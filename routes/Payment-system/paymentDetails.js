@@ -65,17 +65,17 @@ function getbankDetails(response, localjson, uuid){
         
         if(data.Item.BankDetails){
             
-            console.log("Bank Status true");
             localjson['bankDetails'] = data.Item.BankDetails;
             localjson['bankStatus'] = true;
+            console.log("Bank Status " + localjson.bankStatus);
             response.send(JSON.stringify(localjson));
             response.end();
             
         }
         else{
             
-            console.log("Bank Status false");
-            localjson['bankStatus'] = false;
+            localjson['bankStatus'] = false;            
+            console.log("Bank Status " + localjson.bankStatus);
             response.send(JSON.stringify(localjson));
             response.end();
             

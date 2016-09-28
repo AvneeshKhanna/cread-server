@@ -17,16 +17,16 @@ var connection = mysql.createConnection({
 
 router.post('/', function(request, response){
     
-    console.log('request data is ' + request.body);
+    console.log('request data is ' + JSON.stringify(request.body));
     
     var apply_data = {};    
     apply_data.userid = request.body.userid_referred;
     apply_data.Refcode = request.body.refcode;
     apply_data.jobid = request.body.jobid;
-    apply_data.Status = request.body.status;
-    apply_data.Application_status = request.body.application_status;
+    apply_data.Status = /*request.body.status*/"Applied";
+    apply_data.Application_status = /*request.body.application_status*/"Pending";
     
-    console.log('apply_data is ' + apply_data);
+    console.log('apply_data is ' + JSON.stringify(apply_data));
     
     saveInApplyTbl(apply_data, function(onApplyResult){
         
@@ -42,14 +42,16 @@ router.post('/', function(request, response){
                     response.end();
                 }
                 else{
-                    response.send('The referral could not be registered due to some reason');
+                  //  response.send('The referral could not be registered due to some reason');
+                    response.send({'status':'error'});
                     response.end();
                 }
                 
             });
         }
         else{
-            response.send('The application could not be registered due to some reason');
+            //response.send('The application could not be registered due to some reason');
+            response.send({'status':'error'});
             response.end();
         }        
     });
