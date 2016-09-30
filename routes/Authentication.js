@@ -9,8 +9,8 @@ var localStrategy = require('passport-local');
 
 var config = require('./Config');
 
-var getToken = function(userName){
-    var tokenId = Jwt.sign(userName , config.secretKey);
+var getToken = function(Key){
+    var tokenId = Jwt.sign(Key , config.secretKey);
 	return tokenId;
 }
 

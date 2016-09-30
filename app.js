@@ -15,6 +15,7 @@ var Check = require('./routes/Check');
 var referralScreen = require('./routes/referralScreen');
 var usersProfile = require('./routes/userProfile');
 var jobApplication = require('./routes/jobApplication');
+var checkauthToken = require('./routes/authtokenValidation');
 var referraljobApplication = require('./routes/referraljobApplication');
 var jobAddition = require('./routes/jobAddition');
 var refcode_gen = require('./routes/refer-external/RefcodeGen');
@@ -54,6 +55,7 @@ app.use('/refcodevalid', refcode_valid);
 app.use('/refcodeapply', apply_refext);
 app.use('/editprofile', edit_profile);
 app.use('/paymentDetails' , paymentSystem);
+app.use('/jobupdationvalidation' , checkauthToken);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

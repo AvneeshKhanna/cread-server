@@ -8,8 +8,6 @@ var User = new schemaObject({
     lastname : String,
     email : String,
     phoneNo : String,
-    address : String,
-    age : String,
     Auth_key : String
 });
 
