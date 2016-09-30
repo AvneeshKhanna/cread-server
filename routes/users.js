@@ -34,18 +34,24 @@ router.post('/register', function(request,response,next){
         if (error) throw error;
         
         else if (row.length == 1){
-            response.send('false');
+            var localJson = {};
+            localJson['authtoken'] = 'false';
+            localJson['uuid'] = 'false';
+            response.send(JSON.stringify(localJson));
             response.end();
         }
         
         else{
+            var localJson = {};
             var uuid = uuidGenerator.v4();
             var Id = _auth.getToken(key);
+            localJson['authtoken'] = Id;
+            localJson['uuid'] = uuid;
             var user = new _User({UUID : uuid , username : firstname , password : password , firstname : firstname , lastname : lastname , email : emailid , phoneNo : phoneNo , Auth_key : Id });
             _connection.query('INSERT INTO users SET ?',user,function(err,result){
                 if (err) throw err;
         
-                response.send(Id);
+                response.send(JSON.stringify(localJson));
                 response.end();
             });
         }
@@ -55,16 +61,23 @@ router.post('/register', function(request,response,next){
 router.post('/login' , function(request,response,next){
     var phoneNo = request.body.conatctnumber;
     var password = request.body.password;
-    _connection.query('SELECT Auth_key FROM users WHERE phoneNo=? AND password=?',[phoneNo , password],function(err,result){
+    var localJson ={};
+    _connection.query('SELECT Auth_key,UUID FROM users WHERE phoneNo=? AND password=?',[phoneNo , password],function(err,result){
         if (err) throw err;
         
         else if(result.length == 0){
-            response.send('false');
+            var localJson = {};
+            localJson['authtoken'] = 'false';
+            localJson['uuid'] = 'false';
+            response.send(JSON.stringify(localJson));
             response.end();
         }
         
         else{
-            response.send(result[0].Auth_key);
+            localJson['uuid'] = result[0].UUID;
+            localJson['token'] = result[0].Auth_key;
+//            response.send(result[0].Auth_key);
+            response.send(JSON.stringify(localJson));
             response.end();
         }
     });

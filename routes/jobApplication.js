@@ -78,7 +78,7 @@ router.post('/applications',function(request,response,next){
     var auth_key = request.body.authtoken;
     var ApplicationForms = new Array();
     
-    var sqlQuery = 'SELECT jobs.title,jobs.companyname,apply.Application_status FROM apply INNER JOIN jobs ON jobs.JUUID = apply.jobid WHERE apply.userid = ?';
+    var sqlQuery = 'SELECT jobs.title,jobs.companyname,apply.Application_status FROM apply INNER JOIN jobs ON jobs.JUUID = apply.jobid WHERE apply.userid = ? AND apply.Status = ?';
     
     authtokenvalidation.checkToken(uuid, auth_key, function(err, data){
         if(err) throw err;
@@ -87,7 +87,7 @@ router.post('/applications',function(request,response,next){
             response.end('invalid');
         }
         else{
-            _connection.query(sqlQuery,uuid,function(error,row){
+            _connection.query(sqlQuery,[uuid,'Applied'],function(error,row){
                 if (error) throw error;
             
                 for(var j=0 ; j<row.length ; j++){
