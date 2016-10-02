@@ -15,7 +15,7 @@ var Check = require('./routes/Check');
 var referralScreen = require('./routes/referralScreen');
 var usersProfile = require('./routes/userProfile');
 var jobApplication = require('./routes/jobApplication');
-//var checkauthToken = require('./routes/authtokenValidation');
+var checkauthToken = require('./routes/authtokenValidation');
 var referraljobApplication = require('./routes/referraljobApplication');
 var jobAddition = require('./routes/dashboard/jobAddition');
 var jobViewing = require('./routes/dashboard/jobViewing');
@@ -27,7 +27,7 @@ var refcode_valid = require('./routes/refer-external/RefCodeValidator');
 var apply_refext = require('./routes/refer-external/ApplyRefExternal');
 var edit_profile = require('./routes/user-profile/EditProfileUpdate');
 var paymentSystem = require('./routes/Payment-system/paymentDetails');
-//var contactSync = require('./routes/Contact-Synchronization/contactSync');
+var contactSync = require('./routes/Contact-Synchronization/contactSync');
 
 var app = express();
 
@@ -64,8 +64,8 @@ app.use('/refcodevalid', refcode_valid);
 app.use('/refcodeapply', apply_refext);
 app.use('/editprofile', edit_profile);
 app.use('/paymentDetails' , paymentSystem);
-//app.use('/jobupdationvalidation' , checkauthToken);
-//app.use('/contactsync' , contactSync);
+app.use('/jobupdationvalidation' , checkauthToken);
+app.use('/contactsync' , contactSync);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

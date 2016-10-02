@@ -12,8 +12,8 @@ var config = require('./Config');
 var _connection = config.createConnection;
 var applicationSchema = require('./Schema');
 var jobApplication = applicationSchema.jobApplication;
-//var authtokenvalidation = require('./authtokenValidation');
-//var tokenvalidation = authtokenvalidation.checkToken;
+var authtokenvalidation = require('./authtokenValidation');
+var tokenvalidation = authtokenvalidation.checkToken;
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
