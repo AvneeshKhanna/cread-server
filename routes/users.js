@@ -62,9 +62,8 @@ router.post('/register', function(request,response,next){
 router.post('/login' , function(request,response,next){
     var phoneNo = request.body.contactnumber;
     var password = request.body.password;
-    var localJson ={};
     _connection.query('SELECT Auth_key,UUID FROM users WHERE phoneNo=? AND password=?',[phoneNo , password],function(err,result){
-         var localJson = {};
+        var localJson = {};
         if (err) throw err;
         
         else if(result.length == 0){
