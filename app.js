@@ -12,6 +12,7 @@ var users = require('./routes/users');
 var Auth = require('./routes/Authentication');
 var Refer = require('./routes/refer');
 var Check = require('./routes/Check');
+var test = require('./routes/test');
 var referralScreen = require('./routes/referralScreen');
 var usersProfile = require('./routes/userProfile');
 var jobApplication = require('./routes/jobApplication');
@@ -66,6 +67,7 @@ app.use('/editprofile', edit_profile);
 app.use('/paymentDetails' , paymentSystem);
 app.use('/jobupdationvalidation' , checkauthToken);
 app.use('/contactsync' , contactSync);
+app.use('/test' , test);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

@@ -59,6 +59,7 @@ router.post('/',function(request,response){
 });
 
 function checkContacts(CLIENTCONTACTS , CLIENTNAME , serverUUIDs , serverContacts , response){
+    var array = [];
     for(var i=0;i<CLIENTCONTACTS.length;i++){
         if(serverContacts.indexOf(CLIENTCONTACTS[i]) !== -1){
             var localJson = {};
@@ -73,7 +74,7 @@ function checkContacts(CLIENTCONTACTS , CLIENTNAME , serverUUIDs , serverContact
         }
     }
     
-    response.send(JSON.stringify(onAppContacts));
+    response.send(JSON.stringify(array));
     response.end();
     console.log('valid users : '+onAppContacts);
     console.log('invalid users : '+invalidContacts);
