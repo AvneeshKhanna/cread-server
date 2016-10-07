@@ -16,7 +16,8 @@ router.get('/',function(request,response){
             'CompanyName',
             'JobTitle',
             'Location',
-            'ImagePath'
+            'ImagePath',
+            'RefAmount'
         ]
     };
     
@@ -27,7 +28,7 @@ router.get('/',function(request,response){
         
         console.log(data);
         response.send(data);
-        response.end('No data');
+        response.end();
     });
 });
 

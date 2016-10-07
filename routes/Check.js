@@ -27,7 +27,7 @@ router.post('/',function(request,response){
     }).then(function(item){ 
         console.log(item);
     }).catch(function(err){
-        console.log('Error Occured: '+err);
+        console.log('Error Occured: ' + err);
     })
     
     response.end('You Are Fucked Bro !!');

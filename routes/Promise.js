@@ -9,8 +9,3 @@ module.exports = function (element){
             resolve(element);
     });
 }
-
-
-
-
-

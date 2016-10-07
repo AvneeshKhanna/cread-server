@@ -1,3 +1,6 @@
+/*
+This script will be called when a new job is added from the dashboard AND if an existing job is edited on the dashboard.
+*/
 var express = require('express');
 var app = express();
 var router = express.Router();
@@ -7,6 +10,10 @@ var AWS = require('aws-sdk');
 var uuidGenerator = require('uuid');
 
 var config = require('../Config');
+
+var _connection = config.createConnection;
+
+var jobSchema = require('../Schema');
 
 AWS.config.region = 'ap-northeast-1'; 
 AWS.config.credentials = new AWS.CognitoIdentityCredentials({
@@ -35,12 +42,15 @@ router.post('/',function(request, response, next){
     var Skills = request.body.Skills;
     var Description = request.body.Description;
     var imgStatus = request.body.imagestatus;
-    var incentive = request.body.incentive;
+    var RefAmount = request.body.refAmount;
+    var jobProcess ='';
     if(request.body.JUUID){
         var juuid = request.body.JUUID;
+        jobProcess = 'EDIT';
     }
     else{
         var juuid = uuidGenerator.v4();
+        jobProcess = 'ADD';
     }        
     
     var ImagePath = {};
@@ -71,7 +81,8 @@ router.post('/',function(request, response, next){
             'Duration':Duration,
             'Skills':Skills,
             'Description':Description,
-            'ImagePath' : ImagePath
+            'ImagePath' : ImagePath,
+            'RefAmount' : refAmount
         }
     };
     
@@ -80,6 +91,8 @@ router.post('/',function(request, response, next){
     docClient.put(params, function(error, data) {
         
         if(error) throw error;
+        
+        console.log('DynamoDB Udpated');
         
         var responseJSON = {};
         
@@ -92,13 +105,58 @@ router.post('/',function(request, response, next){
             //Add nothing
         }
         
-        console.log(JSON.stringify(responseJSON));
+        var job = new jobSchema.Job({
+            JUUID : params.Item.JUUID,
+            title : params.Item.JobTitle,
+            companyname : params.Item.CompanyName,
+            payscale : params.Item.Payscale,
+            details : params.Item.Description,
+            RefAmount : params.Item.RefAmount
+        });
         
-        response.send(responseJSON);
-        response.end();
+        var query;
+        var data = {}; 
+        
+        if(jobProcess == 'ADD'){
+            console.log('ADD query builder called');
+            query = 'INSERT INTO jobs SET ?';
+            data = job;
+        }
+        else if(jobProcess == 'EDIT'){
+            console.log('EDIT query builder called');
+            
+            var editData = {
+                title : params.Item.JobTitle,
+                companyname : params.Item.CompanyName,
+                payscale : params.Item.Payscale,
+                details : params.Item.Description,
+                RefAmount : params.Item.RefAmount
+            };
+            
+            query = 'UPDATE jobs SET ? WHERE JUUID = ?';
+            data = [editData, job.JUUID];
+        }
+        else{
+            throw new Error('Invalid jobProcess');
+        }
+        
+        _connection.query(query, data, function(error, row){
+            
+            if (error){
+                throw error;
+            }
+            else{
+                
+                console.log(JSON.stringify(responseJSON));
+        
+                response.send(responseJSON);
+                response.end();
+                
+            }
+            
+        });
+
     });
-    
-    //TODO: Add part which adds the details to RDS
     
 });
 

@@ -11,6 +11,15 @@ var User = new schemaObject({
     Auth_key : String
 });
 
+var job = new schemaObject({
+    JUUID : String,
+    title : String,
+    payscale : String,
+    companyname : String,
+    details : String,
+    RefAmount : Number
+});
+
 var jobApply = new schemaObject({
     userid : String,
     jobid : String,
@@ -39,4 +48,5 @@ var jobApplication = new schemaObject({
 module.exports.jobApply = jobApply;
 module.exports.User = User;
 module.exports.jobApplication = jobApplication;
+module.exports.Job = job;
 

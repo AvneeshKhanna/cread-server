@@ -23,12 +23,17 @@ var jobViewing = require('./routes/dashboard/jobViewing');
 var jodEdit = require('./routes/dashboard/jobEdit');
 var usersView = require('./routes/dashboard/users-management/usersViewing');
 var userProfileView = require('./routes/dashboard/users-management/userProfileView');
+var userApplicationsView = require('./routes/dashboard/job-applications/userApplicationsViewing')
+var userApplicationStatusUpdate = require('./routes/dashboard/job-applications/applicationStatusUpdate');
 var refcode_gen = require('./routes/refer-external/RefcodeGen');
 var refcode_valid = require('./routes/refer-external/RefCodeValidator');
 var apply_refext = require('./routes/refer-external/ApplyRefExternal');
 var edit_profile = require('./routes/user-profile/EditProfileUpdate');
 var paymentSystem = require('./routes/Payment-system/paymentDetails');
 var contactSync = require('./routes/Contact-Synchronization/contactSync');
+
+var forgotPassValidContact = require('./routes/forgot-password/validateContact');
+var updatePassword = require('./routes/forgot-password/updatePassword')
 
 var app = express();
 
@@ -60,6 +65,8 @@ app.use('/jobViewing' , jobViewing);
 app.use('/jobEdit', jodEdit);
 app.use('/usersView', usersView);
 app.use('/userProfileView', userProfileView);
+app.use('/userApplicationsView', userApplicationsView);
+app.use('/application-status-update', userApplicationStatusUpdate);
 app.use('/refcodegen', refcode_gen);
 app.use('/refcodevalid', refcode_valid);
 app.use('/refcodeapply', apply_refext);
@@ -67,7 +74,12 @@ app.use('/editprofile', edit_profile);
 app.use('/paymentDetails' , paymentSystem);
 app.use('/jobupdationvalidation' , checkauthToken);
 app.use('/contactsync' , contactSync);
+//<<<<<<< Updated upstream
 app.use('/test' , test);
+//=======
+app.use('/password-validate-contact', forgotPassValidContact);
+app.use('/update-password', updatePassword);
+//>>>>>>> Stashed changes
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

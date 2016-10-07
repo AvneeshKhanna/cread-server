@@ -59,6 +59,7 @@ router.post('/register', function(request,response,next){
             localJson['authtoken'] = Id;
             localJson['uuid'] = uuid;
             var user = new _User({UUID : uuid , username : firstname , password : password , firstname : firstname , lastname : lastname , email : emailid , phoneNo : phoneNo , Auth_key : Id });
+            
             _connection.query('INSERT INTO users SET ?',user,function(err,result){
                 if (err) throw err;
                 
@@ -71,6 +72,7 @@ router.post('/register', function(request,response,next){
 router.post('/login' , function(request,response,next){
     var phoneNo = request.body.contactnumber;
     var password = request.body.password;
+//<<<<<<< Updated upstream
     var fcmtoken  = request.body.fcmtoken;
     
     _connection.query('SELECT Auth_key,UUID FROM users WHERE phoneNo=? AND password=?',[phoneNo , password],function(err,result){
@@ -123,5 +125,5 @@ router.post('/logout' , function(request,response,next){
         response.end();
     });
 });
+    
 module.exports = router;
-
