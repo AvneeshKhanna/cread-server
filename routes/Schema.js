@@ -2,7 +2,6 @@ var schemaObject = require('node-schema-object');
 
 var User = new schemaObject({
     UUID : String,
-    username : String,
     password : String,
     firstname : String,
     lastname : String,

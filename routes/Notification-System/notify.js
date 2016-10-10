@@ -8,7 +8,6 @@ var dynamo_marshal = require('dynamodb-marshaler');    //package to convert plai
 
 var config = require('../Config');
 var _connection = config.createConnection;
-//var bankdetailsArray = new Array();
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());

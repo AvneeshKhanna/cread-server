@@ -11,6 +11,8 @@ router.post('/',function(request,response){
     var str1 = 'Ho gaya1';
     var str2 = 'Ho gaya2';
     var promise = ext(Id);
+    var arr = ['1','2','3'];
+    var arr2 = ['11','12','13'];
     
     promise.then(function(item){
         console.log(item);
@@ -23,9 +25,11 @@ router.post('/',function(request,response){
         return item+3;
     }).then(function(item){
         console.log(item);
-        return item+4;
+        return arr;
     }).then(function(item){ 
-        console.log(item);
+        for(var y in item){
+         console.log(item[y]);   
+        }
     }).catch(function(err){
         console.log('Error Occured: ' + err);
     })

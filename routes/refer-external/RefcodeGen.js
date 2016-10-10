@@ -5,10 +5,11 @@ This script would be invoked when a user tries to refer someone using external r
 */
 var express = require('express');
 var router = express.Router();
-
 var mysql = require('mysql');
-
 var uuidGenerator = require('uuid');
+var Hashids = require('hashids');
+
+var authtokenvalidation = require('../authtokenValidation');   //module to authenticate user before making request
 
 var connection = mysql.createConnection({
     host : 'testrdsinstance.cfjbzkm4dzzx.ap-northeast-1.rds.amazonaws.com',
@@ -22,19 +23,32 @@ router.post('/', function (request, response){
     
     var userid = request.body.userid;
     var jobid = request.body.jobid;
+    var auth_key = request.body.authkey;
 
     //Check if referral code exists or not
-    checkRefCode(userid, jobid, function(send_result){
+    
+    authtokenvalidation.checkToken(userid, auth_key, function(err, data){
+        if(err) throw err;
         
-        if(send_result){
-            response.send(send_result);
+        else if(data == 0){
+            var invalidJson = {};
+            invalidJson['tokenstatus'] = 'Invalid';
+            response.send(JSON.stringify(invalidJson));
             response.end();
         }
         else{
-            response.send('The requested data could not be found');
-            response.end();
-        }
+            checkRefCode(userid, jobid, function(send_result){
+                if(send_result){
+                    response.send(send_result);
+                    response.end();
+                }
+                else{
+                    response.send('The requested data could not be found');
+                    response.end();
+                }
         
+            });
+        }
     });
 });
 
@@ -76,7 +90,7 @@ function checkRefCode(userid, jobid, onCheck){
             //Referral code doesn't exists; generate, save and send as response
             else{
                 
-                var refcode = refcode_genrtr();
+                var refcode = refcode_genrtr(userid , jobid);
                 
                 var check_result = {};
                 
@@ -114,9 +128,12 @@ function checkRefCode(userid, jobid, onCheck){
 }
 
 //Function to simulate random-refcode generator
-function refcode_genrtr(){
+function refcode_genrtr(uuid , juuid){
+    var hashkey = uuid+juuid;
+    var hashid = new Hashids(hashkey,10);
+    var refCode = hashid.encode(1);
     
-    return uuidGenerator.v4();
+    return refCode;
     
 }
 

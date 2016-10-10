@@ -13,7 +13,6 @@ var _connection = config.createConnection;
 var applicationSchema = require('./Schema');
 var jobApplication = applicationSchema.jobApplication;
 var authtokenvalidation = require('./authtokenValidation');
-var tokenvalidation = authtokenvalidation.checkToken;
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -39,7 +38,10 @@ router.post('/',function(request,response,next){
         if(err) throw err;
         
         else if(data == 0){
-            response.end('invalid');
+            var invalidJson = {};
+            invalidJson['tokenstatus'] = 'Invalid';
+            response.send(JSON.stringify(invalidJson));
+            response.end();
         }
         else{
             _connection.query(sqlQuery,[UUID , JUUID], function(error, row){

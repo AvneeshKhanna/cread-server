@@ -8,6 +8,7 @@ var bodyParser = require('body-parser');
 var mysql = require('mysql');
 
 var config = require('./Config');
+var authtokenvalidation = require('./authtokenValidation');   //module to authenticate user before making request
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -17,12 +18,27 @@ var referrals = new Array();
 
 router.post('/',function(request,response,next){
     var userid = request.body.uuid;
+    var auth_key = request.body.authkey;
     
-    getData(userid,response);
+    authtokenvalidation.checkToken(userid, auth_key, function(err, data){
+        if(err) throw err;
+        
+        else if(data == 0){
+            var invalidJson = {};
+            invalidJson['tokenstatus'] = 'Invalid';
+            response.send(JSON.stringify(invalidJson));
+            response.end();
+        }
+        
+        else{
+            getData(userid,response);
+        }
+    });
+//    getData(userid,response);
 });
 
 function getData(userID,res){
-    var Query = 'SELECT users.username , jobs.payscale , jobs.JUUID , apply.Application_status FROM users INNER JOIN referredUsers ON users.UUID = referredUsers.refUser INNER JOIN Referrals ON Referrals.Refcode = referredUsers.Refcode INNER JOIN jobs ON jobs.JUUID = Referrals.jobid INNER JOIN apply ON Referrals.Refcode = apply.Refcode WHERE Referrals.userid = ? AND apply.Status=?';
+    var Query = 'SELECT users.firstname , jobs.payscale , jobs.JUUID , apply.Application_status FROM users INNER JOIN referredUsers ON users.UUID = referredUsers.refUser INNER JOIN Referrals ON Referrals.Refcode = referredUsers.Refcode INNER JOIN jobs ON jobs.JUUID = Referrals.jobid INNER JOIN apply ON Referrals.Refcode = apply.Refcode WHERE Referrals.userid = ? AND apply.Status=?';
     
     _connection.query(Query,[userID,'Applied'],function(error,row){
         if (error) throw error;
@@ -31,7 +47,7 @@ function getData(userID,res){
         
         for(var i=0 ; i<row.length ; i++){
             var localJson ={};
-            localJson['username'] = row[i].username;
+            localJson['username'] = row[i].firstname;
             localJson['amount'] = row[i].payscale;
             localJson['status'] = row[i].Application_status;
             localJson['jobid'] = row[i].JUUID;

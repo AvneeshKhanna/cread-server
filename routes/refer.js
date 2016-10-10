@@ -103,19 +103,4 @@ function referredTable(validusers,refcode){
     });
 }
 
-//function checkreferredUsers(userid,jobid,refUser){
-//    var referredusersQuery = 'SELECT referredUsers.rid,Referrals.Refcode FROM Referrals INNER JOIN referredUsers ON Referrals.Refcode = referredUsers.Refcode WHERE Referrals.userid=? AND Referrals.jobid=? AND referredUsers.refUser=?';
-//    
-//    _connection.query(referredusersQuery,[userid , jobid , refUser],function(error,result){
-//        if(error) throw error;
-//        
-//        else if(result.length == 0){
-//            refUsers(refUser);
-//        }
-//        else{
-//            console.log('NOT VALID');
-//        }        
-//    });
-//}
-
 module.exports = router;

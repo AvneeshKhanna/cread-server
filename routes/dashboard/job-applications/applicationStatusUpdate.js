@@ -4,8 +4,10 @@ This script updates the user's application status when a request is issued from 
 var express = require('express');
 var app = express();
 var router = express.Router();
-
 var mysql = require('mysql');
+
+var sendNotification = require('../../Notification-System/notificationFramework');
+
 var _connection = mysql.createConnection({
     host : 'testrdsinstance.cfjbzkm4dzzx.ap-northeast-1.rds.amazonaws.com',
     user : 'ttrds',
@@ -21,6 +23,7 @@ router.post('/', function(request, response){
     var application_status = request.body.applicationstatus;
     var refAmount = request.body.refamount;
     var refcode = request.body.refcode;
+    var jobName = request.body.jobname;
     
     console.log('Request is ' + JSON.stringify(request.body, null, 3));
     
@@ -40,25 +43,35 @@ router.post('/', function(request, response){
                 throw err;
             }
             else{                
-                updateAplcnStatus(application_status, uuid, jobid, response);
+                updateAplcnStatus(application_status , uuid , jobid , jobName , response);
             }            
         });        
     }
     else{
-        updateAplcnStatus(application_status, uuid, jobid, response);
+        updateAplcnStatus(application_status , uuid , jobid , jobName , response);
     }
 });
 
-function updateAplcnStatus(application_status, uuid, jobid, response){
+function updateAplcnStatus(application_status , uuid , jobid , jobName , response){
+    var uuidArray = [];
+    uuidArray.push(uuid);
+    
+    var notificationData = {
+        Category : 'ApplicationStatus',
+        Status : application_status,
+        JobName : jobName
+    };
     
     _connection.query('UPDATE apply SET Application_status = ? WHERE userid = ? AND jobid = ?', [application_status, uuid, jobid], function(err, rows){
         
         if(err){
             throw err;
         }
-        else{            
-            response.send(true);
-            response.end();
+        else{  
+            sendNotification.Notification(uuidArray , notificationData , function(){
+                response.send(true);
+                response.end(); 
+            });
         }
     });
 

@@ -37,7 +37,7 @@ router.post('/register', function(request,response,next){
     var phoneNo = request.body.contactnumber;
     var emailid = request.body.emailid;
     var fcmToken = request.body.fcmtoken;
-    var key = firstname+password+phoneNo;
+    var key = password+phoneNo;
     var name = firstname+' '+lastname;
         
     //checking if user already exists in db use deasync
@@ -57,7 +57,7 @@ router.post('/register', function(request,response,next){
             var Id = _auth.getToken(key);
             localJson['authtoken'] = Id;
             localJson['uuid'] = uuid;
-            var user = new _User({UUID : uuid , username : firstname , password : password , firstname : firstname , lastname : lastname , email : emailid , phoneNo : phoneNo , Auth_key : Id });
+            var user = new _User({UUID : uuid , password : password , firstname : firstname , lastname : lastname , email : emailid , phoneNo : phoneNo , Auth_key : Id });
             
             _connection.query('INSERT INTO users SET ?', user, function(err,result){
                 if (err) throw err;
@@ -71,7 +71,6 @@ router.post('/register', function(request,response,next){
 router.post('/login' , function(request,response,next){
     var phoneNo = request.body.contactnumber;
     var password = request.body.password;
-//<<<<<<< Updated upstream
     var fcmtoken  = request.body.fcmtoken;
     
     _connection.query('SELECT Auth_key, UUID FROM users WHERE phoneNo=? AND password=?', [phoneNo , password], function(err,result){
@@ -103,25 +102,93 @@ router.post('/logout' , function(request,response,next){
         Key : {
             UUID : uuid
         },
-        ConditionExpression : "Fcm_token == :val",
-        ExpressionAttributeValues : {
-            ':val' : fcmToken
-        }
-//        AttributeUpdates : {
-//            Fcm_token : {
-//                Action : 'DELETE', 
-//                Value : [fcmToken]
-//            }
-//        }
+        AttributesToGet : [
+            'Fcm_token'   
+        ]
     };  
     
-    docClient.delete(deleteParams, function(error, data) {
+    docClient.get(deleteParams, function(error, data) {
+        if (error) throw error;
+
+        deleteupdateItem(data.Item.Fcm_token , fcmToken , uuid , response);
+    });
+});
+
+router.post('/refreshfcmtoken' , function(request,response){
+    var newFcm = request.body.newfcmtoken;
+    var oldFcm = request.body.oldfcmtoken;
+    var uuid = request.body.uuid;
+    var table = 'User_Profile';
+
+    var getParams = {
+        TableName : table,
+        Key : {
+            UUID : uuid
+        },
+        AttributesToGet : [
+            'Fcm_token'   
+        ]
+    };
+    
+    docClient.get(getParams , function(error,data){
+        if (error) throw error;
+        
+        refreshToken(uuid , newFcm , oldFcm , data.Item.Fcm_token , response);
+        
+    });
+});
+
+function refreshToken(uuid , newFcm , oldFcm , items , response){
+    items.splice(items.indexOf(oldFcm) , 1 , newFcm);
+    
+    var table = 'User_Profile';
+
+    var refreshParams = {
+        TableName : table,
+        Key : {
+            UUID : uuid
+        },
+        AttributeUpdates : {
+            Fcm_token : {
+                Action : 'PUT', 
+                Value : items
+            }
+        }
+    };
+    
+    docClient.update(refreshParams, function(error, data) {
         if (error) throw error;
 
         console.log(data);
-        response.send('Lgged out');
+        response.send('Token is refreshed');
         response.end();
     });
-});
+}
     
+function deleteupdateItem(items , fcmtoken , uuid , response){
+    items.splice(items.indexOf(fcmtoken) , 1);
+    
+    var table = 'User_Profile';
+    var addParams = {
+        TableName : table,
+        Key : {
+            UUID : uuid
+        },
+        AttributeUpdates : {
+            Fcm_token : {
+                Action : 'PUT', 
+                Value : items
+            }
+        }
+    };
+    
+    docClient.update(addParams, function(error, data) {
+        if (error) throw error;
+
+        console.log(data);
+        response.send('Logged out');
+        response.end();
+    });
+}
+
 module.exports = router;

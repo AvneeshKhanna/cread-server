@@ -8,7 +8,8 @@ var router = express.Router();
 var mysql = require('mysql');
 
 var AWS = require('aws-sdk');
-var dynamo_marshal = require('dynamodb-marshaler'); 
+var dynamo_marshal = require('dynamodb-marshaler');
+var sendNotification = require('../../Notification-System/notificationFramework');
 
 var _connection = mysql.createConnection({
     host : 'testrdsinstance.cfjbzkm4dzzx.ap-northeast-1.rds.amazonaws.com',
@@ -55,7 +56,7 @@ router.post('/', function(request, response){
             console.log('Referrer QUery Response ' + JSON.stringify(data, null, 3));
             
             data = data.Item;
-            
+            console.log(data);
             response_data.referrer_id = data.UUID;
             response_data.referrer_data = {
                 Name : data.Name,
@@ -82,7 +83,7 @@ router.post('/', function(request, response){
                         Email : data.Email_Id
                     };
                     
-                    _connection.query('SELECT paymentStatus FROM Earnings WHERE refCode = ? AND applieduserid = ?', [refcode, '15dc3883-7eab-4a34-9d2f-1057d11141c0'], function(err, rows){
+                    _connection.query('SELECT paymentStatus FROM Earnings WHERE refCode = ? AND applieduserid = ?', [refcode, applicant_id], function(err, rows){
                         
                        if(err){
                            throw err;
@@ -103,24 +104,23 @@ router.post('/', function(request, response){
                 
             });
         }
-    });
-    
-    /*getUsersDataDynamo(function(data){
-        
-        response.send(dummyData());
-        response.end();
-        
-    });*/
-    
-    /*response.send(dummyData());
-    response.end();*/
-    
+    });    
 });
 
 router.post('/payment-approval/', function(request,response){
-    
+    var referredUser = request.body.referreduser;
     var refcode = request.body.refcode;
     var applicant_id = request.body.applicant_id;
+    
+    var notificationData = {
+        Category : 'Payments',
+        Status : 'Approved',
+        Referred : referredUser
+    };
+    
+    var applicantArray = [];
+    applicantArray.push(applicant_id);
+    
     console.log(JSON.stringify(request.body, null, 3));
     
     _connection.query('UPDATE Earnings SET paymentStatus = ? WHERE refCode = ? AND applieduserid = ?', ['Approved', refcode, applicant_id], function(err, data){
@@ -129,64 +129,12 @@ router.post('/payment-approval/', function(request,response){
             throw err;
         }
         
-        response.send(true);
-        response.end();
+        sendNotification.Notification(applicantArray , notificationData , function(){
+            response.send(true);
+            response.end(); 
+        });
     });
     
-})
-
-function getUsersDataDynamo(callback){
-    
-    console.log('getUsersDataDynamo called');
-    
-    var params = {
-        TableName: 'User_Profile',
-        KeyConditions: [
-            DynamoDB.Condition('UUID', 'EQ', referrer_id),
-            DynamoDB.Condition('UUID', 'EQ', applicant_id)
-        ],
-        ConditionalOperator : 'OR' 
-    };
-    
-    docClient.get(params, function (err, data){
-       
-        if(err){
-            console.log(err);
-            throw err;
-        }
-        
-        console.log(data);
-        callback(data);
-    });
-}
-
-function dummyData(){
-    
-    var data = {
-        
-        referrer_id : 'a',
-        referrer_data : {
-            Name : 'Avneesh Khanna',
-            Contact : '9999015838',
-            Email : 'avneesh.khanna92@gmail.com',
-            BankDetails: {
-                Account_holder : "fcv",
-                Account_number : "5889",
-                Bank_branch : "vb",
-                Bank_name : "cvv",
-                IFSC : "fghh"                
-            }
-        },
-        applicant_id : 'afa',
-        applicant_data : {            
-            Name : 'Suraj Kandoi',
-            Contact : '9999087839',
-            Email : 'suraj.kandoi@gmail.com'            
-        },
-        referrer_payment_status : 'Pending'        
-    };
-    
-    return data;
-}
+});
 
 module.exports = router;

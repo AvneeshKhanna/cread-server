@@ -7,6 +7,7 @@ var bodyParser = require('body-parser');
 var mysql = require('mysql');
 var AWS = require('aws-sdk');
 var dynamo_marshal = require('dynamodb-marshaler');    //package to convert plain JS/JSON objects to DynamoDB JSON
+var authtokenvalidation = require('../authtokenValidation');   //module to authenticate user before making request
 
 var config = require('../Config');
 var _connection = config.createConnection;
@@ -21,31 +22,47 @@ var docClient = new AWS.DynamoDB.DocumentClient();
 
 router.post('/',function(request, response, next){
     var uuid = request.body.uuid;
+    var auth_key = request.body.authkey;
+    
     var sqlQuery = 'SELECT referralAmount, paymentStatus FROM Earnings INNER JOIN Referrals ON Referrals.Refcode = Earnings.refCode WHERE Referrals.userid=?';
     var approvedUser = 0;
     var pendingUser =0;
     var localJson = {};
     
     console.log(uuid);
-    _connection.query(sqlQuery,uuid,function(error,result){
+    
+    authtokenvalidation.checkToken(uuid, auth_key, function(err, data){
+        if(err) throw err;
         
-        if(error) throw error;
-        
-        for(var i=0 ; i<result.length ; i++){
-            if(result[i].paymentStatus == 'pending'){
-                pendingUser = pendingUser+result[i].referralAmount;
-            }
-            else{
-                approvedUser = approvedUser+result[i].referralAmount;
-            }
+        else if(data == 0){
+            var invalidJson = {};
+            invalidJson['tokenstatus'] = 'Invalid';
+            response.send(JSON.stringify(invalidJson));
+            response.end();
         }
         
-        console.log('The earnings: ' + approvedUser);
-        console.log('The pendings: ' + pendingUser);
-        localJson['earnings'] = approvedUser;
-        localJson['pending'] = pendingUser;
+        else{
+            _connection.query(sqlQuery,uuid,function(error,result){
+        
+                if(error) throw error;
 
-        getbankDetails(response,localJson,uuid);
+                for(var i=0 ; i<result.length ; i++){
+                    if(result[i].paymentStatus == 'pending'){
+                        pendingUser = pendingUser+result[i].referralAmount;
+                    }
+                    else{
+                        approvedUser = approvedUser+result[i].referralAmount;
+                    }
+                }
+
+                console.log('The earnings: ' + approvedUser);
+                console.log('The pendings: ' + pendingUser);
+                localJson['earnings'] = approvedUser;
+                localJson['pending'] = pendingUser;
+
+                getbankDetails(response,localJson,uuid);
+            });
+        }
     });
 });
 

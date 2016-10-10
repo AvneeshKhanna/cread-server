@@ -12,7 +12,6 @@ var users = require('./routes/users');
 var Auth = require('./routes/Authentication');
 var Refer = require('./routes/refer');
 var Check = require('./routes/Check');
-var test = require('./routes/test');
 var referralScreen = require('./routes/referralScreen');
 var usersProfile = require('./routes/userProfile');
 var jobApplication = require('./routes/jobApplication');
@@ -32,6 +31,8 @@ var apply_refext = require('./routes/refer-external/ApplyRefExternal');
 var edit_profile = require('./routes/user-profile/EditProfileUpdate');
 var paymentSystem = require('./routes/Payment-system/paymentDetails');
 var contactSync = require('./routes/Contact-Synchronization/contactSync');
+var internalReferral = require('./routes/refer-Internal/internalReferral');
+var notification = require('./routes/Notification-System/jobNotification');
 
 var forgotPassValidContact = require('./routes/forgot-password/validateContact');
 var updatePassword = require('./routes/forgot-password/updatePassword')
@@ -76,12 +77,10 @@ app.use('/editprofile', edit_profile);
 app.use('/paymentDetails' , paymentSystem);
 app.use('/jobupdationvalidation' , checkauthToken);
 app.use('/contactsync' , contactSync);
-//<<<<<<< Updated upstream
-app.use('/test' , test);
-//=======
 app.use('/password-validate-contact', forgotPassValidContact);
 app.use('/update-password', updatePassword);
-//>>>>>>> Stashed changes
+app.use('/internalrefer' , internalReferral);
+app.use('/jobnotification' , notification);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

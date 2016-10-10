@@ -4,8 +4,9 @@ This module stores respective entries into 'apply' table and 'referredUsers' tab
 
 var express = require('express');
 var router = express.Router();
-
 var mysql = require('mysql');
+
+var authtokenvalidation = require('../authtokenValidation');   //module to authenticate user before making request
 
 var connection = mysql.createConnection({
     host : 'testrdsinstance.cfjbzkm4dzzx.ap-northeast-1.rds.amazonaws.com',
@@ -16,6 +17,8 @@ var connection = mysql.createConnection({
 });
 
 router.post('/', function(request, response){
+    var userid = request.body.userid_referred;
+    var auth_key = request.body.authkey;
     
     console.log('request data is ' + JSON.stringify(request.body));
     
@@ -28,34 +31,44 @@ router.post('/', function(request, response){
     
     console.log('apply_data is ' + JSON.stringify(apply_data));
     
-    saveInApplyTbl(apply_data, function(onApplyResult){
+    authtokenvalidation.checkToken(userid, auth_key, function(err, data){
+        if(err) throw err;
         
-        if(onApplyResult){
-            var refusers_data = {};
-            refusers_data.Refcode = request.body.refcode;
-            refusers_data.refUser = request.body.userid_referred;
-            
-            saveInRefUsersTbl(refusers_data, function(onSaveRefUsrsResult){
+        else if(data == 0){
+            var invalidJson = {};
+            invalidJson['tokenstatus'] = 'Invalid';
+            response.send(JSON.stringify(invalidJson));
+            response.end();
+        }
+        
+        else{
+            saveInApplyTbl(apply_data, function(onApplyResult){
+                if(onApplyResult){
+                    var refusers_data = {};
+                    refusers_data.Refcode = request.body.refcode;
+                    refusers_data.refUser = request.body.userid_referred;
                 
-                if(onSaveRefUsrsResult){
-                    response.send({'status':'OK'});
-                    response.end();
+                    saveInRefUsersTbl(refusers_data, function(onSaveRefUsrsResult){
+                
+                        if(onSaveRefUsrsResult){
+                            response.send({'status':'OK'});
+                            response.end();
+                        }
+                        else{
+                        //response.send('The referral could not be registered due to some reason');
+                            response.send({'status':'error'});
+                            response.end();
+                        }
+                    });
                 }
                 else{
-                  //  response.send('The referral could not be registered due to some reason');
+                    //response.send('The application could not be registered due to some reason');
                     response.send({'status':'error'});
                     response.end();
-                }
-                
+                }        
             });
         }
-        else{
-            //response.send('The application could not be registered due to some reason');
-            response.send({'status':'error'});
-            response.end();
-        }        
     });
-    
 });
 
 /*Used to save data into 'apply' table*/

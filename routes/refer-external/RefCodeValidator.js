@@ -23,7 +23,7 @@ router.post('/', function(request, response){
     var userid = request.body.userid;
     var refcode = request.body.refcode;
     
-    refCodeValidtr(refcode, function(codeValidResult){
+    refCodeValidtr(refcode , userid , function(codeValidResult){
         
         if(codeValidResult){
             
@@ -63,9 +63,9 @@ router.post('/', function(request, response){
 });
 
 //To check whether refcode is valid or not. If yes, then retrieve the jid and pass it further for apply-table validation
-function refCodeValidtr(refcode, onCodeValid){
+function refCodeValidtr(refcode , userid , onCodeValid){
     
-    connection.query('SELECT * FROM Referrals WHERE Refcode = ?', refcode, function(err, rows){
+    connection.query('SELECT * FROM Referrals WHERE Refcode = ? AND userid <> ?', [refcode , userid], function(err, rows){
        
         if(err){
             throw err;
