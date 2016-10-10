@@ -25,6 +25,7 @@ var usersView = require('./routes/dashboard/users-management/usersViewing');
 var userProfileView = require('./routes/dashboard/users-management/userProfileView');
 var userApplicationsView = require('./routes/dashboard/job-applications/userApplicationsViewing')
 var userApplicationStatusUpdate = require('./routes/dashboard/job-applications/applicationStatusUpdate');
+var referDetailsView = require('./routes/dashboard/referrer-detail/referrerDetailsView');
 var refcode_gen = require('./routes/refer-external/RefcodeGen');
 var refcode_valid = require('./routes/refer-external/RefCodeValidator');
 var apply_refext = require('./routes/refer-external/ApplyRefExternal');
@@ -67,6 +68,7 @@ app.use('/usersView', usersView);
 app.use('/userProfileView', userProfileView);
 app.use('/userApplicationsView', userApplicationsView);
 app.use('/application-status-update', userApplicationStatusUpdate);
+app.use('/refer-detail', referDetailsView);
 app.use('/refcodegen', refcode_gen);
 app.use('/refcodevalid', refcode_valid);
 app.use('/refcodeapply', apply_refext);

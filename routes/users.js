@@ -50,8 +50,7 @@ router.post('/register', function(request,response,next){
             localJson['uuid'] = 'false';
             response.send(JSON.stringify(localJson));
             response.end();
-        }
-        
+        }        
         else{
             var localJson = {};
             var uuid = uuidGenerator.v4();
@@ -60,7 +59,7 @@ router.post('/register', function(request,response,next){
             localJson['uuid'] = uuid;
             var user = new _User({UUID : uuid , username : firstname , password : password , firstname : firstname , lastname : lastname , email : emailid , phoneNo : phoneNo , Auth_key : Id });
             
-            _connection.query('INSERT INTO users SET ?',user,function(err,result){
+            _connection.query('INSERT INTO users SET ?', user, function(err,result){
                 if (err) throw err;
                 
                 notify.registerFCM(uuid , fcmToken , localJson , name , emailid , phoneNo , response);
@@ -75,7 +74,7 @@ router.post('/login' , function(request,response,next){
 //<<<<<<< Updated upstream
     var fcmtoken  = request.body.fcmtoken;
     
-    _connection.query('SELECT Auth_key,UUID FROM users WHERE phoneNo=? AND password=?',[phoneNo , password],function(err,result){
+    _connection.query('SELECT Auth_key, UUID FROM users WHERE phoneNo=? AND password=?', [phoneNo , password], function(err,result){
         var localJson = {};
         if (err) throw err;
         
@@ -84,8 +83,7 @@ router.post('/login' , function(request,response,next){
             localJson['uuid'] = 'false';
             response.send(JSON.stringify(localJson));
             response.end();
-        }
-        
+        }        
         else{
             localJson['uuid'] = result[0].UUID;
             localJson['authtoken'] = result[0].Auth_key;
