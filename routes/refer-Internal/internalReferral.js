@@ -43,7 +43,7 @@ router.post('/' , function(request,response){
         
         else if(data == 0){
             var invalidJson = {};
-            invalidJson['tokenstatus'] = 'Invalid';
+            invalidJson['tokenstatus'] = 'invalid';
             response.send(JSON.stringify(invalidJson));
             response.end();
         }
@@ -88,7 +88,7 @@ router.post('/' , function(request,response){
                             saveReferredUser(userStatus.uuidArray , refCode , function(){
                                 sendNotification.Notification(userStatus.uuidArray , notificationData , function(){
                                     var localJson = {};
-                                    localJson['tokenstatus'] = 'Valid';
+                                    localJson['tokenstatus'] = 'valid';
                                     localJson['uuidstatus'] = userStatus.Users;
                                     response.send(JSON.stringify(localJson));
                                     response.end();  
@@ -110,7 +110,7 @@ router.post('/' , function(request,response){
                             saveReferredUser(userStatus.uuidArray , refcode , function(){
                                 sendNotification.Notification(userStatus.uuidArray , notificationData , function(){
                                     var localJson = {};
-                                    localJson['tokenstatus'] = 'Valid';
+                                    localJson['tokenstatus'] = 'valid';
                                     localJson['uuidstatus'] = userStatus.Users;
                                     response.send(JSON.stringify(localJson));
                                     response.end(); 
