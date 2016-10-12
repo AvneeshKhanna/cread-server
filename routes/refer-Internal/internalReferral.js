@@ -18,7 +18,6 @@ app.use(bodyParser.json());
 var _jobApply = jobApplySchema.jobApply;
 var _connection = config.createConnection;
 
-
 router.post('/' , function(request,response){
     var uuid = request.body.uuid;
     var juuid = request.body.juuid;

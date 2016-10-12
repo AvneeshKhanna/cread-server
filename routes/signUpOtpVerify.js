@@ -4,19 +4,15 @@ var router = express.Router();
 
 var mysql = require('mysql');
 var AWS = require('aws-sdk');
+var config = require('./Config');
 
-var _connection = mysql.createConnection({
-    host : 'testrdsinstance.cfjbzkm4dzzx.ap-northeast-1.rds.amazonaws.com',
-    user : 'ttrds',
-    password : 'amazonpass2015',
-    database : 'testdb',
-    port : '3306'
-});
+var _connection = config.createConnection;
 
 router.post('/', function(request, response){
-    console.log('Request received forgot password validate contact');
-    
+        
     var contactnumber = request.body.contactnumber;
+    console.log('Request received sign up otp');
+    console.log('Request ' + JSON.stringify(request.body, null, 3));
     
     _connection.query('SELECT UUID FROM users WHERE phoneNo = ?', [contactnumber], function(err, row){
         
@@ -28,15 +24,10 @@ router.post('/', function(request, response){
             var responseObj = {};
             
             if(row.length == 0){
-                responseObj.valid = false;
-                response.send(responseObj);
-            }
-            else{
+                
                 console.log('forgotPassword UUID in response: ' + JSON.stringify(row));
-                responseObj.valid = true;
-                responseObj.uuid = row[0].UUID;
-                //TODO Send SNS request for OTP message to the relevant contact number
-                            
+                responseObj.exists = false;
+                
                 var sns = new AWS.SNS();
                 
                 var params = {
@@ -75,6 +66,10 @@ router.post('/', function(request, response){
                         });
                     } 
                 });
+            }
+            else{
+                responseObj.exists = true;
+                response.send(responseObj);                
             }            
         }
     });

@@ -13,14 +13,13 @@ AWS.config.credentials = new AWS.CognitoIdentityCredentials({
 
 var docClient = new AWS.DynamoDB.DocumentClient();
 
-
 router.post('/' , function(req,res){
     var testIds = new Array();
     testIds.push('43d865a5-f7b7-4c27-84b1-367203744226');
     testIds.push('11271509-244b-4fac-86a3-a19e5933823a');
     testIds.push('11271509-244b-4fac-86a3-a19e5933823e');
     
-    var data = {Category:"Payments" , Status:"Approved" , Referred:"Avneesh Khanna" , Incentive:"500"}
+    var data = {Category: "Payments" , Status: "Approved" , Referred: "Avneesh Khanna" , Incentive: "500"}
     
     sendNotification(testIds , data , function(){
         res.end('done');
@@ -84,7 +83,7 @@ function sendNotification(users , notificationData , callback){
             var sender = new gcm.Sender('AIzaSyDUbtCYGKI-kLl7oSVQoW_sZqo2VZBFeKQ');
 
             sender.send(message, { registrationTokens : registrationTokens }, 3 , function (err, response) {
-                if(err) throw err;
+                //if(err) throw err;
 
                 console.log(response);
                 callback();

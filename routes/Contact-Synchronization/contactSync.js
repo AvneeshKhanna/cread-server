@@ -25,7 +25,7 @@ router.post('/',function(request,response){
     var CLIENTNAME = new Array();
     var CLIENTCONTACTS = new Array();
     
-    var Query = 'SELECT phoneNO,UUID FROM users';
+    var Query = 'SELECT phoneNO, UUID FROM users';
     
     //contacts and name send by user
     contacts.forEach(function(item){

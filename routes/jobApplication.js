@@ -27,7 +27,7 @@ router.post('/',function(request,response,next){
     var UUID = request.body.uuid;
     var JUUID = request.body.juuid;
     var refCode = request.body.refcode;
-    var auth_key = request.body.authtoken;
+    var auth_key = request.body.authkey;
     
     var application = new jobApplication({userid : UUID , jobid : JUUID , Refcode : refCode , Status : 'Applied' , Application_status : 'Pending'});
     
@@ -39,7 +39,7 @@ router.post('/',function(request,response,next){
         
         else if(data == 0){
             var invalidJson = {};
-            invalidJson['tokenstatus'] = 'Invalid';
+            invalidJson['tokenstatus'] = 'invalid';
             response.send(JSON.stringify(invalidJson));
             response.end();
         }
@@ -63,7 +63,7 @@ router.post('/',function(request,response,next){
                         });
                     }
                     else{
-                        response.send(null);
+                        response.send(false);
                         response.end();
                     }
                 }).
@@ -77,18 +77,28 @@ router.post('/',function(request,response,next){
 
 router.post('/applications',function(request,response,next){
     var uuid = request.body.uuid;
-    var auth_key = request.body.authtoken;
+    var auth_key = request.body.authkey;
     var ApplicationForms = new Array();
     
     var sqlQuery = 'SELECT jobs.title,jobs.companyname,apply.Application_status FROM apply INNER JOIN jobs ON jobs.JUUID = apply.jobid WHERE apply.userid = ? AND apply.Status = ?';
+    
+    var responseData = {};
+    responseData.tokenstatus = {};
+    responseData.applicationsdata = new Array();
+    
+    console.log('Request in jobApplications is ' + JSON.stringify(request.body, null, 3));
     
     authtokenvalidation.checkToken(uuid, auth_key, function(err, data){
         if(err) throw err;
         
         else if(data == 0){
-            response.end('invalid');
+            responseData.tokenstatus = 'invalid';
+            response.send(responseData);
+            response.end();
         }
         else{
+            responseData.tokenstatus = 'valid';
+            
             _connection.query(sqlQuery,[uuid,'Applied'],function(error,row){
                 if (error) throw error;
             
@@ -100,8 +110,10 @@ router.post('/applications',function(request,response,next){
             
                     ApplicationForms.push(localJson);
                 }
+                
+                responseData.applicationsdata = ApplicationForms;
         
-                response.send(JSON.stringify(ApplicationForms));
+                response.send(responseData);
                 response.end();
         
                 ApplicationForms=[];

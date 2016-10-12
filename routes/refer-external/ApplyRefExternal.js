@@ -36,7 +36,7 @@ router.post('/', function(request, response){
         
         else if(data == 0){
             var invalidJson = {};
-            invalidJson['tokenstatus'] = 'Invalid';
+            invalidJson['tokenstatus'] = 'invalid';
             response.send(JSON.stringify(invalidJson));
             response.end();
         }

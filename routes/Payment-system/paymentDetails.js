@@ -36,18 +36,19 @@ router.post('/',function(request, response, next){
         
         else if(data == 0){
             var invalidJson = {};
-            invalidJson['tokenstatus'] = 'Invalid';
-            response.send(JSON.stringify(invalidJson));
+            invalidJson['tokenstatus'] = 'invalid';
+            response.send(invalidJson);
             response.end();
         }
         
-        else{
+        else{            
+            localJson['tokenstatus'] = 'valid';
             _connection.query(sqlQuery,uuid,function(error,result){
         
                 if(error) throw error;
 
                 for(var i=0 ; i<result.length ; i++){
-                    if(result[i].paymentStatus == 'pending'){
+                    if(result[i].paymentStatus == 'Pending'){
                         pendingUser = pendingUser+result[i].referralAmount;
                     }
                     else{
@@ -60,7 +61,7 @@ router.post('/',function(request, response, next){
                 localJson['earnings'] = approvedUser;
                 localJson['pending'] = pendingUser;
 
-                getbankDetails(response,localJson,uuid);
+                getbankDetails(response, localJson, uuid);
             });
         }
     });
@@ -75,7 +76,9 @@ function getbankDetails(response, localjson, uuid){
     }
     
     docClient.get(params, function(err, data) {
-        if (err) console.log(err);
+        if (err) {
+            throw err;
+        }
         
         console.log(data.Item.BankDetails);
         //bankdetailsArray.push(data.Item.Bank_details);

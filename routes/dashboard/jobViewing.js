@@ -17,6 +17,7 @@ router.get('/',function(request,response){
             'JobTitle',
             'Location',
             'ImagePath',
+            'Duration',
             'RefAmount'
         ]
     };

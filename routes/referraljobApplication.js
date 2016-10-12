@@ -1,4 +1,4 @@
-//This page is executed when user want to apply for a job using referrals made to him.This basically displays the referrals made to an app user for a job 
+//This page is executed when user want to apply for a job using referrals made to him. This basically displays the referrals made to an app user for a job 
 
 var express = require('express');
 var app = express();
@@ -18,7 +18,9 @@ router.post('/',function(request,response,next){
     var UUID = request.body.uuid;
     var JUUID = request.body.juuid;
     var auth_key = request.body.authkey;
-    var userReferrals = new Array();
+    var userReferrals = {};
+    userReferrals.tokenstatus = {};
+    userReferrals.referraldata = new Array();
     
     var sqlQuery = 'SELECT Referrals.userid , referredUsers.Refcode FROM Referrals INNER JOIN referredUsers ON Referrals.Refcode = referredUsers.Refcode WHERE referredUsers.refUser = ? And Referrals.jobid = ?';
     
@@ -26,22 +28,27 @@ router.post('/',function(request,response,next){
         if(err) throw err;
         
         else if(data == 0){
-            var invalidJson = {};
-            invalidJson['tokenstatus'] = 'Invalid';
-            response.send(JSON.stringify(invalidJson));
+            userReferrals.tokenstatus = 'invalid';
+            response.send(userReferrals);
             response.end();
         }
         
         else{
-            _connection.query(sqlQuery,[UUID , JUUID],function(error,result){
+            _connection.query(sqlQuery, [UUID, JUUID], function(error,result){
                 if(error) throw error;
+                
+                userReferrals.tokenstatus = 'valid';
         
                 for(var i=0 ; i<result.length ; i++){
                     var localJson = {};
                     localJson['uuid'] = result[i].userid;
                     localJson['refcode'] = result[i].Refcode;
-            
-                    userReferrals.push(localJson);
+                    
+                    var s3bucketheader = "testamentbucket.s3-ap-northeast-1.amazonaws.com";
+                    var urlprotocol = 'https://';
+                    
+                    localJson['contactpicurl'] = urlprotocol + s3bucketheader + '/Users/' + result[i].userid + '/Profile/display-pic.jpg';
+                    userReferrals.referraldata.push(localJson);
                 }
         
                 response.send(userReferrals);

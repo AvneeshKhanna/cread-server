@@ -52,6 +52,10 @@ router.post('/register', function(request,response,next){
             response.end();
         }        
         else{
+            
+            //Send OTP for verification of phonenumber to user
+            
+            
             var localJson = {};
             var uuid = uuidGenerator.v4();
             var Id = _auth.getToken(key);
@@ -73,7 +77,7 @@ router.post('/login' , function(request,response,next){
     var password = request.body.password;
     var fcmtoken  = request.body.fcmtoken;
     
-    _connection.query('SELECT Auth_key, UUID FROM users WHERE phoneNo=? AND password=?', [phoneNo , password], function(err,result){
+    _connection.query('SELECT Auth_key, UUID, firstname, lastname FROM users WHERE phoneNo=? AND password=?', [phoneNo , password], function(err,result){
         var localJson = {};
         if (err) throw err;
         
@@ -86,8 +90,9 @@ router.post('/login' , function(request,response,next){
         else{
             localJson['uuid'] = result[0].UUID;
             localJson['authtoken'] = result[0].Auth_key;
+            localJson['name'] = result[0].firstname + " " + result[0].lastname;
 //            response.send(result[0].Auth_key);
-            notify.loginFCM(result[0].UUID , fcmtoken , localJson , response);
+            notify.loginFCM(result[0].UUID, fcmtoken, localJson , response);
         }
     });
 });

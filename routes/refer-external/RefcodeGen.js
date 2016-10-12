@@ -32,13 +32,14 @@ router.post('/', function (request, response){
         
         else if(data == 0){
             var invalidJson = {};
-            invalidJson['tokenstatus'] = 'Invalid';
+            invalidJson['tokenstatus'] = 'invalid';
             response.send(JSON.stringify(invalidJson));
             response.end();
         }
         else{
             checkRefCode(userid, jobid, function(send_result){
                 if(send_result){
+                    send_result.tokenstatus = 'valid';
                     response.send(send_result);
                     response.end();
                 }

@@ -10,11 +10,14 @@ var _connection = config.createConnection;
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-router.post('/',function(request,response,next){
+router.post('/',function(request, response, next){
+    
+    console.log('authtokenValidation router ' + JSON.stringify(request.body, null, 3));
+    
     var authKey = request.body.authtoken;
     var uuid = request.body.uuid;
     
-    var authQuery = 'SELECT UUID FROM users WHERE UUID=? AND Auth_key=?';
+    var authQuery = 'SELECT UUID FROM users WHERE UUID = ? AND Auth_key=?';
     
     _connection.query(authQuery,[uuid,authKey],function(error,result){
         if(error) throw error;
@@ -35,7 +38,10 @@ router.post('/',function(request,response,next){
 var tokenValidation = function(uuid,auth_key, callback){
     var authQuery = 'SELECT UUID FROM users WHERE UUID=? AND Auth_key=?';
     
-    _connection.query(authQuery,[uuid,auth_key],function(error,row){
+    _connection.query(authQuery, [uuid,auth_key], function(error, row){
+        
+        console.log('Row in authtokenValidation.tokenValidation is ' + JSON.stringify(row, null, 3));
+        
         if(error) {
             callback(error, null);
         }

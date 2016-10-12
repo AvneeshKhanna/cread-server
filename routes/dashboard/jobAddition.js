@@ -42,8 +42,9 @@ router.post('/',function(request, response, next){
     var Skills = request.body.Skills;
     var Description = request.body.Description;
     var imgStatus = request.body.imagestatus;
-    var RefAmount = request.body.refAmount;
+    var RefAmount = request.body.RefAmount;
     var jobProcess ='';
+    console.log('Request object is ' + JSON.stringify(request.body, null, 3));
     if(request.body.JUUID){
         var juuid = request.body.JUUID;
         jobProcess = 'EDIT';
@@ -55,11 +56,11 @@ router.post('/',function(request, response, next){
     
     var ImagePath = {};
     
-    if(imgStatus == "NO_CHANGE"){        
-        ImagePath = urlprotocol + s3bucketheader + '/' + juuid + '/' + imagefilename;        
+    if(imgStatus == "NO_CHANGE"){
+        ImagePath = urlprotocol + s3bucketheader + '/Jobs/' + juuid + '/' + imagefilename;        
     }
     else if(imgStatus == "CHANGE"){
-        ImagePath = urlprotocol + s3bucketheader + '/' + juuid + '/' + imagefilename;
+        ImagePath = urlprotocol + s3bucketheader + '/Jobs/' + juuid + '/' + imagefilename;
     }
     else if(imgStatus == "NULL"){
         ImagePath = "NA";
@@ -82,7 +83,7 @@ router.post('/',function(request, response, next){
             'Skills':Skills,
             'Description':Description,
             'ImagePath' : ImagePath,
-            'RefAmount' : refAmount
+            'RefAmount' : RefAmount
         }
     };
     
@@ -145,13 +146,11 @@ router.post('/',function(request, response, next){
             if (error){
                 throw error;
             }
-            else{
-                
+            else{                
                 console.log(JSON.stringify(responseJSON));
         
                 response.send(responseJSON);
-                response.end();
-                
+                response.end();                
             }
             
         });
