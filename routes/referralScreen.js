@@ -1,5 +1,4 @@
-//This code is to show all the referrals made by an app user to a multiple users
-//replace username with firstname
+//This code is to show all the referrals made by an app user to a multiple users if they have applied to the job
 
 var express = require('express');
 var app = express();
@@ -77,12 +76,9 @@ function getData(userID, res){
             
         res.send(responseData);
         res.end();
-        //referrals=[];
+        referrals=[];
     });
 }
-
-//Function to get profile pic urls from dynamodb of the users returned by the referrals query
-function getProfilePicData(){}
 
 module.exports = router;
 //var Query = 'SELECT Referrals.userid , jobs.payscale , jobs.JUUID , apply.Application_status , users.UUID , users.username , Referrals.Refcode , referredUsers.refUser FROM referredUsers INNER JOIN Referrals ON Referrals.Refcode = referredUsers.Refcode INNER JOIN users ON referredUsers.refUser = users.UUID LEFT JOIN jobs ON Referrals.jobid = jobs.JUUID LEFT JOIN apply ON users.UUID = apply.userid';

@@ -52,18 +52,23 @@ router.post('/',function(request,response,next){
                     return row.length;
                 }).
                 then(function(item){
+                    var validJson = {};
                     if(item == 0){
                         _connection.query('INSERT INTO apply SET ?', application,function(error,result){
                             if(error) throw error;
                     
                             console.log(result);
-                    
-                            response.send('true');
+                            
+                            validJson.tokenstatus = 'valid';
+                            validJson.applystatus = 'true';
+                            response.send(JSON.stringify(validJson));
                             response.end();
                         });
                     }
                     else{
-                        response.send(false);
+                        validJson.tokenstatus = 'valid';
+                        validJson.applystatus = 'false';
+                        response.send(JSON.stringify(validJson));
                         response.end();
                     }
                 }).

@@ -28,7 +28,7 @@ router.post('/' , function(request,response){
     
     var notificationData = {
        Category : "Referral",
-       Referrer : name,    //name to the user should be here which is given by client
+       Referrer : name,    
        jobID : juuid,
        JobName : jobName
     };
@@ -131,7 +131,7 @@ function duplicationMapping(server_refuser , referredusers , refcode){
         if(referredusers.indexOf(server_refuser[i]) !== -1){
             var localJson = {};
             
-            localJson[server_refuser[i]] = 'duplicate user';
+            localJson[server_refuser[i]] = 'Duplicate';
             statusArray.push(localJson);
             referredusers.splice(referredusers.indexOf(server_refuser[i]) , 1);
         }

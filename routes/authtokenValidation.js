@@ -24,7 +24,7 @@ router.post('/',function(request, response, next){
         
         var resultLength = result.length;
         
-        if(resultLength == 0){
+        if(result.length == 0){
             response.send(false);
             response.end();
         }
