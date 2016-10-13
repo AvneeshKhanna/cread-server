@@ -24,7 +24,7 @@ router.post('/' , function(request,response){
     var auth_key = request.body.authkey;
     var referredUsers = request.body.referred_users;
     var name = request.body.name;
-    var jobName = request.body.jobtittle;
+    var jobName = request.body.jobtitle;
     
     var notificationData = {
        Category : "Referral",

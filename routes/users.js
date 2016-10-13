@@ -77,6 +77,8 @@ router.post('/login' , function(request,response,next){
     var password = request.body.password;
     var fcmtoken  = request.body.fcmtoken;
     
+    console.log('users/login Request is ' + JSON.stringify(request.body, null, 3));
+    
     _connection.query('SELECT Auth_key, UUID, firstname, lastname FROM users WHERE phoneNo=? AND password=?', [phoneNo , password], function(err,result){
         var localJson = {};
         if (err) throw err;
@@ -101,6 +103,8 @@ router.post('/logout' , function(request,response,next){
     var uuid = request.body.uuid;
     var fcmToken = request.body.fcmtoken;
     var table = 'User_Profile';
+    
+    console.log('users/logout Request is ' + uuid);
     
     var deleteParams = {
         TableName : table,
