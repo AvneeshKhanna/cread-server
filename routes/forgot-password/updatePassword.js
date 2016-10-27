@@ -19,6 +19,7 @@ var dynamodb = new AWS.DynamoDB();
 var docClient = new AWS.DynamoDB.DocumentClient();
 
 router.post('/', function(request, response){
+    console.log(JSON.stringify(request.body));
     var phoneNo = request.body.contactnumber;
     var uuid = request.body.uuid;
     var password = request.body.newPassword;

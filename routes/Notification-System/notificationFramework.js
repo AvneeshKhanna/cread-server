@@ -1,3 +1,5 @@
+// This module is used to send notification to users for referrals , application , payment System.
+
 var express = require('express');
 var app = express();
 var router = express.Router();
@@ -83,7 +85,9 @@ function sendNotification(users , notificationData , callback){
             var sender = new gcm.Sender('AIzaSyDUbtCYGKI-kLl7oSVQoW_sZqo2VZBFeKQ');
 
             sender.send(message, { registrationTokens : registrationTokens }, 3 , function (err, response) {
-                //if(err) throw err;
+                if(err){
+                    console.log(err);
+                }
 
                 console.log(response);
                 callback();

@@ -108,22 +108,25 @@ router.post('/', function(request, response){
 });
 
 router.post('/payment-approval/', function(request,response){
-    var referredUser = request.body.referreduser;
+    var referredUserName = request.body.referredUserName;
     var refcode = request.body.refcode;
-    var applicant_id = request.body.applicant_id;
+    var referredUserId = request.body.referredUserId;
+    var referrer_id = request.body.referrer_id;
+    var jobname = request.body.jobname;
     
     var notificationData = {
         Category : 'Payments',
         Status : 'Approved',
-        Referred : referredUser
+        Referred : referredUserName,
+        JobName : jobname
     };
     
     var applicantArray = [];
-    applicantArray.push(applicant_id);
+    applicantArray.push(referrer_id);
     
     console.log(JSON.stringify(request.body, null, 3));
     
-    _connection.query('UPDATE Earnings SET paymentStatus = ? WHERE refCode = ? AND applieduserid = ?', ['Approved', refcode, applicant_id], function(err, data){
+    _connection.query('UPDATE Earnings SET paymentStatus = ? WHERE refCode = ? AND applieduserid = ?', ['Approved', refcode,referredUserId], function(err, data){
         
         if(err){
             throw err;

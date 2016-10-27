@@ -1,3 +1,5 @@
+//This module sends the OTP to the phone number who have register to the app.
+
 var express = require('express');
 var app = express();
 var router = express.Router();

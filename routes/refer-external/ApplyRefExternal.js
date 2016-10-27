@@ -43,27 +43,34 @@ router.post('/', function(request, response){
         
         else{
             saveInApplyTbl(apply_data, function(onApplyResult){
+                var validJson = {};
+                
                 if(onApplyResult){
                     var refusers_data = {};
                     refusers_data.Refcode = request.body.refcode;
                     refusers_data.refUser = request.body.userid_referred;
                 
                     saveInRefUsersTbl(refusers_data, function(onSaveRefUsrsResult){
-                
                         if(onSaveRefUsrsResult){
-                            response.send({'status':'OK'});
+                            validJson['tokenstatus'] = 'valid';
+                            validJson['status'] = 'OK';
+                            response.send(JSON.stringify(validJson));
                             response.end();
                         }
                         else{
                         //response.send('The referral could not be registered due to some reason');
-                            response.send({'status':'error'});
+                            validJson['tokenstatus'] = 'valid';
+                            validJson['status'] = 'error';
+                            response.send(JSON.stringify(validJson));
                             response.end();
                         }
                     });
                 }
                 else{
                     //response.send('The application could not be registered due to some reason');
-                    response.send({'status':'error'});
+                    validJson['tokenstatus'] = 'valid';
+                    validJson['status'] = 'error';
+                    response.send(validJson);
                     response.end();
                 }        
             });

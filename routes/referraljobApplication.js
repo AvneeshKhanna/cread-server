@@ -22,7 +22,7 @@ router.post('/',function(request,response,next){
     userReferrals.tokenstatus = {};
     userReferrals.referraldata = new Array();
     
-    var sqlQuery = 'SELECT Referrals.userid , referredUsers.Refcode FROM Referrals INNER JOIN referredUsers ON Referrals.Refcode = referredUsers.Refcode WHERE referredUsers.refUser = ? And Referrals.jobid = ?';
+    var sqlQuery = 'SELECT Referrals.userid , referredUsers.Refcode , users.firstname , users.lastname , users.phoneNo FROM Referrals INNER JOIN referredUsers ON Referrals.Refcode = referredUsers.Refcode INNER JOIN users ON Referrals.userid = users.UUID WHERE referredUsers.refUser = ? And Referrals.jobid = ?';
     
     authtokenvalidation.checkToken(UUID , auth_key , function(err, data){
         if(err) throw err;
@@ -41,6 +41,8 @@ router.post('/',function(request,response,next){
         
                 for(var i=0 ; i<result.length ; i++){
                     var localJson = {};
+                    localJson['name'] = result[i].firstname+' '+result[i].lastname;
+                    localJson['number'] = result[i].phoneNo;
                     localJson['uuid'] = result[i].userid;
                     localJson['refcode'] = result[i].Refcode;
                     

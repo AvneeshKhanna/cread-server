@@ -1,4 +1,4 @@
-//one major thing is left is how to prevent error ie if all the users are duplicate then array send to notification framework is null and thenit shows error and terminates the server . one thing can be done is check at notification framework if user array is null or not . 
+//one major thing is left is how to prevent error ie if all the users are duplicate then array send to notification framework is null and thenit shows error and terminates the server . one thing is done is check at notification framework if user array is null or not . 
 
 var express = require('express');
 var app = express();
@@ -24,7 +24,7 @@ router.post('/' , function(request,response){
     var auth_key = request.body.authkey;
     var referredUsers = request.body.referred_users;
     var name = request.body.name;
-    var jobName = request.body.jobtittle;
+    var jobName = request.body.jobtitle;
     
     var notificationData = {
        Category : "Referral",
@@ -57,11 +57,13 @@ router.post('/' , function(request,response){
             
             //Check if refcode for user and job exists
             
+            //firstly it will check for the refcode for ajob and user exists already or not , if it exists than no need to create another. 
+            
             checkRefCode(uuid,juuid,function(row , error){
                 if(error) throw error;
                 
                 else if(row.length !== 0){
-                    //check for user duplication
+                    //Here the refcode exists so there is a chance that user may refer same user again ie. duplication of user So this method checks for user duplication.
                     
                     var refCode = row[0].Refcode;
                     _connection.query(duplicationQuery , [refCode] , function(error,result){
@@ -98,6 +100,8 @@ router.post('/' , function(request,response){
                 }
                 
                 else{
+                    //This block is executed when refcode for a user and a job does not exists in referrals table.So it don't check for the duplication.
+                    
                     applyValidation(uuid , juuid , referredUsers , function(userStatus , error){
                         if(error) throw error;
                         
@@ -122,6 +126,9 @@ router.post('/' , function(request,response){
         }
     });
 });
+
+
+//This function maps the client users with server user who have been referred already and returns a json of updated userid ie. those who are not referred and status.
 
 function duplicationMapping(server_refuser , referredusers , refcode){
     var statusArray = new Array();
@@ -153,7 +160,7 @@ function checkRefCode(uuid,juuid,callback){
     });
 }
 
-//validate only for updated referred users
+//validate only for updated referred users if they have already applied for a job or not.
 
 function applyValidation(uuid , juuid , referredUsers , callback){
     var applyValidationQuery = 'SELECT userid FROM apply WHERE jobid = ?';
@@ -169,6 +176,8 @@ function applyValidation(uuid , juuid , referredUsers , callback){
         callback(usersStatus , error);
     });
 }
+
+//This function is for mapping the result returned by apply table and the userid client have send and returns the jsonof userid and their status.
 
 function applyMapping(referredusers , serverusers){
     var validUsers = new Array();
@@ -200,6 +209,8 @@ function applyMapping(referredusers , serverusers){
     return globalJson;
 }
 
+//This method save refcod if user not referred anybdy for job in past.
+
 function saveReferrals(uuid , juuid , callback){
     var hashkey = uuid+juuid;
     var hashid = new Hashids(hashkey,10);
@@ -215,6 +226,8 @@ function saveReferrals(uuid , juuid , callback){
         callback(refCode , error);
     });
 }
+
+//This function saves the referred users and their refcode in referredUsers table.
 
 function saveReferredUser(referredUsers , refcode , callback){
     var insertReferredusers = 'INSERT INTO referredUsers SET ?';

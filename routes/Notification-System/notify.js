@@ -1,3 +1,5 @@
+//This module is used to save , delete and for updation the fcm token in dynamodb.
+
 var express = require('express');
 var app = express();
 var router = express.Router();

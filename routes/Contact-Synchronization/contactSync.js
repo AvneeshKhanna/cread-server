@@ -1,3 +1,5 @@
+//This file syncs the user contacts.
+
 var express = require('express');
 var app = express();
 var router = express.Router();

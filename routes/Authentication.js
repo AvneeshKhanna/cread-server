@@ -1,3 +1,5 @@
+//This module creates the authentication token when user register or when user changes its password.
+
 var express = require('express');
 var app = express();
 var router = express.Router();

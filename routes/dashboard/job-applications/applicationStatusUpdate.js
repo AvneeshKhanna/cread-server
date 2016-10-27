@@ -68,10 +68,16 @@ function updateAplcnStatus(application_status , uuid , jobid , jobName , respons
             throw err;
         }
         else{  
-            sendNotification.Notification(uuidArray , notificationData , function(){
+            if(application_status !== 'Buffer'){
+                sendNotification.Notification(uuidArray , notificationData , function(){
+                    response.send(true);
+                    response.end(); 
+                });
+            }
+            else{
                 response.send(true);
                 response.end(); 
-            });
+            }
         }
     });
 

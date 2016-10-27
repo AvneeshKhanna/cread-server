@@ -44,7 +44,9 @@ router.post('/',function(request, response, next){
     var imgStatus = request.body.imagestatus;
     var RefAmount = request.body.RefAmount;
     var jobProcess ='';
+    
     console.log('Request object is ' + JSON.stringify(request.body, null, 3));
+    
     if(request.body.JUUID){
         var juuid = request.body.JUUID;
         jobProcess = 'EDIT';

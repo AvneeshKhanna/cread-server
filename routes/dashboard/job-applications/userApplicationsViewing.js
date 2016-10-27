@@ -51,7 +51,7 @@ function mapAppliedData(appliedRows, applicationsData, counter/*, callback*/, re
             applicationsData[counter] = {};
             applicationsData[counter].appliedUser = {
                         UUID : appliedRows[counter].UUID,
-                        Name : appliedRows[counter].firstname + appliedRows[counter].lastname,
+                        Name : appliedRows[counter].firstname +' '+appliedRows[counter].lastname,
                         Email : appliedRows[counter].email,
                         Phone : appliedRows[counter].phoneNo,
                         ApplicationStatus : appliedRows[counter].Application_status
@@ -111,7 +111,7 @@ function mapAppliedData(appliedRows, applicationsData, counter/*, callback*/, re
                         
                         applicationsData[counter].referrerUser = {
                             UUID : referRows[0].UUID,
-                            Name : referRows[0].firstname + referRows[0].lastname,
+                            Name : referRows[0].firstname+' '+referRows[0].lastname,
                             Email : referRows[0].email,
                             Phone : referRows[0].phoneNo
                         };

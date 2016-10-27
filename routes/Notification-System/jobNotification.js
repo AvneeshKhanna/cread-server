@@ -1,3 +1,5 @@
+//This module only used to sedn notification to all users whena a new job is added.
+
 var express = require('express');
 var app = express();
 var router = express.Router();
@@ -18,7 +20,6 @@ router.post('/' , function(request,response){
     var message = request.body.message;
     
     var data = {Category : category , Message : message};
-    console.log(data);
     jobNotification(data , function(){
         response.send(true);
         response.end(); 

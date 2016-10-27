@@ -1,3 +1,5 @@
+//This module validate the auth token in every user request.By taking uuid and auth Token as parameters in its arguments. 
+
 var express = require('express');
 var app = express();
 var router = express.Router();
