@@ -103,7 +103,11 @@ router.post('/logout' , function(request,response,next){
     var fcmToken = request.body.fcmtoken;
     var table = 'User_Profile';
     
+<<<<<<< HEAD
     console.log(JSON.stringify(request.body));
+=======
+    console.log('users/logout Request is ' + uuid);
+>>>>>>> origin/master
     
     var deleteParams = {
         TableName : table,
