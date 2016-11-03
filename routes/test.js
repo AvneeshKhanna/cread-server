@@ -13,7 +13,7 @@ app.use(bodyParser.json());
 router.post('/', function(request, response){
     var juuid = request.body.juuid;
     
-    var sql = 'SELECT * FROM users INNER JOIN apply ON users.UUID = apply.userid INNER JOIN Referrals ON apply.Refcode = Referrals.Refcode WHERE apply.jobid=?';
+    var sql = 'SELECT * FROM users INNER JOIN apply ON users.UUID = apply.userid INNER JOIN Referrals ON apply.Refcode = Referrals.Refcode WHERE apply.jobid = ?';
     
     _connection.query(sql , [juuid] , function(err,row){
         if(err) throw err;

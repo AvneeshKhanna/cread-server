@@ -43,6 +43,7 @@ router.post('/',function(request, response, next){
     var Description = request.body.Description;
     var imgStatus = request.body.imagestatus;
     var RefAmount = request.body.RefAmount;
+    var Domain = request.body.Domain;
     var jobProcess ='';
     
     console.log('Request object is ' + JSON.stringify(request.body, null, 3));
@@ -85,7 +86,8 @@ router.post('/',function(request, response, next){
             'Skills':Skills,
             'Description':Description,
             'ImagePath' : ImagePath,
-            'RefAmount' : RefAmount
+            'RefAmount' : RefAmount,
+            'Domain' : Domain
         }
     };
     
@@ -114,7 +116,8 @@ router.post('/',function(request, response, next){
             companyname : params.Item.CompanyName,
             payscale : params.Item.Payscale,
             details : params.Item.Description,
-            RefAmount : params.Item.RefAmount
+            RefAmount : params.Item.RefAmount,
+            Domain : params.Item.Domain
         });
         
         var query;
@@ -133,7 +136,8 @@ router.post('/',function(request, response, next){
                 companyname : params.Item.CompanyName,
                 payscale : params.Item.Payscale,
                 details : params.Item.Description,
-                RefAmount : params.Item.RefAmount
+                RefAmount : params.Item.RefAmount,
+                Domain : params.Item.Domain
             };
             
             query = 'UPDATE jobs SET ? WHERE JUUID = ?';

@@ -18,7 +18,8 @@ router.get('/',function(request,response){
             'Location',
             'ImagePath',
             'Duration',
-            'RefAmount'
+            'RefAmount',
+            'Domain'
         ]
     };
     

@@ -16,7 +16,8 @@ var job = new schemaObject({
     payscale : String,
     companyname : String,
     details : String,
-    RefAmount : Number
+    RefAmount : Number,
+    Domain : String
 });
 
 var jobApply = new schemaObject({
