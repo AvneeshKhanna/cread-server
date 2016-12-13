@@ -37,7 +37,9 @@ var internalReferral = require('./routes/refer-Internal/internalReferral');
 var notification = require('./routes/Notification-System/jobNotification');
 
 var forgotPassValidContact = require('./routes/forgot-password/validateContact');
-var updatePassword = require('./routes/forgot-password/updatePassword')
+var updatePassword = require('./routes/forgot-password/updatePassword');
+
+var chatbot = require('./routes/chat-bot/bot');
 
 var app = express();
 
@@ -85,6 +87,8 @@ app.use('/password-validate-contact', forgotPassValidContact);
 app.use('/update-password', updatePassword);
 app.use('/internalrefer' , internalReferral);
 app.use('/jobnotification' , notification);
+
+app.use('/chatbot', chatbot);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
