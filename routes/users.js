@@ -61,7 +61,20 @@ router.post('/register', function(request,response,next){
             var Id = _auth.getToken(key);
             localJson['authtoken'] = Id;
             localJson['uuid'] = uuid;
+            
+            /*var user = {
+                UUID: uuid,
+                password: password,
+                firstname: firstname,
+                lastname : lastname,
+                email: emailid,
+                phoneNo: phoneNo,
+                Auth_key: Id
+            };*/
+            
             var user = new _User({UUID : uuid , password : password , firstname : firstname , lastname : lastname , email : emailid , phoneNo : phoneNo , Auth_key : Id });
+            
+            console.log('user details are ' + JSON.stringify(user, null, 3));
             
             _connection.query('INSERT INTO users SET ?', user, function(err,result){
                 if (err) throw err;
