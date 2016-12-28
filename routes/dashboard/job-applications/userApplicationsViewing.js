@@ -24,13 +24,13 @@ router.post('/', function(request, response){
         
     console.log('juid in response is' + juid);
     
-    _connection.query('SELECT users.UUID, users.firstname, users.lastname, users.email, users.phoneNo, apply.Application_status, apply.Refcode FROM users INNER JOIN apply ON apply.userid = users.UUID WHERE apply.jobid = ?', juid, function(err, appliedRows){
+    _connection.query('SELECT DISTINCT users.UUID, users.firstname, users.lastname, users.email, users.phoneNo, apply.Application_status, apply.Refcode FROM users INNER JOIN apply ON apply.userid = users.UUID WHERE apply.jobid = ?', juid, function(err, appliedRows){
         
         if (err){
             throw err;
         }
         
-        console.log('Request is ' + JSON.stringify(appliedRows, null, 3));
+        console.log('appliedRows are ' + JSON.stringify(appliedRows, null, 3));
         var applicationsData = new Array();
         
         var counter = 0;
@@ -51,7 +51,7 @@ function mapAppliedData(appliedRows, applicationsData, counter/*, callback*/, re
             applicationsData[counter] = {};
             applicationsData[counter].appliedUser = {
                         UUID : appliedRows[counter].UUID,
-                        Name : appliedRows[counter].firstname +' '+appliedRows[counter].lastname,
+                        Name : appliedRows[counter].firstname + ' ' + appliedRows[counter].lastname,
                         Email : appliedRows[counter].email,
                         Phone : appliedRows[counter].phoneNo,
                         ApplicationStatus : appliedRows[counter].Application_status
@@ -68,38 +68,7 @@ function mapAppliedData(appliedRows, applicationsData, counter/*, callback*/, re
             }
             else{
                 
-                /*var promise = new Promise(function (resolve, reject) {
-
-                    _connection.query('SELECT users.UUID, users.firstname, users.lastname, users.email, users.phoneNo FROM users INNER JOIN Referrals ON users.UUID = Referrals.userid WHERE Referrals.Refcode = ?', appliedRows[counter].Refcode, function(err, referRows){
-
-                        //console.log('Query Finished ' + cntr);
-                         if(err){
-                             reject(err);
-                         } else {
-                             resolve(referRows);
-                         }
-                     });
-                });
-                
-                
-                promise.then(function(referRows){
-                    
-                    applicationsData[counter] = {};
-                        applicationsData[counter].referrerUser = {
-                            UUID : referRows[counter].UUID,
-                            Name : referRows[counter].firstname + rows[counter].lastname,
-                            Email : referRows[counter].email,
-                            Phone : referRows[counter].phoneNo
-                        };
-                    counter++;
-                    mapAppliedData(appliedRows, applicationsData, counter);
-
-                }, function(err){
-                    console.log('Error occured');
-                });*/
-                
-                console.log('Refcode before querying is ' + appliedRows[counter].Refcode);
-                
+                console.log('Refcode before querying is ' + appliedRows[counter].Refcode);                
                 
                 _connection.query('SELECT users.UUID, users.firstname, users.lastname, users.email, users.phoneNo FROM users INNER JOIN Referrals ON users.UUID = Referrals.userid WHERE Referrals.Refcode = ?', appliedRows[counter].Refcode, function(err, referRows){
                     
@@ -109,12 +78,19 @@ function mapAppliedData(appliedRows, applicationsData, counter/*, callback*/, re
                     else{
                         console.log('Data after querying is ' + JSON.stringify(referRows, null, 3));
                         
-                        applicationsData[counter].referrerUser = {
+                        //This case is incorporated to cater an anamoly in the data which occured because a user profile was incorrectly deleted manually
+                        if(referRows.length == 0){
+                            //Do nothing
+                        }
+                        else{
+                            applicationsData[counter].referrerUser = {
                             UUID : referRows[0].UUID,
-                            Name : referRows[0].firstname+' '+referRows[0].lastname,
+                            Name : referRows[0].firstname + ' ' + referRows[0].lastname,
                             Email : referRows[0].email,
                             Phone : referRows[0].phoneNo
-                        };
+                            };
+                        }                        
+                        
                         counter++;
                         mapAppliedData(appliedRows, applicationsData, counter, response);                        
                     }            
@@ -126,36 +102,6 @@ function mapAppliedData(appliedRows, applicationsData, counter/*, callback*/, re
             response.send(applicationsData);
         }
     
-}
-
-router.post('/test', function(request, response){
-    
-    var Response = [
-        {
-              referrerUser : {
-
-                  UUID: "b4e8baad-5057-4e51-95b6-cc1c01182da7",
-                  Name: "paras malhotra",
-                  Email: "parasm",
-                  Phone: "0777"
-
-              },
-              appliedUser : {
-
-                  UUID: "b4e8baad-5057-4e51-95b6-cc1c01182da7",
-                  Name: "avneesh khanna",
-                  Email: "parasm",
-                  Phone: "0777",
-                  ApplicationStatus: "Pending"
-
-              },
-              refCode : "xyz"
-        }
-    ];
-    
-    response.send(Response);
-    response.end;
-    
-})
+};
 
 module.exports = router;
