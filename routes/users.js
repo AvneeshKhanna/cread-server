@@ -36,12 +36,13 @@ router.post('/register', function(request,response,next){
     var password = request.body.password;
     var phoneNo = request.body.contactnumber;
     var emailid = request.body.emailid;
+    var city = request.body.city;
     var fcmToken = request.body.fcmtoken;
     var key = password+phoneNo;
     var name = firstname+' '+lastname;
         
     //checking if user already exists in db use deasync
-    _connection.query('SELECT UUID FROM users WHERE phoneNo=?',[phoneNo],function(error,row){
+    _connection.query('SELECT UUID FROM users WHERE phoneNo=?',[phoneNo], function(error,row){
         if (error) throw error;
         
         else if (row.length == 1){
@@ -79,7 +80,7 @@ router.post('/register', function(request,response,next){
             _connection.query('INSERT INTO users SET ?', user, function(err,result){
                 if (err) throw err;
                 
-                notify.registerFCM(uuid , fcmToken , localJson , name , emailid , phoneNo , response);
+                notify.registerFCM(uuid , fcmToken , localJson , name , emailid , phoneNo , city, response);
             }); 
         }
     });

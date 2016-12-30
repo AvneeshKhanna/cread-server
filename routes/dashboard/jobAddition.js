@@ -87,7 +87,8 @@ router.post('/',function(request, response, next){
             'Description':Description,
             'ImagePath' : ImagePath,
             'RefAmount' : RefAmount,
-            'Domain' : Domain
+            'Domain' : Domain,
+            'Active' : true
         }
     };
     

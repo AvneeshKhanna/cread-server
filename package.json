@@ -28,6 +28,7 @@
     "net": "^1.0.2",
     "node-gcm": "^0.14.4",
     "node-schema-object": "^3.3.4",
+    "node-wit": "^4.2.0",
     "passport": "^0.3.2",
     "passport-local": "^1.0.0",
     "promise": "^7.1.1",

@@ -8,10 +8,19 @@ AWS.config.region = 'ap-northeast-1';
 var dynamodb = new AWS.DynamoDB();
 var docClient = new AWS.DynamoDB.DocumentClient();
 
-router.get('/',function(request,response){
+router.get('/',function(request,response){    
+    scanJobs(true, response);    
+});
+
+router.get('/deactive/',function(request,response){    
+    scanJobs(false, response);    
+});
+
+function scanJobs(isActive, response){
+    
     var params = {
         TableName : 'Jobs',
-        AttributesToGet: [
+        /*AttributesToGet: [
             'JUUID',
             'CompanyName',
             'JobTitle',
@@ -19,8 +28,11 @@ router.get('/',function(request,response){
             'ImagePath',
             'Duration',
             'RefAmount',
-            'Domain'
-        ]
+            'Domain',
+            'Active'
+        ],*/
+        FilterExpression : 'Active = :_active',
+        ExpressionAttributeValues : {':_active' : isActive}
     };
     
     docClient.scan(params, function(err, data) {
@@ -32,7 +44,7 @@ router.get('/',function(request,response){
         response.send(data);
         response.end();
     });
-});
-
+    
+}
 
 module.exports = router;

@@ -21,7 +21,7 @@ AWS.config.credentials = new AWS.CognitoIdentityCredentials({
 
 var docClient = new AWS.DynamoDB.DocumentClient();
 
-var registerFCM = function(uuid , fcmToken , localJson , name , emailid , contactnumber , response){
+var registerFCM = function(uuid , fcmToken , localJson , name , emailid , contactnumber , city, response){
     console.log(uuid);
     var table = 'User_Profile';
     var params = {
@@ -31,6 +31,7 @@ var registerFCM = function(uuid , fcmToken , localJson , name , emailid , contac
             'ContactNumber' : contactnumber,
             'Email_Id' : emailid,
             'Name' : name,
+            'City' : city,
             'Fcm_token' : [fcmToken]
         }
     };
