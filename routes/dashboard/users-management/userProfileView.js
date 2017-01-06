@@ -3,6 +3,7 @@ var app = express();
 var router = express.Router();
 var mysql = require('mysql');
 var AWS = require('aws-sdk');
+var asyncTask = require('async');
 
 AWS.config.region = 'ap-northeast-1'; 
 var dynamodb = new AWS.DynamoDB();
@@ -45,7 +46,11 @@ router.post('/job-applications/', function(request, response){
     //var auth_key = request.body.authkey;
     var ApplicationForms = new Array();
     
-    var sqlQuery = 'SELECT jobs.title,jobs.companyname,jobs.Active,apply.Application_status FROM apply INNER JOIN jobs ON jobs.JUUID = apply.jobid WHERE apply.userid = ? AND apply.Status = ?';
+    //query for getting user's application info with referral code=none
+    var sqlQuery = 'SELECT DISTINCT jobs.title,jobs.companyname,jobs.Active,apply.Application_status,apply.Refcode FROM apply INNER JOIN jobs ON jobs.JUUID = apply.jobid WHERE apply.userid = ? AND apply.Refcode = ?';
+    
+    //query for getting user's application info with referral code
+    var sqlQuery1 ='SELECT DISTINCT jobs.title,jobs.companyname ,apply.Application_status,jobs.Active ,jobs.RefAmount ,jobs.JUUID ,Referrals.userid , users.firstname ,users.lastname ,apply.Refcode FROM apply INNER JOIN jobs ON jobs.JUUID = apply.jobid INNER JOIN Referrals ON Referrals.Refcode = apply.Refcode INNER JOIN users ON users.UUID = Referrals.userid WHERE apply.userid = ?'
     
     var responseData = {};
     //responseData.tokenstatus = {};
@@ -53,32 +58,49 @@ router.post('/job-applications/', function(request, response){
     
     console.log('Request in jobApplications is ' + JSON.stringify(request.body, null, 3));
     
-    _connection.query(sqlQuery, [uuid, 'Applied'], function(error,row){
-                
-        console.log('Users applications are ' + JSON.stringify(row, null, 3));
-
-        if (error) throw error;
-
-        for(var j=0 ; j<row.length ; j++){
-            var localJson = {};
-            localJson['title'] = row[j].title;
-            localJson['companyname'] = row[j].companyname;
-            localJson['status'] = row[j].Application_status;
-            localJson['active'] = row[j].Active;
-
-            ApplicationForms.push(localJson);
+    asyncTask.parallel([
+        function(callback) {
+            _connection.query(sqlQuery, [uuid,'none'], function(error,row){
+                callback(error, row);
+            });
+        },
+        function(callback) {
+            _connection.query(sqlQuery1, [uuid], function(error,row){
+                callback(error, row);
+            });
         }
+    ],
+    function(err,row){
+        console.log('Response object is: ' + JSON.stringify(row, null, 3)); 
+        for(var i=0;i<2 ; i++)
+        {
+            for(var j=0 ; j<row[i].length ; j++){
+                var localJson = {};
+                localJson['title'] = row[i][j].title;
+                localJson['companyname'] =row[i][j].companyname;
+                localJson['status'] = row[i][j].Application_status;
+                localJson['active'] = row[i][j].Active;
+                localJson['Jid'] = row[i][j].JUUID;
+                localJson['RefAmount'] = row[i][j].RefAmount;
 
+                if(row[i][j].Refcode !== 'none'){
+                    localJson['ReferredBy'] = row[i][j].firstname+' '+row[i][j].lastname;
+                }
+                else{
+                    localJson['ReferredBy'] = 'none';
+                }
+
+                ApplicationForms.push(localJson);
+            }
+        }
         responseData.applicationsdata = ApplicationForms;
-
         console.log('Response object is: ' + JSON.stringify(responseData, null, 3));
-
+        
+        
         response.send(responseData);
         response.end();
-
         ApplicationForms=[];
     });
-    
 });
 
 /*
