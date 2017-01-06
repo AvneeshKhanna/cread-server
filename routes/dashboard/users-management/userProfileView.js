@@ -47,7 +47,7 @@ router.post('/job-applications/', function(request, response){
     var ApplicationForms = new Array();
     
     //query for getting user's application info with referral code=none
-    var sqlQuery = 'SELECT DISTINCT jobs.title,jobs.companyname,jobs.Active,apply.Application_status,apply.Refcode FROM apply INNER JOIN jobs ON jobs.JUUID = apply.jobid WHERE apply.userid = ? AND apply.Refcode = ?';
+    var sqlQuery = 'SELECT DISTINCT jobs.title,jobs.companyname,jobs.Active,jobs.JUUID,jobs.RefAmount,apply.Application_status,apply.Refcode FROM apply INNER JOIN jobs ON jobs.JUUID = apply.jobid WHERE apply.userid = ? AND apply.Refcode = ?';
     
     //query for getting user's application info with referral code
     var sqlQuery1 ='SELECT DISTINCT jobs.title,jobs.companyname ,apply.Application_status,jobs.Active ,jobs.RefAmount ,jobs.JUUID ,Referrals.userid , users.firstname ,users.lastname ,apply.Refcode FROM apply INNER JOIN jobs ON jobs.JUUID = apply.jobid INNER JOIN Referrals ON Referrals.Refcode = apply.Refcode INNER JOIN users ON users.UUID = Referrals.userid WHERE apply.userid = ?'
