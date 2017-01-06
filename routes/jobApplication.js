@@ -85,7 +85,7 @@ router.post('/applications',function(request,response,next){
     var auth_key = request.body.authkey;
     var ApplicationForms = new Array();
     
-    var sqlQuery = 'SELECT jobs.title,jobs.companyname,apply.Application_status FROM apply INNER JOIN jobs ON jobs.JUUID = apply.jobid WHERE apply.userid = ? AND apply.Status = ?';
+    var sqlQuery = 'SELECT jobs.title,jobs.companyname,jobs.Active,apply.Application_status FROM apply INNER JOIN jobs ON jobs.JUUID = apply.jobid WHERE apply.userid = ? AND apply.Status = ?';
     
     var responseData = {};
     responseData.tokenstatus = {};
@@ -105,6 +105,9 @@ router.post('/applications',function(request,response,next){
             responseData.tokenstatus = 'valid';
             
             _connection.query(sqlQuery,[uuid,'Applied'],function(error,row){
+                
+                console.log('Users applications are ' + JSON.stringify(row, null, 3));
+                
                 if (error) throw error;
             
                 for(var j=0 ; j<row.length ; j++){
@@ -112,6 +115,7 @@ router.post('/applications',function(request,response,next){
                     localJson['title'] = row[j].title;
                     localJson['companyname'] = row[j].companyname;
                     localJson['status'] = row[j].Application_status;
+                    localJson['active'] = JSON.stringify(row[j].Active);
             
                     ApplicationForms.push(localJson);
                 }
