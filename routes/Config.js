@@ -24,6 +24,7 @@ var dbConnect = function(){
         if (err) throw err
         
         console.log('Connected to rds...');
+        console.log(config.get('type') + ' version running');
     });
 }
 
