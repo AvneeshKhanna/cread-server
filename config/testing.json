@@ -1,0 +1,11 @@
+{
+    "rdsDB" : {
+        "dbConfig" : {
+            "host" : "testrdsinstance.cfjbzkm4dzzx.ap-northeast-1.rds.amazonaws.com",
+            "user" : "ttrds",
+			"password" : "amazonpass2015",
+			"database" : "TEST_DB",
+            "port" : "3306"
+        }
+    }
+}

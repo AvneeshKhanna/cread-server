@@ -1,13 +1,23 @@
 var mysql = require('mysql');
 var AWS = require('aws-sdk');
+var config = require('config');
+var dbConfig = config.get('rdsDB.dbConfig');
 
 var connection = mysql.createConnection({
-			host : 'testrdsinstance.cfjbzkm4dzzx.ap-northeast-1.rds.amazonaws.com',
-			user : 'ttrds',
-			password : 'amazonpass2015',
-			database : 'testdb',
-            port : '3306'
+			host : dbConfig.host,
+			user : dbConfig.user,
+			password : dbConfig.password,
+			database : dbConfig.database,
+            port : dbConfig.port
 		});
+//test db
+//var testdbConnection = mysql.createConnection({
+//			host : dbConfig.host,
+//			user : dbConfig.user,
+//			password : dbConfig.password,
+//			database : dbConfig.database,
+//            port : dbConfig.port
+//		});
 
 var dbConnect = function(){
     connection.connect(function(err,result){
@@ -29,4 +39,5 @@ module.exports = {
     'createConnection' : connection,
     'connectDb' : dbConnect,
     'dynamodbCredentials' : dynamodbCredentials
+//    'testdbConnection' : testdbConnection
 }

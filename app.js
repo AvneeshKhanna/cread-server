@@ -12,6 +12,7 @@ var users = require('./routes/users');
 var Auth = require('./routes/Authentication');
 var Refer = require('./routes/refer');
 var Check = require('./routes/Check');
+var test = require('./routes/test');
 var signUpOTP = require('./routes/signUpOtpVerify');
 var referralScreen = require('./routes/referralScreen');
 var usersProfile = require('./routes/userProfile');
@@ -36,6 +37,8 @@ var paymentSystem = require('./routes/Payment-system/paymentDetails');
 var contactSync = require('./routes/Contact-Synchronization/contactSync');
 var internalReferral = require('./routes/refer-Internal/internalReferral');
 var notification = require('./routes/Notification-System/jobNotification');
+var pieCharts = require('./routes/Data Analytics/pieChart');
+var countGraph = require('./routes/Data Analytics/countGraph');
 
 var forgotPassValidContact = require('./routes/forgot-password/validateContact');
 var updatePassword = require('./routes/forgot-password/updatePassword');
@@ -64,6 +67,7 @@ app.use('/', routes);
 app.use('/users', users);
 app.use('/refer' , Refer);
 app.use('/check' , Check);
+app.use('/date' , test);
 app.use('/sign-up-otp', signUpOTP);
 app.use('/referredUsers' , referralScreen);
 app.use('/userprofile' , usersProfile);
@@ -90,6 +94,8 @@ app.use('/password-validate-contact', forgotPassValidContact);
 app.use('/update-password', updatePassword);
 app.use('/internalrefer' , internalReferral);
 app.use('/jobnotification' , notification);
+app.use('/dataAnalytics' , pieCharts);
+app.use('/countGraph' , countGraph);
 
 app.use('/chatbot', chatbot);
 
