@@ -111,7 +111,7 @@ router.get('/',function(request,response){
 });
 
 function graphData(callback){
-    var sqlQuery = 'SELECT totalUsers,reg_date FROM analyticsData ORDER BY countid DESC LIMIT 9';
+    var sqlQuery = 'SELECT totalUsers,reg_date FROM analyticsData ORDER BY countid DESC LIMIT 10';
     var graphArray = [];
     var graphDate = [];
     
