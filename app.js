@@ -37,8 +37,8 @@ var paymentSystem = require('./routes/Payment-system/paymentDetails');
 var contactSync = require('./routes/Contact-Synchronization/contactSync');
 var internalReferral = require('./routes/refer-Internal/internalReferral');
 var notification = require('./routes/Notification-System/jobNotification');
-var pieCharts = require('./routes/Data Analytics/pieChart');
-var countGraph = require('./routes/Data Analytics/countGraph');
+var pieCharts = require('./routes/DataAnalytics/pieChart');
+var countGraph = require('./routes/DataAnalytics/countGraph');
 
 var forgotPassValidContact = require('./routes/forgot-password/validateContact');
 var updatePassword = require('./routes/forgot-password/updatePassword');

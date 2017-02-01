@@ -92,6 +92,16 @@ router.post('/',function(request, response, next){
         }
     };
     
+    if(jobProcess == 'ADD'){
+           params.Item.reg_date = new Date().toISOString();         //UTC Time with format: 2017-02-01T09:34:17.182Z
+        }
+    else if(jobProcess == 'EDIT'){
+            params.Item.reg_date = request.body.reg_date;
+    }
+    else{
+        throw new Error('Invalid jobProcess');
+    }
+    
     console.log('JUUID is '+ JSON.stringify(params.Item.JUUID));
     
     docClient.put(params, function(error, data) {
@@ -148,16 +158,17 @@ router.post('/',function(request, response, next){
             throw new Error('Invalid jobProcess');
         }
         
-        _connection.query(query, data, function(error, row){
+        _connection.query(query, data, function(err, result){
             
-            if (error){
-                throw error;
+            if (err){
+                throw err;
             }
-            else{                
+            else{
+                console.log('Response from SQL query is: ' + JSON.stringify(result, null, 3));
                 console.log(JSON.stringify(responseJSON));
         
                 response.send(responseJSON);
-                response.end();                
+                response.end();   
             }
             
         });

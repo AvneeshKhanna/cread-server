@@ -7,5 +7,7 @@
 			"database" : "testdb",
             "port" : "3306"
         }
-    }
+    },
+	"type" : "PRODUCTION"
+	
 }
