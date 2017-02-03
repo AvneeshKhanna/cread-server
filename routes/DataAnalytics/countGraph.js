@@ -19,7 +19,7 @@ router.post('/', function(request,response){
     var localJson = {};
     var graphArray = [];
     var graphDate = [];
-    
+
     if(columnName == 'totalApplications'){
         sqlQuery = 'SELECT reg_date,totalReferralApps+totalWoReferralApps AS totalApplications FROM analyticsData ORDER BY countid DESC LIMIT 10';
     }
@@ -32,27 +32,28 @@ router.post('/', function(request,response){
     else{
         sqlQuery = 'SELECT '+columnName+',reg_date FROM analyticsData ORDER BY countid DESC LIMIT 10';
     }
-    
+
     _connection.query(sqlQuery , function(error,result){
         if(error) throw error;
-        
+
         console.log(result);
-        
+
         for(var i=result.length-1 ; i>-1 ; i--){
             var date = new Date(result[i].reg_date+' UTC');
-            var istDate = date.getDate() + '/'+ date.getMonth()+1;
-            
+            var month = date.getMonth()+1;
+            var istDate = date.getDate() + '/'+ month;
+
             graphDate.push(istDate);
             graphArray.push(result[i][columnName]);
         }
-        
+
         localJson.Data = graphArray;
         localJson.Dates = graphDate;
         globalJson.Graph = localJson;
         localJson = {};
-        
+
         console.log('The array is ->' +graphArray);
-        
+
         response.send(JSON.stringify(globalJson));
         response.end();
     });
