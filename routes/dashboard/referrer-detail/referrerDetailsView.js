@@ -11,17 +11,15 @@ var AWS = require('aws-sdk');
 var dynamo_marshal = require('dynamodb-marshaler');
 var sendNotification = require('../../Notification-System/notificationFramework');
 
-var _connection = mysql.createConnection({
-    host : 'testrdsinstance.cfjbzkm4dzzx.ap-northeast-1.rds.amazonaws.com',
-    user : 'ttrds',
-    password : 'amazonpass2015',
-    database : 'testdb',
-    port : '3306'
-});
+var appconfig = require('../../Config');
+var _connection = appconfig.createConnection;
 
 AWS.config.region = 'ap-northeast-1'; 
 var dynamodb = new AWS.DynamoDB();
 var docClient = new AWS.DynamoDB.DocumentClient();
+
+var envconfig = require('config');
+var userstbl_ddb = envconfig.get('dynamoDB.users_table');
 
 var request = {};
 
@@ -37,7 +35,7 @@ router.post('/', function(request, response){
     
     var params = {
         
-        TableName : 'User_Profile',
+        TableName : userstbl_ddb,
         //ConditionalOperator: 'OR',
         Key: {
             UUID: referrer_id

@@ -6,13 +6,8 @@ var AWS = require('aws-sdk');
 
 var _auth = require('../Authentication');
 
-var connection = mysql.createConnection({
-    host : 'testrdsinstance.cfjbzkm4dzzx.ap-northeast-1.rds.amazonaws.com',
-    user : 'ttrds',
-    password : 'amazonpass2015',
-    database : 'testdb',
-    port : '3306'
-});
+var appconfig = require('../Config');
+var connection = appconfig.createConnection;
 
 AWS.config.region = 'ap-northeast-1'; 
 var dynamodb = new AWS.DynamoDB();

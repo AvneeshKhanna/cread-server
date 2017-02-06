@@ -11,9 +11,12 @@ var gcm = require('node-gcm');
 AWS.config.region = 'ap-northeast-1';
 AWS.config.credentials = new AWS.CognitoIdentityCredentials({
     IdentityPoolId: 'ap-northeast-1:863bdfec-de0f-4e9f-8749-cf7fd96ea2ff',
-}); 
+});
 
 var docClient = new AWS.DynamoDB.DocumentClient();
+
+var envconfig = require('config');
+var userstbl_ddb = envconfig.get('dynamoDB.users_table');
 
 router.post('/' , function(req,res){
     var testIds = new Array();
@@ -32,7 +35,7 @@ function getfcmTokens(userIds , callback){
     var serveruuids = new Array();
     var serverfcmTokens = new Array();
     
-    var table = 'User_Profile';
+    var table = userstbl_ddb;
     
     var params = {
         TableName : table,

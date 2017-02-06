@@ -5,13 +5,8 @@ var router = express.Router();
 var mysql = require('mysql');
 var AWS = require('aws-sdk');
 
-var _connection = mysql.createConnection({
-    host : 'testrdsinstance.cfjbzkm4dzzx.ap-northeast-1.rds.amazonaws.com',
-    user : 'ttrds',
-    password : 'amazonpass2015',
-    database : 'testdb',
-    port : '3306'
-});
+var appconfig = require('../Config');
+var _connection = appconfig.createConnection;
 
 router.post('/', function(request, response){
     console.log('Request received forgot password validate contact');

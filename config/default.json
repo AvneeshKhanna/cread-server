@@ -8,6 +8,13 @@
             "port" : "3306"
         }
     },
+	"dynamoDB" : {
+		"jobs_table" : "Jobs",
+		"users_table" : "User_Profile"
+	},
+	"s3" : {
+		"bucket" : "testamentbucket"
+	},
 	"type" : "PRODUCTION"
 	
 }

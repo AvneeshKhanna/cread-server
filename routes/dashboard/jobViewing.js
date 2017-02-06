@@ -8,6 +8,9 @@ AWS.config.region = 'ap-northeast-1';
 var dynamodb = new AWS.DynamoDB();
 var docClient = new AWS.DynamoDB.DocumentClient();
 
+var envconfig = require('config');
+var jobstbl_ddb = envconfig.get('dynamoDB.jobs_table');
+
 router.get('/',function(request,response){    
     scanJobs(true, response);    
 });
@@ -19,7 +22,7 @@ router.get('/deactive/',function(request,response){
 function scanJobs(isActive, response){
     
     var params = {
-        TableName : 'Jobs',
+        TableName : jobstbl_ddb,
         /*AttributesToGet: [
             'JUUID',
             'CompanyName',

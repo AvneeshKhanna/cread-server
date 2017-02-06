@@ -6,17 +6,12 @@ var mysql = require('mysql');
 
 var AWS = require('aws-sdk');
 
-var _connection = mysql.createConnection({
-    host : 'testrdsinstance.cfjbzkm4dzzx.ap-northeast-1.rds.amazonaws.com',
-    user : 'ttrds',
-    password : 'amazonpass2015',
-    database : 'testdb',
-    port : '3306'
-});
+var appconfig = require('../../Config');
+var _connection = appconfig.createConnection;
 
-AWS.config.region = 'ap-northeast-1'; 
+/*AWS.config.region = 'ap-northeast-1'; 
 var dynamodb = new AWS.DynamoDB();
-var docClient = new AWS.DynamoDB.DocumentClient();
+var docClient = new AWS.DynamoDB.DocumentClient();*/
 
 router.post('/', function(request, response){
     

@@ -10,13 +10,8 @@ var mysql = require('mysql');
 
 var uuidGenerator = require('uuid');
 
-var connection = mysql.createConnection({
-    host : 'testrdsinstance.cfjbzkm4dzzx.ap-northeast-1.rds.amazonaws.com',
-    user : 'ttrds',
-    password : 'amazonpass2015',
-    database : 'testdb',
-    port : '3306'
-});
+var config = require('../Config');
+var connection = config.createConnection;
 
 router.post('/', function(request, response){
     

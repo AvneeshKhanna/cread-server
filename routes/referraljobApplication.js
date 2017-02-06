@@ -7,9 +7,12 @@ var bodyParser = require('body-parser');
 var mysql = require('mysql');
 var Promise = require('promise');
 
-var config = require('./Config');
+var appconfig = require('./Config');
 var authtokenvalidation = require('./authtokenValidation');   //module to authenticate user before making request
-var _connection = config.createConnection;
+var _connection = appconfig.createConnection;
+
+var envconfig = require('config');
+var s3bucket = envconfig.get('s3.bucket');
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -46,7 +49,7 @@ router.post('/',function(request,response,next){
                     localJson['uuid'] = result[i].userid;
                     localJson['refcode'] = result[i].Refcode;
                     
-                    var s3bucketheader = "testamentbucket.s3-ap-northeast-1.amazonaws.com";
+                    var s3bucketheader = s3bucket + ".s3-ap-northeast-1.amazonaws.com";
                     var urlprotocol = 'https://';
                     
                     localJson['contactpicurl'] = urlprotocol + s3bucketheader + '/Users/' + result[i].userid + '/Profile/display-pic.jpg';

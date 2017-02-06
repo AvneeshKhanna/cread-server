@@ -9,9 +9,9 @@ var mysql = require('mysql');
 var AWS = require('aws-sdk');
 var uuidGenerator = require('uuid');
 
-var config = require('../Config');
+var appconfig = require('../Config');
 
-var _connection = config.createConnection;
+var _connection = appconfig.createConnection;
 
 var jobSchema = require('../Schema');
 
@@ -21,6 +21,9 @@ AWS.config.credentials = new AWS.CognitoIdentityCredentials({
 }); 
 
 var docClient = new AWS.DynamoDB.DocumentClient();
+
+var envconfig = require('config');
+var jobstbl_ddb = envconfig.get('dynamoDB.jobs_table');
 
 /*app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -46,7 +49,7 @@ router.post('/',function(request, response, next){
         else{
             
             var params = {
-                  TableName: 'Jobs',
+                  TableName: jobstbl_ddb,
                   Key: { 
                     'JUUID' : JUUID 
                   },

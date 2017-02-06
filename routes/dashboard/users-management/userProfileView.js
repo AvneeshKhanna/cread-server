@@ -9,8 +9,11 @@ AWS.config.region = 'ap-northeast-1';
 var dynamodb = new AWS.DynamoDB();
 var docClient = new AWS.DynamoDB.DocumentClient();
 
-var config = require('../../Config');
-var _connection = config.createConnection;
+var appconfig = require('../../Config');
+var _connection = appconfig.createConnection;
+
+var envconfig = require('config');
+var userstbl_ddb = envconfig.get('dynamoDB.users_table');
 
 var referrals = new Array();
 
@@ -22,7 +25,7 @@ router.post('/', function(request, response){
     console.log(JSON.stringify(request.body.userid));
     
     var params = {
-        TableName : 'User_Profile'
+        TableName : userstbl_ddb
     };
     params.Key = {
         UUID : request.body.userid

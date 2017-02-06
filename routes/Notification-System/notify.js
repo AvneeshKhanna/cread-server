@@ -8,8 +8,8 @@ var mysql = require('mysql');
 var AWS = require('aws-sdk');
 var dynamo_marshal = require('dynamodb-marshaler');    //package to convert plain JS/JSON objects to DynamoDB JSON
 
-var config = require('../Config');
-var _connection = config.createConnection;
+var appconfig = require('../Config');
+var _connection = appconfig.createConnection;
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -21,9 +21,12 @@ AWS.config.credentials = new AWS.CognitoIdentityCredentials({
 
 var docClient = new AWS.DynamoDB.DocumentClient();
 
+var envconfig = require('config');
+var userstbl_ddb = envconfig.get('dynamoDB.users_table');
+
 var registerFCM = function(uuid , fcmToken , localJson , name , emailid , contactnumber , city, response){
     console.log(uuid);
-    var table = 'User_Profile';
+    var table = userstbl_ddb;
     var params = {
         TableName: table,
         Item:{
@@ -47,7 +50,7 @@ var registerFCM = function(uuid , fcmToken , localJson , name , emailid , contac
 
 var loginFCM = function(uuid , fcmToken , localJson , response){
     console.log(uuid);
-    var table = 'User_Profile';
+    var table = userstbl_ddb;
     var addParams = {
         TableName : table,
         Key : {

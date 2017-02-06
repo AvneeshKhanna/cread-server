@@ -10,11 +10,14 @@ AWS.config.region = 'ap-northeast-1';
 var dynamodb = new AWS.DynamoDB();
 var docClient = new AWS.DynamoDB.DocumentClient();
 
+var envconfig = require('config');
+var userstbl_ddb = envconfig.get('dynamoDB.users_table');
+
 var _connection = config.createConnection;
 
 router.get('/',function(request, response){
     var params = {
-        TableName : 'User_Profile',
+        TableName : userstbl_ddb,
         AttributesToGet: [
             'UUID',
             'Name',

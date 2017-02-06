@@ -9,9 +9,9 @@ var mysql = require('mysql');
 var AWS = require('aws-sdk');
 var uuidGenerator = require('uuid');
 
-var config = require('../Config');
+var appconfig = require('../Config');
 
-var _connection = config.createConnection;
+var _connection = appconfig.createConnection;
 
 var jobSchema = require('../Schema');
 
@@ -22,12 +22,17 @@ AWS.config.credentials = new AWS.CognitoIdentityCredentials({
 
 var docClient = new AWS.DynamoDB.DocumentClient();
 
+var envconfig = require('config');
+var jobstbl_ddb = envconfig.get('dynamoDB.jobs_table');
+
+var s3bucket = envconfig.get('s3.bucket');
+
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 //config.dynamodbCredentials();
 
-var s3bucketheader = "testamentbucket.s3-ap-northeast-1.amazonaws.com";
+var s3bucketheader = s3bucket + '.s3-ap-northeast-1.amazonaws.com';
 
 var imagefilename = "job-logo.png";
 
@@ -72,7 +77,7 @@ router.post('/',function(request, response, next){
         throw new Error('Invalid value of key "imagestatus"');
     }
     
-    var table = 'Jobs';
+    var table = jobstbl_ddb;
     
     var params = {
         TableName: table,

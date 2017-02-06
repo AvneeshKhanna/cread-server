@@ -20,6 +20,9 @@ AWS.config.region = 'ap-northeast-1';
 var dynamodb = new AWS.DynamoDB();
 var docClient = new AWS.DynamoDB.DocumentClient();
 
+var envconfig = require('config');
+var userstbl_ddb = envconfig.get('dynamoDB.users_table');
+
 router.post('/',function(request, response, next){
     var uuid = request.body.uuid;
     var auth_key = request.body.authkey;
@@ -69,7 +72,7 @@ router.post('/',function(request, response, next){
 
 function getbankDetails(response, localjson, uuid){
     var params = {
-        TableName: 'User_Profile',
+        TableName: userstbl_ddb,
         Key: {
             UUID: uuid
         }

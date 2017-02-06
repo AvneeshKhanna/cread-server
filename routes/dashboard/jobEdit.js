@@ -8,12 +8,15 @@ AWS.config.region = 'ap-northeast-1';
 var dynamodb = new AWS.DynamoDB();
 var docClient = new AWS.DynamoDB.DocumentClient();
 
+var envconfig = require('config');
+var jobstbl_ddb = envconfig.get('dynamoDB.jobs_table');
+
 router.post('/', function(request, response){
     
     console.log(JSON.stringify(request.body.id));
     
     var params = {
-        TableName : 'Jobs'
+        TableName : jobstbl_ddb
     };
     params.Key = {
         JUUID : request.body.id

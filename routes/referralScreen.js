@@ -18,6 +18,9 @@ var referrals = new Array();
 
 var docClient = new AWS.DynamoDB.DocumentClient();
 
+var envconfig = require('config');
+var s3bucket = envconfig.get('s3.bucket');
+
 router.post('/',function(request,response,next){
     var userid = request.body.uuid;
     var auth_key = request.body.authkey;
@@ -63,7 +66,7 @@ function getData(userID, responseData, res){
             localJson['jobtitle'] = row[i].title;
             localJson['jobcompany'] = row[i].companyname;
             
-            var s3bucketheader = "testamentbucket.s3-ap-northeast-1.amazonaws.com";
+            var s3bucketheader = s3bucket + '.s3-ap-northeast-1.amazonaws.com';
             var urlprotocol = 'https://';
                     
             localJson['referralpicurl'] = urlprotocol + s3bucketheader + '/Users/' + row[i].UUID + '/Profile/display-pic.jpg';

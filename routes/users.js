@@ -24,6 +24,9 @@ AWS.config.credentials = new AWS.CognitoIdentityCredentials({
 }); 
 
 var docClient = new AWS.DynamoDB.DocumentClient();
+var envconfig = require('config');
+var userstbl_ddb = envconfig.get('dynamoDB.users_table');
+
 var _User = userSchema.User;
 var _connection = config.createConnection;
 config.connectDb();
@@ -115,7 +118,7 @@ router.post('/login' , function(request,response,next){
 router.post('/logout' , function(request,response,next){
     var uuid = request.body.uuid;
     var fcmToken = request.body.fcmtoken;
-    var table = 'User_Profile';
+    var table = userstbl_ddb;
     
     console.log(JSON.stringify(request.body));
     console.log('users/logout Request is ' + uuid);
@@ -141,7 +144,7 @@ router.post('/refreshfcmtoken' , function(request,response){
     var newFcm = request.body.newfcmtoken;
     var oldFcm = request.body.oldfcmtoken;
     var uuid = request.body.uuid;
-    var table = 'User_Profile';
+    var table = userstbl_ddb;
 
     var getParams = {
         TableName : table,
@@ -164,7 +167,7 @@ router.post('/refreshfcmtoken' , function(request,response){
 function refreshToken(uuid , newFcm , oldFcm , items , response){
     items.splice(items.indexOf(oldFcm) , 1 , newFcm);
     
-    var table = 'User_Profile';
+    var table = userstbl_ddb;
 
     var refreshParams = {
         TableName : table,
@@ -191,7 +194,7 @@ function refreshToken(uuid , newFcm , oldFcm , items , response){
 function deleteupdateItem(items , fcmtoken , uuid , response){
     items.splice(items.indexOf(fcmtoken) , 1);
     
-    var table = 'User_Profile';
+    var table = userstbl_ddb;
     var addParams = {
         TableName : table,
         Key : {
