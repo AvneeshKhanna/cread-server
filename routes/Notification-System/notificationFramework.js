@@ -18,7 +18,7 @@ var docClient = new AWS.DynamoDB.DocumentClient();
 var envconfig = require('config');
 var userstbl_ddb = envconfig.get('dynamoDB.users_table');
 
-router.post('/' , function(req,res){
+/*router.post('/' , function(req,res){
     var testIds = new Array();
     testIds.push('43d865a5-f7b7-4c27-84b1-367203744226');
     testIds.push('11271509-244b-4fac-86a3-a19e5933823a');
@@ -29,7 +29,7 @@ router.post('/' , function(req,res){
     sendNotification(testIds , data , function(){
         res.end('done');
     });
-});
+});*/
 
 function getfcmTokens(userIds , callback){
     var serveruuids = new Array();
@@ -99,5 +99,5 @@ function sendNotification(users , notificationData , callback){
     }
 }
 
-module.exports = router;
+//module.exports = router;
 module.exports.Notification = sendNotification;

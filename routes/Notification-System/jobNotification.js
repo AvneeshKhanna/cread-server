@@ -1,4 +1,4 @@
-//This module only used to sedn notification to all users whena a new job is added.
+/*This module only used to send notifications to all users using the dashboard notification panel. It contains the router(); function to be called by the client/dashboard*/
 
 var express = require('express');
 var app = express();
@@ -19,23 +19,40 @@ var userstbl_ddb = envconfig.get('dynamoDB.users_table');
 var docClient = new AWS.DynamoDB.DocumentClient();
 
 router.post('/' , function(request,response){
+    console.log(request.body);
+    
     var category = request.body.category;
     var message = request.body.message;
     
+    var cities = request.body.cities;
+    
     var data = {Category : category , Message : message};
-    jobNotification(data , function(){
+    jobNotification(data, cities, function(){
         response.send(true);
         response.end(); 
     });
 });
 
-function getTokens(callback){
+/*Function to get the FCM Tokens of all the users from the DynamoDB table. An optional city filter is also catered*/
+function getTokens(cities, callback){
     var table = userstbl_ddb;
     
     var params = {
         TableName : table,
         AttributesToGet : ['Fcm_token']
     };
+    
+    if(cities != undefined){
+        
+        params.ScanFilter = {
+            City: {
+              ComparisonOperator: 'IN', /* required */
+              AttributeValueList: cities
+            }
+        }
+    }
+    
+    console.log(JSON.stringify(params, null, 3));
     
     docClient.scan(params , function(error , data){
         if(error) throw error;
@@ -46,6 +63,7 @@ function getTokens(callback){
     });
 }
 
+/*Function to formulate an array of FCM Tokens as received using getTokens(cities, callback) function*/
 function pushTokens(tokens){
     var finalTokens = [];
     
@@ -58,8 +76,9 @@ function pushTokens(tokens){
     return finalTokens;
 }
 
-function jobNotification(jobData , callback){
-    getTokens(function(registrationTokens){
+/*Function to call the AWS SNS API to send push notifications to users using FCM Tokens*/
+function jobNotification(jobData, cities, callback){
+    getTokens(cities, function(registrationTokens){
         if(registrationTokens.length == 0){
             callback();
         }
