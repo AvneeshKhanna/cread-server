@@ -23,6 +23,7 @@ router.get('/',function(request, response){
             'Name',
             'Email_Id',
             'ProfilePicURL',
+            'ContactNumber',
             'City'
         ]
     };
