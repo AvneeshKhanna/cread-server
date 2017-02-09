@@ -42,6 +42,7 @@ var countGraph = require('./routes/DataAnalytics/countGraph');
 
 var forgotPassValidContact = require('./routes/forgot-password/validateContact');
 var updatePassword = require('./routes/forgot-password/updatePassword');
+var updateContact = require('./routes/update-contact/updateContact');
 
 var chatbot = require('./routes/chat-bot/bot');
 
@@ -92,6 +93,7 @@ app.use('/validate-auhtoken', validateAuthToken);
 app.use('/contactsync' , contactSync);
 app.use('/password-validate-contact', forgotPassValidContact);
 app.use('/update-password', updatePassword);
+app.use('/update-contact', updateContact);
 app.use('/internalrefer' , internalReferral);
 app.use('/jobnotification' , notification);
 app.use('/dataAnalytics' , pieCharts);

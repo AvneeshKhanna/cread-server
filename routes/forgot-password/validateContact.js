@@ -1,3 +1,7 @@
+/*This file is called when the user registers for the first time or opts for 'forgot-password' option in the app.
+
+It validates if the contact-number received doesn't exists in the DB already. If not, it sends an OTP using AWS SNS API and sends a copy of that OTP as server response*/
+
 var express = require('express');
 var app = express();
 var router = express.Router();
