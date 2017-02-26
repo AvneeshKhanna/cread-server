@@ -9,8 +9,8 @@ var mysql = require('mysql');
 var config = require('../Config');
 var _connection = config.createConnection;
 
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+/*app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());*/
 
 var onAppContacts = new Array();
 var invalidContacts = new Array();
