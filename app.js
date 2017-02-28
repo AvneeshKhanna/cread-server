@@ -33,6 +33,7 @@ var applicationsLogView = require('./routes/dashboard/applications-log/applicati
 var refcode_gen = require('./routes/refer-external/RefcodeGen');
 var refcode_valid = require('./routes/refer-external/RefCodeValidator');
 var apply_refext = require('./routes/refer-external/ApplyRefExternal');
+var external_ref_link_data = require('./routes/refer-external/ExternalRefData');
 var edit_profile = require('./routes/user-profile/EditProfileUpdate');
 var paymentSystem = require('./routes/Payment-system/paymentDetails');
 var contactSync = require('./routes/Contact-Synchronization/contactSync');
@@ -86,6 +87,7 @@ app.use('/application-status-update', userApplicationStatusUpdate);
 app.use('/refer-detail', referDetailsView);
 app.use('/refcodegen', refcode_gen);
 app.use('/refcodevalid', refcode_valid);
+app.use('/external-ref-link-data', external_ref_link_data);
 app.use('/refcodeapply', apply_refext);
 app.use('/editprofile', edit_profile);
 app.use('/paymentDetails', paymentSystem);
