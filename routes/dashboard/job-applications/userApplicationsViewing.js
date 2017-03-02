@@ -19,7 +19,7 @@ router.post('/', function(request, response){
         
     console.log('juid in response is' + juid);
     
-    _connection.query('SELECT DISTINCT users.UUID, users.firstname, users.lastname, users.email, users.phoneNo, apply.Application_status, apply.Refcode FROM users INNER JOIN apply ON apply.userid = users.UUID WHERE apply.jobid = ?', juid, function(err, appliedRows){
+    _connection.query('SELECT DISTINCT users.UUID, users.firstname, users.lastname, users.email, users.phoneNo, apply.Application_status, apply.Refcode FROM users INNER JOIN apply ON apply.userid = users.UUID WHERE apply.jobid = ? ORDER BY apply.reg_date DESC', juid, function(err, appliedRows){
         
         if (err){
             throw err;
