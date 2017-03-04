@@ -38,20 +38,23 @@ router.post('/', function(request, response){
                 throw err;
             }
             else{                
-                updateAplcnStatus(application_status , uuid , jobid , jobName , response);
+                updateAplcnStatus(application_status , uuid , jobid , jobName , response, refcode);
             }            
         });        
     }
     else{
-        updateAplcnStatus(application_status , uuid , jobid , jobName , response);
+        updateAplcnStatus(application_status , uuid , jobid , jobName , response, refcode);
     }
 });
 
-function updateAplcnStatus(application_status , uuid , jobid , jobName , response){
+/*
+Method to update the application status of an applicant and send him a push notification for the same
+*/
+function updateAplcnStatus(application_status , uuid , jobid , jobName , response, refcode){
     var uuidArray = [];
     uuidArray.push(uuid);
     
-    var notificationData = {
+    var applicantNotifData = {
         Category : 'ApplicationStatus',
         Status : application_status,
         JobName : jobName
@@ -64,9 +67,41 @@ function updateAplcnStatus(application_status , uuid , jobid , jobName , respons
         }
         else{  
             if(application_status !== 'Buffer'){
-                sendNotification.Notification(uuidArray , notificationData , function(){
-                    response.send(true);
-                    response.end(); 
+                sendNotification.Notification(uuidArray, applicantNotifData, function(){
+                    
+                    //If refcode is not 'none', send a push notification to referrer as well 
+                    if(refcode != 'none'){
+                        
+                        //extract referrer's full-name and userid to send as parameters to the notification API
+                        _connection.query('SELECT Referrals.userid, users.firstname, users.lastname FROM Referrals INNER JOIN users ON Referrals.userid = users.UUID WHERE Refcode = ?', refcode, function(err, data){
+                            
+                            console.log('Referrer data is ' + JSON.stringify(data, null, 3));
+                            
+                            uuidArray = [];
+                            uuidArray.push(data[0].userid);
+                            
+                            var referrerNotifData = {
+                                Category : 'ReferralApplicationUpdate',
+                                Status : application_status,
+                                JobName : jobName,
+                                Referee : data[0].firstname + " " + data[0].lastname
+                            }
+                            
+                            sendNotification.Notification(uuidArray, referrerNotifData, function(){
+                                
+                                response.send(true);
+                                response.end();
+                                
+                            });
+                            
+                        });
+                        
+                    }
+                    else{
+                        response.send(true);
+                        response.end();
+                    }                    
+                    
                 });
             }
             else{
