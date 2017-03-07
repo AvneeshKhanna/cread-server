@@ -21,16 +21,16 @@ router.post('/', function(request,response){
     var graphDate = [];
 
     if(columnName == 'totalApplications'){
-        sqlQuery = 'SELECT reg_date,totalReferralApps+totalWoReferralApps AS totalApplications FROM analyticsData ORDER BY countid DESC LIMIT 10';
+        sqlQuery = 'SELECT reg_date,totalReferralApps+totalWoReferralApps AS totalApplications FROM analyticsData ORDER BY countid DESC LIMIT 30';
     }
     else if(columnName == 'totalSelections'){
-        sqlQuery = 'SELECT reg_date,totalWoReferralSelections+totalRefSelections AS totalSelections FROM analyticsData ORDER BY countid DESC LIMIT 10';
+        sqlQuery = 'SELECT reg_date,totalWoReferralSelections+totalRefSelections AS totalSelections FROM analyticsData ORDER BY countid DESC LIMIT 30';
     }
     else if(columnName == 'totalShortlisted'){
-        sqlQuery = 'SELECT reg_date,nonreferralShortlisted+referralShortlisted AS totalShortlisted FROM analyticsData ORDER BY countid DESC LIMIT 10'
+        sqlQuery = 'SELECT reg_date,nonreferralShortlisted+referralShortlisted AS totalShortlisted FROM analyticsData ORDER BY countid DESC LIMIT 30'
     }
     else{
-        sqlQuery = 'SELECT '+columnName+',reg_date FROM analyticsData ORDER BY countid DESC LIMIT 10';
+        sqlQuery = 'SELECT '+columnName+',reg_date FROM analyticsData ORDER BY countid DESC LIMIT 30';
     }
 
     _connection.query(sqlQuery , function(error,result){

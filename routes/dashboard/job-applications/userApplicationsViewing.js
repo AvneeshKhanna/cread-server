@@ -19,7 +19,7 @@ router.post('/', function(request, response){
         
     console.log('juid in response is' + juid);
     
-    _connection.query('SELECT DISTINCT users.UUID, users.firstname, users.lastname, users.email, users.phoneNo, apply.Application_status, apply.Refcode FROM users INNER JOIN apply ON apply.userid = users.UUID WHERE apply.jobid = ? ORDER BY apply.reg_date DESC', juid, function(err, appliedRows){
+    _connection.query('SELECT DISTINCT users.UUID, users.firstname, users.lastname, users.email, users.phoneNo, apply.Application_status, apply.Refcode, apply.Seen FROM users INNER JOIN apply ON apply.userid = users.UUID WHERE apply.jobid = ? ORDER BY apply.reg_date DESC', juid, function(err, appliedRows){
         
         if (err){
             throw err;
@@ -39,11 +39,16 @@ router.post('/', function(request, response){
     
 });
 
+/*
+This functions retreive's the referrer's data by checking the refcode from applied-users data in a separate array and maps the referrer's data
+to the respective applicant's data thus, creating a single array
+*/
 function mapAppliedData(appliedRows, applicationsData, counter/*, callback*/, response){
         
         if(counter<appliedRows.length){
             
             applicationsData[counter] = {};
+            applicationsData[counter].Seen = appliedRows[counter].Seen;
             applicationsData[counter].appliedUser = {
                         UUID : appliedRows[counter].UUID,
                         Name : appliedRows[counter].firstname + ' ' + appliedRows[counter].lastname,
@@ -93,10 +98,34 @@ function mapAppliedData(appliedRows, applicationsData, counter/*, callback*/, re
             }            
         }
         else{
-            console.log('Response is ' + applicationsData);
+            console.log('Response is ' + JSON.stringify(applicationsData, null, 3));
             response.send(applicationsData);
         }
     
 };
+
+/*
+For marking job-applications as seen
+*/
+router.post('/mark-seen', function(request, response){
+    
+    var juuid = request.body.juuid;
+    var uuidarray = request.body.uuidarray;
+    
+    console.log('Request is ' + JSON.stringify(request.body, null, 3));
+    
+    _connection.query('UPDATE apply SET Seen = ? WHERE jobid =? AND userid IN (?)', ['1', juuid, uuidarray], function(err, data){
+
+        if(err){
+            throw err;
+        }
+        
+        response.send(true);
+        response.end();
+        
+    });
+    
+    
+});
 
 module.exports = router;
