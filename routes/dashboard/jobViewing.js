@@ -55,7 +55,7 @@ function scanJobs(isActive, response){
             activeSQLparam = '0';
         }
         
-        connection.query('SELECT jobs.JUUID, (SELECT COUNT( apply.jobid ) FROM apply WHERE apply.jobid = jobs.JUUID AND apply.Seen = ? AND jobs.Active = ?) AS  NewApplctns FROM jobs', ["0", activeSQLparam], function(err, rows){
+        connection.query('SELECT jobs.JUUID, (SELECT COUNT( apply.jobid ) FROM apply WHERE apply.jobid = jobs.JUUID AND apply.Seen = ?) AS NewApplctns FROM jobs WHERE jobs.Active = ?', ["0", activeSQLparam], function(err, rows){
             
             console.log(JSON.stringify(rows, null, 3));
             
