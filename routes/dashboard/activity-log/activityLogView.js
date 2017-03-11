@@ -91,7 +91,7 @@ function mapAppliedData(appliedRows, applicationsData, counter/*, callback*/, re
         else{
             
             //<> - not equal operator
-            _connection.query('SELECT firstname, lastname, reg_date, resume_upload FROM users WHERE resume_upload <> ? ORDER BY reg_date DESC LIMIT 25', ['0000-00-00 00:00:00'], function(err, resume_rows){
+            _connection.query('SELECT UUID, firstname, lastname, reg_date, resume_upload FROM users WHERE resume_upload <> ? ORDER BY reg_date DESC LIMIT 25', ['0000-00-00 00:00:00'], function(err, resume_rows){
                
                 if(err){
                     console.error(err);
