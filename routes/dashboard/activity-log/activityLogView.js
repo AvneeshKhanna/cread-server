@@ -1,5 +1,5 @@
 /*
-This script is used to send the applications to the applications-log screen at the dashboard
+This script is used to send the latest activity events to the dashboard for the updates screen
 */
 var express = require('express');
 var app = express();
@@ -14,7 +14,7 @@ var _connection = appconfig.createConnection;
 
 router.get('/', function(request, response){
     
-    _connection.query('SELECT DISTINCT users.UUID, users.firstname, users.lastname, jobs.JUUID, jobs.title, jobs.RefAmount, apply.Application_status, apply.Refcode, apply.reg_date FROM users INNER JOIN apply ON apply.userid = users.UUID INNER JOIN jobs ON apply.jobid=jobs.JUUID ORDER BY apply.reg_date DESC LIMIT 100', null, function(err, appliedRows){
+    _connection.query('SELECT DISTINCT users.UUID, users.firstname, users.lastname, jobs.JUUID, jobs.title, jobs.RefAmount, apply.Application_status, apply.Refcode, apply.reg_date FROM users INNER JOIN apply ON apply.userid = users.UUID INNER JOIN jobs ON apply.jobid=jobs.JUUID ORDER BY apply.reg_date DESC LIMIT 75', null, function(err, appliedRows){
         
         if (err){
             throw err;
@@ -40,6 +40,7 @@ function mapAppliedData(appliedRows, applicationsData, counter/*, callback*/, re
         if(counter<appliedRows.length){
             
             applicationsData[counter] = {};
+            applicationsData[counter].type = 'application';
             applicationsData[counter].reg_date = appliedRows[counter].reg_date;
             applicationsData[counter].job = {
                 JUUID : appliedRows[counter].JUUID,
@@ -61,8 +62,6 @@ function mapAppliedData(appliedRows, applicationsData, counter/*, callback*/, re
                 mapAppliedData(appliedRows, applicationsData, counter, response);
             }
             else{
-                
-                console.log('Refcode before querying is ' + appliedRows[counter].Refcode);                
                 
                 _connection.query('SELECT users.UUID, users.firstname, users.lastname, users.email, users.phoneNo FROM users INNER JOIN Referrals ON users.UUID = Referrals.userid WHERE Referrals.Refcode = ?', appliedRows[counter].Refcode, function(err, referRows){
                     
@@ -90,10 +89,49 @@ function mapAppliedData(appliedRows, applicationsData, counter/*, callback*/, re
             }            
         }
         else{
-            console.log('Response is ' + applicationsData);
-            response.send(applicationsData);
+            
+            //<> - not equal operator
+            _connection.query('SELECT firstname, lastname, reg_date, resume_upload FROM users WHERE resume_upload <> ? ORDER BY reg_date DESC LIMIT 25', ['0000-00-00 00:00:00'], function(err, resume_rows){
+               
+                if(err){
+                    console.error(err);
+                    throw err;
+                }
+                else{
+                    
+                    resume_rows.forEach(function (item){ 
+                        item.type = 'resume';
+                        item.name = item.firstname + ' ' + item.lastname;
+                        delete item.firstname;
+                        delete item.lastname;
+                    });
+                    
+                    var response_data = [];
+                    
+                    //Concatenating arrays
+                    response_data.push.apply(response_data, applicationsData);
+                    response_data.push.apply(response_data, resume_rows);
+                    
+                    console.log('Concatenated array is ' + JSON.stringify(response_data, null, 3));
+                    
+                    response.send(sortByRegDate(response_data));
+                    response.end();
+                }
+                
+            });
         }
     
+};
+
+/*
+Sort an array of inconsistent objects by reg_date
+*/
+function sortByRegDate(array){
+    
+    array.sort(function(a,b) {return (a.reg_date > b.reg_date) ? 1 : ((b.reg_date > a.reg_date) ? -1 : 0);} ); 
+    console.log('Sorted Data is ' + JSON.stringify(array, null, 3));
+    
+    return array;
 };
 
 module.exports = router;

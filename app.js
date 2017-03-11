@@ -29,7 +29,7 @@ var userProfileView = require('./routes/dashboard/users-management/userProfileVi
 var userApplicationsView = require('./routes/dashboard/job-applications/userApplicationsViewing')
 var userApplicationStatusUpdate = require('./routes/dashboard/job-applications/applicationStatusUpdate');
 var referDetailsView = require('./routes/dashboard/referrer-detail/referrerDetailsView');
-var applicationsLogView = require('./routes/dashboard/applications-log/applicationsLogView');
+var activityLogView = require('./routes/dashboard/activity-log/activityLogView');
 var refcode_gen = require('./routes/refer-external/RefcodeGen');
 var refcode_valid = require('./routes/refer-external/RefCodeValidator');
 var apply_refext = require('./routes/refer-external/ApplyRefExternal');
@@ -101,7 +101,7 @@ app.use('/internalrefer', internalReferral);
 app.use('/jobnotification', notification);
 app.use('/dataAnalytics', pieCharts);
 app.use('/countGraph', countGraph);
-app.use('/applicationsLogView', applicationsLogView);
+app.use('/latest-updates', activityLogView);
 
 app.use('/chatbot', chatbot);
 
