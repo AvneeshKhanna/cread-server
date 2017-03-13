@@ -10,7 +10,7 @@ var gcm = require('node-gcm');
 
 AWS.config.region = 'ap-northeast-1';
 AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-    IdentityPoolId: 'ap-northeast-1:863bdfec-de0f-4e9f-8749-cf7fd96ea2ff',
+    IdentityPoolId: 'ap-northeast-1:863bdfec-de0f-4e9f-8749-cf7fd96ea2ff'
 });
 
 var envconfig = require('config');
@@ -27,10 +27,7 @@ router.post('/' , function(request,response){
     var cities = request.body.cities;
     
     var data = {Category : category , Message : message};
-    jobNotification(data, cities, function(){
-        response.send(true);
-        response.end(); 
-    });
+    jobNotification(data, cities, response);
 });
 
 /*Function to get the FCM Tokens of all the users from the DynamoDB table. An optional city filter is also catered*/
@@ -77,10 +74,11 @@ function pushTokens(tokens){
 }
 
 /*Function to call the AWS SNS API to send push notifications to users using FCM Tokens*/
-function jobNotification(jobData, cities, callback){
+function jobNotification(jobData, cities, response){
     getTokens(cities, function(registrationTokens){
         if(registrationTokens.length == 0){
-            callback();
+            response.send(true);
+            response.end();
         }
         else{
             var message = new gcm.Message();
@@ -90,13 +88,48 @@ function jobNotification(jobData, cities, callback){
 
             var sender = new gcm.Sender('AIzaSyDUbtCYGKI-kLl7oSVQoW_sZqo2VZBFeKQ');
 
-            sender.send(message, { registrationTokens : registrationTokens }, 3 , function (err, response) {
-                if(err) throw err;
-
-                console.log(response);
-                callback();
-            }); 
+            const batchsize = 1000;  //FCM limits the no of users to 1,000 which can be sent a notification in one-go
+            batchTokenHandler(registrationTokens, batchsize, 0, sender, message, response);
         }
+    });
+}
+
+/*
+Method to send notification to FCM tokens in a batch using recursive loop
+*/
+function batchTokenHandler(tokens, batchsize, counter, sender, message, response){
+    
+    var iterations = Math.floor(tokens.length/batchsize) + ((tokens.length % batchsize) != 0 ? 1 : 0);
+    console.log('No of tokens are ' + tokens.length);
+    console.log('No of iterations are ' + JSON.stringify(iterations, null, 3));
+    
+    if(counter == (iterations - 1)){ //Last iteration
+        var lastitemindex = tokens.length;
+    }
+    else{        
+        var lastitemindex = batchsize * (counter + 1);
+    }
+    
+    var batchtokens = tokens.slice(batchsize * counter, lastitemindex);
+    console.log('Batch ' + (counter+1) + ' is ' + JSON.stringify(batchtokens, null, 3));
+    
+    sender.send(message, { registrationTokens : batchtokens }, 3 , function (err, res) {
+        
+        if(err){
+            console.error(err);
+            throw err;
+        }
+        else{
+            if(counter == (iterations - 1)){
+                response.send(true);
+                response.end();
+            }
+            else{
+                counter++;
+                batchTokenHandler(tokens, batchsize, counter, sender, message, response);
+            }
+        }
+
     });
 }
 

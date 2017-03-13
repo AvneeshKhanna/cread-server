@@ -40,9 +40,13 @@ router.post('/',function(request,response){
     });
     
     _connection.query(Query,function(error,row){
-        if(error) throw error;
-        
-        //pushing all contacts on server in an array
+        if(error){
+            console.error(error);
+            throw error;
+        }
+        else{
+            
+            //pushing all contacts on server in an array
         
         for(var k in row){
 //            console.log(row[k].UUID);
@@ -57,6 +61,9 @@ router.post('/',function(request,response){
         checkContacts(CLIENTCONTACTS , CLIENTNAME , allUUIDs , allContacts , response);
         allContacts = [];
         allUUIDs = [];
+            
+        } 
+        
     });
 });
 
