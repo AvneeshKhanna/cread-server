@@ -91,7 +91,7 @@ function mapAppliedData(appliedRows, applicationsData, counter/*, callback*/, re
         else{
             
             //<> - not equal operator
-            _connection.query('SELECT UUID, firstname, lastname, reg_date, resume_upload FROM users WHERE resume_upload <> ? ORDER BY reg_date DESC LIMIT 25', ['0000-00-00 00:00:00'], function(err, resume_rows){
+            _connection.query('SELECT UUID, firstname, lastname, resume_upload AS reg_date FROM users WHERE resume_upload <> ? ORDER BY resume_upload DESC LIMIT 25', ['0000-00-00 00:00:00'], function(err, resume_rows){
                
                 if(err){
                     console.error(err);
@@ -128,7 +128,9 @@ Sort an array of inconsistent objects by reg_date
 */
 function sortByRegDate(array){
     
-    array.sort(function(a,b) {return (a.reg_date > b.reg_date) ? 1 : ((b.reg_date > a.reg_date) ? -1 : 0);} ); 
+    array.sort(function(a,b) {
+        return (a.reg_date < b.reg_date) ? 1 : ((b.reg_date < a.reg_date) ? -1 : 0);
+    }); 
     console.log('Sorted Data is ' + JSON.stringify(array, null, 3));
     
     return array;
