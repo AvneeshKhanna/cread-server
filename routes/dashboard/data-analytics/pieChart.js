@@ -5,7 +5,7 @@ var bodyParser = require('body-parser');
 var mysql = require('mysql');
 var AWS = require('aws-sdk');
 
-var config = require('../Config');
+var config = require('../../Config');
 //testing on dummy db
 var _connection = config.createConnection;
 

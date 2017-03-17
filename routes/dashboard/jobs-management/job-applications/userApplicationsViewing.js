@@ -6,7 +6,7 @@ var mysql = require('mysql');
 
 var AWS = require('aws-sdk');
 
-var appconfig = require('../../Config');
+var appconfig = require('../../../Config');
 var _connection = appconfig.createConnection;
 
 /*AWS.config.region = 'ap-northeast-1'; 

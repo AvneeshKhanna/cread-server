@@ -9,15 +9,15 @@ var mysql = require('mysql');
 var AWS = require('aws-sdk');
 var uuidGenerator = require('uuid');
 
-var appconfig = require('../Config');
+var appconfig = require('../../Config');
 
 var _connection = appconfig.createConnection;
 
-var jobSchema = require('../Schema');
+var jobSchema = require('../../Schema');
 
 AWS.config.region = 'ap-northeast-1'; 
 AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-    IdentityPoolId: 'ap-northeast-1:863bdfec-de0f-4e9f-8749-cf7fd96ea2ff',
+    IdentityPoolId: 'ap-northeast-1:863bdfec-de0f-4e9f-8749-cf7fd96ea2ff'
 }); 
 
 var docClient = new AWS.DynamoDB.DocumentClient();
@@ -49,6 +49,7 @@ router.post('/',function(request, response, next){
     var imgStatus = request.body.imagestatus;
     var RefAmount = request.body.RefAmount;
     var Domain = request.body.Domain;
+    var PayScaleType = request.body.PayScaleType;
     var jobProcess ='';
     
     console.log('Request object is ' + JSON.stringify(request.body, null, 3));
@@ -93,7 +94,8 @@ router.post('/',function(request, response, next){
             'ImagePath' : ImagePath,
             'RefAmount' : RefAmount,
             'Domain' : Domain,
-            'Active' : true
+            'Active' : true,
+            'PayScaleType' : PayScaleType
         }
     };
     
@@ -133,7 +135,8 @@ router.post('/',function(request, response, next){
             payscale : params.Item.Payscale,
             details : params.Item.Description,
             RefAmount : params.Item.RefAmount,
-            Domain : params.Item.Domain
+            Domain : params.Item.Domain,
+            PayScaleType : PayScaleType
         });
         
         var query;
@@ -153,7 +156,8 @@ router.post('/',function(request, response, next){
                 payscale : params.Item.Payscale,
                 details : params.Item.Description,
                 RefAmount : params.Item.RefAmount,
-                Domain : params.Item.Domain
+                Domain : params.Item.Domain,
+                PayScaleType : PayScaleType
             };
             
             query = 'UPDATE jobs SET ? WHERE JUUID = ?';

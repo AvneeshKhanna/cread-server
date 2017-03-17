@@ -11,7 +11,7 @@ var docClient = new AWS.DynamoDB.DocumentClient();
 var envconfig = require('config');
 var jobstbl_ddb = envconfig.get('dynamoDB.jobs_table');
 
-var appconfig = require('../Config');
+var appconfig = require('../../Config');
 var connection = appconfig.createConnection;
 
 router.get('/',function(request,response){    

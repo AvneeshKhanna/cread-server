@@ -6,9 +6,9 @@ var app = express();
 var router = express.Router();
 var mysql = require('mysql');
 
-var sendNotification = require('../../Notification-System/notificationFramework');
+var sendNotification = require('../../../Notification-System/notificationFramework');
 
-var appconfig = require('../../Config');
+var appconfig = require('../../../Config');
 var _connection = appconfig.createConnection;
 
 router.post('/', function(request, response){

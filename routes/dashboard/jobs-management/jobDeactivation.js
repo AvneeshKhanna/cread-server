@@ -9,11 +9,11 @@ var mysql = require('mysql');
 var AWS = require('aws-sdk');
 var uuidGenerator = require('uuid');
 
-var appconfig = require('../Config');
+var appconfig = require('../../Config');
 
 var _connection = appconfig.createConnection;
 
-var jobSchema = require('../Schema');
+var jobSchema = require('../../Schema');
 
 AWS.config.region = 'ap-northeast-1'; 
 AWS.config.credentials = new AWS.CognitoIdentityCredentials({

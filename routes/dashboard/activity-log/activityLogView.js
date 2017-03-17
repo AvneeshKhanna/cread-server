@@ -14,7 +14,7 @@ var _connection = appconfig.createConnection;
 
 router.get('/', function(request, response){
     
-    _connection.query('SELECT DISTINCT users.UUID, users.firstname, users.lastname, jobs.JUUID, jobs.title, jobs.RefAmount, apply.Application_status, apply.Refcode, apply.reg_date FROM users INNER JOIN apply ON apply.userid = users.UUID INNER JOIN jobs ON apply.jobid=jobs.JUUID ORDER BY apply.reg_date DESC LIMIT 75', null, function(err, appliedRows){
+    _connection.query('SELECT DISTINCT users.UUID, users.firstname, users.lastname, jobs.JUUID, jobs.title, jobs.RefAmount, apply.Application_status, apply.Refcode, apply.reg_date AS timestamp FROM users INNER JOIN apply ON apply.userid = users.UUID INNER JOIN jobs ON apply.jobid=jobs.JUUID ORDER BY apply.reg_date DESC LIMIT 75', null, function(err, appliedRows){
         
         if (err){
             throw err;
@@ -41,7 +41,7 @@ function mapAppliedData(appliedRows, applicationsData, counter/*, callback*/, re
             
             applicationsData[counter] = {};
             applicationsData[counter].type = 'application';
-            applicationsData[counter].reg_date = appliedRows[counter].reg_date;
+            applicationsData[counter].timestamp = appliedRows[counter].timestamp;
             applicationsData[counter].job = {
                 JUUID : appliedRows[counter].JUUID,
                 title : appliedRows[counter].title,
@@ -91,7 +91,7 @@ function mapAppliedData(appliedRows, applicationsData, counter/*, callback*/, re
         else{
             
             //<> - not equal operator
-            _connection.query('SELECT UUID, firstname, lastname, resume_upload AS reg_date FROM users WHERE resume_upload <> ? ORDER BY resume_upload DESC LIMIT 25', ['0000-00-00 00:00:00'], function(err, resume_rows){
+            _connection.query('SELECT UUID, firstname, lastname, resume_upload AS timestamp FROM users WHERE resume_upload <> ? ORDER BY resume_upload DESC LIMIT 25', ['0000-00-00 00:00:00'], function(err, resume_rows){
                
                 if(err){
                     console.error(err);
@@ -124,12 +124,12 @@ function mapAppliedData(appliedRows, applicationsData, counter/*, callback*/, re
 };
 
 /*
-Sort an array of inconsistent objects by reg_date
+Sort an array of inconsistent objects by timestamp
 */
 function sortByRegDate(array){
     
     array.sort(function(a,b) {
-        return (a.reg_date < b.reg_date) ? 1 : ((b.reg_date < a.reg_date) ? -1 : 0);
+        return (a.timestamp < b.timestamp) ? 1 : ((b.timestamp < a.timestamp) ? -1 : 0);
     }); 
     console.log('Sorted Data is ' + JSON.stringify(array, null, 3));
     
