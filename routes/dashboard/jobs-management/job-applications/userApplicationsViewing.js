@@ -19,7 +19,7 @@ router.post('/', function(request, response){
         
     console.log('juid in response is' + juid);
     
-    _connection.query('SELECT DISTINCT users.UUID, users.firstname, users.lastname, users.email, users.phoneNo, apply.Application_status, apply.Refcode, apply.Seen FROM users INNER JOIN apply ON apply.userid = users.UUID WHERE apply.jobid = ? ORDER BY apply.reg_date DESC', juid, function(err, appliedRows){
+    _connection.query('SELECT DISTINCT users.UUID, users.firstname, users.lastname, users.email, users.phoneNo, apply.aid AS apply_id, apply.Application_status, apply.Refcode, apply.Seen, apply.Note FROM users INNER JOIN apply ON apply.userid = users.UUID WHERE apply.jobid = ? ORDER BY apply.reg_date DESC', juid, function(err, appliedRows){
         
         if (err){
             throw err;
@@ -49,6 +49,8 @@ function mapAppliedData(appliedRows, applicationsData, counter/*, callback*/, re
             
             applicationsData[counter] = {};
             applicationsData[counter].Seen = appliedRows[counter].Seen;
+            applicationsData[counter].Note = appliedRows[counter].Note;
+            applicationsData[counter].apply_id = appliedRows[counter].apply_id;
             applicationsData[counter].appliedUser = {
                         UUID : appliedRows[counter].UUID,
                         Name : appliedRows[counter].firstname + ' ' + appliedRows[counter].lastname,
@@ -117,6 +119,7 @@ router.post('/mark-seen', function(request, response){
     _connection.query('UPDATE apply SET Seen = ? WHERE jobid =? AND userid IN (?)', ['1', juuid, uuidarray], function(err, data){
 
         if(err){
+            console.error(err);
             throw err;
         }
         
@@ -126,6 +129,30 @@ router.post('/mark-seen', function(request, response){
     });
     
     
+});
+
+router.post('/update-note', function (request, response) {
+
+    var note = request.body.Note;
+    var apply_id = request.body.apply_id;
+
+    console.log('Request is ' + JSON.stringify(request.body));
+
+    _connection.query('UPDATE apply SET Note = ? WHERE aid = ?', [note, apply_id], function (err, result) {
+
+        if(err){
+            console.error(err);
+            throw err;
+        }
+        else{
+
+            response.send(true);
+            response.end();
+
+        }
+
+    });
+
 });
 
 module.exports = router;

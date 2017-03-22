@@ -30,7 +30,7 @@ router.post('/', function(request, response){
             referralAmount : refAmount,
             refCode : refcode,
             applieduserid : uuid
-        }
+        };
         
         _connection.query('INSERT INTO Earnings SET ?', tableValues, function(err, rows){
             
