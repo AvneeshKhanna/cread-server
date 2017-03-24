@@ -1,5 +1,5 @@
 //The first router is to insert data in apply table, when user apply for a job only when user had not applied for a job already
-//Second route is to display all jobs to which user have applied to 
+//Second router is to display all jobs to which user have applied to 
 
 var express = require('express');
 var app = express();
@@ -13,6 +13,8 @@ var _connection = config.createConnection;
 var applicationSchema = require('./Schema');
 var jobApplication = applicationSchema.jobApplication;
 var authtokenvalidation = require('./authtokenValidation');
+
+var notify = require('./Notification-System/notificationFramework');
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -63,6 +65,12 @@ router.post('/',function(request,response,next){
                             validJson.applystatus = 'true';
                             response.send(JSON.stringify(validJson));
                             response.end();
+                            
+                            //Since the notification is to be sent to the referrer and the server response to be sent to applicant, we can call the below functions AFTER response.send() and response.end() functions have been called
+                            if(refCode != 'none'){
+                                sendNotifToReferrer(refCode);
+                            }
+                            
                         });
                     }
                     else{
@@ -79,6 +87,42 @@ router.post('/',function(request,response,next){
         }
     });
 });
+
+/*
+Sending a push notification to the referrer
+*/
+function sendNotifToReferrer(refcode){
+    
+    _connection.query('SELECT Referrals.userid, users.firstname, users.lastname, jobs.title FROM referredUsers INNER JOIN users ON referredUsers.refUser = users.UUID INNER JOIN Referrals ON Referrals.Refcode = referredUsers.Refcode INNER JOIN jobs ON Referrals.jobid = jobs.JUUID WHERE Referrals.Refcode = ?', refcode, function(err, data){
+        
+        if(err){
+            throw err;
+        }
+        else{
+            
+            console.log('Query data from sendNotifToReferrer is ' + JSON.stringify(data, null, 3));
+            
+            var uuidArray = new Array();
+            uuidArray.push(data[0].userid); //Referrer's userid
+            
+            var notifData = {
+                Category : 'ReferralApplicationUpdate',
+                Status : 'Pending',
+                JobName : data[0].title,
+                Referee : data[0].firstname + " " + data[0].lastname
+            }
+            
+            notify.Notification(uuidArray, notifData, function(){
+               
+                //End of flow
+                
+            });
+            
+        }
+        
+    });
+    
+}
 
 router.post('/applications',function(request,response,next){
     var uuid = request.body.uuid;

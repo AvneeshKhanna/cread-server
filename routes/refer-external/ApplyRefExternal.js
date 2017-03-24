@@ -7,6 +7,7 @@ var router = express.Router();
 var mysql = require('mysql');
 
 var authtokenvalidation = require('../authtokenValidation');   //module to authenticate user before making request
+var notify = require('../Notification-System/notificationFramework');
 
 var config = require('../Config');
 var connection = config.createConnection;
@@ -55,6 +56,9 @@ router.post('/', function(request, response){
                                     validJson['status'] = 'OK';
                                     response.send(JSON.stringify(validJson));
                                     response.end();
+                                    
+                                    //Since the notification is to be sent to the referrer and the server response to be sent to applicant, we can call the below functions AFTER response.send() and response.end() functions have been called
+                                    sendNotifToReferrer(request.body.refcode);
                                 }
                                 else{
                                 //response.send('The referral could not be registered due to some reason');
@@ -140,6 +144,42 @@ function checkApplyTable(data,callback){
             callback(null);
         }
     });
+}
+
+/*
+Sending a push notification to the referrer
+*/
+function sendNotifToReferrer(refcode){
+    
+    connection.query('SELECT Referrals.userid, users.firstname, users.lastname, jobs.title FROM referredUsers INNER JOIN users ON referredUsers.refUser = users.UUID INNER JOIN Referrals ON Referrals.Refcode = referredUsers.Refcode INNER JOIN jobs ON Referrals.jobid = jobs.JUUID WHERE Referrals.Refcode = ?', refcode, function(err, data){
+        
+        if(err){
+            throw err;
+        }
+        else{
+            
+            console.log('Query data from sendNotifToReferrer is ' + JSON.stringify(data, null, 3));
+            
+            var uuidArray = new Array();
+            uuidArray.push(data[0].userid); //Referrer's userid
+            
+            var notifData = {
+                Category : 'ReferralApplicationUpdate',
+                Status : 'Pending',
+                JobName : data[0].title,
+                Referee : data[0].firstname + " " + data[0].lastname
+            }
+            
+            notify.Notification(uuidArray, notifData, function(){
+               
+                //End of flow
+                
+            });
+            
+        }
+        
+    });
+    
 }
 
 module.exports = router;
