@@ -66,9 +66,10 @@ router.post('/',function(request,response,next){
                             response.send(JSON.stringify(validJson));
                             response.end();
                             
-                            //Since the notification is to be sent to the referrer and the server response to be sent to applicant, we can call the below functions AFTER response.send() and response.end() functions have been called
+                            //Since the notification is to be sent to the referrer and the server response to be sent to applicant,
+                            // we can call the below functions AFTER response.send() and response.end() functions have been called
                             if(refCode != 'none'){
-                                sendNotifToReferrer(refCode);
+                                sendNotifToReferrer(refCode, UUID);
                             }
                             
                         });
@@ -91,9 +92,12 @@ router.post('/',function(request,response,next){
 /*
 Sending a push notification to the referrer
 */
-function sendNotifToReferrer(refcode){
+function sendNotifToReferrer(refcode, applicant_userid){
     
-    _connection.query('SELECT Referrals.userid, users.firstname, users.lastname, jobs.title FROM referredUsers INNER JOIN users ON referredUsers.refUser = users.UUID INNER JOIN Referrals ON Referrals.Refcode = referredUsers.Refcode INNER JOIN jobs ON Referrals.jobid = jobs.JUUID WHERE Referrals.Refcode = ?', refcode, function(err, data){
+    _connection.query('SELECT Referrals.userid, referredUsers.refUser AS referred_userid, users.firstname, users.lastname, jobs.title ' +
+        'FROM referredUsers INNER JOIN users ON referredUsers.refUser = users.UUID ' +
+        'INNER JOIN Referrals ON Referrals.Refcode = referredUsers.Refcode ' +
+        'INNER JOIN jobs ON Referrals.jobid = jobs.JUUID WHERE Referrals.Refcode = ?', refcode, function(err, data){
         
         if(err){
             throw err;
@@ -101,16 +105,24 @@ function sendNotifToReferrer(refcode){
         else{
             
             console.log('Query data from sendNotifToReferrer is ' + JSON.stringify(data, null, 3));
-            
+
+            var referredUserIndex = null;
+
             var uuidArray = new Array();
-            uuidArray.push(data[0].userid); //Referrer's userid
+            for(var i=0; i<data.length; i++){
+                if(applicant_userid == data[i].referred_userid){
+                    referredUserIndex = i;
+                    uuidArray.push(data[i].userid); //Referrer's userid
+                    break;
+                }
+            }
             
             var notifData = {
                 Category : 'ReferralApplicationUpdate',
                 Status : 'Pending',
-                JobName : data[0].title,
-                Referee : data[0].firstname + " " + data[0].lastname
-            }
+                JobName : data[referredUserIndex].title,
+                Referee : data[referredUserIndex].firstname + " " + data[referredUserIndex].lastname
+            };
             
             notify.Notification(uuidArray, notifData, function(){
                

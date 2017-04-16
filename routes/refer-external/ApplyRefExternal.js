@@ -1,5 +1,6 @@
 /*
-This module stores respective entries into 'apply' table and 'referredUsers' table once the user clicks on 'Apply' button in a job posting using external-referral.
+This module stores respective entries into 'apply' table and 'referredUsers' table once the user clicks on 'Apply' button in a job
+ posting using external-referral.
 */
 
 var express = require('express');
@@ -57,8 +58,10 @@ router.post('/', function(request, response){
                                     response.send(JSON.stringify(validJson));
                                     response.end();
                                     
-                                    //Since the notification is to be sent to the referrer and the server response to be sent to applicant, we can call the below functions AFTER response.send() and response.end() functions have been called
-                                    sendNotifToReferrer(request.body.refcode);
+                                    //Since the notification is to be sent to the referrer and the server response to be sent to
+                                    // applicant, we can call the below functions AFTER response.send() and response.end()
+                                    // functions have been called
+                                    sendNotifToReferrer(request.body.refcode, userid);
                                 }
                                 else{
                                 //response.send('The referral could not be registered due to some reason');
@@ -149,9 +152,12 @@ function checkApplyTable(data,callback){
 /*
 Sending a push notification to the referrer
 */
-function sendNotifToReferrer(refcode){
+function sendNotifToReferrer(refcode, applicant_userid){
     
-    connection.query('SELECT Referrals.userid, users.firstname, users.lastname, jobs.title FROM referredUsers INNER JOIN users ON referredUsers.refUser = users.UUID INNER JOIN Referrals ON Referrals.Refcode = referredUsers.Refcode INNER JOIN jobs ON Referrals.jobid = jobs.JUUID WHERE Referrals.Refcode = ?', refcode, function(err, data){
+    connection.query('SELECT Referrals.userid, referredUsers.refUser AS referred_userid, users.firstname, users.lastname, jobs.title ' +
+        'FROM referredUsers INNER JOIN users ON referredUsers.refUser = users.UUID ' +
+        'INNER JOIN Referrals ON Referrals.Refcode = referredUsers.Refcode ' +
+        'INNER JOIN jobs ON Referrals.jobid = jobs.JUUID WHERE Referrals.Refcode = ?', refcode, function(err, data){
         
         if(err){
             throw err;
@@ -159,16 +165,24 @@ function sendNotifToReferrer(refcode){
         else{
             
             console.log('Query data from sendNotifToReferrer is ' + JSON.stringify(data, null, 3));
-            
+
+            var referredUserIndex = null;
+
             var uuidArray = new Array();
-            uuidArray.push(data[0].userid); //Referrer's userid
+            for(var i=0; i<data.length; i++){
+                if(applicant_userid == data[i].referred_userid){
+                    referredUserIndex = i;
+                    uuidArray.push(data[i].userid); //Referrer's userid
+                    break;
+                }
+            }
             
             var notifData = {
                 Category : 'ReferralApplicationUpdate',
                 Status : 'Pending',
-                JobName : data[0].title,
-                Referee : data[0].firstname + " " + data[0].lastname
-            }
+                JobName : data[referredUserIndex].title,
+                Referee : data[referredUserIndex].firstname + " " + data[referredUserIndex].lastname
+            };
             
             notify.Notification(uuidArray, notifData, function(){
                
