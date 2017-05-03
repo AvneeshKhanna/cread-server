@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<head>
+
+    <title>Someone has referred you</title>
+
+    <meta charset="utf-8">
+
+    <!--Open Graph tags for LinkedIn and Facebook-->
+    <meta property="og:title" content="<%- meta_tag_og_title %>">
+    <meta property="og:image" content="<%- meta_tag_og_image %>">
+    <!--<meta property="og:description" content="">
+    <meta property="og:type" content=""/>
+    <meta property="og:url" content= "">
+    <meta property="og:site_name" content="">-->
+
+    <!-- To ensure proper rendering and touch zooming, the following <meta> tags are used -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+
+    <!-- Latest compiled JavaScript -->
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <!--Loading the AWS SDK for JavaScript-->
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.4.13.min.js"></script>
+
+    <!--Loading UAParser.js for User-Agent detection-->
+    <script src="/javascripts/ua-parser-js/dist/ua-parser.min.js"></script>
+
+    <script src="/javascripts/load-image/load-image.all.min.js"></script>
+
+    <script type="text/javascript">
+
+        var name, job, company;
+
+        var refcode = "<%- refcode %>>";
+
+        function getUrlParams(){
+
+            name = urlParam('name');
+            job = urlParam('job');
+            company = urlParam('company');
+            refcode = urlParam('refcode');
+
+            console.log(name);
+            console.log(job);
+            console.log(company);
+            console.log(refcode);
+            console.log(urlParam('piclink'));
+
+            detectUser();
+        }
+
+        function detectUser(){
+            var parser = new UAParser();
+            // by default it takes ua string from current browser's window.navigator.userAgent
+            console.log(JSON.stringify(parser.getResult(), null, 3));
+
+            setContent();
+        }
+
+        function redirectToPlayStore(){
+
+            var psUrl = "https://play.google.com/store/apps/details?id=in.thetestament.marketrecruit&pcampaignid=fdl_long&url=http://localhost/index.html?param1=Nishant_Mittal/Software_Engineer/BOTWORX/lAPekwe1md";
+            window.location.replace(psUrl);
+        }
+
+        //function to extract a given parameter value from the url
+        function urlParam(sParam) {
+            var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+                sURLVariables = sPageURL.split('&'),
+                sParameterName,
+                i;
+
+            for (i = 0; i < sURLVariables.length; i++) {
+                sParameterName = sURLVariables[i].split('=');
+
+                if (sParameterName[0] === sParam) {
+                    return sParameterName[1] === undefined ? true : sParameterName[1];
+                }
+            }
+        }
+
+        function setContent(){
+
+            $('#user-name').text("<%- name %>");
+            $('#designation').text("<%- designation %>");
+            $('#user-first-name').text("<%- name %>");
+            $('#job-name').text("<%- job %>");
+            $('#company-name').text("<%- company %>");
+            $('#salary').text("<%- salary %>");
+
+            loadImage(
+                "<%- profilepicurl %>",
+                function (img) {
+                    if(img.type === "error") {
+                        //code for default image
+                        $('#profile-img').attr('src', '/images/user_profle_placeholder.jpg');
+                    } else {
+                        console.log('else block called');
+                        $('#profile-img').attr('src', "<%- profilepicurl %>");
+                    }
+                }
+            );
+        }
+
+        function sendSMSLink() {
+
+            $('#send-sms-btn').prop('disabled', true);
+            $('#sms-alert-success').hide();
+            $('#sms-alert-error').hide();
+
+            //TODO: Define 'url' and 'params'
+            var params = {
+                contact: $('#contact-number').val(),
+                referral_link: ""
+            }
+
+            $.post("http://d1655db4.ngrok.io/referrer-details-web/sms-link", params, function (data, status) {
+
+                console.log('data is ' + JSON.stringify(data, null, 3));
+                console.log('status is ' + status);
+
+                $('#send-sms-btn').prop('disabled', false);
+
+                if(status == 'success'){
+                    $('#sms-alert-success').show();
+                }
+                else{
+                    $('#sms-alert-error').show();
+                }
+
+            })
+
+        }
+
+    </script>
+
+    <style>
+
+        body{
+            background-color: #F0F0F0;
+        }
+
+        .root-div{
+            margin: 0 auto;
+            padding: 0;
+            max-width: 50em;
+            height: 100%;
+            background-color: white;
+        }
+
+        #content-div{
+            padding: 2em;
+        }
+
+        .profile-img{
+            border-radius: 50%;
+            width: 5em;
+            align: left;
+            margin-right: 5px;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .profile-img-heading{
+            line-height: 80%;
+        }
+
+        #profile-img-content{
+            vertical-align: middle;
+            display: inline-block;
+        }
+
+        .header-image{
+            max-width: 100%;
+        }
+
+        #text-link-icon{
+            height: 1.25em;
+            margin: 0.5em;
+            vertical-align: middle;
+        }
+
+        .modal-phone-img{
+            height: 100px;
+        }
+
+        #google-play-badge-img{
+            align: center;
+            width: 15em;
+        }
+    </style>
+
+</head>
+<body onload="getUrlParams()">
+
+<div class="container-fluid root-div">
+
+    <img src="/images/market_recruit_header_practice.png" class="header-image"/>
+
+    <div id="content-div">
+
+        <!-- Profile Picture and Referrer Name -->
+        <div id="profile-img-container">
+            <img id="profile-img" class="profile-img"/>
+            <div id="profile-img-content">
+                <h3 class="profile-img-heading"><span id="user-name">Avneesh Khanna</span></h3>
+                <h4 class="profile-img-heading"><small><span id="designation">Android Developer</span></small></h4>
+            </div>
+        </div>
+        <br>
+
+        <!-- Referring Context Text -->
+        <div>
+            <p><span id="user-first-name">Avneesh</span> recommends a job for the position of <b><span id="job-name">Support Representative</span></b> at
+                <b><span id="company-name">Uber Pvt Ltd</span></b> available on the app Market Recruit. You can apply through their referral;
+                if you get hired, they get rewarded.</p>
+        </div>
+
+        <br>
+
+        <!-- Salary -->
+        <blockquote>
+            Salary:
+            <br><span id="salary">Rs. 25,000 - 30,000 per month</span>
+        </blockquote>
+
+        <!-- Google Play Store button -->
+        <div align="center">
+            <h3 style="display: inline-block"><small><b>Download the app to apply</b></small></h3></small>
+            <span data-toggle="modal" data-target="#text-link-modal"><a href="#" data-toggle="modal" title="Text me the link"><img id="text-link-icon" src="/images/text_link_icon.png"/></a></span>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="#"><img id="google-play-badge-img" src="/images/google-play-badge.png" onclick="redirectToPlayStore()"/></a>
+        </div>
+
+
+        <div >
+            <p><i><font size="2">You can install the app directly to your phone from web. After clicking on the download button above, click on the green
+                <b>Install</b> button on the Google Play Store page and select your device. Market Recruit will be automatically installed on your phone.</font></i></p>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Text Link Modal -->
+<div id="text-link-modal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header" style="border-bottom: 0;">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Receive Referral Link via Text</h4>
+            </div>
+            <div class="modal-body" style="text-align: center;">
+                <!-- <div id="modal-phone-img-container" style="text-align: center;">
+
+                </div> -->
+                <img class="modal-phone-img" src="/images/text_phone_icon.png"/>
+                <p style="margin-top: 1em; margin-left: 2em; margin-right: 2em;">Don't miss out <i>Avneesh's</i> referral. Get the referral link straight to your phone to download the app.
+                    Enter your 10-digit mobile number below to get the link via SMS</p>
+
+                <!-- Contact Number Box -->
+                <div class="input-group" style="margin-bottom: 1em; margin-top: 1em; margin-left: 2em; margin-right: 2em;">
+
+                    <span class="input-group-addon">+91</span>
+
+                    <input id="contact-number" type="number" class="form-control" name="contact" maxlength="10" min="0" oninput="if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);">
+
+                    <div class="input-group-btn">
+                        <button id="send-sms-btn" class="btn btn-primary" type="submit" onclick="sendSMSLink()" style="background-color: #008de2;">
+                            <i class="glyphicon glyphicon-ok"></i>
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- Text Delivery Report: Success -->
+                <div id="sms-alert-success" class="alert alert-success alert-dismissible" style="margin-left: 2em; margin-right: 2em; display:none">
+                    <strong>Done!</strong> Please check your phone for the text.
+                </div>
+
+                <!-- Text Delivery Report: Success -->
+                <div id="sms-alert-error" class="alert alert-danger alert-dismissible" style="margin-left: 2em; margin-right: 2em; display:none">
+                    <strong>Error!</strong> Something went wrong. Please try again
+                </div>
+
+            </div>
+            <!-- <div class="modal-footer">
+              <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div> -->
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>

@@ -35,6 +35,7 @@ var refcode_gen = require('./routes/refer-external/RefcodeGen');
 var refcode_valid = require('./routes/refer-external/RefCodeValidator');
 var apply_refext = require('./routes/refer-external/ApplyRefExternal');
 var external_ref_link_data = require('./routes/refer-external/ExternalRefData');
+var referrerdetailsforweb = require('./routes/refer-external/ReferrerDetailsForWeb');
 var edit_profile = require('./routes/user-profile/EditProfileUpdate');
 var paymentSystem = require('./routes/Payment-system/paymentDetails');
 var contactSync = require('./routes/Contact-Synchronization/contactSync');
@@ -56,12 +57,14 @@ app.options('*', cors());
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'jade');
+//app.set('view engine', 'jade');
+
+app.use(express.static(path.join(__dirname, 'public')));
+app.set('view engine', 'ejs');
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));
-//app.use(bodyParser({limit: '50mb'}));   //for handling large stream client requests
 app.use(bodyParser.json({limit: '50mb'}));  //{limit: '50mb'}: for handling large stream client requests
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
@@ -89,6 +92,7 @@ app.use('/refer-detail', referDetailsView);
 app.use('/refcodegen', refcode_gen);
 app.use('/refcodevalid', refcode_valid);
 app.use('/external-ref-link-data', external_ref_link_data);
+app.use('/referrer-details-web', referrerdetailsforweb);
 app.use('/refcodeapply', apply_refext);
 app.use('/editprofile', edit_profile);
 app.use('/paymentDetails', paymentSystem);
