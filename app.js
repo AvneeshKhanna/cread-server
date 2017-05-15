@@ -32,6 +32,7 @@ var userApplicationStatusUpdate = require('./routes/dashboard/jobs-management/jo
 var referDetailsView = require('./routes/dashboard/referrer-detail/referrerDetailsView');
 var activityLogView = require('./routes/dashboard/activity-log/activityLogView');
 var refcode_gen = require('./routes/refer-external/RefcodeGen');
+var refcode_gen_pictorial = require('./routes/refer-external/RefcodeGenPictorial');
 var refcode_valid = require('./routes/refer-external/RefCodeValidator');
 var apply_refext = require('./routes/refer-external/ApplyRefExternal');
 var external_ref_link_data = require('./routes/refer-external/ExternalRefData');
@@ -89,7 +90,8 @@ app.use('/userProfileView', userProfileView);
 app.use('/userApplicationsView', userApplicationsView);
 app.use('/application-status-update', userApplicationStatusUpdate);
 app.use('/refer-detail', referDetailsView);
-app.use('/refcodegen', refcode_gen);
+app.use('/refcodegen', refcode_gen);  //for older compatibility
+app.use('/refcodegen-pictorial', refcode_gen_pictorial);
 app.use('/refcodevalid', refcode_valid);
 app.use('/external-ref-link-data', external_ref_link_data);
 app.use('/referrer-details-web', referrerdetailsforweb);
@@ -107,6 +109,7 @@ app.use('/jobnotification', notification);
 app.use('/dataAnalytics', pieCharts);
 app.use('/countGraph', countGraph);
 app.use('/latest-updates', activityLogView);
+app.use('/generate-pictorial', require('./routes/pictorial/generatePictorial'));
 
 app.use('/chatbot', chatbot);
 

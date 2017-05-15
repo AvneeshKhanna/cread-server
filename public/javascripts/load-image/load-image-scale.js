@@ -39,8 +39,8 @@
   }
 
   // Transform image coordinates, allows to override e.g.
-  // the canvas orientation based on the orientation option,
-  // gets canvas, options passed as arguments:
+  // the profilepiccanvas orientation based on the orientation option,
+  // gets profilepiccanvas, options passed as arguments:
   loadImage.transformCoordinates = function () {
     return
   }
@@ -103,15 +103,15 @@
     return canvas
   }
 
-  // Determines if the target image should be a canvas element:
+  // Determines if the target image should be a profilepiccanvas element:
   loadImage.hasCanvasOption = function (options) {
     return options.canvas || options.crop || !!options.aspectRatio
   }
 
-  // Scales and/or crops the given image (img or canvas HTML element)
+  // Scales and/or crops the given image (img or profilepiccanvas HTML element)
   // using the given options.
-  // Returns a canvas object if the browser supports canvas
-  // and the hasCanvasOption method returns true or a canvas
+  // Returns a profilepiccanvas object if the browser supports profilepiccanvas
+  // and the hasCanvasOption method returns true or a profilepiccanvas
   // object is passed as image, else the scaled image:
   loadImage.scale = function (img, options, data) {
     options = options || {}

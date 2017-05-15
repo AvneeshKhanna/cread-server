@@ -15,7 +15,7 @@
   'use strict'
 
   // Loads an image for a given File object.
-  // Invokes the callback with an img or optional canvas
+  // Invokes the callback with an img or optional profilepiccanvas
   // element (if supported by the browser) as parameter:
   function loadImage (file, callback, options) {
     var img = document.createElement('img')

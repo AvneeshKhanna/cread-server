@@ -34,7 +34,7 @@
   var originalTransformCoordinates = loadImage.transformCoordinates
   var originalGetTransformedOptions = loadImage.getTransformedOptions
 
-  // Determines if the target image should be a canvas element:
+  // Determines if the target image should be a profilepiccanvas element:
   loadImage.hasCanvasOption = function (options) {
     return !!options.orientation ||
       originalHasCanvasOption.call(loadImage, options)

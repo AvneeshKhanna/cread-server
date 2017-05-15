@@ -86,9 +86,7 @@ function updateAplcnStatus(application_status , uuid , jobid , jobName , refcode
             //Since the notification is to be sent to the referrer and the server response to be sent to
             // applicant, we can call the below functions AFTER response.send() and response.end()
             // functions have been called
-            if(refcode != 'none'){
-                sendNotifToReferrer(refcode, uuid);
-            }
+            sendNotifToReferrer(refcode, uuid);
         }
     });
 

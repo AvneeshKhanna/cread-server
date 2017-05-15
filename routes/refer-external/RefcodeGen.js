@@ -48,7 +48,9 @@ router.post('/', function (request, response){
     });
 });
 
-//To check if referral code exists or not
+/*
+* To check if referral code exists or not
+* */
 function checkRefCode(userid, jobid, onCheck){
     
     connection.query('SELECT * FROM Referrals WHERE userid = ? AND jobid = ?', [userid, jobid], function(err, rows){
@@ -123,7 +125,9 @@ function checkRefCode(userid, jobid, onCheck){
     });    
 }
 
-//Function to simulate random-refcode generator
+/*
+* Function to simulate random-refcode generator
+* */
 function refcode_genrtr(uuid , juuid){
     var hashkey = uuid+juuid;
     var hashid = new Hashids(hashkey,10);
@@ -133,7 +137,9 @@ function refcode_genrtr(uuid , juuid){
     
 }
 
-//Function to store referral details into DB
+/*
+* Function to store referral details into DB
+* */
 function saveRefDetails(userid, jobid, refcode, onDetailsSaved){
     
     var refDetailsData = {};
@@ -147,11 +153,10 @@ function saveRefDetails(userid, jobid, refcode, onDetailsSaved){
             throw err;
         }
         else{
-            
-            /*console.log('Row returned after insert query is: ' + rows.Refcode + ' userid: ' + rows.userid);
-            onDetailsSaved(rows);*/
-            
-            connection.query('SELECT * FROM Referrals WHERE Refcode = ?', refDetailsData.Refcode, function(err, rows){
+
+            onDetailsSaved(refDetailsData);
+
+            /*connection.query('SELECT * FROM Referrals WHERE Refcode = ?', refDetailsData.Refcode, function(err, rows){
                 
                 if(err){
                     throw err;
@@ -163,7 +168,7 @@ function saveRefDetails(userid, jobid, refcode, onDetailsSaved){
                     
                 }              
                 
-            });              
+            });*/
         }        
     });    
 }

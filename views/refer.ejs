@@ -39,6 +39,7 @@
     <script type="text/javascript">
 
         var name, job, company;
+        var rooturl = "http://marketrecruitserver-env.ap-northeast-1.elasticbeanstalk.com";
 
         var refcode = "<%- refcode %>>";
 
@@ -68,7 +69,7 @@
 
         function redirectToPlayStore(){
 
-            var psUrl = "https://play.google.com/store/apps/details?id=in.thetestament.marketrecruit&pcampaignid=fdl_long&url=http://localhost/index.html?param1=Nishant_Mittal/Software_Engineer/BOTWORX/lAPekwe1md";
+            var psUrl = "https://play.google.com/store/apps/details?id=in.thetestament.marketrecruit&pcampaignid=fdl_long&url=" + window.location.href;
             window.location.replace(psUrl);
         }
 
@@ -95,7 +96,7 @@
             $('#user-first-name').text("<%- name %>");
             $('#job-name').text("<%- job %>");
             $('#company-name').text("<%- company %>");
-            $('#salary').text("<%- salary %>");
+            $('#salary').text("Rs. <%- salary %>");
 
             loadImage(
                 "<%- profilepicurl %>",
@@ -113,17 +114,22 @@
 
         function sendSMSLink() {
 
+            if($('#contact-number').val().length < 10){
+                console.log('if block for 10-digit validation called');
+                $('#sms-btn-container').popover();
+                return;
+            }
+
             $('#send-sms-btn').prop('disabled', true);
             $('#sms-alert-success').hide();
             $('#sms-alert-error').hide();
 
-            //TODO: Define 'url' and 'params'
             var params = {
                 contact: $('#contact-number').val(),
-                referral_link: ""
+                referral_link: window.location.href
             }
 
-            $.post("http://d1655db4.ngrok.io/referrer-details-web/sms-link", params, function (data, status) {
+            $.post(rooturl + "/referrer-details-web/sms-link", params, function (data, status) {
 
                 console.log('data is ' + JSON.stringify(data, null, 3));
                 console.log('status is ' + status);
@@ -140,6 +146,13 @@
             })
 
         }
+
+        $(document).ready(function(){
+            $('[data-toggle="popover"]').popover();
+
+            //show sms-modal on page loading
+            $('#text-link-modal').modal('show');
+        });
 
     </script>
 
@@ -197,6 +210,17 @@
             align: center;
             width: 15em;
         }
+
+        /* Popover Header */
+        .popover-title {
+            background-color: #ff4d4d;
+            color: #FFFFFF;
+        }
+
+        /* Popover Body */
+        .popover-content {
+            font-size: 0.8em;
+        }
     </style>
 
 </head>
@@ -212,16 +236,16 @@
         <div id="profile-img-container">
             <img id="profile-img" class="profile-img"/>
             <div id="profile-img-content">
-                <h3 class="profile-img-heading"><span id="user-name">Avneesh Khanna</span></h3>
-                <h4 class="profile-img-heading"><small><span id="designation">Android Developer</span></small></h4>
+                <h3 class="profile-img-heading"><span id="user-name"><%- name %></span></h3>
+                <h4 class="profile-img-heading"><small><span id="designation"><%- designation %></span></small></h4>
             </div>
         </div>
         <br>
 
         <!-- Referring Context Text -->
         <div>
-            <p><span id="user-first-name">Avneesh</span> recommends a job for the position of <b><span id="job-name">Support Representative</span></b> at
-                <b><span id="company-name">Uber Pvt Ltd</span></b> available on the app Market Recruit. You can apply through their referral;
+            <p><span id="user-first-name"><%- name %></span> recommends a job for the position of <b><span id="job-name"><%- job %></span></b> at
+                <b><span id="company-name"><%- company %></span></b> available on the app Market Recruit. You can apply through their referral;
                 if you get hired, they get rewarded.</p>
         </div>
 
@@ -230,15 +254,16 @@
         <!-- Salary -->
         <blockquote>
             Salary:
-            <br><span id="salary">Rs. 25,000 - 30,000 per month</span>
+            <br><span id="salary">Rs. <%- salary %> </span>
         </blockquote>
 
-        <!-- Google Play Store button -->
+        <!-- Download the app with SMS icon -->
         <div align="center">
             <h3 style="display: inline-block"><small><b>Download the app to apply</b></small></h3></small>
             <span data-toggle="modal" data-target="#text-link-modal"><a href="#" data-toggle="modal" title="Text me the link"><img id="text-link-icon" src="/images/text_link_icon.png"/></a></span>
         </div>
 
+        <!-- Google Play Store button -->
         <div style="text-align: center;">
             <a href="#"><img id="google-play-badge-img" src="/images/google-play-badge.png" onclick="redirectToPlayStore()"/></a>
         </div>
@@ -268,7 +293,7 @@
 
                 </div> -->
                 <img class="modal-phone-img" src="/images/text_phone_icon.png"/>
-                <p style="margin-top: 1em; margin-left: 2em; margin-right: 2em;">Don't miss out <i>Avneesh's</i> referral. Get the referral link straight to your phone to download the app.
+                <p style="margin-top: 1em; margin-left: 2em; margin-right: 2em;">Don't miss out <i><%- name %>'s</i> referral. Get the referral link straight to your phone to download the app.
                     Enter your 10-digit mobile number below to get the link via SMS</p>
 
                 <!-- Contact Number Box -->
@@ -278,7 +303,7 @@
 
                     <input id="contact-number" type="number" class="form-control" name="contact" maxlength="10" min="0" oninput="if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);">
 
-                    <div class="input-group-btn">
+                    <div class="input-group-btn" id="sms-btn-container" data-toggle="popover" data-trigger="focus" data-placement="left" title="Invalid Contact" data-content="The contact number must be strictly 10-digit">
                         <button id="send-sms-btn" class="btn btn-primary" type="submit" onclick="sendSMSLink()" style="background-color: #008de2;">
                             <i class="glyphicon glyphicon-ok"></i>
                         </button>
