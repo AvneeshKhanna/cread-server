@@ -31,11 +31,11 @@ router.post('/',function(request,response){
     
     //contacts and name send by user
     contacts.forEach(function(item){
-        console.log('Each client contact->'+item.contactnumber);
+        // console.log('Each client contact->'+item.contactnumber);
         CLIENTCONTACTS.push(item.contactnumber);
     });
     contacts.forEach(function(item){
-        console.log('Each client name->'+item.contactname); 
+        // console.log('Each client name->'+item.contactname);
         CLIENTNAME.push(item.contactname);
     });
     
@@ -84,8 +84,8 @@ function checkContacts(CLIENTCONTACTS , CLIENTNAME , serverUUIDs , serverContact
     
     response.send(JSON.stringify(onAppContacts));
     response.end();
-    console.log('valid users : '+onAppContacts);
-    console.log('invalid users : '+invalidContacts);
+    /*console.log('valid users : '+onAppContacts);
+    console.log('invalid users : '+invalidContacts);*/
     onAppContacts = [];
     invalidContacts = [];
 }
