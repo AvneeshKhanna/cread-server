@@ -35,8 +35,8 @@ router.get('/', function (request, response) {
         case name: ;
         case job: ;
         case company: ;
-        case profilepicurl: ;
-        case pictoriallink: ;
+        /*case profilepicurl: ;
+        case pictoriallink: ;*/
         case salary:
             response.render(projectpath + '/views/404.ejs');
             response.end();
