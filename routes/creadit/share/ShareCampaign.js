@@ -116,6 +116,7 @@ router.post('/request-unique-link', function (request, response) {
             console.log("ulinkvalue is " + JSON.stringify(ulinkvalue, null, 3));
 
             var data = {
+                budgetavailable: true,
                 campaignlink: utils.updateQueryStringParameter(campaign.contentbaseurl, ulinkkey, ulinkvalue),
                 ulinkkey: ulinkkey,
                 ulinkvalue: ulinkvalue
@@ -124,6 +125,16 @@ router.post('/request-unique-link', function (request, response) {
             response.send({
                 tokenstatus: 'valid',
                 data: data
+            });
+            response.end();
+
+        }, function () { //Case where budget of the Campaign has been exhausted
+
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    budgetavailable: false
+                }
             });
             response.end();
 
@@ -138,14 +149,17 @@ function getCampaignBaseLink(cmid) {
 
     return new Promise(function (resolve, reject) {
 
-        connection.query('SELECT contentbaseurl FROM Campaign WHERE cmid = ?', [cmid], function (err, rows) {
+        connection.query('SELECT budget, contentbaseurl FROM Campaign WHERE cmid = ?', [cmid], function (err, rows) {
 
             if(err){
                 console.error(err);
                 throw err;
             }
+            else if(rows[0].budget <= 0){   //Case where budget of the 'Campaign' has been exhausted
+                reject();
+            }
             else {
-                console.log("rows after querying campaignbaselink is " + JSON.stringify(rows, null, 3));
+                console.log("rows after querying getCampaignBaseLink is " + JSON.stringify(rows, null, 3));
                 resolve(rows[0]);
             }
 

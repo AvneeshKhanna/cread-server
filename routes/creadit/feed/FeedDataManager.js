@@ -35,7 +35,7 @@ router.post('/load/', function (request, response) {
         }
         else{
 
-            connection.query('SELECT * FROM Campaign WHERE cmpstatus = ? ORDER BY regdate DESC', ['ACTIVE'], function (err, result) {
+            connection.query('SELECT * FROM Campaign WHERE cmpstatus = ? AND budget > 0 ORDER BY regdate DESC', ['ACTIVE'], function (err, result) {
 
                 if(err){
                     console.error(err);

@@ -30,7 +30,7 @@ router.post('/request', function (request, response) {
     var authkey = request.body.authkey;
 
     _auth.authValid(uuid, authkey)
-        .then(getCheckData, function () {
+        .then(getDataForCheck, function () {
 
             response.send({
                 tokenstatus: 'invalid'
@@ -82,7 +82,7 @@ router.post('/request', function (request, response) {
 /**
  * Function to retrieve a random user's data from the profile who has shared a given campaign
  * */
-function getCheckData() {
+function getDataForCheck() {
 
     return new Promise(function (resolve, reject) {
 
@@ -189,24 +189,26 @@ router.post('/register', function (request, response) {
 
     var checkdata = {
         checkresponse: validateCheckResponse(request.body.checkresponse), //Should be one of the following constants: VERIFIED, ABSENT_PROFILE, WRONG_PERSON, ABSENT_SHARE
-        sharelikes: request.body.sharelikes,
-        sharecomments: request.body.sharecomments
+        fbshares: request.body.fbshares,
+        fbcomments: request.body.fbcomments
     };
 
     _auth.authValid(uuid, authkey)
         .then(function () {
             return registerCheckResponse(checkdata, shareid, cmid, uuid);
         }, function () {
-
             response.send({
                 tokenstatus: 'invalid'
             });
             response.end();
-
         })
+        /*.then(function () {
+            //TODO: Code 'updateCampaignBudget' function
+        })*/
         .then(function () {
             return updateShareForCheck(shareid);
         }, function () {
+            console.log('Sending back response');
             //Send response back to the client without updating 'Share' table
             response.send({
                 tokenstatus: 'valid',
@@ -217,6 +219,7 @@ router.post('/register', function (request, response) {
             response.end();
         })
         .then(function () {
+            console.log('Sending back response');
             response.send({
                 tokenstatus: 'valid',
                 data: {
@@ -268,6 +271,40 @@ function updateShareForCheck(shareid) {
 }
 
 /**
+ * Function to update the budget of a campaign based on whether the share was valid or not
+ * */
+function updateCampaignBudget(verified, sharerate, checkrate, cmid) {
+
+    return new Promise(function (resolve, reject) {
+
+        var amount = 0;
+
+        //Case of valid share
+        if(verified){
+           amount = sharerate + checkrate;
+        }
+        //Case of an invalid share
+        else {
+            amount = checkrate;
+        }
+
+        connection.query('UPDATE Campaign SET budget = (budget + ?) WHERE cmid = ?', [amount, cmid], function (err, row) {
+
+            if(err){
+                console.error(err);
+                throw err;
+            }
+            else {
+                resolve();
+            }
+
+        });
+
+    });
+
+}
+
+/**
  * Insert a row into 'Checks' table and calls resolve OR reject based on whether
  * this is the second time a check is being registered or first time for a given 'shareid'
  * */
@@ -281,8 +318,8 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid) {
             UUID: uuid,
             cmid: cmid,
             responses: checkdata.checkresponse,
-            sharelikes: checkdata.sharelikes,
-            sharecomments: checkdata.sharecomments
+            fbshares: checkdata.fbshares,
+            fbcomments: checkdata.fbcomments
         };
 
         console.log("shareid is " + JSON.stringify(shareid, null, 3));

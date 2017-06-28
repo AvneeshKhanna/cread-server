@@ -24,11 +24,13 @@ router.post('/add', function (request, response) {
     var type = request.body.type;
     var cmpstatus = 'UNVERIFIED';
     var imagepath = request.body.imagepath;
-    var contentbaseurl = requesy.body.contentbaseurl;
+    var contentbaseurl = request.body.contentbaseurl;
     var cmid = uuidGenerator.v4();
+    var clientid = request.body.clientid;
 
     var sqlparams = {
         cmid: cmid,
+        clientid: clientid,
         title: title,
         description: description,
         budget: budget,
@@ -50,12 +52,32 @@ router.post('/add', function (request, response) {
 
     });
 
-
 });
 
 router.post('/edit', function (request, response) {
 
+    var description = request.body.description;
+    var budget = request.body.budget;
+    var imagepath = request.body.imagepath;
+    var cmid = request.body.cmid;
 
+    var sqlparams = {
+        description: description,
+        budget: budget,
+        imagepath: imagepath
+    };
+
+    connection.query('UPDATE Campaign SET ? WHERE cmid = ?', [sqlparams, cmid], function (err, result) {
+
+        if(err){
+            console.error(err);
+            throw err;
+        }
+
+        response.send('Done');
+        response.end();
+
+    });
 
 });
 
