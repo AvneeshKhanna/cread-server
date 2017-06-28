@@ -37,10 +37,10 @@ router.post('/',function(request, response, next){
     });
 });
 
-var tokenValidation = function(uuid,auth_key, callback){
-    var authQuery = 'SELECT UUID FROM users WHERE UUID=? AND Auth_key=?';
-    
-    _connection.query(authQuery, [uuid,auth_key], function(error, row){
+var tokenValidation = function(uuid, auth_key, callback){
+
+    var authQuery = 'SELECT UUID FROM users WHERE UUID = ? AND Auth_key = ?';
+    _connection.query(authQuery, [uuid, auth_key], function(error, row){
         
         console.log('Row in authtokenValidation.tokenValidation is ' + JSON.stringify(row, null, 3));
         
@@ -53,7 +53,59 @@ var tokenValidation = function(uuid,auth_key, callback){
             callback(null, rowLength);
         }
     });
+};
+
+/**
+ * Function to check user's authtoken is valid or not
+ * */
+function authValid(uuid, authkey) {
+
+    return new Promise(function (resolve, reject) {
+
+        tokenValidation(uuid, authkey, function (err, datasize) {
+
+            if(err){
+                throw err;
+            }
+            else if(datasize == 0){
+                reject();
+            }
+            else{
+                resolve(datasize);
+            }
+
+        });
+
+    });
+
+}
+
+/**
+ * Function to check a client's authtoken is valid or not
+ * */
+function clientAuthValid(clientid, authkey) {
+
+    return new Promise(function (resolve, reject) {
+
+        _connection.query('SELECT clientid FROM Client WHERE clientid = ? AND authkey = ?', [clientid, authkey], function (err, row) {
+
+            if(err){
+                throw err;
+            }
+            else if(row.length == 0){
+                reject();
+            }
+            else{
+                resolve(row.length);
+            }
+
+        });
+
+    });
+
 }
 
 module.exports = router;
 module.exports.checkToken = tokenValidation;
+module.exports.authValid = authValid; //Promise version of tokenValidation
+module.exports.clientAuthValid = clientAuthValid;

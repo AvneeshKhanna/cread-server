@@ -53,9 +53,9 @@ function getTokens(cities, callback){
     
     docClient.scan(params , function(error , data){
         if(error) throw error;
-        
+
+        console.log('Data from DynamoDB scan is ' + JSON.stringify(data, null, 3));
         var fcmTokens = pushTokens(data.Items);
-        
         callback(fcmTokens);
     });
 }

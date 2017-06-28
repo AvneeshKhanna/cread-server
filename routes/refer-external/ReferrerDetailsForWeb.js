@@ -40,7 +40,7 @@ router.get('/', function (request, response) {
         case salary:
             response.render(projectpath + '/views/404.ejs');
             response.end();
-            break;
+            return;
     }
 
     var keys = {

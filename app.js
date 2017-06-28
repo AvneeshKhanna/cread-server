@@ -111,6 +111,16 @@ app.use('/countGraph', countGraph);
 app.use('/latest-updates', activityLogView);
 app.use('/generate-pictorial', require('./routes/pictorial/generatePictorial'));
 
+//CREADIT
+app.use('/feed', require('./routes/creadit/feed/FeedDataManager'));
+app.use('/campaign', require('./routes/creadit/dsbrd/campaign-management/CampaignManager'));
+app.use('/track-campaigns', require('./routes/creadit/track/CampaignTracker'));
+app.use('/share-campaign', require('./routes/creadit/share/ShareCampaign'));
+app.use('/check-campaign', require('./routes/creadit/check/CheckCampaign'));
+app.use('/campaign-details', require('./routes/creadit/dsbrd/campaign-details/CampaignDetails'));
+
+app.use('/creadit-test', require('./routes/creadit/test/DBLocking'));
+
 app.use('/chatbot', chatbot);
 
 // catch 404 and forward to error handler
