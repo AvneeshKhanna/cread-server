@@ -111,6 +111,9 @@ app.use('/countGraph', countGraph);
 app.use('/latest-updates', activityLogView);
 app.use('/generate-pictorial', require('./routes/pictorial/generatePictorial'));
 
+//CREADIT
+app.use('/social-reach', require('./routes/thetestament/social-reach-survey/SocialReachSurvey'));
+
 app.use('/chatbot', chatbot);
 
 // catch 404 and forward to error handler
