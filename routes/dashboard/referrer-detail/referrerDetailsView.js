@@ -129,11 +129,20 @@ router.post('/payment-approval/', function(request,response){
         if(err){
             throw err;
         }
-        
-        sendNotification.Notification(applicantArray , notificationData , function(){
-            response.send(true);
-            response.end(); 
-        });
+        else {
+            sendNotification.notification(applicantArray , notificationData , function(err){
+
+                if(err){
+                    console.error(err);
+                    throw err;
+                }
+                else {
+                    response.send(true);
+                    response.end();
+                }
+            });
+        }
+
     });
     
 });

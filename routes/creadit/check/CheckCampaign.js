@@ -10,6 +10,7 @@ var connection = config.createConnection;
 var AWS = config.AWS;
 
 var _auth = require('../../authtokenValidation');
+var notify = require('../../Notification-System/notificationFramework');
 var uuidGenerator = require('uuid');
 
 var utils = require('../utils/Utils');
@@ -74,7 +75,6 @@ router.post('/request', function (request, response) {
 
         });
 
-
 });
 
 //DATE_SUB(NOW(), INTERVAL 60 MINUTE);
@@ -98,9 +98,9 @@ function getDataForCheck() {
 
                 //TODO: Randomise the retrieval
                 //Retrieve a user's share data for a given cmid who has shared within the last 24 hours and has not been verified
-                connection.query('SELECT Share.shareid, Share.regdate AS sharetime, Share.shareid, Share.ulinkkey, Share.ulinkvalue, ' +
+                connection.query('SELECT Share.sharerate, Share.regdate AS sharetime, Share.shareid, Share.ulinkkey, Share.ulinkvalue, ' +
                     'Campaign.cmid, Campaign.contentbaseurl AS verificationurl, Campaign.title, Campaign.description, Campaign.imagepath, ' +
-                    'users.firstname, users.lastname, users.fbusername ' +
+                    'users.firstname, users.lastname, users.UUID AS sharerid, users.fbusername ' +
                     'FROM Share ' +
                     'JOIN users ' +
                     'ON Share.UUID = users.UUID ' +
@@ -183,28 +183,30 @@ router.post('/register', function (request, response) {
     console.log("Request is " + JSON.stringify(request.body, null, 3));
 
     var uuid = request.body.uuid;   //UUID of the person who has checked
+    var sharerid = request.body.sharerid;   //UUID of the person who is being checked
     var authkey = request.body.authkey;
     var shareid = request.body.shareid;
     var cmid = request.body.cmid;
+    var sharerate = request.body.sharerate;
 
     var checkdata = {
         checkresponse: validateCheckResponse(request.body.checkresponse), //Should be one of the following constants: VERIFIED, ABSENT_PROFILE, WRONG_PERSON, ABSENT_SHARE
-        fbshares: request.body.fbshares,
+        fblikes: request.body.fblikes,
         fbcomments: request.body.fbcomments
     };
 
     _auth.authValid(uuid, authkey)
         .then(function () {
-            return registerCheckResponse(checkdata, shareid, cmid, uuid);
+            return registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid);
         }, function () {
             response.send({
                 tokenstatus: 'invalid'
             });
             response.end();
         })
-        /*.then(function () {
-            //TODO: Code 'updateCampaignBudget' function
-        })*/
+        .then(function () {
+            return updateCampaignBudget(sharerate, 4, cmid);    //TODO: Make the 'checkreward' dynamic
+        })
         .then(function () {
             return updateShareForCheck(shareid);
         }, function () {
@@ -252,6 +254,8 @@ function validateCheckResponse(res) {
  * */
 function updateShareForCheck(shareid) {
 
+    console.log('updateShareForCheck called');
+
     return new Promise(function (resolve, reject) {
 
         connection.query('UPDATE Share SET checkstatus = ?, locked = ?, locked_at = ? WHERE shareid = ?', ["COMPLETE", false, null, shareid], function (err, rows) {
@@ -273,22 +277,19 @@ function updateShareForCheck(shareid) {
 /**
  * Function to update the budget of a campaign based on whether the share was valid or not
  * */
-function updateCampaignBudget(verified, sharerate, checkrate, cmid) {
+function updateCampaignBudget(sharerate, checkrate, cmid) {
+
+    console.log('updateCampaignBudget called');
 
     return new Promise(function (resolve, reject) {
 
-        var amount = 0;
+        var markup = (sharerate + checkrate) * 0.02; //TODO: Update markup
+        var amount = (sharerate+checkrate+markup);
 
-        //Case of valid share
-        if(verified){
-           amount = sharerate + checkrate;
-        }
-        //Case of an invalid share
-        else {
-            amount = checkrate;
-        }
+        console.log('markup subtracted from budget ' + markup);
+        console.log('amount subtracted from budget ' + amount);
 
-        connection.query('UPDATE Campaign SET budget = (budget + ?) WHERE cmid = ?', [amount, cmid], function (err, row) {
+        connection.query('UPDATE Campaign SET budget = (budget - ?) WHERE cmid = ?', [amount, cmid], function (err, row) {
 
             if(err){
                 console.error(err);
@@ -308,7 +309,9 @@ function updateCampaignBudget(verified, sharerate, checkrate, cmid) {
  * Insert a row into 'Checks' table and calls resolve OR reject based on whether
  * this is the second time a check is being registered or first time for a given 'shareid'
  * */
-function registerCheckResponse(checkdata, shareid, cmid, uuid) {
+function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid) {
+
+    console.log('registerCheckResponse called');
 
     return new Promise(function (resolve, reject) {
 
@@ -318,7 +321,7 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid) {
             UUID: uuid,
             cmid: cmid,
             responses: checkdata.checkresponse,
-            fbshares: checkdata.fbshares,
+            fblikes: checkdata.fblikes,
             fbcomments: checkdata.fbcomments
         };
 
@@ -328,7 +331,7 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid) {
         The logic table for below callback statements is
 
         Condition 1 (C1) : res == 'verified'
-        Condition 2 (C2) : checkcount == 1
+        Condition 2 (C2) : checkcount > 1
 
         C1   C2    Update Share Table
         0    0              0
@@ -347,7 +350,25 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid) {
             }
             //If the response is 'verified', then update the 'Share' table
             else if(checkdata.checkresponse == 'verified'){
-                resolve(rows);
+
+                var notifData = {
+                    Category: 'Share',
+                    Status: 'verified',
+                    Cmid: cmid
+                };
+
+                var notifUser = new Array(sharerid);
+
+                notify.notification(notifUser, notifData, function (err) {
+
+                    console.log('notification sent');
+
+                    resolve(rows);  //As this action is independent of whether the notification to the user was a success or not
+
+                    if(err){
+                        throw err;
+                    }
+                });
             }
             //If the response is NOT 'verified', then count the no of checks this share has received,
             // if the count == 1 then do not update the 'Share' table otherwise do.
@@ -368,7 +389,26 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid) {
                     }
                     //Two checks, update the share table
                     else {
-                        resolve(row);
+
+                        var notifData = {
+                            Category: 'Share',
+                            Status: 'notverified',
+                            Cmid: cmid
+                        };
+
+                        var notifUser = new Array(sharerid);
+
+                        notify.notification(notifUser, notifData, function (err) {
+
+                            console.log('notification sent');
+
+                            resolve(row);   //As this action is independent whether the notification to the user was a success or not
+
+                            if(err){
+                                console.log(err);
+                                throw err;
+                            }
+                        });
                     }
 
                 });

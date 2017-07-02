@@ -87,12 +87,20 @@ router.post('/' , function(request,response){
                             }
                             
                             saveReferredUser(userStatus.uuidArray , refCode , function(){
-                                sendNotification.Notification(userStatus.uuidArray , notificationData , function(){
-                                    var localJson = {};
-                                    localJson['tokenstatus'] = 'valid';
-                                    localJson['uuidstatus'] = userStatus.Users;
-                                    response.send(JSON.stringify(localJson));
-                                    response.end();  
+                                sendNotification.notification(userStatus.uuidArray , notificationData , function(err){
+
+                                    if(err){
+                                        console.error(err);
+                                        throw err;
+                                    }
+                                    else {
+                                        var localJson = {};
+                                        localJson['tokenstatus'] = 'valid';
+                                        localJson['uuidstatus'] = userStatus.Users;
+                                        response.send(JSON.stringify(localJson));
+                                        response.end();
+                                    }
+
                                 });
                             });
                         });
@@ -111,12 +119,18 @@ router.post('/' , function(request,response){
                             if(error) throw error;
                             
                             saveReferredUser(userStatus.uuidArray , refcode , function(){
-                                sendNotification.Notification(userStatus.uuidArray , notificationData , function(){
-                                    var localJson = {};
-                                    localJson['tokenstatus'] = 'valid';
-                                    localJson['uuidstatus'] = userStatus.Users;
-                                    response.send(JSON.stringify(localJson));
-                                    response.end(); 
+                                sendNotification.notification(userStatus.uuidArray , notificationData , function(err){
+                                    if(err){
+                                        console.error(err);
+                                        throw err;
+                                    }
+                                    else {
+                                        var localJson = {};
+                                        localJson['tokenstatus'] = 'valid';
+                                        localJson['uuidstatus'] = userStatus.Users;
+                                        response.send(JSON.stringify(localJson));
+                                        response.end();
+                                    }
                                 });
                             });
                         });

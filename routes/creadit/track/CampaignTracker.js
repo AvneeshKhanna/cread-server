@@ -53,7 +53,7 @@ router.post('/', function (request, response) {
 
                 }
 
-                connection.query('SELECT Campaign.title, Checks.regdate ' +
+                connection.query('SELECT Campaign.title, Checks.responses, Checks.regdate ' +
                     'FROM Checks INNER JOIN Campaign ON Checks.cmid = Campaign.cmid WHERE Checks.UUID = ?', [uuid],
                     function (err, rows) {
 
@@ -85,7 +85,13 @@ router.post('/', function (request, response) {
                                 return accumulator + element.sharerate;
                             }
                             else{
-                                return accumulator + 5; //TODO: Make the checkrate dynamic
+                                //TODO: Make the checkprice dynamic
+                                if(element.responses == 'verified'){
+                                    return accumulator + 4;
+                                }
+                                else {
+                                    return accumulator + 1;
+                                }
                             }
                         }, 0);
 

@@ -13,6 +13,8 @@ var _auth = require('../../../authtokenValidation');
 
 
 router.post('/graph', function (request, response) {
+    
+    console.log("Request is " + JSON.stringify(request.body, null, 3));
 
     var clientid = request.body.clientid;
     var authkey = request.body.authkey;
@@ -32,7 +34,7 @@ router.post('/graph', function (request, response) {
         })
         .then(function (data) {
             response.send({
-                tokenstatus: 'invalid',
+                tokenstatus: 'valid',
                 data: data
             });
             response.end();

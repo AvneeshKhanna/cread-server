@@ -184,7 +184,12 @@ function sendNotifToReferrer(refcode, applicant_userid){
                 Referee : data[referredUserIndex].firstname + " " + data[referredUserIndex].lastname
             };
             
-            notify.Notification(uuidArray, notifData, function(){
+            notify.notification(uuidArray, notifData, function(err){
+
+                if(err){
+                    console.error(err);
+                    throw err;
+                }
                
                 //End of flow
                 

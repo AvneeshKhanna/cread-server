@@ -51,9 +51,7 @@ function getfcmTokens(userIds , callback){
         }
         
         var mappingResult = usersMapping(userIds , serveruuids , serverfcmTokens);
-        
         console.log(mappingResult);
-        
         callback(mappingResult);
     }); 
 }
@@ -73,15 +71,14 @@ function usersMapping(usersuuid , serveruuids , serverFcmtokens){
     return fcmTokens;
 }
 
-function sendNotification(users , notificationData , callback){
+function sendNotification(users, notificationData, callback){
     
     if(users.length == 0){
         callback();
     }
     else{
         getfcmTokens(users , function(registrationTokens){
-            var message = new gcm.Message();
-            var message = new gcm.Message({
+           var message = new gcm.Message({
                 data : notificationData
             });
 
@@ -89,7 +86,7 @@ function sendNotification(users , notificationData , callback){
 
             sender.send(message, { registrationTokens : registrationTokens }, 3 , function (err, response) {
                 if(err){
-                    console.log(err);
+                    callback(err);
                 }
 
                 console.log(response);
@@ -100,4 +97,4 @@ function sendNotification(users , notificationData , callback){
 }
 
 //module.exports = router;
-module.exports.Notification = sendNotification;
+module.exports.notification = sendNotification;

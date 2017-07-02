@@ -94,7 +94,7 @@ function jobNotification(jobData, cities, response){
     });
 }
 
-/*
+/**
 Method to send notification to FCM tokens in a batch using recursive loop
 */
 function batchTokenHandler(tokens, batchsize, counter, sender, message, response){
