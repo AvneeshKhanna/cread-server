@@ -7,7 +7,7 @@ var express = require('express');
 var router = express.Router();
 var mysql = require('mysql');
 
-var authtokenvalidation = require('../authtokenValidation');   //module to authenticate user before making request
+var authtokenvalidation = require('../auth-token-management/AuthTokenManager');   //module to authenticate user before making request
 var notify = require('../Notification-System/notificationFramework');
 
 var config = require('../Config');

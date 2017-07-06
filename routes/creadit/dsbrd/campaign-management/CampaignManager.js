@@ -11,7 +11,7 @@ var router = express.Router();
 
 var config = require('../../../Config');
 var connection = config.createConnection;
-var _auth = require('../../../authtokenValidation');
+var _auth = require('../../../auth-token-management/AuthTokenManager');
 
 var AWS = config.AWS;
 var uuidGenerator = require('uuid');

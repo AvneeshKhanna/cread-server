@@ -17,8 +17,8 @@ var signUpOTP = require('./routes/signUpOtpVerify');
 var referralScreen = require('./routes/referralScreen');
 var usersProfile = require('./routes/userProfile');
 var jobApplication = require('./routes/jobApplication');
-var checkauthToken = require('./routes/authtokenValidation');
-var validateAuthToken = require('./routes/authtokenValidation');
+var checkauthToken = require('./routes/auth-token-management/AuthTokenManager');
+var validateAuthToken = require('./routes/auth-token-management/AuthTokenManager');
 var referraljobApplication = require('./routes/referraljobApplication');
 var jobAnalysis = require('./routes/dashboard/jobs-management/job-analysis/jobAnalysis');
 var jobAddition = require('./routes/dashboard/jobs-management/jobAddition');
@@ -111,13 +111,20 @@ app.use('/countGraph', countGraph);
 app.use('/latest-updates', activityLogView);
 app.use('/generate-pictorial', require('./routes/pictorial/generatePictorial'));
 
-//CREADIT
+//CREAD
+
+//-app-
 app.use('/feed', require('./routes/creadit/feed/FeedDataManager'));
-app.use('/campaign', require('./routes/creadit/dsbrd/campaign-management/CampaignManager'));
 app.use('/track-campaigns', require('./routes/creadit/track/CampaignTracker'));
 app.use('/share-campaign', require('./routes/creadit/share/ShareCampaign'));
 app.use('/check-campaign', require('./routes/creadit/check/CheckCampaign'));
+app.use('/user-profile', require('./routes/creadit/user-profile/UserProfileManager'));
+
+//-dashboard-
 app.use('/campaign-details', require('./routes/creadit/dsbrd/campaign-details/CampaignDetails'));
+app.use('/campaign', require('./routes/creadit/dsbrd/campaign-management/CampaignManager'));
+app.use('/client-profile', require('./routes/creadit/dsbrd/client-profile/ClientProfileManager'));
+app.use('/wallet-screen', require('./routes/creadit/dsbrd/wallet-management/WalletDataLoader'));
 
 app.use('/creadit-test', require('./routes/creadit/test/DBLocking'));
 

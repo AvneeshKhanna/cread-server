@@ -7,7 +7,7 @@ var bodyParser = require('body-parser');
 
 var config = require('../Config');
 var _connection = config.createConnection;
-var authtokenvalidation = require('../authtokenValidation');   //module to authenticate user before making request
+var authtokenvalidation = require('../auth-token-management/AuthTokenManager');   //module to authenticate user before making request
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());

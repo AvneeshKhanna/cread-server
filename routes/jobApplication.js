@@ -12,7 +12,7 @@ var config = require('./Config');
 var _connection = config.createConnection;
 var applicationSchema = require('./Schema');
 var jobApplication = applicationSchema.jobApplication;
-var authtokenvalidation = require('./authtokenValidation');
+var authtokenvalidation = require('./auth-token-management/AuthTokenManager');
 
 var notify = require('./Notification-System/notificationFramework');
 

@@ -41,8 +41,8 @@ router.post('/register', function(request,response,next){
     var emailid = request.body.emailid;
     var city = request.body.city;
     var fcmToken = request.body.fcmtoken;
-    var key = password+phoneNo;
-    var name = firstname+' '+lastname;
+    var key = password + phoneNo;
+    var name = firstname + ' ' + lastname;
         
     //checking if user already exists in db use deasync
     _connection.query('SELECT UUID FROM users WHERE phoneNo=?',[phoneNo], function(error,row){

@@ -8,7 +8,7 @@ var mysql = require('mysql');
 var AWS = require('aws-sdk');
 
 var config = require('./Config');
-var authtokenvalidation = require('./authtokenValidation');   //module to authenticate user before making request
+var authtokenvalidation = require('./auth-token-management/AuthTokenManager');   //module to authenticate user before making request
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());

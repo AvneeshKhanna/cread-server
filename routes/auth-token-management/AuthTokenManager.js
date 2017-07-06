@@ -5,8 +5,9 @@ var app = express();
 var router = express.Router();
 var bodyParser = require('body-parser');
 var mysql = require('mysql');
+var jwt = require('jsonwebtoken');
 
-var config = require('./Config');
+var config = require('./../Config');
 var _connection = config.createConnection;
 
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -36,6 +37,23 @@ router.post('/',function(request, response, next){
         }
     });
 });
+
+function generateToken(payload) {
+    return jwt.sign(payload, config.secretKey);
+}
+
+function validateToken(token) {
+    return new Promise(function (resolve, reject) {
+        jwt.verify(token, config.secretKey, function (err, decoded) {
+            if(err){
+                reject(err);
+            }
+            else {
+                resolve(decoded);
+            }
+        });
+    });
+}
 
 var tokenValidation = function(uuid, auth_key, callback){
 
@@ -109,3 +127,5 @@ module.exports = router;
 module.exports.checkToken = tokenValidation;
 module.exports.authValid = authValid; //Promise version of tokenValidation
 module.exports.clientAuthValid = clientAuthValid;
+module.exports.generateToken = generateToken;
+module.exports.validateToken = validateToken;

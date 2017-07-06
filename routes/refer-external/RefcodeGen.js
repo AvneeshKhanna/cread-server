@@ -9,7 +9,7 @@ var mysql = require('mysql');
 var uuidGenerator = require('uuid');
 var Hashids = require('hashids');
 
-var authtokenvalidation = require('../authtokenValidation');   //module to authenticate user before making request
+var authtokenvalidation = require('../auth-token-management/AuthTokenManager');   //module to authenticate user before making request
 
 var config = require('../Config');
 var connection = config.createConnection;

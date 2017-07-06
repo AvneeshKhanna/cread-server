@@ -13,7 +13,7 @@ var config = require('../../Config');
 var connection = config.createConnection;
 var AWS = config.AWS;
 
-var _auth = require('../../authtokenValidation');
+var _auth = require('../../auth-token-management/AuthTokenManager');
 
 router.post('/', function (request, response) {
 
@@ -37,7 +37,7 @@ router.post('/', function (request, response) {
 
             var resarray = [];
 
-            connection.query('SELECT Campaign.title, Share.regdate, Share.sharerate, Share.checkstatus ' +
+            connection.query('SELECT Campaign.title, Share.regdate, Share.sharerate, Share.checkstatus, Share.cause_id ' +
                 'FROM Share INNER JOIN Campaign ON Share.cmid = Campaign.cmid WHERE Share.UUID = ?', [uuid],
                 function (err, data) {
 
@@ -50,7 +50,6 @@ router.post('/', function (request, response) {
 
                 for (var i = 0; i < data.length; i++) {
                     data[i].type = 0;   //Share Code
-
                 }
 
                 connection.query('SELECT Campaign.title, Checks.responses, Checks.regdate ' +
@@ -72,7 +71,7 @@ router.post('/', function (request, response) {
 
                         //Calculate pendingAmount
                         var pendingAmt = resarray.filter(function (element) {
-                            return element.hasOwnProperty('checkstatus') && element.checkstatus == 'PENDING';
+                            return element.hasOwnProperty('checkstatus') && element.checkstatus == 'PENDING' && element.cause_id == null;
                         }).reduce(function (accumulator, element) {
                             return accumulator + element.sharerate;
                         }, 0);
@@ -82,7 +81,12 @@ router.post('/', function (request, response) {
                             return !element.hasOwnProperty('checkstatus') || element.checkstatus != 'PENDING';
                         }).reduce(function (accumulator, element) {
                             if(element.hasOwnProperty('sharerate')){
-                                return accumulator + element.sharerate;
+                                if(element.cause_id == null){
+                                    return accumulator + element.sharerate;
+                                }
+                                else {
+                                    return accumulator;
+                                }
                             }
                             else{
                                 //TODO: Make the checkprice dynamic

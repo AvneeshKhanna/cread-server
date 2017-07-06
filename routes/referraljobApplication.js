@@ -8,7 +8,7 @@ var mysql = require('mysql');
 var Promise = require('promise');
 
 var appconfig = require('./Config');
-var authtokenvalidation = require('./authtokenValidation');   //module to authenticate user before making request
+var authtokenvalidation = require('./auth-token-management/AuthTokenManager');   //module to authenticate user before making request
 var _connection = appconfig.createConnection;
 
 var envconfig = require('config');

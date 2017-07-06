@@ -14,7 +14,7 @@ var Hashids = require('hashids');
 
 var utils = require('../utils/Utils');
 
-var _auth = require('../../authtokenValidation');
+var _auth = require('../../auth-token-management/AuthTokenManager');
 
 /**
  * Register's a user's share to the database
@@ -28,6 +28,8 @@ router.post('/save', function (request, response) {
     var ulinkvalue = request.body.ulinkvalue;
     var sharerate = 50;
     var channel = 'Facebook';
+    var donation = request.body.donation;
+    var cause_id = request.body.cause_id;
 
     var resdata = {};
 
@@ -41,8 +43,13 @@ router.post('/save', function (request, response) {
                 sharerate: sharerate,
                 channel: 'Facebook',
                 ulinkkey: ulinkkey,
-                ulinkvalue: ulinkvalue
+                ulinkvalue: ulinkvalue,
+                donation: donation
             };
+
+            if(cause_id){
+                params.cause_id = cause_id;
+            }
 
             return saveShareToDb(params);
 

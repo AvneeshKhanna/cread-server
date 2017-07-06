@@ -9,7 +9,7 @@ var Hashids = require('hashids');
 
 var jobApplySchema = require('../Schema');
 var config = require('../Config');
-var authtokenvalidation = require('../authtokenValidation');   //module to authenticate user before making request
+var authtokenvalidation = require('../auth-token-management/AuthTokenManager');   //module to authenticate user before making request
 var sendNotification = require('../Notification-System/notificationFramework');
 
 app.use(bodyParser.urlencoded({ extended: false }));

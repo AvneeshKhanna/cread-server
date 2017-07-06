@@ -9,7 +9,7 @@ var config = require('../../Config');
 var connection = config.createConnection;
 var AWS = config.AWS;
 
-var _auth = require('../../authtokenValidation');
+var _auth = require('../../auth-token-management/AuthTokenManager');
 var notify = require('../../Notification-System/notificationFramework');
 var uuidGenerator = require('uuid');
 
@@ -96,7 +96,6 @@ function getDataForCheck() {
             }
             else {
 
-                //TODO: Randomise the retrieval
                 //Retrieve a user's share data for a given cmid who has shared within the last 24 hours and has not been verified
                 connection.query('SELECT Share.sharerate, Share.regdate AS sharetime, Share.shareid, Share.ulinkkey, Share.ulinkvalue, ' +
                     'Campaign.cmid, Campaign.contentbaseurl AS verificationurl, Campaign.title, Campaign.description, Campaign.imagepath, ' +
@@ -108,8 +107,9 @@ function getDataForCheck() {
                     'ON Campaign.cmid = Share.cmid ' +
                     'WHERE Share.checkstatus = "PENDING" ' +
                     //'AND Share.locked = ? ' + TODO: Uncomment
+                    'ORDER BY RAND() ' +    //To randomise
                     'LIMIT 1 ' +
-                    'FOR UPDATE', null/*[false]*/, function (err, rows) {
+                    'FOR UPDATE', null/*[false]*/, function (err, rows) {   //TODO: Uncomment
 
                     console.log('SELECT...FOR UPDATE query executed');
 

@@ -9,7 +9,7 @@ var moment = require('moment');
 
 var config = require('../../../Config');
 var connection = config.createConnection;
-var _auth = require('../../../authtokenValidation');
+var _auth = require('../../../auth-token-management/AuthTokenManager');
 
 
 router.post('/graph', function (request, response) {
