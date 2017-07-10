@@ -3,8 +3,8 @@
  */
 
 /**
-* To create a new, modify an existing or deactivate an existing Campaign using dashboard
-* */
+ * To create a new, modify an existing or deactivate an existing Campaign using dashboard
+ * */
 
 var express = require('express');
 var router = express.Router();
@@ -15,6 +15,74 @@ var _auth = require('../../../auth-token-management/AuthTokenManager');
 
 var AWS = config.AWS;
 var uuidGenerator = require('uuid');
+
+router.post('/load', function (request, response) {
+
+    var clientid = request.body.clientid;
+    var authkey = request.body.authkey;
+    var cmpstatus = request.body.cmpstatus; //ACTIVE or DEACTIVE
+
+    _auth.clientAuthValid(clientid, authkey)
+        .then(function () {
+            return getCampaigns(clientid, cmpstatus);
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+        })
+        .then(function (rows) {
+
+            //Sorting according last created
+            rows.sort(function (a, b) {
+                if(a.regdate < b.regdate){
+                    return 1;
+                }
+                else {
+                    return -1;
+                }
+            });
+
+            response.send({
+                tokenstatus: 'valid',
+                data: rows
+            });
+            response.end();
+        })
+        .catch(function (err) {
+            console.error(err);
+            response
+                .status(500)
+                .send({
+                    error: 'Some error occurred at the server'
+                })
+                .end();
+        })
+
+});
+
+function getCampaigns(clientid, cmpstatus) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT Campaign.cmid, Campaign.title, Campaign.description, Campaign.imagepath, ' +
+            'Campaign.budget, Campaign.regdate, SUM(!ISNULL(Share.shareid)) AS sharescount ' +
+            'FROM Campaign ' +
+            'LEFT JOIN Share ' +
+            'ON Campaign.cmid = Share.cmid ' +
+            'WHERE Campaign.clientid = ? ' +
+            'AND Campaign.cmpstatus = ? ' +
+            'GROUP BY Campaign.cmid ', [clientid, cmpstatus], function (err, rows) {
+
+            if(err){
+                reject(err);
+            }
+            else{
+                resolve(rows);
+            }
+
+        })
+    })
+
+}
 
 router.post('/add', function (request, response) {
 
@@ -42,7 +110,7 @@ router.post('/add', function (request, response) {
 
     connection.query('INSERT INTO Campaign SET ?', sqlparams, function (err, result) {
 
-        if(err){
+        if (err) {
             console.error(err);
             throw err;
         }
@@ -69,7 +137,7 @@ router.post('/edit', function (request, response) {
 
     connection.query('UPDATE Campaign SET ? WHERE cmid = ?', [sqlparams, cmid], function (err, result) {
 
-        if(err){
+        if (err) {
             console.error(err);
             throw err;
         }
@@ -108,13 +176,13 @@ router.post('/deactivate', function (request, response) {
 /**
  * Function to change the 'cmpstatus' of the Campaign to 'DEACTIVE'
  * */
-function deactivateCampaign(cmid){
+function deactivateCampaign(cmid) {
 
     return new Promise(function (resolve, reject) {
 
-        connection.query('UPDATE Campaign SET cmpstatus = ? WHERE cmid = ?', ['DEACTIVE', cmid],function (err, row) {
+        connection.query('UPDATE Campaign SET cmpstatus = ? WHERE cmid = ?', ['DEACTIVE', cmid], function (err, row) {
 
-            if(err){
+            if (err) {
                 console.error(err);
                 throw err;
             }

@@ -18,13 +18,12 @@ var connection = mysql.createConnection({
 		});
 
 var dbConnect = function(){
-    connection.connect(function(err,result){
+    connection.connect(function(err, result){
         if (err) {
             throw err;
         }
         
         console.log('Connected to rds...');
-        console.log("Database name is " + JSON.stringify(config.get('rdsDB.dbConfig.database'), null, 3));
         console.log(config.get('type') + ' version running');
     });
 };

@@ -34,30 +34,35 @@ router.post('/load/', function (request, response) {
 
         }
         else{
-
-            connection.query('SELECT * FROM Campaign WHERE cmpstatus = ? AND budget > 0 ORDER BY regdate DESC', ['ACTIVE'], function (err, rows) {
+            connection.query('SELECT Campaign.cmid, Campaign.title, Campaign.description, Campaign.type, Campaign.contentbaseurl, ' +
+                'Campaign.imagepath, Campaign.regdate, SUM(!ISNULL(Share.shareid)) AS sharescount, Client.name, Client.bio ' +
+                'FROM Campaign ' +
+                'JOIN Client ' +
+                'ON Campaign.clientid = Client.clientid ' +
+                'LEFT JOIN Share ' +
+                'ON Campaign.cmid = Share.cmid ' +
+                'WHERE Campaign.cmpstatus = ? AND Campaign.budget > 0 ' +
+                'GROUP BY Campaign.regdate', ['ACTIVE'],  function (err, rows) {
 
                 if(err){
                     console.error(err);
                     throw err;
                 }
 
-                //TODO: Make the below parameters dynamic
-                for (var i = 0; i < rows.length; i++) {
-                    rows[i].sharerate = 30;
-                    rows[i].clientbio = "Just some random bio for testing";
-                    rows[i].sharescount = 10;
-                    rows[i].clientname = "The Testament";
-                }
+                //Sorting according last created
+                rows.sort(function (a, b) {
+                    if(a.regdate < b.regdate){
+                        return 1;
+                    }
+                    else {
+                        return -1;
+                    }
+                });
 
-                rows[1].sharescount = 0;
-
-                console.log("rows from query are " + JSON.stringify(rows, null, 3));
-
-                resdata.tokenstatus = 'valid';
-                resdata.data = rows;
-
-                response.send(resdata);
+                response.send({
+                    tokenstatus: 'valid',
+                    data: rows
+                });
                 response.end();
 
             });

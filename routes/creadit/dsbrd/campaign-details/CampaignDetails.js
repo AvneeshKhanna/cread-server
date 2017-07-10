@@ -11,7 +11,6 @@ var config = require('../../../Config');
 var connection = config.createConnection;
 var _auth = require('../../../auth-token-management/AuthTokenManager');
 
-
 router.post('/graph', function (request, response) {
     
     console.log("Request is " + JSON.stringify(request.body, null, 3));

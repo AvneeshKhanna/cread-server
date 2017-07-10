@@ -115,6 +115,7 @@ app.use('/generate-pictorial', require('./routes/pictorial/generatePictorial'));
 
 //-app-
 app.use('/feed', require('./routes/creadit/feed/FeedDataManager'));
+app.use('/feed2', require('./routes/creadit/feed/FeedDataManager2'));
 app.use('/track-campaigns', require('./routes/creadit/track/CampaignTracker'));
 app.use('/share-campaign', require('./routes/creadit/share/ShareCampaign'));
 app.use('/check-campaign', require('./routes/creadit/check/CheckCampaign'));
