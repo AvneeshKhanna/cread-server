@@ -115,7 +115,7 @@ app.use('/generate-pictorial', require('./routes/pictorial/generatePictorial'));
 
 //-app-
 app.use('/feed', require('./routes/creadit/feed/FeedDataManager'));
-app.use('/feed2', require('./routes/creadit/feed/FeedDataManager2'));
+// app.use('/feed2', require('./routes/creadit/feed/FeedDataManager2'));
 app.use('/track-campaigns', require('./routes/creadit/track/CampaignTracker'));
 app.use('/share-campaign', require('./routes/creadit/share/ShareCampaign'));
 app.use('/check-campaign', require('./routes/creadit/check/CheckCampaign'));
@@ -127,7 +127,7 @@ app.use('/campaign', require('./routes/creadit/dsbrd/campaign-management/Campaig
 app.use('/client-profile', require('./routes/creadit/dsbrd/client-profile/ClientProfileManager'));
 app.use('/wallet-screen', require('./routes/creadit/dsbrd/wallet-management/WalletDataLoader'));
 
-app.use('/creadit-test', require('./routes/creadit/test/DBLocking'));
+// app.use('/creadit-test', require('./routes/creadit/test/DBLocking'));
 
 app.use('/chatbot', chatbot);
 
@@ -135,7 +135,7 @@ app.use('/chatbot', chatbot);
 app.use(function(req, res, next) {
   var err = new Error('Not Found');
   err.status = 404;
-  next(err); 
+  next(err);
 });
 
 // error handlers
