@@ -173,6 +173,10 @@ router.post('/edit', function (request, response) {
 
             });
 
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            }).end();
         })
         .catch(function (err) {
             console.error(err);
