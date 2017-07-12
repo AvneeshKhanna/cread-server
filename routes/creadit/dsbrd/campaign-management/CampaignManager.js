@@ -35,7 +35,7 @@ router.post('/load', function (request, response) {
 
             //Sorting according last created
             rows.sort(function (a, b) {
-                if(a.regdate < b.regdate){
+                if (a.regdate < b.regdate) {
                     return 1;
                 }
                 else {
@@ -72,16 +72,15 @@ function getCampaigns(clientid, cmpstatus) {
             'AND Campaign.cmpstatus = ? ' +
             'GROUP BY Campaign.cmid ', [clientid, cmpstatus], function (err, rows) {
 
-            if(err){
+            if (err) {
                 reject(err);
             }
-            else{
+            else {
                 resolve(rows);
             }
 
         })
-    })
-
+    });
 }
 
 router.post('/add', function (request, response) {
@@ -95,6 +94,7 @@ router.post('/add', function (request, response) {
     var contentbaseurl = request.body.contentbaseurl;
     var cmid = uuidGenerator.v4();
     var clientid = request.body.clientid;
+    var authkey = request.body.authkey;
 
     var sqlparams = {
         cmid: cmid,
@@ -108,22 +108,41 @@ router.post('/add', function (request, response) {
         contentbaseurl: contentbaseurl
     };
 
-    connection.query('INSERT INTO Campaign SET ?', sqlparams, function (err, result) {
+    _auth.clientAuthValid(clientid, authkey)
+        .then(function () {
+            connection.query('INSERT INTO Campaign SET ?', sqlparams, function (err, result) {
 
-        if (err) {
+                if (err) {
+                    throw err;
+                }
+
+                response.send({
+                    tokenstatus: 'valid',
+                    data: {
+                        status: 'done'
+                    }
+                });
+                response.end();
+
+            });
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            }).end();
+        })
+        .catch(function (err) {
             console.error(err);
-            throw err;
-        }
-
-        response.send('Done');
-        response.end();
-
-    });
+            response.status(500).send({
+                error: 'Some error occurred at the server'
+            }).end();
+        });
 
 });
 
 router.post('/edit', function (request, response) {
 
+    var clientid = request.body.clientid;
+    var authkey = request.body.authkey;
     var description = request.body.description;
     var budget = request.body.budget;
     var imagepath = request.body.imagepath;
@@ -135,17 +154,32 @@ router.post('/edit', function (request, response) {
         imagepath: imagepath
     };
 
-    connection.query('UPDATE Campaign SET ? WHERE cmid = ?', [sqlparams, cmid], function (err, result) {
+    _auth.clientAuthValid(clientid, authkey)
+        .then(function () {
 
-        if (err) {
+            connection.query('UPDATE Campaign SET ? WHERE cmid = ?', [sqlparams, cmid], function (err, result) {
+
+                if (err) {
+                    throw err;
+                }
+
+                response.send({
+                    tokenstatus: 'valid',
+                    data: {
+                        status: 'done'
+                    }
+                });
+                response.end();
+
+            });
+
+        })
+        .catch(function (err) {
             console.error(err);
-            throw err;
-        }
-
-        response.send('Done');
-        response.end();
-
-    });
+            response.status(500).send({
+                error: 'Some error occurred at the server'
+            })
+        })
 
 });
 
@@ -166,7 +200,10 @@ router.post('/deactivate', function (request, response) {
         })
         .then(function () {
             response.send({
-                tokenstatus: 'valid'
+                tokenstatus: 'valid',
+                data: {
+                    status: 'done'
+                }
             });
             response.end();
         });
