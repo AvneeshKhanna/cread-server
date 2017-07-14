@@ -114,20 +114,21 @@ app.use('/generate-pictorial', require('./routes/pictorial/generatePictorial'));
 //CREAD
 
 //-app-
-app.use('/feed', require('./routes/creadit/feed/FeedDataManager'));
-// app.use('/feed2', require('./routes/creadit/feed/FeedDataManager2'));
-app.use('/track-campaigns', require('./routes/creadit/track/CampaignTracker'));
-app.use('/share-campaign', require('./routes/creadit/share/ShareCampaign'));
-app.use('/check-campaign', require('./routes/creadit/check/CheckCampaign'));
-app.use('/user-profile', require('./routes/creadit/user-profile/UserProfileManager'));
+app.use('/feed', require('./routes/cread/feed/FeedDataManager'));
+// app.use('/feed2', require('./routes/cread/feed/FeedDataManager2'));
+app.use('/track-campaigns', require('./routes/cread/track/CampaignTracker'));
+app.use('/share-campaign', require('./routes/cread/share/ShareCampaign'));
+app.use('/check-campaign', require('./routes/cread/check/CheckCampaign'));
+app.use('/user-profile', require('./routes/cread/user-profile/UserProfileManager'));
+app.use('/givers-manager', require('./routes/cread/givers/GiversManager'));
 
 //-dashboard-
-app.use('/campaign-details', require('./routes/creadit/dsbrd/campaign-details/CampaignDetails'));
-app.use('/campaign', require('./routes/creadit/dsbrd/campaign-management/CampaignManager'));
-app.use('/client-profile', require('./routes/creadit/dsbrd/client-profile/ClientProfileManager'));
-app.use('/wallet-screen', require('./routes/creadit/dsbrd/wallet-management/WalletDataLoader'));
+app.use('/campaign-details', require('./routes/cread/dsbrd/campaign-details/CampaignDetails'));
+app.use('/campaign', require('./routes/cread/dsbrd/campaign-management/CampaignManager'));
+app.use('/client-profile', require('./routes/cread/dsbrd/client-profile/ClientProfileManager'));
+app.use('/wallet-screen', require('./routes/cread/dsbrd/wallet-management/WalletDataLoader'));
 
-// app.use('/creadit-test', require('./routes/creadit/test/DBLocking'));
+// app.use('/cread-test', require('./routes/cread/test/DBLocking'));
 
 app.use('/chatbot', chatbot);
 

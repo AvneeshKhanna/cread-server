@@ -42,6 +42,7 @@ router.post('/request', function (request, response) {
         .then(function (row) {
 
             if(row === undefined){    //Case of no data
+                console.log("row before response " + JSON.stringify(row, null, 3));
                 response.send({
                     tokenstatus: 'valid',
                     data: []
@@ -63,6 +64,8 @@ router.post('/request', function (request, response) {
                 if(row.hasOwnProperty("fbusername")){
                     delete row.fbusername;
                 }
+
+                row.checkrate = 3.5;    //TODO: Make the check rate dynamic
 
                 console.log("row is " + JSON.stringify(row, null, 3));
 
@@ -192,7 +195,8 @@ router.post('/register', function (request, response) {
     var checkdata = {
         checkresponse: validateCheckResponse(request.body.checkresponse), //Should be one of the following constants: VERIFIED, ABSENT_PROFILE, WRONG_PERSON, ABSENT_SHARE
         fblikes: request.body.fblikes,
-        fbcomments: request.body.fbcomments
+        fbcomments: request.body.fbcomments,
+        fbshares: request.body.fbshares
     };
 
     _auth.authValid(uuid, authkey)
@@ -322,7 +326,8 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid) {
             cmid: cmid,
             responses: checkdata.checkresponse,
             fblikes: checkdata.fblikes,
-            fbcomments: checkdata.fbcomments
+            fbcomments: checkdata.fbcomments,
+            fbshares: checkdata.fbshares
         };
 
         console.log("shareid is " + JSON.stringify(shareid, null, 3));

@@ -34,8 +34,10 @@ router.post('/load/', function (request, response) {
 
         }
         else{
+            //TODO: Add mission and fbidstatus
             connection.query('SELECT Campaign.cmid, Campaign.title, Campaign.description, Campaign.type, Campaign.contentbaseurl, ' +
-                'Campaign.imagepath, Campaign.regdate, SUM(!ISNULL(Share.shareid)) AS sharescount, Client.name, Client.bio ' +
+                'Campaign.imagepath, Campaign.regdate, Share.sharerate, SUM(!ISNULL(Share.shareid)) AS sharescount, ' +
+                'Client.name AS clientname, Client.bio AS clientbio ' +
                 'FROM Campaign ' +
                 'JOIN Client ' +
                 'ON Campaign.clientid = Client.clientid ' +
@@ -58,6 +60,13 @@ router.post('/load/', function (request, response) {
                         return -1;
                     }
                 });
+
+                for (var i = 0; i < rows.length; i++) {
+                    rows[i].mission = 'A random static mission which needs to be updated';
+                    rows[i].fbidstatus = true;
+                }
+
+                console.log("rows after querying is " + JSON.stringify(rows, null, 3));
 
                 response.send({
                     tokenstatus: 'valid',

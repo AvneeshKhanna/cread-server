@@ -16,6 +16,59 @@ var utils = require('../utils/Utils');
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
 
+router.post('/add-donation-cause', function (request, response) {
+
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var shareid = request.body.shareid;
+    var causeid = request.body.causeid;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return addDonationCause(shareid, causeid);
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+        })
+        .then(function () {
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    status: 'done'
+                }
+            }).end();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+        });
+
+});
+
+function addDonationCause(shareid, causeid) {
+    return new Promise(function (resolve, reject) {
+
+        var params = {
+            donation: true,
+            causeid: causeid
+        };
+
+        connection.query('UPDATE Share SET ? WHERE shareid = ?', [params, shareid], function (err, row) {
+
+            if(err){
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+
+        });
+    })
+}
+
 /**
  * Register's a user's share to the database
  * */
@@ -47,7 +100,7 @@ router.post('/save', function (request, response) {
                 donation: donation
             };
 
-            if(cause_id){
+            if (cause_id) {
                 params.cause_id = cause_id;
             }
 
@@ -59,41 +112,76 @@ router.post('/save', function (request, response) {
             });
             response.end();
         })
-        .then(function (message) {
+        .then(function () {
+            return getCausesData();
+        }, function (err) {
+            console.error(err);
+            response.status(500).send({
+                error: 'Some error occurred at the server'
+            }).end();
+        })
+        .then(function (rows) {
 
             var resdata = {
                 tokenstatus: 'valid',
-                message: message
+                data: rows
             };
 
             response.send(resdata);
             response.end();
 
+        }, function (err) {
+            console.error(err);
+            response.status(500).send({
+                error: 'Some error occurred at the server'
+            }).end();
+        })
+        .catch(function (err) {
+            console.error(err);
+            response.status(500).send({
+                error: 'Some error occurred at the server'
+            }).end();
         });
 
 });
 
 /**
-* Function to add a user's share's details to the database
-* */
-function saveShareToDb(params){
-    
+ * Function to add a user's share's details to the database
+ * */
+function saveShareToDb(params) {
+
     return new Promise(function (resolve, reject) {
 
         connection.query('INSERT INTO Share SET ?', params, function (error, data) {
 
-            if(error){
+            if (error) {
                 throw error;
             }
             else {
                 console.log('Query executed');
-                resolve('Data saved');
+                resolve();
             }
 
         });
 
     });
 
+}
+
+/**
+ * Return all the causes saved in the DB
+ * */
+function getCausesData() {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT * FROM SocialCause', null, function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(rows);
+            }
+        })
+    })
 }
 
 /**
@@ -105,8 +193,8 @@ router.post('/request-unique-link', function (request, response) {
     var uuid = request.body.uuid;
     var cmid = request.body.cmid;
 
-    var ulinkkey =  new Hashids(uuid+cmid, 10).encode(1);
-    var ulinkvalue = new Hashids(uuid+cmid, 10).encode(2);
+    var ulinkkey = new Hashids(uuid + cmid, 10).encode(1);
+    var ulinkvalue = new Hashids(uuid + cmid, 10).encode(2);
 
     _auth.authValid(uuid, authkey)
         .then(function () {
@@ -158,11 +246,11 @@ function getCampaignBaseLink(cmid) {
 
         connection.query('SELECT budget, contentbaseurl FROM Campaign WHERE cmid = ?', [cmid], function (err, rows) {
 
-            if(err){
+            if (err) {
                 console.error(err);
                 throw err;
             }
-            else if(rows[0].budget <= 0){   //Case where budget of the 'Campaign' has been exhausted
+            else if (rows[0].budget <= 0) {   //Case where budget of the 'Campaign' has been exhausted
                 reject();
             }
             else {
