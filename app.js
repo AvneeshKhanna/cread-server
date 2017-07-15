@@ -128,7 +128,7 @@ app.use('/campaign', require('./routes/cread/dsbrd/campaign-management/CampaignM
 app.use('/client-profile', require('./routes/cread/dsbrd/client-profile/ClientProfileManager'));
 app.use('/wallet-screen', require('./routes/cread/dsbrd/wallet-management/WalletDataLoader'));
 
-// app.use('/cread-test', require('./routes/cread/test/DBLocking'));
+app.use('/cread-test', require('./routes/cread/test/Testing'));
 
 app.use('/chatbot', chatbot);
 

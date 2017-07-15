@@ -11,6 +11,19 @@ var config = require('../../../Config');
 var connection = config.createConnection;
 var _auth = require('../../../auth-token-management/AuthTokenManager');
 
+function Rectangle(x, y) {
+    this._length = x;
+    this._breadth = y;
+}
+
+Rectangle.prototype.getArea = function () {
+    return "Area is " + (this._length * this._breadth);
+};
+
+var rect = new Rectangle(10, 30);
+
+console.log(rect.getArea());
+
 router.post('/graph', function (request, response) {
     
     console.log("Request is " + JSON.stringify(request.body, null, 3));
