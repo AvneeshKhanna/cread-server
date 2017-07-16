@@ -111,8 +111,9 @@ app.use('/countGraph', countGraph);
 app.use('/latest-updates', activityLogView);
 app.use('/generate-pictorial', require('./routes/pictorial/generatePictorial'));
 
-//CREADIT
+//CREAD
 app.use('/social-reach', require('./routes/thetestament/social-reach-survey/SocialReachSurvey'));
+app.use('/dev-utils', require('./routes/dev-utils/DevUtils'));
 
 app.use('/chatbot', chatbot);
 
