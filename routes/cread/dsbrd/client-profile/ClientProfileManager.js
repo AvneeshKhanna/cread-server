@@ -100,6 +100,8 @@ function createNewClientUser(email, password, contact, name) {
 }
 
 router.post('/sign-in', function (request, response) {
+    
+    console.log("request is " + JSON.stringify(request.body, null, 3));
 
     var email = request.body.email;
     var password = request.body.password;
