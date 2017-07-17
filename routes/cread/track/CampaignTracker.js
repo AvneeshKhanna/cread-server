@@ -37,9 +37,11 @@ router.post('/', function (request, response) {
 
             var resarray = [];
 
-            connection.query('SELECT Campaign.title, Share.regdate, Share.sharerate, Share.checkstatus, Share.cause_id ' +
-                'FROM Share INNER JOIN Campaign ON Share.cmid = Campaign.cmid WHERE Share.UUID = ?', [uuid],
-                function (err, data) {
+            connection.query('SELECT Campaign.title, Share.regdate, Share.sharerate, Share.checkstatus, Share.causeid ' +
+                'FROM Share ' +
+                'INNER JOIN Campaign ' +
+                'ON Share.cmid = Campaign.cmid ' +
+                'WHERE Share.UUID = ?', [uuid], function (err, data) {
 
                 if(err){
                     console.error(err);
@@ -53,8 +55,10 @@ router.post('/', function (request, response) {
                 }
 
                 connection.query('SELECT Campaign.title, Checks.responses, Checks.regdate ' +
-                    'FROM Checks INNER JOIN Campaign ON Checks.cmid = Campaign.cmid WHERE Checks.UUID = ?', [uuid],
-                    function (err, rows) {
+                    'FROM Checks ' +
+                    'INNER JOIN Campaign ' +
+                    'ON Checks.cmid = Campaign.cmid ' +
+                    'WHERE Checks.UUID = ?', [uuid], function (err, rows) {
 
                     if(err){
                         console.error(err);
@@ -71,7 +75,7 @@ router.post('/', function (request, response) {
 
                         //Calculate pendingAmount
                         var pendingAmt = resarray.filter(function (element) {
-                            return element.hasOwnProperty('checkstatus') && element.checkstatus == 'PENDING' && element.cause_id == null;
+                            return element.hasOwnProperty('checkstatus') && element.checkstatus == 'PENDING' && element.causeid == null;
                         }).reduce(function (accumulator, element) {
                             return accumulator + element.sharerate;
                         }, 0);
@@ -81,7 +85,7 @@ router.post('/', function (request, response) {
                             return !element.hasOwnProperty('checkstatus') || element.checkstatus != 'PENDING';
                         }).reduce(function (accumulator, element) {
                             if(element.hasOwnProperty('sharerate')){
-                                if(element.cause_id == null){
+                                if(element.causeid == null){
                                     return accumulator + element.sharerate;
                                 }
                                 else {

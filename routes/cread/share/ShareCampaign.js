@@ -101,7 +101,7 @@ router.post('/save', function (request, response) {
             };
 
             if (cause_id) {
-                params.cause_id = cause_id;
+                params.causeid = cause_id;
             }
 
             return saveShareToDb(params);
