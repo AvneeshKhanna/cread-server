@@ -136,11 +136,13 @@ router.post('/sign-in', function (request, response) {
                 error: 'Server error occurred'
             });
         })
-        .then(function (authkey) {
+        .then(function (data) {
+
+            console.log("then block after checkAuthKey(): data is " + JSON.stringify(data, null, 3));
 
             response.send({
                 access: 'approved',
-                authkey: authkey
+                data: data
             });
             response.end();
 
@@ -161,7 +163,10 @@ function checkForAuthKey(userdata){
     return new Promise(function (resolve, reject) {
 
         if(userdata.authkey){
-            resolve(userdata.authkey);
+            resolve({
+                authkey: userdata.authkey,
+                clientid: userdata.clientid
+            });
         }
         else{
 
@@ -179,7 +184,11 @@ function checkForAuthKey(userdata){
                     reject(err);
                 }
                 else {
-                    resolve(authkey);
+
+                    resolve({
+                        authkey: authkey,
+                        clientid: userdata.clientid
+                    });
                 }
 
             });
