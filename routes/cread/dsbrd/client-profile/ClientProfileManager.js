@@ -220,6 +220,58 @@ function getUserDetailsForLogin(email) {
 
 }
 
+router.post('/sign-out', function (request, response) {
+
+    var clientid = request.body.clientid;
+    var authkey = request.body.authkey;
+
+    _auth.clientAuthValid(clientid, authkey)
+        .then(function () {
+            return clearValuesForSignout(clientid);
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+        })
+        .then(function () {
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    status: 'done'
+                }
+            });
+            response.end();
+        })
+        .catch(function (err) {
+            console.error(err);
+            response.status(500).send({
+                error: 'Some error occurred at the server'
+            }).end();
+        });
+
+});
+
+/**
+ * Clears the authkey of the client when he logs out
+ * */
+function clearValuesForSignout(clientid) {
+    return new Promise(function (resolve, reject) {
+        var params = {
+            authkey: null
+        };
+
+        connection.query('UPDATE Client SET ? WHERE clientid = ?', [params, clientid], function (err, row) {
+            if(err){
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        })
+    })
+}
+
 router.post('/token-update', function (request, response) {
 
     var clientid = request.body.clientid;

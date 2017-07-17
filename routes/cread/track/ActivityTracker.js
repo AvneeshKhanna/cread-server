@@ -37,7 +37,7 @@ router.post('/', function (request, response) {
 
             var resarray = [];
 
-            connection.query('SELECT Campaign.title, Share.regdate, Share.sharerate, Share.checkstatus, Share.causeid ' +
+            connection.query('SELECT Campaign.title, Share.donation, Share.regdate, Share.sharerate, Share.checkstatus, Share.causeid ' +
                 'FROM Share ' +
                 'INNER JOIN Campaign ' +
                 'ON Share.cmid = Campaign.cmid ' +
@@ -74,16 +74,17 @@ router.post('/', function (request, response) {
                         }
 
                         //Calculate pendingAmount
-                        var pendingAmt = resarray.filter(function (element) {
+                        /*var pendingAmt = resarray.filter(function (element) {
                             return element.hasOwnProperty('checkstatus') && element.checkstatus == 'PENDING' && element.causeid == null;
                         }).reduce(function (accumulator, element) {
                             return accumulator + element.sharerate;
-                        }, 0);
+                        }, 0);*/
 
                         //Calculate availableAmount
                         var availableAmt = resarray.filter(function (element) {
                             return !element.hasOwnProperty('checkstatus') || element.checkstatus != 'PENDING';
-                        }).reduce(function (accumulator, element) {
+                        })
+                        .reduce(function (accumulator, element) {
                             if(element.hasOwnProperty('sharerate')){
                                 if(element.causeid == null){
                                     return accumulator + element.sharerate;
@@ -121,8 +122,18 @@ router.post('/', function (request, response) {
 
                         resdata.data = {
                             activityList : resarray,
-                            pendingAmt : pendingAmt,
-                            availableAmt : availableAmt
+                            //pendingAmt : pendingAmt,
+                            userProfile: {
+                                firstname: 'Avneesh',
+                                lastname: 'Khanna',
+                                email: 'avneesh.khanna92@gmail.com',
+                                contact: '9999015838',
+                                shared: 700,
+                                measured: 250,
+                                donated: 500,
+                                minCashInAmt: 100,
+                                creditAmt : availableAmt
+                            }
                         };
 
                         console.log("resdata is" + JSON.stringify(resdata, null, 3));

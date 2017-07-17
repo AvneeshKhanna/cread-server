@@ -20,7 +20,7 @@ router.post('/update-budget', function (request, response) {
     var amount = request.body.amount;   //Transfer Amount
 
     //Type of transfer: 'ALLOCATE' for wallet -> campaign & 'DEALLOCATE' for campaign -> wallet
-    //The 'REMOVE' type would only be applicable when the campaign is deactivated
+    //The 'DEALLOCATE' type would only be applicable when the campaign is deactivated
     var type = request.body.type;
 
     _auth.clientAuthValid(clientid, authkey)
