@@ -115,7 +115,6 @@ app.use('/generate-pictorial', require('./routes/pictorial/generatePictorial'));
 
 //-app-
 app.use('/feed', require('./routes/cread/feed/FeedDataManager'));
-// app.use('/feed2', require('./routes/cread/feed/FeedDataManager2'));
 app.use('/track-activity', require('./routes/cread/track/ActivityTracker'));
 app.use('/share-campaign', require('./routes/cread/share/ShareCampaign'));
 app.use('/check-campaign', require('./routes/cread/check/CheckCampaign'));

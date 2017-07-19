@@ -37,12 +37,10 @@ router.post('/sign-up', function (request, response) {
             });
             response.end();
         })
-        .then(function (authkey) {
+        .then(function (data) {
             response.send({
                 status: 'created',
-                data: {
-                    authkey: authkey
-                }
+                data: data
             });
             response.end();
         }, function (err) {
@@ -93,7 +91,10 @@ function createNewClientUser(email, password, contact, name) {
                 reject(err);
             }
             else {
-                resolve(params.authkey);
+                resolve({
+                    authkey: params.authkey,
+                    clientid: params.clientid
+                });
             }
         })
     })

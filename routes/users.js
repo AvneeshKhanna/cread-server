@@ -98,25 +98,57 @@ router.post('/register', function (request, response, next) {
 });
 
 router.post('/login', function (request, response, next) {
+
     var phoneNo = request.body.contactnumber;
     var password = request.body.password;
     var fcmtoken = request.body.fcmtoken;
-    console.log(JSON.stringify(request.body));
-    _connection.query('SELECT Auth_key, UUID, firstname, lastname FROM users WHERE phoneNo=? AND password=?', [phoneNo, password], function (err, result) {
-        var localJson = {};
-        if (err) throw err;
 
-        else if (result.length == 0) {
-            localJson['authtoken'] = 'false';
+    console.log(JSON.stringify(request.body, null, 3));
+
+    _connection.query('SELECT Auth_key, UUID, firstname, lastname, password ' +
+        'FROM users ' +
+        'WHERE phoneNo = ?', [phoneNo], function (err, result) {
+
+        var localJson = {};
+
+        if (err) {
+            throw err;
+        }
+        else if (result.length == 0) {  //Case of unidentified contact
+
+            localJson = {
+                status: 'invalid-contact'
+            };
+
+            /*localJson['authtoken'] = 'false';
             localJson['uuid'] = 'false';
-            localJson['name'] = 'false';
-            response.send(JSON.stringify(localJson));
+            localJson['name'] = 'false';*/
+            response.send(localJson);
             response.end();
         }
-        else {
-            localJson['uuid'] = result[0].UUID;
+        else if (result[0].password != password){   //Case of unidentified password
+
+            localJson = {
+                status: 'invalid-password'
+            };
+
+            response.send(localJson);
+            response.end();
+        }
+        else{
+
+            localJson = {
+                status: 'success',
+                data: {
+                    uuid: result[0].UUID,
+                    authtoken: result[0].Auth_key,
+                    name: result[0].firstname + " " + result[0].lastname
+                }
+            };
+
+            /*localJson['uuid'] = result[0].UUID;
             localJson['authtoken'] = result[0].Auth_key;
-            localJson['name'] = result[0].firstname + " " + result[0].lastname;
+            localJson['name'] = result[0].firstname + " " + result[0].lastname;*/
 //            response.send(result[0].Auth_key);
             notify.loginFCM(result[0].UUID, fcmtoken, localJson, response);
         }
