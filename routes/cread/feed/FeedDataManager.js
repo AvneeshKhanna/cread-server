@@ -22,20 +22,19 @@ router.post('/load/', function (request, response) {
 
     _auth.checkToken(uuid, authkey, function (err, datasize) {
 
-        if(err){
+        if (err) {
             console.error(err);
             throw err;
         }
-        else if(datasize == 0) {
+        else if (datasize == 0) {
 
             resdata.tokenstatus = 'invalid';
             response.send(resdata);
             response.end();
 
         }
-        else{
-            //TODO: Add mission and fbidstatus
-            connection.query('SELECT Campaign.cmid, Campaign.title, Campaign.description, Campaign.type, Campaign.contentbaseurl, ' +
+        else {
+            connection.query('SELECT Campaign.cmid, Campaign.title, Campaign.description, Campaign.mission, Campaign.type, Campaign.contentbaseurl, ' +
                 'Campaign.imagepath, Campaign.regdate, Share.sharerate, SUM(!ISNULL(Share.shareid)) AS sharescount, ' +
                 'Client.name AS clientname, Client.bio AS clientbio ' +
                 'FROM Campaign ' +
@@ -44,16 +43,16 @@ router.post('/load/', function (request, response) {
                 'LEFT JOIN Share ' +
                 'ON Campaign.cmid = Share.cmid ' +
                 'WHERE Campaign.cmpstatus = ? AND Campaign.budget > 0 ' +
-                'GROUP BY Campaign.regdate', ['ACTIVE'],  function (err, rows) {
+                'GROUP BY Campaign.regdate', ['ACTIVE'], function (err, rows) {
 
-                if(err){
+                if (err) {
                     console.error(err);
                     throw err;
                 }
 
                 //Sorting according last created
                 rows.sort(function (a, b) {
-                    if(a.regdate < b.regdate){
+                    if (a.regdate < b.regdate) {
                         return 1;
                     }
                     else {
@@ -61,18 +60,23 @@ router.post('/load/', function (request, response) {
                     }
                 });
 
-                for (var i = 0; i < rows.length; i++) {
-                    rows[i].mission = 'A random static mission which needs to be updated';
-                    rows[i].fbidstatus = true;
-                }
+                connection.query('SELECT fbusername FROM users WHERE UUID = ?', [uuid], function (err, row) {
+                    if (err) {
+                        throw err;
+                    }
+                    else {
+                        console.log("rows after querying is " + JSON.stringify(rows, null, 3));
 
-                console.log("rows after querying is " + JSON.stringify(rows, null, 3));
-
-                response.send({
-                    tokenstatus: 'valid',
-                    data: rows
+                        response.send({
+                            tokenstatus: 'valid',
+                            data: {
+                                feed: rows,
+                                fbidstatus: true//row[0].fbusername != null TODO: Uncomment
+                            }
+                        });
+                        response.end();
+                    }
                 });
-                response.end();
 
             });
         }

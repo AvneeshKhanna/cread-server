@@ -81,8 +81,9 @@ router.post('/save', function (request, response) {
     var ulinkvalue = request.body.ulinkvalue;
     var sharerate = 50;
     var channel = 'Facebook';
-    var donation = request.body.donation;
+    var donation = false;//request.body.donation;
     var cause_id = request.body.cause_id;
+    var shareid;    //Is initialised after params for saveShareToDb() method are set
 
     var resdata = {};
 
@@ -99,6 +100,8 @@ router.post('/save', function (request, response) {
                 ulinkvalue: ulinkvalue,
                 donation: donation
             };
+
+            shareid = params.shareid;
 
             if (cause_id) {
                 params.causeid = cause_id;
@@ -124,8 +127,13 @@ router.post('/save', function (request, response) {
 
             var resdata = {
                 tokenstatus: 'valid',
-                data: rows
+                data: {
+                    causes: rows,
+                    shareid: shareid
+                }
             };
+
+            console.log("resdata before /share-campaign/save " + JSON.stringify(resdata, null, 3));
 
             response.send(resdata);
             response.end();
@@ -173,7 +181,8 @@ function saveShareToDb(params) {
  * */
 function getCausesData() {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT * FROM SocialCause', null, function (err, rows) {
+        connection.query('SELECT causeid, title AS causetitle, description AS causedesc, imagepath AS causeimgpth, link AS causelink ' +
+            'FROM SocialCause', null, function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -217,6 +226,8 @@ router.post('/request-unique-link', function (request, response) {
                 ulinkvalue: ulinkvalue
             };
 
+            console.log("response data available budget case is " + JSON.stringify(data, null, 3));
+
             response.send({
                 tokenstatus: 'valid',
                 data: data
@@ -224,6 +235,8 @@ router.post('/request-unique-link', function (request, response) {
             response.end();
 
         }, function () { //Case where budget of the Campaign has been exhausted
+
+            console.log("unavailable budget case is called");
 
             response.send({
                 tokenstatus: 'valid',
@@ -233,6 +246,12 @@ router.post('/request-unique-link', function (request, response) {
             });
             response.end();
 
+        })
+        .catch (function (err) {
+            console.error(err);
+            response.status(500).send({
+                error: 'Some error occurred at the server'
+            }).end();
         });
 
 });

@@ -190,6 +190,8 @@ router.post('/update-fb-username', function (request, response) {
     var authkey = request.body.authkey;
     var fbusername = request.body.fbusername;
 
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
     _auth.authValid(uuid, authkey)
         .then(function () {
             return updateFbUsername(uuid, fbusername);
