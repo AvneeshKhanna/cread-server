@@ -20,7 +20,7 @@ app.use(bodyParser.json());
 
 AWS.config.region = 'ap-northeast-1';
 AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-    IdentityPoolId: 'ap-northeast-1:863bdfec-de0f-4e9f-8749-cf7fd96ea2ff',
+    IdentityPoolId: 'ap-northeast-1:863bdfec-de0f-4e9f-8749-cf7fd96ea2ff'
 });
 
 var docClient = new AWS.DynamoDB.DocumentClient();
@@ -46,10 +46,13 @@ router.post('/register', function (request, response, next) {
 
     //checking if user already exists in db use deasync
     _connection.query('SELECT UUID FROM users WHERE phoneNo=?', [phoneNo], function (error, row) {
+
+        var localJson = {};
+
         if (error) throw error;
 
         else if (row.length == 1) {
-            var localJson = {};
+
             localJson['authtoken'] = 'false';
             localJson['uuid'] = 'false';
             response.send(JSON.stringify(localJson));
@@ -58,9 +61,6 @@ router.post('/register', function (request, response, next) {
         else {
 
             //Send OTP for verification of phonenumber to user
-
-
-            var localJson = {};
             var uuid = uuidGenerator.v4();
             var Id = _auth.getToken(key);
             localJson['authtoken'] = Id;

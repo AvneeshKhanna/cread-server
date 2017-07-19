@@ -1,3 +1,7 @@
+/**
+ * Code for backward compatible versions of the app
+ * */
+
 var express = require('express');
 var app = express();
 var router = express.Router();
@@ -28,9 +32,7 @@ router.post('/', function (request, response) {
             throw err;
         }
         else {
-            response.send({
-                status: 'success'
-            });
+            response.send();
             response.end();
 
         }

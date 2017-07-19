@@ -23,6 +23,8 @@ router.post('/update-budget', function (request, response) {
     //The 'DEALLOCATE' type would only be applicable when the campaign is deactivated
     var type = request.body.type;
 
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
     _auth.clientAuthValid(clientid, authkey)
         .then(function () {
             return registerBudgetTransfer(cmid, amount, type);
