@@ -48,7 +48,7 @@ router.post('/update-budget', function (request, response) {
             response.status(500).send({
                 error: 'Some error occurred at the server'
             }).end();
-        })
+        });
 
 });
 

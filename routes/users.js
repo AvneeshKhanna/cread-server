@@ -97,7 +97,7 @@ router.post('/register', function (request, response, next) {
     });
 });
 
-router.post('/login', function (request, response, next) {
+router.post('/sign-in', function (request, response, next) {
 
     var phoneNo = request.body.contactnumber;
     var password = request.body.password;
@@ -121,12 +121,12 @@ router.post('/login', function (request, response, next) {
             };
 
             /*localJson['authtoken'] = 'false';
-            localJson['uuid'] = 'false';
-            localJson['name'] = 'false';*/
+             localJson['uuid'] = 'false';
+             localJson['name'] = 'false';*/
             response.send(localJson);
             response.end();
         }
-        else if (result[0].password != password){   //Case of unidentified password
+        else if (result[0].password != password) {   //Case of unidentified password
 
             localJson = {
                 status: 'invalid-password'
@@ -135,7 +135,7 @@ router.post('/login', function (request, response, next) {
             response.send(localJson);
             response.end();
         }
-        else{
+        else {
 
             localJson = {
                 status: 'success',
@@ -147,15 +147,55 @@ router.post('/login', function (request, response, next) {
             };
 
             /*localJson['uuid'] = result[0].UUID;
-            localJson['authtoken'] = result[0].Auth_key;
-            localJson['name'] = result[0].firstname + " " + result[0].lastname;*/
+             localJson['authtoken'] = result[0].Auth_key;
+             localJson['name'] = result[0].firstname + " " + result[0].lastname;*/
 //            response.send(result[0].Auth_key);
             notify.loginFCM(result[0].UUID, fcmtoken, localJson, response);
         }
     });
 });
 
+//For backward compatibility
+router.post('/login', function (request, response, next) {
+
+    var phoneNo = request.body.contactnumber;
+    var password = request.body.password;
+    var fcmtoken = request.body.fcmtoken;
+
+    console.log(JSON.stringify(request.body));
+
+    _connection.query('SELECT Auth_key, UUID, firstname, lastname FROM users WHERE phoneNo=? AND password=?', [phoneNo, password], function (err, result) {
+
+        var localJson = {};
+
+        if (err) {
+            throw err;
+        }
+        else if (result.length == 0) {
+
+            localJson['authtoken'] = 'false';
+            localJson['uuid'] = 'false';
+            localJson['name'] = 'false';
+
+            response.send(localJson);
+            response.end();
+
+        }
+        else {
+
+            localJson['uuid'] = result[0].UUID;
+            localJson['authtoken'] = result[0].Auth_key;
+            localJson['name'] = result[0].firstname + " " + result[0].lastname;
+
+            //response.send(result[0].Auth_key);
+
+            notify.loginFCM(result[0].UUID, fcmtoken, localJson, response);
+        }
+    });
+});
+
 router.post('/logout', function (request, response, next) {
+
     var uuid = request.body.uuid;
     var fcmToken = request.body.fcmtoken;
     var table = userstbl_ddb;
@@ -174,13 +214,17 @@ router.post('/logout', function (request, response, next) {
     };
 
     docClient.get(deleteParams, function (error, data) {
-        if (error) throw error;
-
-        deleteupdateItem(data.Item.Fcm_token, fcmToken, uuid, response);
+        if (error) {
+            throw error;
+        }
+        else {
+            deleteupdateItem(data.Item.Fcm_token, fcmToken, uuid, response);
+        }
     });
 });
 
 router.post('/refreshfcmtoken', function (request, response) {
+
     var newFcm = request.body.newfcmtoken;
     var oldFcm = request.body.oldfcmtoken;
     var uuid = request.body.uuid;

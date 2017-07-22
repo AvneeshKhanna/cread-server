@@ -52,7 +52,7 @@ router.post('/', function(request, response){
                             PhoneNumber : '+91' + contactnumber
                         };
                         
-                        console.log('sns request sending');
+                        console.log('sns request sending with otp ' + OTP);
                 
                         sns.publish(params, function(err, data){
 

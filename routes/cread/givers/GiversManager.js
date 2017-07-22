@@ -51,13 +51,13 @@ router.post('/load', function (request, response) {
 
             //Extracting the requesting user's data from rows
             var thisuserindex = rows.map(function (element) {
-                return element.UUID;
+                return element.uuid;
             }).indexOf(uuid);
 
             var thisuser;
 
             if(thisuserindex == -1){
-                thisuser = null;
+                thisuser = {};
             }
             else {
                 thisuser = rows[thisuserindex];
@@ -85,7 +85,7 @@ router.post('/load', function (request, response) {
 
 function getGiversData() {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT users.UUID, users.firstname, users.lastname, Share.shareid, SUM(Share.sharerate) AS donatedamount ' +
+        connection.query('SELECT users.UUID AS uuid, users.firstname, users.lastname, SUM(Share.sharerate) AS donatedamount ' +
             'FROM users ' +
             'LEFT JOIN Share ' +
             'ON users.UUID = Share.UUID ' +
