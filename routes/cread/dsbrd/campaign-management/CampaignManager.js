@@ -63,7 +63,7 @@ router.post('/load', function (request, response) {
 
 function getCampaigns(clientid, cmpstatus) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT Campaign.cmid, Campaign.title, Campaign.description, Campaign.imagepath, ' +
+        connection.query('SELECT Campaign.cmid, Campaign.title, Campaign.description, Campaign.imagepath, Campaign.deactvtntime, ' +
             'Campaign.budget, Campaign.regdate, SUM(!ISNULL(Share.shareid)) AS sharescount ' +
             'FROM Campaign ' +
             'LEFT JOIN Share ' +
@@ -219,9 +219,12 @@ router.post('/deactivate', function (request, response) {
  * */
 function deactivateCampaign(cmid) {
 
+    var deactvtntime = new Date().toISOString();
+
     return new Promise(function (resolve, reject) {
 
-        connection.query('UPDATE Campaign SET cmpstatus = ? WHERE cmid = ?', ['DEACTIVE', cmid], function (err, row) {
+        connection.query('UPDATE Campaign SET cmpstatus = ?, deactvtntime = ? ' +
+            'WHERE cmid = ?', ['DEACTIVE', deactvtntime, cmid], function (err, row) {
 
             if (err) {
                 console.error(err);
