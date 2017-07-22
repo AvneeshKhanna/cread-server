@@ -16,10 +16,11 @@ router.post('/', function (request, response) {
 
     var clientid = request.body.clientid;
     var authkey = request.body.authkey;
+    var limit = request.body.limit;
 
     _auth.clientAuthValid(clientid, authkey)
         .then(function () {
-            return getLatestUpdates(clientid);
+            return getLatestUpdates(clientid, limit);
         }, function () {
             response.send({
                 tokenstatus: 'invalid'
@@ -43,7 +44,7 @@ router.post('/', function (request, response) {
 
 });
 
-function getLatestUpdates(clientid) {
+function getLatestUpdates(clientid, limit) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT Campaign.title, users.firstname, users.lastname, Share.regdate, Share.checkstatus ' +
             'FROM users ' +
@@ -52,7 +53,8 @@ function getLatestUpdates(clientid) {
             'INNER JOIN Campaign ' +
             'ON Share.cmid = Campaign.cmid ' +
             'WHERE Campaign.clientid = ? ' +
-            'ORDER BY Share.regdate DESC', [clientid], function (err, rows) {
+            'ORDER BY Share.regdate DESC ' +
+            'LIMIT ?', [clientid, limit], function (err, rows) {
 
             if(err){
                 reject(err);
