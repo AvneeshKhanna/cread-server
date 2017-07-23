@@ -84,7 +84,6 @@ router.post('/', function (request, response) {
 
                                 console.log("userdata is " + JSON.stringify(userdata, null, 3));
 
-
                                 //Calculate pendingAmount
                                 /*var pendingAmt = resarray.filter(function (element) {
                                  return element.hasOwnProperty('checkstatus') && element.checkstatus == 'PENDING' && element.causeid == null;
@@ -107,7 +106,7 @@ router.post('/', function (request, response) {
                                     return element;
                                 })
                                 .filter(function (element) {
-                                    return !element.hasOwnProperty('checkstatus') || element.checkstatus != 'PENDING';
+                                    return (element.cashed_in == 0) && !element.hasOwnProperty('checkstatus') || element.checkstatus != 'PENDING';
                                 })
                                 .reduce(function (accumulator, element) {
                                     if (element.hasOwnProperty('sharerate')) {
@@ -127,6 +126,18 @@ router.post('/', function (request, response) {
                                             return accumulator + 1;
                                         }
                                     }
+                                }, 0);
+
+                                var no_of_shares = resarray.filter(function (element) {
+                                    return element.hasOwnProperty('sharerate');
+                                }).length;
+
+                                var no_of_checks = resarray.length - no_of_shares;
+
+                                var donatedAmt = resarray.filter(function (element) {
+                                    return element.hasOwnProperty('sharerate') && (element.donation == 1);
+                                }).reduce(function (accumuator, element) {
+                                    accumuator += element.sharerate;
                                 }, 0);
 
                                 //Sort according to 'regdate'
@@ -154,10 +165,10 @@ router.post('/', function (request, response) {
                                         email: userdata[0].email,
                                         contact: userdata[0].contact,
                                         fbusername: userdata[0].fbusername,
-                                        shared: 700,
-                                        measured: 250,
-                                        donated: 500,
-                                        minCashInAmt: 100,
+                                        shared: no_of_shares,
+                                        measured: no_of_checks,
+                                        donated: donatedAmt,
+                                        minCashInAmt: 100,          //TODO: Can change the amount based on team discussion
                                         creditAmt: availableAmt
                                     }
                                 };
