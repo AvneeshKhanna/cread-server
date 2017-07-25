@@ -15,7 +15,6 @@ var AWS = config.AWS;
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
 
-//TODO: Calculate shares, checks and donations
 router.post('/', function (request, response) {
 
     var authkey = request.body.authkey;
@@ -106,7 +105,9 @@ router.post('/', function (request, response) {
                                     return element;
                                 })
                                 .filter(function (element) {
-                                    return (element.cashed_in == 0) && !element.hasOwnProperty('checkstatus') || element.checkstatus != 'PENDING';
+                                    return (element.cashed_in == false)
+                                        && !element.hasOwnProperty('checkstatus')
+                                        || element.checkstatus != 'PENDING';
                                 })
                                 .reduce(function (accumulator, element) {
                                     if (element.hasOwnProperty('sharerate')) {
@@ -165,10 +166,10 @@ router.post('/', function (request, response) {
                                         email: userdata[0].email,
                                         contact: userdata[0].contact,
                                         fbusername: userdata[0].fbusername,
-                                        shared: no_of_shares,
-                                        measured: no_of_checks,
-                                        donated: donatedAmt,
-                                        minCashInAmt: 100,          //TODO: Can change the amount based on team discussion
+                                        shared: no_of_shares ? no_of_shares : 0,
+                                        measured: no_of_checks ? no_of_checks : 0,
+                                        donated: donatedAmt ? donatedAmt : 0,
+                                        minCashInAmt: 90,          //TODO: Can change the amount based on team discussion
                                         creditAmt: availableAmt
                                     }
                                 };

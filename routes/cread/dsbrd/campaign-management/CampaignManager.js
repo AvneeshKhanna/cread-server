@@ -83,6 +83,19 @@ function getCampaigns(clientid, cmpstatus) {
     });
 }
 
+function getClientWalletBal(clientid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT walletbalance FROM Client WHERE clientid = ?', [clientid], function (err, row) {
+            if(err){
+                reject(err);
+            }
+            else {
+                resolve(row[0].walletbalance);
+            }
+        })
+    })
+}
+
 router.post('/add', function (request, response) {
 
     var title = request.body.title;

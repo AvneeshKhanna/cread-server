@@ -20,10 +20,12 @@ router.post('/', function (request, response) {
 
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
+    var amount = request.body.amount;
+    var userpaytmcontact = request.body.userpaytmcontact;
 
     _auth.authValid(uuid, authkey)
         .then(function () {
-            return transactToPaytm(uuid);
+            return transactToPaytm(uuid, amount);
         }, function () {
             response.send({
                 tokenstatus: 'invalid'
@@ -35,7 +37,7 @@ router.post('/', function (request, response) {
             response.send({
                 tokenstatus: 'valid',
                 data: {
-                    status: 'SUCCESS'
+                    status: 'success'
                 }
             });
             response.end();
@@ -51,9 +53,9 @@ router.post('/', function (request, response) {
 });
 
 /**
- * Function to transact
+ * Function to transact amount to user's paytm wallet
  * */
-function transactToPaytm(uuid) {
+function transactToPaytm(uuid, amount) {
 
     return new Promise(function (resolve, reject) {
 
@@ -67,11 +69,10 @@ function transactToPaytm(uuid) {
 
                 //Updating Share table
                 connection.query('UPDATE Share ' +
-                    'SET Share.cashed_in = 1 ' +
-                    'FROM Share ' +
                     'JOIN Checks ' +
                     'ON Share.shareid = Checks.shareid ' +
-                    'WHERE Checks.responses = ? AND Share.UUID = ?', ['verified', uuid], function (err, row) {
+                    'SET Share.cashed_in = ? ' +
+                    'WHERE Checks.responses = ? AND Share.UUID = ?', [1, 'verified', uuid], function (err, row) {
 
                     if (err) {
                         connection.rollback(function () {
