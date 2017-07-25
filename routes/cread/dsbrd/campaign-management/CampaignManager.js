@@ -152,6 +152,51 @@ router.post('/add', function (request, response) {
 
 });
 
+router.post('/specific', function (request, response) {
+    var clientid = request.body.clientid;
+    var authkey = request.body.authkey;
+    var cmid = request.body.cmid;
+
+    _auth.clientAuthValid(clientid, authkey)
+        .then(function () {
+            return getCampaign(cmid);
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+        })
+        .then(function (campaign) {
+            response.send({
+                tokenstatus: 'valid',
+                data: campaign
+            });
+            response.end();
+        })
+        .catch(function (err) {
+            console.error(err);
+            response.status(500).send({
+                error: 'Some error occurred at the server'
+            }).end();
+        });
+
+});
+
+function getCampaign(cmid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT * FROM Campaign WHERE cmid = ?', [cmid], function (err, row) {
+
+            if(err){
+                reject(err);
+            }
+            else {
+                resolve(row[0]);
+            }
+
+        })
+    })
+}
+
 router.post('/edit', function (request, response) {
 
     var clientid = request.body.clientid;
