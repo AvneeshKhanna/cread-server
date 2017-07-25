@@ -11,6 +11,7 @@ var AWS = config.AWS;
 var uuid = require('uuid');
 
 var _auth = require('../../../auth-token-management/AuthTokenManager');
+var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 
 router.post('/sign-up', function (request, response) {
 
@@ -357,6 +358,81 @@ function saveToken(clientid, authkey) {
 
         });
 
+    })
+}
+
+router.post('/update', function (request, response) {
+
+   var clientid = request.body.clientid;
+   var authkey = request.body.authkey;
+
+   var params = {
+       authkey: authkey
+   };
+
+   if(request.body.bio){
+       params.bio = request.body.bio;
+   }
+
+   if(request.body.name){
+        params.name = request.body.name;
+   }
+
+    if(request.body.email){
+        params.email = request.body.email;
+    }
+
+    if(request.body.password){
+        params.password = request.body.password;
+    }
+
+    if(request.body.contact){
+        params.contact = request.body.contact;
+    }
+
+   _auth.clientAuthValid(clientid, authkey)
+       .then(function () {
+           return updateClientProfile(clientid, params);
+       }, function () {
+           response.send({
+               tokenstatus: 'invalid'
+           });
+           response.end();
+           throw new BreakPromiseChainError();
+       })
+       .then(function () {
+           response.send({
+               tokenstatus: 'valid',
+               data: {
+                   status: 'SUCCESS'
+               }
+           });
+           response.end();
+       })
+       .catch(function (err) {
+           if (err instanceof BreakPromiseChainError) {
+               console.log('Broke out of a promise chain');
+           }
+           else {
+               console.error(err);
+               response.status(500).send({
+                   error: 'Some error occurred at the server'
+               }).end();
+           }
+       })
+
+});
+
+function updateClientProfile(clientid, params){
+    return new Promise(function (resolve, reject) {
+        connection.query('UPDATE Client SET ? WHERE clientid = ?', [params, clientid], function (err, row) {
+            if(err){
+                reject(err);
+            }
+            else{
+                resolve();
+            }
+        });
     })
 }
 
