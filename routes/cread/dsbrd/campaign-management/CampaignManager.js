@@ -16,6 +16,8 @@ var _auth = require('../../../auth-token-management/AuthTokenManager');
 var AWS = config.AWS;
 var uuidGenerator = require('uuid');
 
+var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
+
 router.post('/load', function (request, response) {
 
     var clientid = request.body.clientid;
@@ -86,7 +88,7 @@ function getCampaigns(clientid, cmpstatus) {
 function getClientWalletBal(clientid) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT walletbalance FROM Client WHERE clientid = ?', [clientid], function (err, row) {
-            if(err){
+            if (err) {
                 reject(err);
             }
             else {
@@ -161,10 +163,13 @@ router.post('/specific', function (request, response) {
         .then(function () {
             return getCampaign(cmid);
         }, function () {
+
             response.send({
                 tokenstatus: 'invalid'
             });
             response.end();
+
+            throw new BreakPromiseChainError();
         })
         .then(function (campaign) {
             response.send({
@@ -174,10 +179,16 @@ router.post('/specific', function (request, response) {
             response.end();
         })
         .catch(function (err) {
-            console.error(err);
-            response.status(500).send({
-                error: 'Some error occurred at the server'
-            }).end();
+
+            if (err instanceof BreakPromiseChainError) {
+                console.log('Broke out of a promise chain');
+            }
+            else {
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
         });
 
 });
@@ -186,7 +197,7 @@ function getCampaign(cmid) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT * FROM Campaign WHERE cmid = ?', [cmid], function (err, row) {
 
-            if(err){
+            if (err) {
                 reject(err);
             }
             else {
