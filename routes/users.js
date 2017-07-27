@@ -200,7 +200,7 @@ router.post('/logout', function (request, response, next) {
     var fcmToken = request.body.fcmtoken;
     var table = userstbl_ddb;
 
-    console.log(JSON.stringify(request.body));
+    console.log(JSON.stringify(request.body, null, 3));
     console.log('users/logout Request is ' + uuid);
 
     var deleteParams = {
@@ -295,7 +295,7 @@ function deleteupdateItem(items, fcmtoken, uuid, response) {
     docClient.update(addParams, function (error, data) {
         if (error) throw error;
 
-        console.log(data);
+        console.log(JSON.stringify(data, null, 3));
         response.send('Logged out');
         response.end();
     });

@@ -13,21 +13,31 @@ var envconfig = require('config');
 var userstbl_ddb = envconfig.get('dynamoDB.users_table');
 var paytm_server_url = envconfig.get('paytm-server-url');
 
+var uuidGen = require('uuid');
+var httprequest = require('request');
+
 var docClient = new AWS.DynamoDB.DocumentClient();
 
 var _auth = require('../../../auth-token-management/AuthTokenManager');
+var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 
 var paytmchecksum = require('../../paytmutils/checksum');
 var paytmMerchantKey = 'SY#F6vL_Yke1ey&w';  //Provided by Paytm
 
-var httprequest = require('request');
+var orderId;
 
 router.post('/', function (request, response) {
 
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var amount = request.body.amount;
-    var userpaytmcontact = 7777777777; //request.body.userpaytmcontact; TODO: Uncomment
+    var userpaytmcontact = request.body.userpaytmcontact; //request.body.userpaytmcontact; TODO: Uncomment
+
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
+    orderId = uuidGen.v4();
+
+    console.log("orderId is " + JSON.stringify(orderId, null, 3));
 
     _auth.authValid(uuid, authkey)
         .then(function () {
@@ -37,7 +47,7 @@ router.post('/', function (request, response) {
                 tokenstatus: 'invalid'
             });
             response.end();
-
+            throw new BreakPromiseChainError();
         })
         .then(function (checksumhash) {
             return checkIfUserPaytmAccExists(amount, userpaytmcontact, checksumhash);
@@ -51,11 +61,11 @@ router.post('/', function (request, response) {
                 response.send({
                     tokenstatus: 'valid',
                     data: {
-                        status: 'INVALID-PAYTM-WALLET'
+                        status: 'invalid-user'
                     }
                 });
                 response.end();
-                throw new Error('User\'s paytm wallet does not exists');
+                throw new BreakPromiseChainError();
             }
         })
         .then(function (checksumhash) {
@@ -71,21 +81,31 @@ router.post('/', function (request, response) {
             response.end();
         })
         .catch(function (err) {
-            console.error(err);
-            response.status(500).send({
-                error: 'Some error occurred at the server'
-            });
-            response.end();
-        })
+
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                });
+                response.end();
+            }
+
+        });
 
 });
 
+/**
+ * Formulate request parameters to send to paytm servers
+ * */
 function getPaytmParams(userpaytmcontact, amount, requestType) {
     return paytm_params = {
         request: {
             requestType: requestType,
             merchantGuid: "52cd743e-2f83-41b8-8468-ea83daf909e7",
-            merchantOrderId: "123112q",
+            merchantOrderId: orderId/*uuid.v4()*/,
             salesWalletName: null,
             salesWalletGuid: "05d92f1a-e603-4df4-9034-000c8363dd7b",
             payeeEmailId: null,
@@ -96,12 +116,15 @@ function getPaytmParams(userpaytmcontact, amount, requestType) {
             currencyCode: "INR"
         },
         metadata: "Testing Data",
-        ipAddress: "122.161.164.208",
+        ipAddress: "127.0.0.1",     //TODO: Check to change
         platformName: "PayTM",
         operationType: "SALES_TO_USER_CREDIT"
     };
 }
 
+/**
+* Function to check if user's paytm
+* */
 function checkIfUserPaytmAccExists(amount, userpaytmcontact, checksumhash) {
     console.log("checkIfUserPaytmAccExists called");
     return new Promise(function (resolve, reject) {
@@ -177,8 +200,8 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
                 connection.query('UPDATE Share ' +
                     'JOIN Checks ' +
                     'ON Share.shareid = Checks.shareid ' +
-                    'SET Share.cashed_in = ? ' +
-                    'WHERE Checks.responses = ? AND Share.UUID = ?', [1, 'verified', uuid], function (err, row) {
+                    'SET Share.cashed_in = ?, Share.paytmOrderId = ? ' +
+                    'WHERE Checks.responses = ? AND Share.UUID = ?', [1, orderId, 'verified', uuid], function (err, row) {
 
                     if (err) {
                         connection.rollback(function () {
@@ -189,8 +212,8 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
 
                         //Updating Checks table
                         connection.query('UPDATE Checks ' +
-                            'SET Checks.cashed_in = 1 ' +
-                            'WHERE Checks.UUID = ?', [uuid], function (err, data) {
+                            'SET Checks.cashed_in = 1, Checks.paytmOrderId = ? ' +
+                            'WHERE Checks.UUID = ?', [orderId, uuid], function (err, data) {
 
                             if (err) {
                                 connection.rollback(function () {
@@ -254,18 +277,24 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
                                                     });
                                                 }
                                                 else {
-                                                    resolve("SUCCESS");
+                                                    resolve("success");
                                                 }
                                             });
                                         }
                                         else if (resbody.status == "FAILURE") {
                                             connection.rollback(function () {
-                                                reject(new Error(resbody.statusMessage));
+
+                                                if(resbody.statusCode == 'GE_1032'){    //Case of invalid mobile number
+                                                    resolve('invalid-contact');
+                                                }
+                                                else {
+                                                    reject(new Error(resbody.statusMessage));
+                                                }
                                             });
                                         }
                                         else {   //resbody.status == "PENDING"
                                             connection.rollback(function () {
-                                                resolve("INVALID-PAYTM-WALLET");
+                                                resolve("invalid-user");
                                             });
                                         }
 

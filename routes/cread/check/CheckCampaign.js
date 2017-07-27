@@ -23,8 +23,8 @@ var ABSENT_SHARE = 'absent-share';
 //TODO: Add budget consumption system
 
 /**
-* To serve user's request to check another user's share
-* */
+ * To serve user's request to check another user's share
+ * */
 router.post('/request', function (request, response) {
 
     var uuid = request.body.uuid;
@@ -37,11 +37,11 @@ router.post('/request', function (request, response) {
                 tokenstatus: 'invalid'
             });
             response.end();
-            
+
         })
         .then(function (row) {
 
-            if(row === undefined){    //Case of no data
+            if (row === undefined) {    //Case of no data
                 console.log("row before response " + JSON.stringify(row, null, 3));
                 response.send({
                     tokenstatus: 'valid',
@@ -61,7 +61,7 @@ router.post('/request', function (request, response) {
 
                 row.fbuserlink = "https://www.facebook.com/login.php?next=" + encodeURIComponent("https://www.facebook.com/" + row.fbusername);
 
-                if(row.hasOwnProperty("fbusername")){
+                if (row.hasOwnProperty("fbusername")) {
                     delete row.fbusername;
                 }
 
@@ -93,7 +93,7 @@ function getDataForCheck() {
         // not want any other session to update that specific record. connection.beginTransaction() ensures so.
         // NOTE: calling connection.commit() is necessary after calling connection.beginTransaction() in the same session
         connection.beginTransaction(function (err) {
-            if(err){
+            if (err) {
                 console.error(err);
                 throw err;
             }
@@ -116,14 +116,14 @@ function getDataForCheck() {
 
                     console.log('SELECT...FOR UPDATE query executed');
 
-                    if(err){
+                    if (err) {
                         console.error(err);
                         throw err;
                     }
-                    else if(rows.length == 0){
+                    else if (rows.length == 0) {
 
                         connection.commit(function (err) {
-                            if(err){
+                            if (err) {
                                 connection.rollback(function () {
                                     console.error(err);
                                     throw err;
@@ -143,7 +143,7 @@ function getDataForCheck() {
 
                             console.log("UPDATE query executed");
 
-                            if(err){
+                            if (err) {
                                 connection.rollback(function () {
                                     console.error(err);
                                     throw err;
@@ -152,7 +152,7 @@ function getDataForCheck() {
                             else {
 
                                 connection.commit(function (err) {
-                                    if(err){
+                                    if (err) {
                                         connection.rollback(function () {
                                             console.error(err);
                                             throw err;
@@ -177,6 +177,11 @@ function getDataForCheck() {
     });
 
 }
+
+//TODO: Implement
+router.post('/release-lock', function (request, response) {
+
+});
 
 /**
  * Function to register the check of a share
@@ -239,7 +244,7 @@ router.post('/register', function (request, response) {
 
 function validateCheckResponse(res) {
 
-    switch (res){
+    switch (res) {
 
         case VERIFIED:
         case ABSENT_PROFILE:
@@ -264,7 +269,7 @@ function updateShareForCheck(shareid) {
 
         connection.query('UPDATE Share SET checkstatus = ?, locked = ?, locked_at = ? WHERE shareid = ?', ["COMPLETE", false, null, shareid], function (err, rows) {
 
-            if(err){
+            if (err) {
                 console.error(err);
                 throw err;
             }
@@ -287,15 +292,15 @@ function updateCampaignBudget(sharerate, checkrate, cmid) {
 
     return new Promise(function (resolve, reject) {
 
-        var markup = (sharerate + checkrate) * 0.02; //TODO: Update markup
-        var amount = (sharerate+checkrate+markup);
+        var markup = (parseFloat(sharerate) + parseFloat(checkrate)) * 0.02; //TODO: Update markup
+        var amount = (parseFloat(sharerate) + parseFloat(checkrate) + parseFloat(markup));
 
         console.log('markup subtracted from budget ' + markup);
         console.log('amount subtracted from budget ' + amount);
 
         connection.query('UPDATE Campaign SET budget = (budget - ?) WHERE cmid = ?', [amount, cmid], function (err, row) {
 
-            if(err){
+            if (err) {
                 console.error(err);
                 throw err;
             }
@@ -320,7 +325,7 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid) {
     return new Promise(function (resolve, reject) {
 
         var params = {
-            checkid : uuidGenerator.v4(),
+            checkid: uuidGenerator.v4(),
             shareid: shareid,
             UUID: uuid,
             cmid: cmid,
@@ -333,28 +338,28 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid) {
         console.log("shareid is " + JSON.stringify(shareid, null, 3));
 
         /*
-        The logic table for below callback statements is
+         The logic table for below callback statements is
 
-        Condition 1 (C1) : res == 'verified'
-        Condition 2 (C2) : checkcount > 1
+         Condition 1 (C1) : res == 'verified'
+         Condition 2 (C2) : checkcount > 1
 
-        C1   C2    Update Share Table
-        0    0              0
-        0    1              1
-        1    0              1
-        1    1              1
+         C1   C2    Update Share Table
+         0    0              0
+         0    1              1
+         1    0              1
+         1    1              1
 
-        */
+         */
 
         //Register the check into 'Checks' table
-        connection.query('INSERT INTO Checks SET ?', params, function (err, rows){
+        connection.query('INSERT INTO Checks SET ?', params, function (err, rows) {
 
-            if(err){
+            if (err) {
                 console.error(err);
                 throw err;
             }
             //If the response is 'verified', then update the 'Share' table
-            else if(checkdata.checkresponse == 'verified'){
+            else if (checkdata.checkresponse == 'verified') {
 
                 var notifData = {
                     Category: 'Share',
@@ -370,7 +375,7 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid) {
 
                     resolve(rows);  //As this action is independent of whether the notification to the user was a success or not
 
-                    if(err){
+                    if (err) {
                         throw err;
                     }
                 });
@@ -379,17 +384,17 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid) {
             // if the count == 1 then do not update the 'Share' table otherwise do.
             else {
 
-                connection.query('SELECT * FROM Checks WHERE shareid = ?', [shareid], function(err, row) {
+                connection.query('SELECT * FROM Checks WHERE shareid = ?', [shareid], function (err, row) {
 
                     console.log("row is " + JSON.stringify(row, null, 3));
                     var checkcount = row.length;
 
-                    if(err){
+                    if (err) {
                         console.error(err);
                         throw err;
                     }
                     //Only one check, do not update the share table
-                    else if(checkcount == 1){
+                    else if (checkcount == 1) {
                         reject(row);
                     }
                     //Two checks, update the share table
@@ -409,7 +414,7 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid) {
 
                             resolve(row);   //As this action is independent whether the notification to the user was a success or not
 
-                            if(err){
+                            if (err) {
                                 console.log(err);
                                 throw err;
                             }

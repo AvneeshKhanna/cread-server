@@ -35,7 +35,7 @@ router.post('/load/', function (request, response) {
         }
         else {
             connection.query('SELECT Campaign.cmid, Campaign.title, Campaign.description, Campaign.mission, Campaign.type, Campaign.contentbaseurl, ' +
-                'Campaign.imagepath, Campaign.regdate, Share.sharerate, SUM(!ISNULL(Share.shareid)) AS sharescount, ' +
+                'Campaign.imagepath, Campaign.regdate, SUM(!ISNULL(Share.shareid)) AS sharescount, ' +
                 'Client.name AS clientname, Client.bio AS clientbio ' +
                 'FROM Campaign ' +
                 'JOIN Client ' +
@@ -60,6 +60,10 @@ router.post('/load/', function (request, response) {
                     }
                 });
 
+                rows.map(function (element) {
+                    element.sharerate = 50;     //TODO: Make sharerate dynamic
+                });
+
                 connection.query('SELECT fbusername FROM users WHERE UUID = ?', [uuid], function (err, row) {
                     if (err) {
                         throw err;
@@ -71,7 +75,7 @@ router.post('/load/', function (request, response) {
                             tokenstatus: 'valid',
                             data: {
                                 feed: rows,
-                                fbidstatus: true//row[0].fbusername != null TODO: Uncomment
+                                fbidstatus: row[0].fbusername != null
                             }
                         });
                         response.end();
