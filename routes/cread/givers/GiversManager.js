@@ -35,10 +35,10 @@ router.post('/load', function (request, response) {
 
             //Sorting the rows in decreasing order of donated amount
             rows.sort(function (a, b) {
-                if(a.donatedamount < b.donatedamount){
+                if (a.donatedamount < b.donatedamount) {
                     return 1;
                 }
-                else{
+                else {
                     return -1;
                 }
             });
@@ -56,7 +56,7 @@ router.post('/load', function (request, response) {
 
             var thisuser;
 
-            if(thisuserindex == -1){
+            if (thisuserindex == -1) {
                 thisuser = {};
             }
             else {
@@ -92,10 +92,10 @@ function getGiversData() {
             'WHERE Share.donation = ? ' +
             'GROUP BY users.UUID', [true], function (err, rows) {
 
-            if(err){
+            if (err) {
                 reject(err);
             }
-            else{
+            else {
                 resolve(rows);
             }
 

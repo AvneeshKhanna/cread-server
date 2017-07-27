@@ -104,7 +104,7 @@ router.post('/add', function (request, response) {
     var description = request.body.description;
     var budget = request.body.budget;
     var type = request.body.type;
-    var cmpstatus = 'UNVERIFIED';
+    var cmpstatus = 'ACTIVE';
     var imagepath = request.body.imagepath;
     var contentbaseurl = request.body.contentbaseurl;
     var cmid = uuidGenerator.v4();
@@ -155,6 +155,7 @@ router.post('/add', function (request, response) {
 });
 
 router.post('/specific', function (request, response) {
+
     var clientid = request.body.clientid;
     var authkey = request.body.authkey;
     var cmid = request.body.cmid;

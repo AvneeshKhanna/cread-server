@@ -48,11 +48,9 @@ router.post('/', function (request, response) {
                     throw err;
                 }
 
-                console.log("Data from query is " + JSON.stringify(data, null, 3));
-
-                for (var i = 0; i < data.length; i++) {
+                /*for (var i = 0; i < data.length; i++) {
                     data[i].type = 0;   //Share Code
-                }
+                }*/
 
                 connection.query('SELECT Campaign.title, Checks.responses, Checks.regdate, Checks.cashed_in ' +
                     'FROM Checks ' +
@@ -68,9 +66,11 @@ router.post('/', function (request, response) {
 
                         resarray = data.concat(rows);
 
-                        for (var i = 0; i < rows.length; i++) {
+                        console.log("Data after concat is " + JSON.stringify(resarray, null, 3));
+
+                        /*for (var i = 0; i < rows.length; i++) {
                             rows[i].type = 1;   //Check Code
-                        }
+                        }*/
 
                         connection.query('SELECT users.firstname, users.lastname, users.phoneNo AS contact, users.email, users.fbusername ' +
                             'FROM users ' +
@@ -90,44 +90,50 @@ router.post('/', function (request, response) {
                                  return accumulator + element.sharerate;
                                  }, 0);*/
 
-                                //TODO: Make the checkprice dynamic
                                 //Calculate availableAmount
                                 var availableAmt = resarray.map(function (element) {
 
-                                    element.cashed_in = (element.cashed_in == 1);
+                                        element.cashed_in = (element.cashed_in == 1);
 
-                                    if (element.hasOwnProperty('sharerate')) {
-                                        element.donation = (element.donation == 1);
-                                    }
-                                    else {
-                                        element.checkrate = 4;
-                                    }
-                                    return element;
-                                })
-                                .filter(function (element) {
-                                    return (element.cashed_in == false)
-                                        && !element.hasOwnProperty('checkstatus')
-                                        || element.checkstatus != 'PENDING';
-                                })
-                                .reduce(function (accumulator, element) {
-                                    if (element.hasOwnProperty('sharerate')) {
-                                        if (element.causeid == null) {
-                                            return accumulator + parseInt(element.sharerate);
+                                        if (element.hasOwnProperty('sharerate')) {
+                                            element.donation = (element.donation == 1);
+                                            element.type = 0; //Share Code
                                         }
                                         else {
-                                            return accumulator;
+                                            if (element.responses == 'verified'){
+                                                element.checkrate = 4;  //TODO: Make checkrate dynamic
+                                            }
+                                            else {
+                                                element.checkrate = 1;  //TODO: Make checkrate dynamic
+                                            }
+                                            element.type = 1;   //Checks Code
                                         }
-                                    }
-                                    else {
-                                        //TODO: Make the checkprice dynamic
-                                        if (element.responses == 'verified') {
-                                            return accumulator + 4;
+
+                                        return element;
+                                    })
+                                    .filter(function (element) {
+                                        return (element.cashed_in == false)
+                                            && (!element.hasOwnProperty('sharerate'))
+                                            || element.checkstatus == 'COMPLETE';
+                                    })
+                                    .reduce(function (accumulator, element) {
+                                        if (element.hasOwnProperty('sharerate')) {
+                                            if (!element.donation) {
+                                                return accumulator + parseInt(element.sharerate);
+                                            }
+                                            else {
+                                                return accumulator;
+                                            }
                                         }
                                         else {
-                                            return accumulator + 1;
+                                            if (element.responses == 'verified') {
+                                                return accumulator + 4; //TODO: Make the checkrate dynamic
+                                            }
+                                            else {
+                                                return accumulator + 1; //TODO: Make the checkrate dynamic
+                                            }
                                         }
-                                    }
-                                }, 0);
+                                    }, 0);
 
                                 var no_of_shares = resarray.filter(function (element) {
                                     return element.hasOwnProperty('sharerate');
@@ -136,7 +142,7 @@ router.post('/', function (request, response) {
                                 var no_of_checks = resarray.length - no_of_shares;
 
                                 var donatedAmt = resarray.filter(function (element) {
-                                    return element.hasOwnProperty('sharerate') && (element.donation == 1);
+                                    return element.hasOwnProperty('sharerate') && (element.donation);
                                 }).reduce(function (accumuator, element) {
                                     accumuator += element.sharerate;
                                 }, 0);

@@ -13,7 +13,7 @@ var AWS = require('aws-sdk');
 var userSchema = require('./Schema');
 var _auth = require('./Authentication');
 var config = require('./Config');
-var notify = require('./Notification-System/notify');
+var notify = require('./notification-system/notify');
 
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());

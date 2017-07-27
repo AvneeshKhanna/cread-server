@@ -82,10 +82,10 @@ router.post('/', function (request, response) {
         })
         .catch(function (err) {
 
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
@@ -123,8 +123,8 @@ function getPaytmParams(userpaytmcontact, amount, requestType) {
 }
 
 /**
-* Function to check if user's paytm
-* */
+ * Function to check if user's paytm
+ * */
 function checkIfUserPaytmAccExists(amount, userpaytmcontact, checksumhash) {
     console.log("checkIfUserPaytmAccExists called");
     return new Promise(function (resolve, reject) {
@@ -196,12 +196,15 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
             }
             else {
 
-                //Updating Share table
-                connection.query('UPDATE Share ' +
-                    'JOIN Checks ' +
-                    'ON Share.shareid = Checks.shareid ' +
-                    'SET Share.cashed_in = ?, Share.paytmOrderId = ? ' +
-                    'WHERE Checks.responses = ? AND Share.UUID = ?', [1, orderId, 'verified', uuid], function (err, row) {
+                var usrtransparams = {
+                    transid: uuidGen.v4(),
+                    uuid: uuid,
+                    paytmOrderId: orderId,
+                    amount: amount
+                };
+
+                //Adding transaction to UserWalletTransaction table
+                connection.query('INSERT INTO UsersWalletTransaction SET ?', [usrtransparams], function (err, row) {
 
                     if (err) {
                         connection.rollback(function () {
@@ -210,10 +213,12 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
                     }
                     else {
 
-                        //Updating Checks table
-                        connection.query('UPDATE Checks ' +
-                            'SET Checks.cashed_in = 1, Checks.paytmOrderId = ? ' +
-                            'WHERE Checks.UUID = ?', [orderId, uuid], function (err, data) {
+                        //Updating Share table
+                        connection.query('UPDATE Share ' +
+                            'JOIN Checks ' +
+                            'ON Share.shareid = Checks.shareid ' +
+                            'SET Share.cashed_in = ?, Share.transid = ? ' +
+                            'WHERE Checks.responses = ? AND Share.UUID = ?', [1, usrtransparams.transid, 'verified', uuid], function (err, row) {
 
                             if (err) {
                                 connection.rollback(function () {
@@ -222,42 +227,10 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
                             }
                             else {
 
-                                /*var paytm_params = {
-                                 request: {
-                                 requestType: "VERIFY",
-                                 merchantGuid: "52cd743e-2f83-41b8-8468-ea83daf909e7",
-                                 merchantOrderId: "123112q",
-                                 salesWalletName: null,
-                                 salesWalletGuid: "05d92f1a-e603-4df4-9034-000c8363dd7b",
-                                 payeeEmailId: null,
-                                 payeePhoneNumber: userpaytmcontact,
-                                 payeeSsoId: null,
-                                 appliedToNewUsers: "Y",
-                                 amount: "10",
-                                 currencyCode: "INR"
-                                 },
-                                 metadata: "Testing Data",
-                                 ipAddress: "122.161.164.208",
-                                 platformName: "PayTM",
-                                 operationType: "SALES_TO_USER_CREDIT"
-                                 };*/
-
-                                // Set the headers
-                                var headers = {
-                                    'checksumhash': checksumhash,
-                                    'Content-Type': 'application/json',
-                                    'mid': '52cd743e-2f83-41b8-8468-ea83daf909e7'
-                                };
-
-                                // Configure the request
-                                var options = {
-                                    url: paytm_server_url + "/wallet-web/salesToUserCredit",
-                                    method: 'POST',
-                                    headers: headers,
-                                    body: JSON.stringify(getPaytmParams(userpaytmcontact, amount, null))  //Body parameter is required to be Sring or Buffer type
-                                };
-
-                                httprequest(options, function (err, res, body) {
+                                //Updating Checks table
+                                connection.query('UPDATE Checks ' +
+                                    'SET Checks.cashed_in = 1, Checks.transid = ? ' +
+                                    'WHERE Checks.UUID = ?', [usrtransparams.transid, uuid], function (err, data) {
 
                                     if (err) {
                                         connection.rollback(function () {
@@ -266,37 +239,85 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
                                     }
                                     else {
 
-                                        var resbody = JSON.parse(body);
-                                        console.log("paytm response resbody is " + JSON.stringify(resbody, null, 3));
+                                        /*var paytm_params = {
+                                         request: {
+                                         requestType: "VERIFY",
+                                         merchantGuid: "52cd743e-2f83-41b8-8468-ea83daf909e7",
+                                         merchantOrderId: "123112q",
+                                         salesWalletName: null,
+                                         salesWalletGuid: "05d92f1a-e603-4df4-9034-000c8363dd7b",
+                                         payeeEmailId: null,
+                                         payeePhoneNumber: userpaytmcontact,
+                                         payeeSsoId: null,
+                                         appliedToNewUsers: "Y",
+                                         amount: "10",
+                                         currencyCode: "INR"
+                                         },
+                                         metadata: "Testing Data",
+                                         ipAddress: "122.161.164.208",
+                                         platformName: "PayTM",
+                                         operationType: "SALES_TO_USER_CREDIT"
+                                         };*/
 
-                                        if (resbody.status == "SUCCESS") {
-                                            connection.commit(function (err) {
-                                                if (err) {
-                                                    connection.rollback(function () {
-                                                        reject(err);
+                                        // Set the headers
+                                        var headers = {
+                                            'checksumhash': checksumhash,
+                                            'Content-Type': 'application/json',
+                                            'mid': '52cd743e-2f83-41b8-8468-ea83daf909e7'
+                                        };
+
+                                        // Configure the request
+                                        var options = {
+                                            url: paytm_server_url + "/wallet-web/salesToUserCredit",
+                                            method: 'POST',
+                                            headers: headers,
+                                            body: JSON.stringify(getPaytmParams(userpaytmcontact, amount, null))  //Body parameter is required to be Sring or Buffer type
+                                        };
+
+                                        httprequest(options, function (err, res, body) {
+
+                                            if (err) {
+                                                connection.rollback(function () {
+                                                    reject(err);
+                                                });
+                                            }
+                                            else {
+
+                                                var resbody = JSON.parse(body);
+                                                console.log("paytm response resbody is " + JSON.stringify(resbody, null, 3));
+
+                                                if (resbody.status == "SUCCESS") {
+                                                    connection.commit(function (err) {
+                                                        if (err) {
+                                                            connection.rollback(function () {
+                                                                reject(err);
+                                                            });
+                                                        }
+                                                        else {
+                                                            resolve("success");
+                                                        }
                                                     });
                                                 }
-                                                else {
-                                                    resolve("success");
-                                                }
-                                            });
-                                        }
-                                        else if (resbody.status == "FAILURE") {
-                                            connection.rollback(function () {
+                                                else if (resbody.status == "FAILURE") {
+                                                    connection.rollback(function () {
 
-                                                if(resbody.statusCode == 'GE_1032'){    //Case of invalid mobile number
-                                                    resolve('invalid-contact');
+                                                        if (resbody.statusCode == 'GE_1032') {    //Case of invalid mobile number
+                                                            resolve('invalid-contact');
+                                                        }
+                                                        else {
+                                                            reject(new Error(resbody.statusMessage));
+                                                        }
+                                                    });
                                                 }
-                                                else {
-                                                    reject(new Error(resbody.statusMessage));
+                                                else {   //resbody.status == "PENDING"
+                                                    connection.rollback(function () {
+                                                        resolve("invalid-user");
+                                                    });
                                                 }
-                                            });
-                                        }
-                                        else {   //resbody.status == "PENDING"
-                                            connection.rollback(function () {
-                                                resolve("invalid-user");
-                                            });
-                                        }
+
+                                            }
+
+                                        });
 
                                     }
 
@@ -308,7 +329,7 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
 
                     }
 
-                });
+                })
 
             }
         });

@@ -9,7 +9,7 @@ var mysql = require('mysql');
 
 var AWS = require('aws-sdk');
 var dynamo_marshal = require('dynamodb-marshaler');
-var sendNotification = require('../../Notification-System/notificationFramework');
+var sendNotification = require('../../notification-system/notificationFramework');
 
 var appconfig = require('../../Config');
 var _connection = appconfig.createConnection;

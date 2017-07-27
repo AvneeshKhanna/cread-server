@@ -37,7 +37,7 @@ router.post('/request/', function (request, response) {
         .then(function (row) {
 
             var data = {
-                firstname : row.firstname,
+                firstname: row.firstname,
                 lastname: row.lastname,
                 contact: row.phoneNo,
                 email: row.email
@@ -62,7 +62,7 @@ function getUserProfileData(uuid) {
 
         connection.query('SELECT firstname, lastname, email, phoneNo FROM users WHERE UUID = ?', [uuid], function (err, row) {
 
-            if(err){
+            if (err) {
                 console.error(err);
                 throw err;
             }
@@ -83,9 +83,9 @@ router.post('/update/', function (request, response) {
     var authkey = request.body.authkey;
 
     var params = {
-        firstname : request.body.firstname,
-        lastname : request.body.lastname,
-        email : request.body.email
+        firstname: request.body.firstname,
+        lastname: request.body.lastname,
+        email: request.body.email
     };
 
     _auth.authValid(uuid, authkey)
@@ -137,27 +137,27 @@ function updateUserProfileDDB(params, uuid) {
     return new Promise(function (resolve, reject) {
 
         var ddbparams = {
-            TableName : userstbl_ddb,
+            TableName: userstbl_ddb,
             Key: {
-                UUID : uuid
+                UUID: uuid
             },
             UpdateExpression: 'set #key1 = :val1, #key2 = :val2',
             ExpressionAttributeNames: {
-                '#key1' : 'Name',
-                '#key2' : 'Email_Id'
+                '#key1': 'Name',
+                '#key2': 'Email_Id'
             },
             ExpressionAttributeValues: {
-                ':val1' : params.firstname + ' ' + params.lastname,
-                ':val2' : params.email
+                ':val1': params.firstname + ' ' + params.lastname,
+                ':val2': params.email
             }
         };
 
         docClient.update(ddbparams, function (err, data) {
 
-            if(err){
+            if (err) {
                 reject(err);
             }
-            else{
+            else {
                 resolve();
             }
 
@@ -169,11 +169,11 @@ function updateUserProfileDDB(params, uuid) {
 /**
  * Function to update user's details in RDS table
  * */
-function updateUserProfileRDS(params, uuid){
+function updateUserProfileRDS(params, uuid) {
     return new Promise(function (resolve, reject) {
         connection.query('UPDATE users SET ? WHERE UUID = ?', [params, uuid], function (err, row) {
 
-            if(err){
+            if (err) {
                 reject(err);
             }
             else {
@@ -229,7 +229,7 @@ function updateFbUsername(uuid, fbusername) {
         };
 
         connection.query('UPDATE users SET ? WHERE UUID = ?', [params, uuid], function (err, row) {
-            if(err){
+            if (err) {
                 reject(err);
             }
             else {

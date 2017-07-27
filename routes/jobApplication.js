@@ -14,7 +14,7 @@ var applicationSchema = require('./Schema');
 var jobApplication = applicationSchema.jobApplication;
 var authtokenvalidation = require('./auth-token-management/AuthTokenManager');
 
-var notify = require('./Notification-System/notificationFramework');
+var notify = require('./notification-system/notificationFramework');
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());

@@ -3,8 +3,8 @@
  */
 
 /*
-* This error is created to that it can be thrown when a promise chain needs to be broken in between
-* */
+ * This error is created to that it can be thrown when a promise chain needs to be broken in between
+ * */
 
 //Utils module loaded
 var util = require('util');

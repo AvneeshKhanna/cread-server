@@ -10,7 +10,7 @@ var Hashids = require('hashids');
 var jobApplySchema = require('../Schema');
 var config = require('../Config');
 var authtokenvalidation = require('../auth-token-management/AuthTokenManager');   //module to authenticate user before making request
-var sendNotification = require('../Notification-System/notificationFramework');
+var sendNotification = require('../notification-system/notificationFramework');
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
