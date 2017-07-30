@@ -1,6 +1,7 @@
 /**
  * Created by avnee on 15-06-2017.
  */
+'use strict';
 
 var express = require('express');
 var router = express.Router();
@@ -93,8 +94,6 @@ router.post('/request', function (request, response) {
         });
 
 });
-
-//DATE_SUB(NOW(), INTERVAL 60 MINUTE);
 
 /**
  * Function to retrieve a random user's data from the profile who has shared a given campaign
@@ -193,11 +192,6 @@ function getDataForCheck(uuid) {
 
 }
 
-//TODO: Implement
-router.post('/release-lock', function (request, response) {
-
-});
-
 /**
  * Function to register the check of a share
  * */
@@ -227,15 +221,24 @@ router.post('/register', function (request, response) {
                 tokenstatus: 'invalid'
             });
             response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (checkstatus) {
+
+            if(checkstatus){
+                return updateShareForCheck(shareid, checkstatus);   //If the checkresponse was 'verified'. If not, then it was the 2nd for the Share
+            }
+            else{
+                return updateShareForCheck(shareid);    //If the checkresponse was not 'verified' and was the 1st for the Share
+            }
+        })
+        .then(function (result) {
+            if(result.toUpdateBudget){
+                return updateCampaignBudget(sharerate, result.checkrate, cmid);
+            }
         })
         .then(function () {
-            return updateCampaignBudget(sharerate, 4, cmid);    //TODO: Make the 'checkreward' dynamic
-        })
-        .then(function () {
-            return updateShareForCheck(shareid);
-        }, function () {
             console.log('Sending back response');
-            //Send response back to the client without updating 'Share' table
             response.send({
                 tokenstatus: 'valid',
                 data: {
@@ -243,16 +246,20 @@ router.post('/register', function (request, response) {
                 }
             });
             response.end();
+            throw new BreakPromiseChainError();
         })
-        .then(function () {
-            console.log('Sending back response');
-            response.send({
-                tokenstatus: 'valid',
-                data: {
-                    status: 'completed'
-                }
-            });
-            response.end();
+        .catch(function (err) {
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                });
+                response.end();
+                throw new Error(err);
+            }
         });
 
 });
@@ -276,20 +283,42 @@ function validateCheckResponse(res) {
 /**
  * Update the 'checkstatus' column of 'Share' table after the check has been registered
  * */
-function updateShareForCheck(shareid) {
+function updateShareForCheck(shareid, checkstatus) {
 
     console.log('updateShareForCheck called');
 
     return new Promise(function (resolve, reject) {
 
-        connection.query('UPDATE Share SET checkstatus = ?, locked = ?, locked_at = ? WHERE shareid = ?', ["COMPLETE", false, null, shareid], function (err, rows) {
+        var result = {
+            toUpdateBudget: false
+        };
 
-            if (err) {
-                console.error(err);
-                throw err;
+        var params = {
+            locked: false,
+            locked_at: null
+        };
+
+        if(checkstatus){    //Case where checkresponse is either 'verified' or 2nd for the Share
+            params.checkstatus = checkstatus;
+            result.toUpdateBudget = true;
+
+            //TODO: Make the checkrate dynamic
+            if(checkstatus == "COMPLETE"){
+                result.checkrate = 4;
             }
             else {
-                resolve(rows);
+                result.checkrate = 1;
+            }
+
+        }
+
+        connection.query('UPDATE Share SET ? WHERE shareid = ?', [params, shareid], function (err, rows) {
+
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(result);
             }
 
         })
@@ -316,8 +345,7 @@ function updateCampaignBudget(sharerate, checkrate, cmid) {
         connection.query('UPDATE Campaign SET budget = (budget - ?) WHERE cmid = ?', [amount, cmid], function (err, row) {
 
             if (err) {
-                console.error(err);
-                throw err;
+               reject(err);
             }
             else {
                 resolve();
@@ -356,8 +384,7 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid) {
 
         connection.query('SELECT title FROM Campaign WHERE cmid = ?', [cmid], function (err, cmp) {
             if(err){
-                console.error(err);
-                throw err;
+                reject(err);
             }
             else {
 
@@ -381,8 +408,7 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid) {
                 connection.query('INSERT INTO Checks SET ?', params, function (err, rows) {
 
                     if (err) {
-                        console.error(err);
-                        throw err;
+                        reject(err);
                     }
                     //If the response is 'verified', then update the 'Share' table
                     else if (checkdata.checkresponse == 'verified') {
@@ -402,7 +428,7 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid) {
 
                             console.log('notification sent');
 
-                            resolve(rows);  //As this action is independent of whether the notification to the user was a success or not
+                            resolve("COMPLETE");  //As this action is independent of whether the notification to the user was a success or not
 
                             if (err) {
                                 throw err;
@@ -419,12 +445,11 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid) {
                             var checkcount = row.length;
 
                             if (err) {
-                                console.error(err);
-                                throw err;
+                                reject(err);
                             }
                             //Only one check, do not update the share table
                             else if (checkcount == 1) {
-                                reject(row);
+                                resolve();
                             }
                             //Two checks, update the share table
                             else {
@@ -444,7 +469,7 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid) {
 
                                     console.log('notification sent');
 
-                                    resolve(row);   //As this action is independent whether the notification to the user was a success or not
+                                    resolve("CANCELLED");   //As this action is independent whether the notification to the user was a success or not
 
                                     if (err) {
                                         console.log(err);
