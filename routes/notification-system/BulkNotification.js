@@ -14,7 +14,7 @@ var notifyUsers = require('./NotificationUtils');
 
 router.post('/', function (request, response) {
 
-    console.log(JSON.stringify(request.body, null, 3));
+    console.log("request is " + JSON.stringify(request.body, null, 3));
 
     var cmid = request.body.cmid;   //Can be NULL
     var app_model = request.body.app_model; // "1.0" or "2.0"

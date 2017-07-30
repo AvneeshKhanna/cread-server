@@ -191,6 +191,7 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
         connection.beginTransaction(function (err) {
             if (err) {
                 connection.rollback(function () {
+                    console.log('Transaction rollbacked');
                     reject(err);
                 });
             }
@@ -208,6 +209,7 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
 
                     if (err) {
                         connection.rollback(function () {
+                            console.log('Transaction rollbacked');
                             reject(err);
                         });
                     }
@@ -222,6 +224,7 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
 
                             if (err) {
                                 connection.rollback(function () {
+                                    console.log('Transaction rollbacked');
                                     reject(err);
                                 });
                             }
@@ -234,6 +237,7 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
 
                                     if (err) {
                                         connection.rollback(function () {
+                                            console.log('Transaction rollbacked');
                                             reject(err);
                                         });
                                     }
@@ -263,7 +267,7 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
                                         var headers = {
                                             'checksumhash': checksumhash,
                                             'Content-Type': 'application/json',
-                                            'mid': '52cd743e-2f83-41b8-8468-ea83daf909e7'
+                                            'mid': '52cd743e-2f83-41b8-8468-ea83daf909e7'   //Provided by Paytm
                                         };
 
                                         // Configure the request
@@ -278,6 +282,7 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
 
                                             if (err) {
                                                 connection.rollback(function () {
+                                                    console.log('Transaction rollbacked');
                                                     reject(err);
                                                 });
                                             }
@@ -290,16 +295,19 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
                                                     connection.commit(function (err) {
                                                         if (err) {
                                                             connection.rollback(function () {
+                                                                console.log('Transaction rollbacked');
                                                                 reject(err);
                                                             });
                                                         }
                                                         else {
+                                                            console.log('Transaction committed');
                                                             resolve("success");
                                                         }
                                                     });
                                                 }
                                                 else if (resbody.status == "FAILURE") {
                                                     connection.rollback(function () {
+                                                        console.log('Transaction rollbacked');
 
                                                         if (resbody.statusCode == 'GE_1032') {    //Case of invalid mobile number
                                                             resolve('invalid-contact');
@@ -311,6 +319,7 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
                                                 }
                                                 else {   //resbody.status == "PENDING"
                                                     connection.rollback(function () {
+                                                        console.log('Transaction rollbacked');
                                                         resolve("invalid-user");
                                                     });
                                                 }

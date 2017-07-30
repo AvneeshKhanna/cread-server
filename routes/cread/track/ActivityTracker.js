@@ -113,8 +113,8 @@ router.post('/', function (request, response) {
                                     })
                                     .filter(function (element) {
                                         return (element.cashed_in == false)
-                                            && (!element.hasOwnProperty('sharerate'))
-                                            || element.checkstatus == 'COMPLETE';
+                                            && (!element.hasOwnProperty('sharerate')
+                                            || element.checkstatus == 'COMPLETE');
                                     })
                                     .reduce(function (accumulator, element) {
                                         if (element.hasOwnProperty('sharerate')) {
@@ -141,10 +141,13 @@ router.post('/', function (request, response) {
 
                                 var no_of_checks = resarray.length - no_of_shares;
 
+                                console.log("resarray after availableAmt calcs " + JSON.stringify(resarray, null, 3));
+
                                 var donatedAmt = resarray.filter(function (element) {
-                                    return element.hasOwnProperty('sharerate') && (element.donation);
+                                    return element.hasOwnProperty('sharerate') && (element.donation == true);
                                 }).reduce(function (accumuator, element) {
                                     accumuator += element.sharerate;
+                                    return accumuator;
                                 }, 0);
 
                                 //Sort according to 'regdate'
@@ -175,7 +178,7 @@ router.post('/', function (request, response) {
                                         shared: no_of_shares ? no_of_shares : 0,
                                         measured: no_of_checks ? no_of_checks : 0,
                                         donated: donatedAmt ? donatedAmt : 0,
-                                        minCashInAmt: 90,          //TODO: Can change the amount based on team discussion
+                                        minCashInAmt: 5,          //TODO: Can change the amount based on team discussion
                                         creditAmt: availableAmt
                                     }
                                 };

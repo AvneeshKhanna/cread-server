@@ -48,7 +48,7 @@ router.post('/', function(request, response){
                         var OTP = otpGenerator();                        
                         var params = {                    
 
-                            Message : 'You verification code for Market Recruit is - ' + OTP,
+                            Message : OTP + ' - your verification code for Cread',
                             PhoneNumber : '+91' + contactnumber
                         };
                         
