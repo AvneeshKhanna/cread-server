@@ -11,6 +11,7 @@ var AWS = config.AWS;
 var uuid = require('uuid');
 
 var _auth = require('../../../auth-token-management/AuthTokenManager');
+var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 
 router.post('/load-data', function (request, response) {
 
@@ -25,6 +26,7 @@ router.post('/load-data', function (request, response) {
                 tokenstatus: 'invalid'
             });
             response.end();
+            throw new BreakPromiseChainError();
         })
         .then(function (rows) {
 
@@ -32,38 +34,30 @@ router.post('/load-data', function (request, response) {
 
             resdata.walletbalance = rows[0].walletbalance;
             resdata.transactions = rows.filter(function (element) {
-                if(element.transid != null){
+                if (element.transid != null) {
                     delete element['walletbalance'];
                     return element;
                 }
             });
 
-            response
-                .send({
-                    tokenstatus: 'valid',
-                    data: resdata
-                })
-                .end();
-
-        }, function (err) {
-            console.error(err);
-            response
-                .status(500)
-                .send({
-                    error: 'Some error occurred at the server'
-                })
-                .end();
+            response.send({
+                tokenstatus: 'valid',
+                data: resdata
+            });
+            response.end();
+            throw new BreakPromiseChainError();
         })
         .catch(function (err) {
-            console.error(err);
-            response
-                .status(500)
-                .send({
+            if (err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
                     error: 'Some error occurred at the server'
-                })
-                .end();
-        })
-
+                }).end();
+            }
+        });
 });
 
 function getWalletScreenData(clientid) {
@@ -75,7 +69,7 @@ function getWalletScreenData(clientid) {
             'WHERE Client.clientid = ? ' +
             'ORDER BY WalletTransaction.regdate DESC', [clientid], function (err, rows) {
 
-            if(err){
+            if (err) {
                 reject(err);
             }
             else {

@@ -11,6 +11,7 @@ var AWS = config.AWS;
 var uuid = require('uuid');
 
 var _auth = require('../../../../auth-token-management/AuthTokenManager');
+var BreakPromiseChainError = require('../../../utils/BreakPromiseChainError');
 
 router.post('/update-budget', function (request, response) {
 
@@ -33,6 +34,7 @@ router.post('/update-budget', function (request, response) {
                 tokenstatus: 'invalid'
             });
             response.end();
+            throw new BreakPromiseChainError;
         })
         .then(function (status) {
             response.send({
@@ -42,12 +44,18 @@ router.post('/update-budget', function (request, response) {
                 }
             });
             response.end();
+            throw new BreakPromiseChainError;
         })
         .catch(function (err) {
-            console.error(err);
-            response.status(500).send({
-                error: 'Some error occurred at the server'
-            }).end();
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
         });
 
 });

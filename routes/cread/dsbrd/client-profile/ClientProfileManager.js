@@ -30,13 +30,8 @@ router.post('/sign-up', function (request, response) {
                     status: 'exists'
                 });
                 response.end();
+                throw new BreakPromiseChainError();
             }
-        }, function (err) {
-            console.error(err);
-            response.status(500).send({
-                error: 'Some error occurred at the server'
-            });
-            response.end();
         })
         .then(function (data) {
             response.send({
@@ -44,12 +39,19 @@ router.post('/sign-up', function (request, response) {
                 data: data
             });
             response.end();
-        }, function (err) {
-            console.error(err);
-            response.status(500).send({
-                error: 'Some error occurred at the server'
-            });
-            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                });
+                response.end();
+            }
         })
 
 });
@@ -122,6 +124,7 @@ router.post('/sign-in', function (request, response) {
                         status: 'incorrect-password'
                     });
                     response.end();
+                    throw new BreakPromiseChainError();
                 }
 
             }
@@ -131,12 +134,8 @@ router.post('/sign-in', function (request, response) {
                     status: 'incorrect-email'
                 });
                 response.end();
+                throw new BreakPromiseChainError();
             }
-        }, function (err) {
-            console.error(err);
-            response.status(500).send({
-                error: 'Server error occurred'
-            });
         })
         .then(function (data) {
 
@@ -147,12 +146,19 @@ router.post('/sign-in', function (request, response) {
                 data: data
             });
             response.end();
+            throw new BreakPromiseChainError();
 
-        }, function (err) {
-            console.error(err);
-            response.status(500).send({
-                error: 'Server error occurred'
-            });
+        })
+        .catch(function (err) {
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
         });
 
 });
@@ -235,6 +241,7 @@ router.post('/sign-out', function (request, response) {
                 tokenstatus: 'invalid'
             });
             response.end();
+            throw new BreakPromiseChainError();
         })
         .then(function () {
             response.send({
@@ -244,12 +251,18 @@ router.post('/sign-out', function (request, response) {
                 }
             });
             response.end();
+            throw new BreakPromiseChainError();
         })
         .catch(function (err) {
-            console.error(err);
-            response.status(500).send({
-                error: 'Some error occurred at the server'
-            }).end();
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
         });
 
 });
@@ -287,7 +300,8 @@ router.post('/token-update', function (request, response) {
             response.send({
                 tokenstatus: 'invalid'
             });
-            response.send();
+            response.end();
+            throw new BreakPromiseChainError();
         })
         .then(function (row) {
 
@@ -297,12 +311,6 @@ router.post('/token-update', function (request, response) {
             };
 
             return saveToken(clientid, _auth.generateToken(payload));
-
-        }, function (err) {
-            console.error(err);
-            response.status(500).send({
-                error: 'Server error occurred'
-            });
         })
         .then(function (authkey) {
             response.send({
@@ -312,11 +320,18 @@ router.post('/token-update', function (request, response) {
                 }
             });
             response.end();
-        }, function (err) {
-            console.error(err);
-            response.status(500).send({
-                error: 'Server error occurred'
-            });
+            throw new BreakPromiseChainError();
+        })
+        .catch(function(err){
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
         });
 
 });
@@ -408,6 +423,7 @@ router.post('/update', function (request, response) {
                }
            });
            response.end();
+           throw new BreakPromiseChainError();
        })
        .catch(function (err) {
            if (err instanceof BreakPromiseChainError) {

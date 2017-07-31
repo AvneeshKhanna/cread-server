@@ -11,10 +11,19 @@ var AWS = config.AWS;
 
 var uuidGenerator = require('uuid');
 var Hashids = require('hashids');
+var moment = require('moment');
+
+var lowerlimittime = moment.utc().subtract(1, "days").format('YYYY-MM-DD HH:mm:ss');
+//console.log("lowerlimittime is " + JSON.stringify(lowerlimittime, null, 3));
+var regdate = moment.utc("2017-07-31T11:06:46.000Z").format("YYYY-MM-DD HH:mm:ss");
+//console.log("regdate is " + JSON.stringify(regdate, null, 3));
+
+console.log("diff is " + moment.utc(moment(regdate, "YYYY-MM-DD HH:mm:ss").diff(lowerlimittime, "YYYY-MM-DD HH:mm:ss")).format("HH:mm:ss"));
 
 var utils = require('../utils/Utils');
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
+var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
 router.post('/add-donation-cause', function (request, response) {
 
@@ -58,7 +67,7 @@ function addDonationCause(shareid, causeid) {
 
         connection.query('UPDATE Share SET ? WHERE shareid = ?', [params, shareid], function (err, row) {
 
-            if(err){
+            if (err) {
                 reject(err);
             }
             else {
@@ -108,20 +117,15 @@ router.post('/save', function (request, response) {
             }
 
             return saveShareToDb(params);
-
         }, function () {
             response.send({
                 tokenstatus: 'invalid'
             });
             response.end();
+            throw new BreakPromiseChainError();
         })
         .then(function () {
             return getCausesData();
-        }, function (err) {
-            console.error(err);
-            response.status(500).send({
-                error: 'Some error occurred at the server'
-            }).end();
         })
         .then(function (rows) {
 
@@ -137,18 +141,20 @@ router.post('/save', function (request, response) {
 
             response.send(resdata);
             response.end();
+            throw new BreakPromiseChainError();
 
-        }, function (err) {
-            console.error(err);
-            response.status(500).send({
-                error: 'Some error occurred at the server'
-            }).end();
         })
         .catch(function (err) {
-            console.error(err);
-            response.status(500).send({
-                error: 'Some error occurred at the server'
-            }).end();
+
+            if (err instanceof BreakPromiseChainError) {
+                //Do nothing
+            }
+            else {
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
         });
 
 });
@@ -163,7 +169,7 @@ function saveShareToDb(params) {
         connection.query('INSERT INTO Share SET ?', params, function (error, data) {
 
             if (error) {
-                throw error;
+                reject(error);
             }
             else {
                 console.log('Query executed');
@@ -207,54 +213,127 @@ router.post('/request-unique-link', function (request, response) {
 
     _auth.authValid(uuid, authkey)
         .then(function () {
-            return getCampaignBaseLink(cmid);
+            return checkUserLastShare(cmid, uuid);
         }, function () {
             response.send({
                 tokenstatus: 'invalid'
             });
             response.end();
         })
+        .then(function (result) {
+
+            if (result["to-share-more"]) {   //A Share doesn't exists within the last 24 hours, proceed the user to Share
+
+                console.log("result when restricting user is " + JSON.stringify(result, null, 3));
+                return getCampaignBaseLink(cmid);
+            }
+            else {  //A Share exists within the last 24 hours, restrict the user to Share any more
+
+                console.log("result when restricting user is " + JSON.stringify(result, null, 3));
+
+                response.send({
+                    tokenstatus: 'valid',
+                    data: {
+                        status: 'stop',
+                        wait_time: result["wait_time"]
+                    }
+                });
+                response.end();
+                throw new BreakPromiseChainError();
+            }
+        })
         .then(function (campaign) {
 
-            console.log("ulinkkey is " + JSON.stringify(ulinkkey, null, 3));
-            console.log("ulinkvalue is " + JSON.stringify(ulinkvalue, null, 3));
+            if(campaign) {
+                console.log("ulinkkey is " + JSON.stringify(ulinkkey, null, 3));
+                console.log("ulinkvalue is " + JSON.stringify(ulinkvalue, null, 3));
 
-            var data = {
-                budgetavailable: true,
-                campaignlink: utils.updateQueryStringParameter(campaign.contentbaseurl, ulinkkey, ulinkvalue),
-                ulinkkey: ulinkkey,
-                ulinkvalue: ulinkvalue
-            };
+                var data = {
+                    status: 'proceed',
+                    budgetavailable: true,
+                    campaignlink: utils.updateQueryStringParameter(campaign.contentbaseurl, ulinkkey, ulinkvalue),
+                    ulinkkey: ulinkkey,
+                    ulinkvalue: ulinkvalue
+                };
 
-            console.log("response data available budget case is " + JSON.stringify(data, null, 3));
+                console.log("response data available budget case is " + JSON.stringify(data, null, 3));
 
-            response.send({
-                tokenstatus: 'valid',
-                data: data
-            });
-            response.end();
+                response.send({
+                    tokenstatus: 'valid',
+                    data: data
+                });
+                response.end();
+                throw new BreakPromiseChainError();
+            }
+            else{   //Case where budget of the Campaign has been exhausted
+                console.log("unavailable budget case is called");
 
-        }, function () { //Case where budget of the Campaign has been exhausted
-
-            console.log("unavailable budget case is called");
-
-            response.send({
-                tokenstatus: 'valid',
-                data: {
-                    budgetavailable: false
-                }
-            });
-            response.end();
+                response.send({
+                    tokenstatus: 'valid',
+                    data: {
+                        budgetavailable: false
+                    }
+                });
+                response.end();
+                throw new BreakPromiseChainError();
+            }
 
         })
-        .catch (function (err) {
-            console.error(err);
-            response.status(500).send({
-                error: 'Some error occurred at the server'
-            }).end();
+        .catch(function (err) {
+            if (err instanceof BreakPromiseChainError) {
+                //Do nothing
+            }
+            else {
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
         });
 
 });
+
+function checkUserLastShare(cmid, uuid) {
+    return new Promise(function (resolve, reject) {
+
+        var lowerlimittime = moment.utc().subtract(1, "days").format('YYYY-MM-DD HH:mm:ss');
+        console.log("lowerlimitime is " + JSON.stringify(lowerlimittime, null, 3));
+
+        connection.query('SELECT shareid, regdate ' +
+            'FROM Share ' +
+            'WHERE cmid = ? AND UUID = ? AND regdate > ? ' +
+            'ORDER BY regdate DESC', [cmid, uuid, lowerlimittime], function (err, rows) {
+
+            console.log("rows after checkUserLastShare query is " + JSON.stringify(rows, null, 3));
+
+            if (err) {
+                reject(err);
+            }
+            else {
+
+                var result = {};
+
+                if (rows[0]) {    //A Share exists within the last 24 hours, restrict the user to Share any more
+
+                    var regdate = moment.utc(rows[0].regdate).format("YYYY-MM-DD HH:mm:ss");
+
+                    console.log("wait time is " + moment.utc(moment(regdate, "YYYY-MM-DD HH:mm:ss").diff(lowerlimittime, "YYYY-MM-DD HH:mm:ss")).format("HH:mm:ss"));
+
+                    result["to-share-more"] = false;
+                    result["wait_time"] = moment.utc(moment(regdate, "YYYY-MM-DD HH:mm:ss").diff(lowerlimittime, "YYYY-MM-DD HH:mm:ss")).format("HH:mm:ss");//moment(moment(rows[0].regdate, "DD-MM-YYYY hh:mm:ss").diff(moment(moment(), "DD-MM-YYYY hh:mm:ss"))).format("hh:mm:ss");
+
+                    resolve(result);
+                }
+                else {
+                    result["to-share-more"] = true;
+                    resolve(result);
+                }
+
+            }
+
+        });
+    });
+}
 
 /**
  * Queries 'contentbaseurl' of a given Campaign
@@ -266,11 +345,10 @@ function getCampaignBaseLink(cmid) {
         connection.query('SELECT budget, contentbaseurl FROM Campaign WHERE cmid = ?', [cmid], function (err, rows) {
 
             if (err) {
-                console.error(err);
-                throw err;
+                reject(err);
             }
             else if (rows[0].budget <= 0) {   //Case where budget of the 'Campaign' has been exhausted
-                reject();
+                resolve();
             }
             else {
                 console.log("rows after querying getCampaignBaseLink is " + JSON.stringify(rows, null, 3));

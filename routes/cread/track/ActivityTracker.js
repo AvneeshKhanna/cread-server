@@ -14,6 +14,7 @@ var connection = config.createConnection;
 var AWS = config.AWS;
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
+var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
 router.post('/', function (request, response) {
 
@@ -83,13 +84,6 @@ router.post('/', function (request, response) {
 
                                 console.log("userdata is " + JSON.stringify(userdata, null, 3));
 
-                                //Calculate pendingAmount
-                                /*var pendingAmt = resarray.filter(function (element) {
-                                 return element.hasOwnProperty('checkstatus') && element.checkstatus == 'PENDING' && element.causeid == null;
-                                 }).reduce(function (accumulator, element) {
-                                 return accumulator + element.sharerate;
-                                 }, 0);*/
-
                                 //Calculate availableAmount
                                 var availableAmt = resarray.map(function (element) {
 
@@ -135,16 +129,25 @@ router.post('/', function (request, response) {
                                         }
                                     }, 0);
 
-                                var no_of_shares = resarray.filter(function (element) {
+                                var validactivityarray = resarray.filter(function (element) {
+                                    if(element.hasOwnProperty('sharerate')){
+                                        return (element.checkstatus != "CANCELLED");
+                                    }
+                                    else {
+                                        return true;
+                                    }
+                                });
+
+                                var no_of_shares = validactivityarray.filter(function (element) {
                                     return element.hasOwnProperty('sharerate');
                                 }).length;
 
-                                var no_of_checks = resarray.length - no_of_shares;
+                                var no_of_checks = validactivityarray.length - no_of_shares;
 
-                                console.log("resarray after availableAmt calcs " + JSON.stringify(resarray, null, 3));
-
-                                var donatedAmt = resarray.filter(function (element) {
-                                    return element.hasOwnProperty('sharerate') && (element.donation == true);
+                                var donatedAmt = validactivityarray.filter(function (element) {
+                                    return element.hasOwnProperty('sharerate')
+                                        && (element.donation == true)
+                                        && (element.checkstatus == "COMPLETE");
                                 }).reduce(function (accumuator, element) {
                                     accumuator += element.sharerate;
                                     return accumuator;
@@ -163,8 +166,9 @@ router.post('/', function (request, response) {
                                 });
 
                                 console.log("resarray is " + JSON.stringify(resarray, null, 3));
+                                console.log("validactivityarray is " + JSON.stringify(validactivityarray, null, 3));
 
-                                resdata.data = {};
+                                // resdata.data = {};
 
                                 resdata.data = {
                                     activityList: resarray,

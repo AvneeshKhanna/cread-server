@@ -11,6 +11,8 @@ var config = require('../../../Config');
 var connection = config.createConnection;
 var _auth = require('../../../auth-token-management/AuthTokenManager');
 
+var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
+
 router.post('/graph', function (request, response) {
     
     console.log("Request is " + JSON.stringify(request.body, null, 3));
@@ -29,6 +31,7 @@ router.post('/graph', function (request, response) {
                 tokenstatus: 'invalid'
             });
             response.end();
+            throw new BreakPromiseChainError();
 
         })
         .then(function (data) {
@@ -37,6 +40,19 @@ router.post('/graph', function (request, response) {
                 data: data
             });
             response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occured at the server'
+                });
+                response.end();
+            }
         });
 
 });
@@ -51,8 +67,7 @@ function getShareGraph(cmid, days) {
         connection.query('SELECT shareid, regdate FROM Share WHERE cmid = ? ORDER BY regdate DESC', [cmid], function (err, rows) {
 
             if(err){
-                console.error(err);
-                throw err;
+                reject(err);
             }
             else{
 
@@ -128,15 +143,27 @@ router.post('/real-time-shares', function (request, response) {
                 tokenstatus: 'invalid'
             });
             response.end();
+            throw new BreakPromiseChainError();
         })
         .then(function (data) {
-
             response.send({
                 tokenstatus: 'valid',
                 data: data
             });
             response.end();
-
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                });
+                response.end();
+            }
         });
 
 });
@@ -155,8 +182,7 @@ function getIndividualShares(cmid, limit) {
             'WHERE Share.cmid = ? ORDER BY Share.regdate DESC LIMIT ?', [cmid, limit], function (err, rows) {
 
             if(err){
-                console.error(err);
-                throw err;
+                reject(err);
             }
             else {
 

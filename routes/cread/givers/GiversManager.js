@@ -15,6 +15,7 @@ var Hashids = require('hashids');
 var utils = require('../utils/Utils');
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
+var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
 router.post('/load', function (request, response) {
 
@@ -28,6 +29,7 @@ router.post('/load', function (request, response) {
             response.send({
                 tokenstatus: 'invalid'
             }).end();
+            throw new BreakPromiseChainError();
         })
         .then(function (rows) {
 
@@ -73,14 +75,20 @@ router.post('/load', function (request, response) {
                 }
             });
             response.end();
+            throw new BreakPromiseChainError();
 
-        }, function (err) {
-            console.error(err);
-            response.status(500).send({
-                error: 'Some error occurred at the server'
-            }).end();
         })
-
+        .catch(function (err) {
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
 });
 
 function getGiversData() {

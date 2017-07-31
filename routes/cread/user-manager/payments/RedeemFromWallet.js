@@ -79,6 +79,7 @@ router.post('/', function (request, response) {
                 }
             });
             response.end();
+            throw new BreakPromiseChainError();
         })
         .catch(function (err) {
 

@@ -20,6 +20,7 @@ router.post('/load', function (request, response) {
                 }
             });
             response.end();
+            throw new BreakPromiseChainError();
         })
         .catch(function (err) {
 
@@ -40,7 +41,6 @@ router.post('/load', function (request, response) {
 
 function loadCampaignNames() {
     return new Promise(function (resolve, reject) {
-
         connection.query('SELECT title, cmid, regdate FROM Campaign WHERE cmpstatus = ?', ['ACTIVE'], function (err, rows) {
             if(err){
                 reject(err);

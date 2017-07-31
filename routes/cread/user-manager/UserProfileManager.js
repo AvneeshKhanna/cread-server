@@ -19,6 +19,7 @@ var userstbl_ddb = envconfig.get('dynamoDB.users_table');
 var docClient = new AWS.DynamoDB.DocumentClient();
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
+var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
 router.post('/request/', function (request, response) {
 
@@ -33,6 +34,7 @@ router.post('/request/', function (request, response) {
                 tokenstatus: 'invalid'
             });
             response.end();
+            throw new BreakPromiseChainError();
         })
         .then(function (row) {
 
@@ -48,7 +50,18 @@ router.post('/request/', function (request, response) {
                 data: data
             });
             response.end();
-
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
         });
 
 });

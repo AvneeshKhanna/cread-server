@@ -10,6 +10,7 @@ var connection = config.createConnection;
 var AWS = config.AWS;
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
+var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
 router.post('/load/', function (request, response) {
 

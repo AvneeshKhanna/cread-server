@@ -24,14 +24,21 @@ router.post('/load', function (request, response) {
     var authkey = request.body.authkey;
     var cmpstatus = request.body.cmpstatus; //ACTIVE or DEACTIVE
 
+    var walletbalance;
+
     _auth.clientAuthValid(clientid, authkey)
         .then(function () {
-            return getCampaigns(clientid, cmpstatus);
+            return getClientWalletBal(clientid);
         }, function () {
             response.send({
                 tokenstatus: 'invalid'
             });
             response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (balance) {
+            walletbalance = balance;
+            return getCampaigns(clientid, cmpstatus);
         })
         .then(function (rows) {
 
@@ -47,18 +54,27 @@ router.post('/load', function (request, response) {
 
             response.send({
                 tokenstatus: 'valid',
-                data: rows
+                data: {
+                    campaigns: rows,
+                    walletbalance: walletbalance
+                }
             });
             response.end();
+            throw new BreakPromiseChainError();
         })
         .catch(function (err) {
-            console.error(err);
-            response
-                .status(500)
-                .send({
-                    error: 'Some error occurred at the server'
-                })
-                .end();
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else {
+                console.error(err);
+                response
+                    .status(500)
+                    .send({
+                        error: 'Some error occurred at the server'
+                    })
+                    .end();
+            }
         })
 
 });
@@ -104,7 +120,7 @@ router.post('/add', function (request, response) {
     var description = request.body.description;
     var budget = request.body.budget;
     var type = request.body.type;
-    var cmpstatus = 'ACTIVE';
+    var cmpstatus = 'ACTIVE';   //Default status
     var imagepath = request.body.imagepath;
     var contentbaseurl = request.body.contentbaseurl;
     var cmid = uuidGenerator.v4();
@@ -138,18 +154,24 @@ router.post('/add', function (request, response) {
                     }
                 });
                 response.end();
-
+                throw new BreakPromiseChainError();
             });
         }, function () {
             response.send({
                 tokenstatus: 'invalid'
             }).end();
+            throw new BreakPromiseChainError();
         })
         .catch(function (err) {
-            console.error(err);
-            response.status(500).send({
-                error: 'Some error occurred at the server'
-            }).end();
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
         });
 
 });
@@ -178,6 +200,7 @@ router.post('/specific', function (request, response) {
                 data: campaign
             });
             response.end();
+            throw new BreakPromiseChainError();
         })
         .catch(function (err) {
 
@@ -240,6 +263,7 @@ router.post('/edit', function (request, response) {
                     }
                 });
                 response.end();
+                throw new BreakPromiseChainError();
 
             });
 
@@ -247,14 +271,19 @@ router.post('/edit', function (request, response) {
             response.send({
                 tokenstatus: 'invalid'
             }).end();
+            throw new BreakPromiseChainError();
         })
         .catch(function (err) {
-            console.error(err);
-            response.status(500).send({
-                error: 'Some error occurred at the server'
-            })
-        })
-
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
 });
 
 router.post('/deactivate', function (request, response) {
@@ -271,6 +300,7 @@ router.post('/deactivate', function (request, response) {
                 tokenstatus: 'invalid'
             });
             response.end();
+            throw new BreakPromiseChainError();
         })
         .then(function () {
             response.send({
@@ -280,6 +310,18 @@ router.post('/deactivate', function (request, response) {
                 }
             });
             response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                });
+                response.end();
+            }
         });
 
 });
@@ -297,8 +339,7 @@ function deactivateCampaign(cmid) {
             'WHERE cmid = ?', ['DEACTIVE', deactvtntime, cmid], function (err, row) {
 
             if (err) {
-                console.error(err);
-                throw err;
+                reject(err);
             }
             else {
                 resolve();

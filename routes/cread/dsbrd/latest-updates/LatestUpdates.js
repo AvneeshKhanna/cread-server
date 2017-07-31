@@ -11,6 +11,7 @@ var AWS = config.AWS;
 var uuid = require('uuid');
 
 var _auth = require('../../../auth-token-management/AuthTokenManager');
+var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 
 router.post('/', function (request, response) {
 
@@ -26,6 +27,7 @@ router.post('/', function (request, response) {
                 tokenstatus: 'invalid'
             });
             response.end();
+            throw new BreakPromiseChainError();
         })
         .then(function (rows) {
             response.send({
@@ -33,15 +35,20 @@ router.post('/', function (request, response) {
                 data: rows
             });
             response.end();
+            throw new BreakPromiseChainError();
         })
         .catch(function (err) {
-            console.error(err);
-            response.send({
-                error: 'Some error occurred at the server'
-            });
-            response.end();
-        })
-
+            if (err instanceof BreakPromiseChainError) {
+                //Do nothing
+            }
+            else {
+                console.error(err);
+                response.send({
+                    error: 'Some error occurred at the server'
+                });
+                response.end();
+            }
+        });
 });
 
 function getLatestUpdates(clientid, limit) {
@@ -56,10 +63,10 @@ function getLatestUpdates(clientid, limit) {
             'ORDER BY Share.regdate DESC ' +
             'LIMIT ?', [clientid, limit], function (err, rows) {
 
-            if(err){
+            if (err) {
                 reject(err);
             }
-            else{
+            else {
                 resolve(rows);
             }
 

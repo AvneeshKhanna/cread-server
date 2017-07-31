@@ -11,6 +11,7 @@ var AWS = config.AWS;
 var uuid = require('uuid');
 
 var _auth = require('../../../auth-token-management/AuthTokenManager');
+var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 
 //TODO: Handle case of a refund
 router.post('/update-balance', function (request, response) {
@@ -28,6 +29,7 @@ router.post('/update-balance', function (request, response) {
                 tokenstatus: 'invalid'
             });
             response.end();
+            throw new BreakPromiseChainError();
         })
         .then(function () {
             return updateClientWalletBalance(clientid, amount)
@@ -40,14 +42,19 @@ router.post('/update-balance', function (request, response) {
                 }
             });
             response.end();
+            throw new BreakPromiseChainError();
         })
         .catch(function (err) {
-            console.error(err);
-            response.status(500).send({
-                error: 'Some error occurred at the server'
-            }).end();
-        })
-
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
 });
 
 function addTransactionToTable(clientid, amount, type) {
