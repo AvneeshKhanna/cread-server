@@ -66,17 +66,7 @@ router.post('/register', function (request, response, next) {
             localJson['authtoken'] = Id;
             localJson['uuid'] = uuid;
 
-            /*var user = {
-             UUID: uuid,
-             password: password,
-             firstname: firstname,
-             lastname : lastname,
-             email: emailid,
-             phoneNo: phoneNo,
-             Auth_key: Id
-             };*/
-
-            var user = new _User({
+            var user = {
                 UUID: uuid,
                 password: password,
                 firstname: firstname,
@@ -84,7 +74,17 @@ router.post('/register', function (request, response, next) {
                 email: emailid,
                 phoneNo: phoneNo,
                 Auth_key: Id
-            });
+            };
+
+            /*var user = new _User({
+             UUID: uuid,
+             password: password,
+             firstname: firstname,
+             lastname: lastname,
+             email: emailid,
+             phoneNo: phoneNo,
+             Auth_key: Id
+             });*/
 
             console.log('user details are ' + JSON.stringify(user, null, 3));
 
