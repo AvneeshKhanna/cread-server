@@ -114,6 +114,8 @@ router.post('/payment-approval/', function(request,response){
     
     var notificationData = {
         Category : 'Payments',
+        AppModel: "1.0",
+        Persist: "Yes",
         Status : 'Approved',
         Referred : referredUserName,
         JobName : jobname

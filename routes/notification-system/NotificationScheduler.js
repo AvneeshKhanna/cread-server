@@ -6,7 +6,7 @@ var notifyUsers = require('./NotificationUtils');
 var CronJob = require('cron').CronJob;
 
 var top_givers_notification = new CronJob({
-    cronTime: '00 30 20 * * 1', //second | minute | hour | day-of-month | month | day-of-week
+    cronTime: '00 30 20 * * *', //second | minute | hour | day-of-month | month | day-of-week TODO: Change day of the week
     onTick: function() {
         /*
          * Runs every Monday
@@ -17,7 +17,7 @@ var top_givers_notification = new CronJob({
             Category: 'top_givers',
             Message: 'Check out the top givers of this week on Cread',
             AppModel: '2.0',
-            Persist: false
+            Persist: "No"
         };
 
         notifyUsers.sendNotification(data, undefined, function (err) {

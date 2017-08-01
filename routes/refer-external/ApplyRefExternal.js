@@ -179,6 +179,8 @@ function sendNotifToReferrer(refcode, applicant_userid){
             
             var notifData = {
                 Category : 'ReferralApplicationUpdate',
+                AppModel: "1.0",
+                Persist: "Yes",
                 Status : 'Pending',
                 JobName : data[referredUserIndex].title,
                 Referee : data[referredUserIndex].firstname + " " + data[referredUserIndex].lastname

@@ -58,6 +58,8 @@ function updateAplcnStatus(application_status , uuid , jobid , jobName , refcode
     
     var notificationData = {
         Category : 'ApplicationStatus',
+        AppModel: "1.0",
+        Persist: "Yes",
         Status : application_status,
         JobName : jobName
     };
@@ -133,6 +135,8 @@ function sendNotifToReferrer(refcode, applicant_userid){
 
             var notifData = {
                 Category : 'ReferralApplicationUpdate',
+                AppModel: "1.0",
+                Persist: "Yes",
                 Status : application_status,
                 JobName : data[referredUserIndex].title,
                 Referee : data[referredUserIndex].firstname + " " + data[referredUserIndex].lastname

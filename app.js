@@ -126,6 +126,7 @@ app.use('/check-campaign', require('./routes/cread/check/CheckCampaign'));
 app.use('/user-profile', require('./routes/cread/user-manager/UserProfileManager'));
 app.use('/redeem-from-wallet', require('./routes/cread/user-manager/payments/RedeemFromWallet'));
 app.use('/givers-manager', require('./routes/cread/givers/GiversManager'));
+app.use('/user-interests', require('./routes/cread/user-manager/interests/InterestsManager'));
 
 //-dashboard-
 app.use('/campaign-details', require('./routes/cread/dsbrd/campaign-details/CampaignDetails'));
