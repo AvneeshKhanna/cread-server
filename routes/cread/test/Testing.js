@@ -14,10 +14,10 @@ var connection = config.createConnection;
 
 var AWS = require('aws-sdk');
 
-AWS.config.region = 'eu-west-1';
+/*AWS.config.region = 'eu-west-1';
 AWS.config.credentials = new AWS.CognitoIdentityCredentials({
     IdentityPoolId: 'eu-west-1:d29fce0a-ac1a-4aaf-b3f6-0bc48b58b87e'
-});
+});*/
 
 var interestTableData = {
     'Arts & Entertainment': [
