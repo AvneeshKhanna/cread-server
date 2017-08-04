@@ -15,7 +15,7 @@
 	"s3" : {
 		"bucket" : "testamentbucket"
 	},
-	"paytm-server-url": "http://trust.paytm.in",
+	"paytm-server-url": "https://trust.paytm.in",
 	"type" : "PRODUCTION"
 	
 }

@@ -15,6 +15,6 @@
 	"s3" : {
 		"bucket" : "testamentbucketdev"
 	},
-	"paytm-server-url": "http://trust-uat.paytm.in",
+	"paytm-server-url": "https://trust-uat.paytm.in",
 	"type" : "DEVELOPMENT"
 }

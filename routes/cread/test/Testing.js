@@ -1,16 +1,83 @@
 /**
  * Created by avnee on 26-06-2017.
  */
+'use strict';
 
 var express = require('express');
 var router = express.Router();
 
 var moment = require('moment');
+var uuidGen = require('uuid');
 
 var config = require('../../Config');
 var connection = config.createConnection;
 
-var AWS = config.AWS;
+var AWS = require('aws-sdk');
+
+AWS.config.region = 'eu-west-1';
+AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+    IdentityPoolId: 'eu-west-1:d29fce0a-ac1a-4aaf-b3f6-0bc48b58b87e'
+});
+
+var interestTableData = {
+    'Arts & Entertainment': [
+        'Art',
+        'Culture',
+        'Film',
+        'Food',
+        'Humor',
+        'Music',
+        'Photography',
+        'Social Media',
+        'Sports'
+    ],
+    'Industry': [
+        'Business',
+        'Economy',
+        'Entrepreneurship',
+        'Marketing',
+        'Freelancing',
+        'Productivity',
+        'Work'
+    ],
+    'Innovation & Tech': [
+        'Artificial Intelligence',
+        'Cyber Security',
+        'Data Science',
+        'Digital Design',
+        'Math',
+        'NeuroScience',
+        'Programming',
+        'Science',
+        'Software Engineering',
+        'Space',
+        'Technology',
+        'UI/UX'
+    ],
+    'Life': [
+        'Creativity',
+        'Family',
+        'Health',
+        'Mental Health & Wellness',
+        'Psychology',
+        'Relationships',
+        'Self',
+        'Sexuality',
+        'Spirituality',
+        'Travel',
+        'Wellness'
+    ],
+    'Society': [
+        'Education',
+        'Environment',
+        'Future',
+        'History',
+        'Media',
+        'Philosophy',
+        'Politics',
+        'World'
+    ]
+};
 
 router.post('/lock', function (request, response) {
 
@@ -91,21 +158,75 @@ router.post('/err', function (req, res) {
 
 });
 
+router.post('/upload-interests', function (request, response) {
+
+    var values = restructureInterestList(interestTableData);
+
+    connection.query('INSERT INTO Interests VALUES ?', [values], function (err, data) {
+
+        if(err){
+            throw err;
+        }
+        else{
+            response.send('Done');
+            response.end();
+        }
+
+    });
+
+});
+
+function restructureInterestList(interestTableData) {
+
+    var masterArr = [];
+
+    var categories = Object.keys(interestTableData);
+
+    categories.forEach(function (category) {
+
+        for(var i =0; i< interestTableData[category].length; i++){
+
+            masterArr.push([
+                uuidGen.v4(),
+                interestTableData[category][i],
+                category,
+                undefined,
+                moment.utc().format('YYYY-MM-DD HH:mm:ss')
+            ]);
+
+        }
+
+    });
+
+    /*var masterArr = [];
+
+    console.log("interestlist  is " + JSON.stringify(interestlist, null, 3));
+
+    interestlist.forEach(function (interest) {
+        var subArr = [uuid, interest];
+        masterArr.push(subArr);
+    });*/
+
+    return masterArr;
+}
+
 router.post('/send-email', function (request, response) {
+
+    var startDate = moment().format('x');
+
+    var emails = request.body.emailaddresses;
 
     var ses = new AWS.SES();
 
     var params = {
         Destination: {
-            ToAddresses: [
-                "chandna.prakhar@gmail.com"
-            ]
+            ToAddresses: emails
         },
         Message: {
             Body: {
                 Html: {
                     Charset: "UTF-8",
-                    Data: "This message body contains HTML formatting. It can, for example, contain links like this one: <a class=\"ulink\" href=\"http://docs.aws.amazon.com/ses/latest/DeveloperGuide\" target=\"_blank\">Amazon SES Developer Guide</a>."
+                    Data: "This message body contains HTML formatting. It can, contain links like this one: <a class=\"ulink\" href=\"http://docs.aws.amazon.com/ses/latest/DeveloperGuide\" target=\"_blank\">Amazon SES Developer Guide</a>."
                 },
                 Text: {
                     Charset: "UTF-8",
@@ -117,17 +238,24 @@ router.post('/send-email', function (request, response) {
                 Data: "Test email"
             }
         },
-        Source: "sender@example.com"
+        Source: "avneesh.khanna92@gmail.com"
     };
 
     ses.sendEmail(params, function(err, data) {
         if (err) {  // an error occurred
             console.error(err, err.stack);
-            throw err;
+            //throw err;
         }
         else {  // successful response
-            console.log(data);
-            response.send(data);
+            // console.log("data is " + JSON.stringify(data, null, 3));
+
+            var stopDate = moment().format('x');
+
+            response.send({
+                startDate: startDate,
+                stopDate: stopDate,
+                aws: data
+            });
         }
 
 
@@ -138,7 +266,8 @@ router.post('/send-email', function (request, response) {
          */
     });
 
-})
+
+});
 
 module.exports = router;
 

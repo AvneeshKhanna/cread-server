@@ -12,7 +12,7 @@ var connection = config.createConnection;
 var _auth = require('../../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 
-router.post('/load', function (request, response) {
+router.post('/load-all', function (request, response) {
 
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
@@ -56,7 +56,7 @@ router.post('/load', function (request, response) {
 
 function loadAllInterests() {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT * FROM Interests', [], function (err, data) {
+        connection.query('SELECT interest_id, name, category FROM Interests', [], function (err, data) {
             if (err) {
                 reject(err);
             }
@@ -72,6 +72,8 @@ router.post('/save', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var interests = request.body.interests; //array of interest ids
+
+    console.log("request is " + JSON.stringify(request.body, null, 3));
 
     _auth.authValid(uuid, authkey)
         .then(function () {
@@ -127,10 +129,8 @@ function restructureInterestList(uuid, interestlist) {
 
     var masterArr = [];
 
-    console.log("interestlist  is " + JSON.stringify(interestlist, null, 3));
-
-    interestlist.forEach(function (interest) {
-        var subArr = [uuid, interest];
+    interestlist.forEach(function (interest_id) {
+        var subArr = [uuid, interest_id];
         masterArr.push(subArr);
     });
 
