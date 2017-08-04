@@ -89,4 +89,69 @@ router.post('/load/', function (request, response) {
 
 });
 
+router.post('/load/specific', function (request, response) {
+
+    var authkey = request.body.authkey;
+    var uuid = request.body.uuid;
+    var cmid = request.body.cmid;
+
+    console.log("authkey is " + JSON.stringify(authkey, null, 3));
+
+    var resdata = {};
+
+    _auth.checkToken(uuid, authkey, function (err, datasize) {
+
+        if (err) {
+            console.error(err);
+            throw err;
+        }
+        else if (datasize == 0) {
+
+            resdata.tokenstatus = 'invalid';
+            response.send(resdata);
+            response.end();
+
+        }
+        else {
+            connection.query('SELECT Campaign.title, Campaign.description, Campaign.mission, Campaign.type, Campaign.contentbaseurl, ' +
+                'Campaign.imagepath, Campaign.regdate, ' +
+                'Client.name AS clientname, Client.bio AS clientbio ' +
+                'FROM Campaign ' +
+                'JOIN Client ' +
+                'ON Campaign.clientid = Client.clientid ' +
+                'WHERE Campaign.cmid = ?', [cmid], function (err, row) {
+
+                if (err) {
+                    console.error(err);
+                    throw err;
+                }
+
+                row.map(function (element) {
+                    element.sharerate = 50;     //TODO: Make sharerate dynamic
+                });
+
+                connection.query('SELECT fbusername FROM users WHERE UUID = ?', [uuid], function (err, user) {
+                    if (err) {
+                        throw err;
+                    }
+                    else {
+                        console.log("row after querying is " + JSON.stringify(user, null, 3));
+
+                        response.send({
+                            tokenstatus: 'valid',
+                            data: {
+                                campaign: row[0],
+                                fbidstatus: user[0].fbusername != null
+                            }
+                        });
+                        response.end();
+                    }
+                });
+
+            });
+        }
+    });
+
+});
+
 module.exports = router;

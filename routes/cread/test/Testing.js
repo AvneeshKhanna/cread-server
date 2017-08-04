@@ -145,7 +145,7 @@ router.post('/user-details', function (request, response) {
 
 router.post('/err', function (req, res) {
 
-    connection.query('SELECCT * FROM Share WHERE shareid = ?', ["abc"], function (err, data) {
+    connection.query('SELECT * FROM Share WHERE shareid = ?', ["abc"], function (err, data) {
 
         if(err){
             console.error(err);
