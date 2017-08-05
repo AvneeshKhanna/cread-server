@@ -23,8 +23,6 @@ var ABSENT_PROFILE = 'absent-profile';
 var WRONG_PERSON = 'wrong-person';
 var ABSENT_SHARE = 'absent-share';
 
-//TODO: Add budget consumption system
-
 /**
  * To serve user's request to check another user's share
  * */
