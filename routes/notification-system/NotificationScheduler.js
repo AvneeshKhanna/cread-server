@@ -6,7 +6,7 @@ var notifyUsers = require('./NotificationUtils');
 var CronJob = require('cron').CronJob;
 
 var top_givers_notification = new CronJob({
-    cronTime: '00 30 20 * * *', //second | minute | hour | day-of-month | month | day-of-week TODO: Change day of the week
+    cronTime: '00 30 20 * * 1', //second | minute | hour | day-of-month | month | day-of-week
     onTick: function() {
         /*
          * Runs every Monday

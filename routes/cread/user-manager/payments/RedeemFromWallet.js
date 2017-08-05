@@ -31,7 +31,7 @@ router.post('/', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var amount = request.body.amount;
-    var userpaytmcontact = request.body.userpaytmcontact; //request.body.userpaytmcontact; TODO: Uncomment
+    var userpaytmcontact = request.body.userpaytmcontact;
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
 

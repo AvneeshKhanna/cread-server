@@ -296,7 +296,7 @@ router.post('/request-unique-link', function (request, response) {
 function checkUserLastShare(cmid, uuid) {
     return new Promise(function (resolve, reject) {
 
-        var lowerlimittime = moment.utc().subtract(1, "days").format('YYYY-MM-DD HH:mm:ss');
+        var lowerlimittime = moment.utc().subtract(1, "minutes").format('YYYY-MM-DD HH:mm:ss');    //TODO change minutes to days in .subract(1, "minutes")
         console.log("lowerlimitime is " + JSON.stringify(lowerlimittime, null, 3));
 
         connection.query('SELECT shareid, regdate ' +

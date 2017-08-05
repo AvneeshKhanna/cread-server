@@ -179,8 +179,7 @@ function checkForAuthKey(userdata){
         else{
 
             var payload = {
-                id: userdata.clientid/*,
-                contact: userdata.contact*/   //TODO: Replace contact since it is not mandatory
+                id: userdata.clientid
             };
 
             var authkey = _auth.generateToken(payload);

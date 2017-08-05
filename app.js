@@ -188,6 +188,6 @@ app.use(function (err, req, res, next) {
     });
 });
 
-top_givers_notification.start();
+// top_givers_notification.start(); TODO: Uncomment
 
 module.exports = app;
