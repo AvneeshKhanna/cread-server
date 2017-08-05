@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
+
+    <script type="text/javascript">
+
+        console.log('javaaascript');
+
+        $(document).ready(function(){
+
+            console.log('document is ready');
+
+            $("#btn").click(function(){
+                console.log('button onclicked');
+                $.get("http://71f920b9.ngrok.io" + "/agent", function(data, status){
+                    alert("Request headers are : " + JSON.stringify(data, null, 3));
+                });
+            });
+
+        });
+
+    </script>
+
+</head>
+<body>
+    <button title="Thanks" id="btn">Thanks</button>
+</body>
+</html>

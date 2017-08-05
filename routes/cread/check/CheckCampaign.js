@@ -418,6 +418,7 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid) {
                             Category: 'share_status',
                             // Status: 'verified',
                             Message: 'Your share for ' + cmptitle + ' has been measured',
+                            Shareid: shareid,
                             Cmid: cmid,
                             Persist: "Yes"
                         };
@@ -457,6 +458,7 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid) {
                                 var notifData = {
                                     AppModel: "2.0",
                                     Category: 'share_status',
+                                    Shareid: shareid,
                                     // Status: 'verified',
                                     Message: 'Your share for ' + cmptitle + ' has been measured',
                                     Cmid: cmid,

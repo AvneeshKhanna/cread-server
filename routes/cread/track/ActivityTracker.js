@@ -38,7 +38,7 @@ router.post('/', function (request, response) {
 
             var resarray = [];
 
-            connection.query('SELECT Campaign.title, Share.donation, Share.regdate, Share.sharerate, Share.checkstatus, Share.causeid, Share.cashed_in ' +
+            connection.query('SELECT Campaign.title, Share.shareid, Share.donation, Share.regdate, Share.sharerate, Share.checkstatus, Share.causeid, Share.cashed_in ' +
                 'FROM Share ' +
                 'INNER JOIN Campaign ' +
                 'ON Share.cmid = Campaign.cmid ' +

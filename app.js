@@ -139,6 +139,22 @@ app.use('/latest-updates', require('./routes/cread/dsbrd/latest-updates/LatestUp
 
 app.use('/cread-test', require('./routes/cread/test/Testing'));
 
+app.get('/user-agent', function (request, response) {
+
+    response.render(__dirname + '/views/facebook-test/ThankYou.ejs');
+    response.end();
+
+});
+
+app.get('/agent', function (request, response) {
+
+    console.log("headers are " + JSON.stringify(request.headers, null, 3));
+    console.log("body is " + JSON.stringify(request.body, null, 3));
+
+    response.send('Thanks');
+    response.end();
+});
+
 app.use('/chatbot', chatbot);
 
 // catch 404 and forward to error handler
