@@ -98,7 +98,8 @@ function getGiversData() {
             'LEFT JOIN Share ' +
             'ON users.UUID = Share.UUID ' +
             'WHERE Share.donation = ? ' +
-            'GROUP BY users.UUID', [true], function (err, rows) {
+            'AND Share.checkstatus = ?' +
+            'GROUP BY users.UUID', [true, 'COMPLETE'], function (err, rows) {
 
             if (err) {
                 reject(err);
