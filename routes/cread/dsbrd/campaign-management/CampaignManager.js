@@ -20,6 +20,8 @@ var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 
 router.post('/load', function (request, response) {
 
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
     var clientid = request.body.clientid;
     var authkey = request.body.authkey;
     var cmpstatus = request.body.cmpstatus; //ACTIVE or DEACTIVE
@@ -139,6 +141,7 @@ router.post('/add', function (request, response) {
         type: type,
         cmpstatus: cmpstatus,
         imagepath: imagepath,
+        mission: mission,
         contentbaseurl: contentbaseurl
     };
 
