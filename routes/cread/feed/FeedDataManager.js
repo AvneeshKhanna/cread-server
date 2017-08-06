@@ -11,6 +11,7 @@ var AWS = config.AWS;
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
+var consts = require('../utils/Constants');
 
 router.post('/load/', function (request, response) {
 
@@ -62,7 +63,7 @@ router.post('/load/', function (request, response) {
                 });
 
                 rows.map(function (element) {
-                    element.sharerate = 50;     //TODO: Make sharerate dynamic
+                    element.sharerate = consts.sharerate;     //TODO: Make sharerate dynamic
                 });
 
                 connection.query('SELECT fbusername FROM users WHERE UUID = ?', [uuid], function (err, row) {
@@ -127,7 +128,7 @@ router.post('/load/specific', function (request, response) {
                 }
 
                 row.map(function (element) {
-                    element.sharerate = 50;     //TODO: Make sharerate dynamic
+                    element.sharerate = consts.sharerate;     //TODO: Make sharerate dynamic
                 });
 
                 connection.query('SELECT fbusername FROM users WHERE UUID = ?', [uuid], function (err, user) {

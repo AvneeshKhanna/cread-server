@@ -17,6 +17,7 @@ var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var uuidGenerator = require('uuid');
 
 var utils = require('../utils/Utils');
+var consts = require('../utils/Constants');
 
 var VERIFIED = 'verified';
 var ABSENT_PROFILE = 'absent-profile';
@@ -70,7 +71,7 @@ router.post('/request', function (request, response) {
                     delete row.fbusername;
                 }
 
-                row.checkrate = 3.5;    //TODO: Make the check rate dynamic
+                row.checkrate = consts.checkrate_verified;    //TODO: Make the check rate dynamic
 
                 console.log("row is " + JSON.stringify(row, null, 3));
 
@@ -302,10 +303,10 @@ function updateShareForCheck(shareid, checkstatus) {
 
             //TODO: Make the checkrate dynamic
             if(checkstatus == "COMPLETE"){
-                result.checkrate = 4;
+                result.checkrate = consts.checkrate_verified;
             }
             else {
-                result.checkrate = 1;
+                result.checkrate = consts.checkrate_not_verified;
             }
 
         }
@@ -334,7 +335,7 @@ function updateCampaignBudget(sharerate, checkrate, cmid) {
 
     return new Promise(function (resolve, reject) {
 
-        var markup = (parseFloat(sharerate) + parseFloat(checkrate)) * 0.02; //TODO: Update markup
+        var markup = (parseFloat(sharerate) + parseFloat(checkrate)) * parseFloat(consts.markup/100); //TODO: Update markup
         var amount = (parseFloat(sharerate) + parseFloat(checkrate) + parseFloat(markup));
 
         console.log('markup subtracted from budget ' + markup);

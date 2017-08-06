@@ -21,6 +21,7 @@ var regdate = moment.utc("2017-07-31T11:06:46.000Z").format("YYYY-MM-DD HH:mm:ss
 console.log("diff is " + moment.utc(moment(regdate, "YYYY-MM-DD HH:mm:ss").diff(lowerlimittime, "YYYY-MM-DD HH:mm:ss")).format("HH:mm:ss"));
 
 var utils = require('../utils/Utils');
+var consts = require('../utils/Constants');
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
@@ -88,7 +89,7 @@ router.post('/save', function (request, response) {
     var cmid = request.body.cmid;
     var ulinkkey = request.body.ulinkkey;
     var ulinkvalue = request.body.ulinkvalue;
-    var sharerate = 50;
+    var sharerate = consts.sharerate; //TODO: Make sharerate dynamic
     var channel = 'Facebook';
     var donation = false;//request.body.donation;
     var cause_id = request.body.cause_id;
