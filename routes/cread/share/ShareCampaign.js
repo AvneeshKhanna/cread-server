@@ -105,7 +105,7 @@ router.post('/save', function (request, response) {
                 UUID: uuid,
                 cmid: cmid,
                 sharerate: sharerate,
-                channel: 'Facebook',
+                channel: 'Facebook',    //TODO: Make channel dynamic
                 ulinkkey: ulinkkey,
                 ulinkvalue: ulinkvalue,
                 donation: donation

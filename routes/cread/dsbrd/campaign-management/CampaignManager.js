@@ -118,14 +118,17 @@ router.post('/add', function (request, response) {
 
     var title = request.body.title;
     var description = request.body.description;
-    var budget = request.body.budget;
-    var type = request.body.type;
+    var budget = 0;//request.body.budget;
+    var type = "Web";//request.body.type;
     var cmpstatus = 'ACTIVE';   //Default status
     var imagepath = request.body.imagepath;
     var contentbaseurl = request.body.contentbaseurl;
     var cmid = uuidGenerator.v4();
     var clientid = request.body.clientid;
     var authkey = request.body.authkey;
+    var mission = request.body.mission;
+    
+    console.log("request is " + JSON.stringify(request.body, null, 3));
 
     var sqlparams = {
         cmid: cmid,
@@ -141,25 +144,21 @@ router.post('/add', function (request, response) {
 
     _auth.clientAuthValid(clientid, authkey)
         .then(function () {
-            connection.query('INSERT INTO Campaign SET ?', sqlparams, function (err, result) {
-
-                if (err) {
-                    throw err;
-                }
-
-                response.send({
-                    tokenstatus: 'valid',
-                    data: {
-                        status: 'done'
-                    }
-                });
-                response.end();
-                throw new BreakPromiseChainError();
-            });
+            return addCampaign(sqlparams);
         }, function () {
             response.send({
                 tokenstatus: 'invalid'
             }).end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function () {
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    status: 'done'
+                }
+            });
+            response.end();
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
@@ -175,6 +174,19 @@ router.post('/add', function (request, response) {
         });
 
 });
+
+function addCampaign(params) {
+    return new Promise(function (resolve, reject) {
+        connection.query('INSERT INTO Campaign SET ?', params, function (err, result) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    })
+}
 
 router.post('/specific', function (request, response) {
 
