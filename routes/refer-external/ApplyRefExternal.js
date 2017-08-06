@@ -7,8 +7,8 @@ var express = require('express');
 var router = express.Router();
 var mysql = require('mysql');
 
-var authtokenvalidation = require('../authtokenValidation');   //module to authenticate user before making request
-var notify = require('../Notification-System/notificationFramework');
+var authtokenvalidation = require('../auth-token-management/AuthTokenManager');   //module to authenticate user before making request
+var notify = require('../notification-system/notificationFramework');
 
 var config = require('../Config');
 var connection = config.createConnection;
@@ -179,12 +179,19 @@ function sendNotifToReferrer(refcode, applicant_userid){
             
             var notifData = {
                 Category : 'ReferralApplicationUpdate',
+                AppModel: "1.0",
+                Persist: "Yes",
                 Status : 'Pending',
                 JobName : data[referredUserIndex].title,
                 Referee : data[referredUserIndex].firstname + " " + data[referredUserIndex].lastname
             };
             
-            notify.Notification(uuidArray, notifData, function(){
+            notify.notification(uuidArray, notifData, function(err){
+
+                if(err){
+                    console.error(err);
+                    throw err;
+                }
                
                 //End of flow
                 

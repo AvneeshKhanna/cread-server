@@ -23,7 +23,7 @@ AWS.config.credentials = new AWS.CognitoIdentityCredentials({
 
 var docClient = new AWS.DynamoDB.DocumentClient();
 
-var authtokenvalidation = require('../authtokenValidation');   //module to authenticate user before making request
+var authtokenvalidation = require('../auth-token-management/AuthTokenManager');   //module to authenticate user before making request
 
 var config = require('../Config');
 var connection = config.createConnection;

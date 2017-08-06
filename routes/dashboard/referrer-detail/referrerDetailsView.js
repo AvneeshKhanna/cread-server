@@ -9,7 +9,7 @@ var mysql = require('mysql');
 
 var AWS = require('aws-sdk');
 var dynamo_marshal = require('dynamodb-marshaler');
-var sendNotification = require('../../Notification-System/notificationFramework');
+var sendNotification = require('../../notification-system/notificationFramework');
 
 var appconfig = require('../../Config');
 var _connection = appconfig.createConnection;
@@ -114,6 +114,8 @@ router.post('/payment-approval/', function(request,response){
     
     var notificationData = {
         Category : 'Payments',
+        AppModel: "1.0",
+        Persist: "Yes",
         Status : 'Approved',
         Referred : referredUserName,
         JobName : jobname
@@ -129,11 +131,20 @@ router.post('/payment-approval/', function(request,response){
         if(err){
             throw err;
         }
-        
-        sendNotification.Notification(applicantArray , notificationData , function(){
-            response.send(true);
-            response.end(); 
-        });
+        else {
+            sendNotification.notification(applicantArray , notificationData , function(err){
+
+                if(err){
+                    console.error(err);
+                    throw err;
+                }
+                else {
+                    response.send(true);
+                    response.end();
+                }
+            });
+        }
+
     });
     
 });

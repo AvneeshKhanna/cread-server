@@ -12,9 +12,9 @@ var config = require('./Config');
 var _connection = config.createConnection;
 var applicationSchema = require('./Schema');
 var jobApplication = applicationSchema.jobApplication;
-var authtokenvalidation = require('./authtokenValidation');
+var authtokenvalidation = require('./auth-token-management/AuthTokenManager');
 
-var notify = require('./Notification-System/notificationFramework');
+var notify = require('./notification-system/notificationFramework');
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -124,7 +124,12 @@ function sendNotifToReferrer(refcode, applicant_userid){
                 Referee : data[referredUserIndex].firstname + " " + data[referredUserIndex].lastname
             };
             
-            notify.Notification(uuidArray, notifData, function(){
+            notify.notification(uuidArray, notifData, function(err){
+
+                if(err){
+                    console.error(err);
+                    throw err;
+                }
                
                 //End of flow
                 

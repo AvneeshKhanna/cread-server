@@ -9,31 +9,33 @@ var _auth = require('../Authentication');
 var appconfig = require('../Config');
 var connection = appconfig.createConnection;
 
-AWS.config.region = 'ap-northeast-1'; 
+AWS.config.region = 'ap-northeast-1';
 var dynamodb = new AWS.DynamoDB();
 var docClient = new AWS.DynamoDB.DocumentClient();
 
-router.post('/', function(request, response){
+router.post('/', function (request, response) {
     console.log(JSON.stringify(request.body));
     var phoneNo = request.body.contactnumber;
     var uuid = request.body.uuid;
     var password = request.body.newPassword;
-    var key = password+phoneNo;
+    var key = password + phoneNo;
     var Id = _auth.getToken(key);
-    
+
     console.log(JSON.stringify(request.body, null, 3));
-    
-    connection.query('UPDATE users SET password = ? , Auth_key = ? WHERE UUID = ?', [password , Id , uuid], function(err, data){
-        if (err){
+
+    connection.query('UPDATE users SET password = ? , Auth_key = ? WHERE UUID = ?', [password, Id, uuid], function (err, data) {
+        if (err) {
             throw err;
         }
-        else{
-            response.send();
+        else {
+            response.send({
+                status: 'success'
+            });
             response.end();
-            
+
         }
     });
-    
+
 });
 
 module.exports = router;

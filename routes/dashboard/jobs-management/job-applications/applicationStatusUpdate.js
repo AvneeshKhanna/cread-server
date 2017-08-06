@@ -6,7 +6,7 @@ var app = express();
 var router = express.Router();
 var mysql = require('mysql');
 
-var sendNotification = require('../../../Notification-System/notificationFramework');
+var sendNotification = require('../../../notification-system/notificationFramework');
 
 var appconfig = require('../../../Config');
 var _connection = appconfig.createConnection;
@@ -58,6 +58,8 @@ function updateAplcnStatus(application_status , uuid , jobid , jobName , refcode
     
     var notificationData = {
         Category : 'ApplicationStatus',
+        AppModel: "1.0",
+        Persist: "Yes",
         Status : application_status,
         JobName : jobName
     };
@@ -69,7 +71,7 @@ function updateAplcnStatus(application_status , uuid , jobid , jobName , refcode
         }
         else{
             /*if(application_status !== 'Buffer'){
-                sendNotification.Notification(uuidArray , notificationData , function(){
+                sendNotification.notification(uuidArray , notificationData , function(){
                     response.send(true);
                     response.end(); 
                 });
@@ -78,9 +80,16 @@ function updateAplcnStatus(application_status , uuid , jobid , jobName , refcode
                 response.send(true);
                 response.end(); 
             }*/
-            sendNotification.Notification(uuidArray , notificationData , function(){
+            sendNotification.notification(uuidArray , notificationData , function(err){
+
                 response.send(true);
                 response.end();
+
+                if(err){
+                    console.error(err);
+                    throw err;
+                }
+
             });
 
             //Since the notification is to be sent to the referrer and the server response to be sent to
@@ -126,12 +135,19 @@ function sendNotifToReferrer(refcode, applicant_userid){
 
             var notifData = {
                 Category : 'ReferralApplicationUpdate',
+                AppModel: "1.0",
+                Persist: "Yes",
                 Status : application_status,
                 JobName : data[referredUserIndex].title,
                 Referee : data[referredUserIndex].firstname + " " + data[referredUserIndex].lastname
             };
 
-            sendNotification.Notification(uuidArray, notifData, function(){
+            sendNotification.notification(uuidArray, notifData, function(err){
+
+                if(err){
+                    console.error(err);
+                    throw err;
+                }
 
                 //End of flow
 

@@ -7,6 +7,8 @@ var bodyParser = require('body-parser');
 var mysql = require('mysql');
 var cors = require('cors');
 
+var top_givers_notification = require('./routes/notification-system/NotificationScheduler');
+
 var routes = require('./routes/index');
 var users = require('./routes/users');
 var Auth = require('./routes/Authentication');
@@ -17,8 +19,8 @@ var signUpOTP = require('./routes/signUpOtpVerify');
 var referralScreen = require('./routes/referralScreen');
 var usersProfile = require('./routes/userProfile');
 var jobApplication = require('./routes/jobApplication');
-var checkauthToken = require('./routes/authtokenValidation');
-var validateAuthToken = require('./routes/authtokenValidation');
+var checkauthToken = require('./routes/auth-token-management/AuthTokenManager');
+var validateAuthToken = require('./routes/auth-token-management/AuthTokenManager');
 var referraljobApplication = require('./routes/referraljobApplication');
 var jobAnalysis = require('./routes/dashboard/jobs-management/job-analysis/jobAnalysis');
 var jobAddition = require('./routes/dashboard/jobs-management/jobAddition');
@@ -41,12 +43,12 @@ var edit_profile = require('./routes/user-profile/EditProfileUpdate');
 var paymentSystem = require('./routes/Payment-system/paymentDetails');
 var contactSync = require('./routes/Contact-Synchronization/contactSync');
 var internalReferral = require('./routes/refer-internal/internalReferral');
-var notification = require('./routes/Notification-System/jobNotification');
+var notification = require('./routes/notification-system/BulkNotification');
 var pieCharts = require('./routes/dashboard/data-analytics/pieChart');
 var countGraph = require('./routes/dashboard/data-analytics/countGraph');
 
 var forgotPassValidContact = require('./routes/forgot-password/validateContact');
-var updatePassword = require('./routes/forgot-password/updatePassword');
+var updatePassword = require('./routes/forgot-password/updatePasswordCompat');
 var updateContact = require('./routes/update-contact/updateContact');
 
 var chatbot = require('./routes/chat-bot/bot');
@@ -67,7 +69,7 @@ app.set('view engine', 'ejs');
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));
 app.use(bodyParser.json({limit: '50mb'}));  //{limit: '50mb'}: for handling large stream client requests
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({extended: false}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -103,9 +105,12 @@ app.use('/validate-auhtoken', validateAuthToken);
 app.use('/contactsync', contactSync);
 app.use('/password-validate-contact', forgotPassValidContact);
 app.use('/update-password', updatePassword);
+app.use('/password-update', require('./routes/forgot-password/updatePassword'));
 app.use('/update-contact', updateContact);
 app.use('/internalrefer', internalReferral);
-app.use('/jobnotification', notification);
+// app.use('/jobnotification', notification);
+app.use('/bulk-notification', notification);
+app.use('/notification-panel', require('./routes/cread/dsbrd/notification-manager/NotificationPanelDataLoader'));
 app.use('/dataAnalytics', pieCharts);
 app.use('/countGraph', countGraph);
 app.use('/latest-updates', activityLogView);
@@ -115,13 +120,52 @@ app.use('/generate-pictorial', require('./routes/pictorial/generatePictorial'));
 app.use('/social-reach', require('./routes/thetestament/social-reach-survey/SocialReachSurvey'));
 app.use('/dev-utils', require('./routes/dev-utils/DevUtils'));
 
+//CREAD
+
+//-app-
+app.use('/feed', require('./routes/cread/feed/FeedDataManager'));
+app.use('/track-activity', require('./routes/cread/track/ActivityTracker'));
+app.use('/share-campaign', require('./routes/cread/share/ShareCampaign'));
+app.use('/check-campaign', require('./routes/cread/check/CheckCampaign'));
+app.use('/user-profile', require('./routes/cread/user-manager/UserProfileManager'));
+app.use('/redeem-from-wallet', require('./routes/cread/user-manager/payments/RedeemFromWallet'));
+app.use('/givers-manager', require('./routes/cread/givers/GiversManager'));
+app.use('/user-interests', require('./routes/cread/user-manager/interests/InterestsManager'));
+
+//-dashboard-
+app.use('/campaign-details', require('./routes/cread/dsbrd/campaign-details/CampaignDetails'));
+app.use('/campaign', require('./routes/cread/dsbrd/campaign-management/CampaignManager'));
+app.use('/client-profile', require('./routes/cread/dsbrd/client-profile/ClientProfileManager'));
+app.use('/wallet-screen', require('./routes/cread/dsbrd/wallet-management/WalletDataLoader'));
+app.use('/wallet-management', require('./routes/cread/dsbrd/wallet-management/WalletTransactionManager'));
+app.use('/budget-management', require('./routes/cread/dsbrd/campaign-management/budget-manager/BudgetManager'));
+app.use('/latest-updates', require('./routes/cread/dsbrd/latest-updates/LatestUpdates'));
+
+app.use('/cread-test', require('./routes/cread/test/Testing'));
+
+app.get('/user-agent', function (request, response) {
+
+    response.render(__dirname + '/views/facebook-test/ThankYou.ejs');
+    response.end();
+
+});
+
+app.get('/agent', function (request, response) {
+
+    console.log("headers are " + JSON.stringify(request.headers, null, 3));
+    console.log("body is " + JSON.stringify(request.body, null, 3));
+
+    response.send('Thanks');
+    response.end();
+});
+
 app.use('/chatbot', chatbot);
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  var err = new Error('Not Found');
-  err.status = 404;
-  next(err);
+app.use(function (req, res, next) {
+    var err = new Error('Not Found');
+    err.status = 404;
+    next(err);
 });
 
 // error handlers
@@ -129,23 +173,25 @@ app.use(function(req, res, next) {
 // development error handler
 // will print stacktrace
 if (app.get('env') === 'development') {
-  app.use(function(err, req, res, next) {
-    res.status(err.status || 500);
-    res.json({
-      message: err.message,
-      error: err
+    app.use(function (err, req, res, next) {
+        res.status(err.status || 500);
+        res.json({
+            message: err.message,
+            error: err
+        });
     });
-  });
 }
 
 // production error handler
 // no stacktraces leaked to user
-app.use(function(err, req, res, next) {
-  res.status(err.status || 500);
-  res.json({
-    message: err.message,
-    error: {}
-  });
+app.use(function (err, req, res, next) {
+    res.status(err.status || 500);
+    res.json({
+        message: err.message,
+        error: {}
+    });
 });
+
+// top_givers_notification.start(); TODO: Uncomment
 
 module.exports = app;

@@ -7,7 +7,7 @@ var bodyParser = require('body-parser');
 var mysql = require('mysql');
 var AWS = require('aws-sdk');
 var dynamo_marshal = require('dynamodb-marshaler');    //package to convert plain JS/JSON objects to DynamoDB JSON
-var authtokenvalidation = require('../authtokenValidation');   //module to authenticate user before making request
+var authtokenvalidation = require('../auth-token-management/AuthTokenManager');   //module to authenticate user before making request
 
 var config = require('../Config');
 var _connection = config.createConnection;

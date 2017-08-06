@@ -34,7 +34,6 @@ router.post('/', function(request, response){
                 console.log('forgotPassword UUID in response: ' + JSON.stringify(row));
                 responseObj.valid = true;
                 responseObj.uuid = row[0].UUID;
-                //TODO Send SNS request for OTP message to the relevant contact number
                             
                 var sns = new AWS.SNS();
                 
