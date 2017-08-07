@@ -249,43 +249,40 @@ function getCampaign(cmid) {
 
 router.post('/edit', function (request, response) {
 
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
     var clientid = request.body.clientid;
     var authkey = request.body.authkey;
     var description = request.body.description;
-    var budget = request.body.budget;
+    var budget = 0;//request.body.budget;
+    var mission = request.body.mission;
     var imagepath = request.body.imagepath;
     var cmid = request.body.cmid;
 
     var sqlparams = {
         description: description,
         budget: budget,
-        imagepath: imagepath
+        imagepath: imagepath,
+        mission: mission
     };
 
     _auth.clientAuthValid(clientid, authkey)
         .then(function () {
-
-            connection.query('UPDATE Campaign SET ? WHERE cmid = ?', [sqlparams, cmid], function (err, result) {
-
-                if (err) {
-                    throw err;
-                }
-
-                response.send({
-                    tokenstatus: 'valid',
-                    data: {
-                        status: 'done'
-                    }
-                });
-                response.end();
-                throw new BreakPromiseChainError();
-
-            });
-
+            return updateCampaign(cmid, sqlparams);
         }, function () {
             response.send({
                 tokenstatus: 'invalid'
             }).end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function () {
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    status: 'done'
+                }
+            });
+            response.end();
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
@@ -300,6 +297,19 @@ router.post('/edit', function (request, response) {
             }
         });
 });
+
+function updateCampaign(cmid, params){
+    return new Promise(function (resolve, reject) {
+        connection.query('UPDATE Campaign SET ? WHERE cmid = ?', [params, cmid], function (err, result) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
 
 router.post('/deactivate', function (request, response) {
 
