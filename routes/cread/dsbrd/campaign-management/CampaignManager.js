@@ -84,13 +84,13 @@ router.post('/load', function (request, response) {
 function getCampaigns(clientid, cmpstatus) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT Campaign.cmid, Campaign.title, Campaign.description, Campaign.imagepath, Campaign.deactvtntime, ' +
-            'Campaign.budget, Campaign.regdate, SUM(!ISNULL(Share.shareid)) AS sharescount ' +
+            'Campaign.budget, Campaign.regdate, SUM(!ISNULL(Share.shareid) && (Share.checkstatus = ?)) AS sharescount ' +
             'FROM Campaign ' +
             'LEFT JOIN Share ' +
             'ON Campaign.cmid = Share.cmid ' +
             'WHERE Campaign.clientid = ? ' +
             'AND Campaign.cmpstatus = ? ' +
-            'GROUP BY Campaign.cmid ', [clientid, cmpstatus], function (err, rows) {
+            'GROUP BY Campaign.cmid ', ['COMPLETE', clientid, cmpstatus], function (err, rows) {
 
             if (err) {
                 reject(err);

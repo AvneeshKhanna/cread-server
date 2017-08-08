@@ -175,11 +175,13 @@ function getIndividualShares(cmid, limit) {
 
     return new Promise(function (resolve, reject) {
 
-        connection.query('SELECT users.firstname, users.lastname, Share.regdate, Share.checkstatus ' +
+        connection.query('SELECT users.firstname, users.lastname, Share.sharerate, Share.regdate, Share.checkstatus ' +
             'FROM Share ' +
             'JOIN users ' +
             'ON Share.UUID = users.UUID ' +
-            'WHERE Share.cmid = ? ORDER BY Share.regdate DESC LIMIT ?', [cmid, limit], function (err, rows) {
+            'WHERE Share.cmid = ? ' +
+            'AND Share.checkstatus = ? ' +
+            'ORDER BY Share.regdate DESC LIMIT ?', [cmid, 'COMPLETE', limit], function (err, rows) {
 
             if(err){
                 reject(err);

@@ -416,7 +416,7 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid) {
                             AppModel: "2.0",
                             Category: 'share_status',
                             // Status: 'verified',
-                            Message: 'Your share for ' + cmptitle + ' has been measured',
+                            Message: 'Your share for ' + cmptitle + ' has been reviewed',
                             Shareid: shareid,
                             Cmid: cmid,
                             Persist: "Yes"
@@ -459,7 +459,7 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid) {
                                     Category: 'share_status',
                                     Shareid: shareid,
                                     // Status: 'verified',
-                                    Message: 'Your share for ' + cmptitle + ' has been measured',
+                                    Message: 'Your share for ' + cmptitle + ' has been reviewed',
                                     Cmid: cmid,
                                     Persist: "Yes"
                                 };
