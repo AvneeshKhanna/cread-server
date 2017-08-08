@@ -4,7 +4,7 @@
 
 const sharerate = 10;
 const checkrate_verified = 2.5;
-const checkrate_not_verified = 2.5;
+const checkrate_not_verified = 1;
 
 const markup = 33; //in percentage
 

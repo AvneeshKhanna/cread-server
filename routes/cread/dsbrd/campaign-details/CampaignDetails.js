@@ -10,6 +10,7 @@ var moment = require('moment');
 var config = require('../../../Config');
 var connection = config.createConnection;
 var _auth = require('../../../auth-token-management/AuthTokenManager');
+var consts = require('../../utils/Constants');
 
 var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 
@@ -191,6 +192,7 @@ function getIndividualShares(cmid, limit) {
                 for (var i = 0; i < rows.length; i++) {
                     var obj = rows[i];
                     rows[i].regdate = moment(obj.regdate).format('YYYY-MM-DD HH:mm');
+                    rows[i].sharerate = parseFloat(rows[i].sharerate + consts.checkrate_verified) * parseFloat(1 + consts.markup/100);
                 }
 
                 resolve(rows);

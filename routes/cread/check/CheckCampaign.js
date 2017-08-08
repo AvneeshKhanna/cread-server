@@ -103,14 +103,14 @@ function getDataForCheck(uuid) {
 
         //Here, SQL's TRANSACTION functions are used because between the 'SELECT...FOR UPDATE' and 'UPDATE' query, we would
         // not want any other session to update that specific record. connection.beginTransaction() ensures so.
-        // NOTE: calling connection.commit() is necessary after calling connection.beginTransaction() in the same session
+        // NOTE: calling connection.commit() or connection.rollback() is necessary after calling connection.beginTransaction()
+        // in the same session
         connection.beginTransaction(function (err) {
             if (err) {
                 console.error(err);
                 throw err;
             }
             else {
-
                 //Retrieve a user's share data for a given cmid who has shared within the last 24 hours and has not been verified
                 connection.query('SELECT Share.sharerate, Share.regdate AS sharetime, Share.shareid, Share.ulinkkey, Share.ulinkvalue, ' +
                     'Campaign.cmid, Campaign.contentbaseurl AS verificationurl, Campaign.title, Campaign.description, Campaign.imagepath, ' +

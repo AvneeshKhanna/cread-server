@@ -15,6 +15,7 @@ var AWS = config.AWS;
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
+var consts = require('../utils/Constants');
 
 router.post('/', function (request, response) {
 
@@ -95,10 +96,10 @@ router.post('/', function (request, response) {
                                         }
                                         else {
                                             if (element.responses == 'verified'){
-                                                element.checkrate = 4;  //TODO: Make checkrate dynamic
+                                                element.checkrate = consts.checkrate_verified;  //TODO: Make checkrate dynamic
                                             }
                                             else {
-                                                element.checkrate = 1;  //TODO: Make checkrate dynamic
+                                                element.checkrate = consts.checkrate_not_verified;  //TODO: Make checkrate dynamic
                                             }
                                             element.type = 1;   //Checks Code
                                         }
@@ -121,10 +122,10 @@ router.post('/', function (request, response) {
                                         }
                                         else {
                                             if (element.responses == 'verified') {
-                                                return accumulator + 4; //TODO: Make the checkrate dynamic
+                                                return accumulator + consts.checkrate_verified; //TODO: Make the checkrate dynamic
                                             }
                                             else {
-                                                return accumulator + 1; //TODO: Make the checkrate dynamic
+                                                return accumulator + consts.checkrate_not_verified; //TODO: Make the checkrate dynamic
                                             }
                                         }
                                     }, 0);
