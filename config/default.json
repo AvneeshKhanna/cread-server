@@ -16,6 +16,7 @@
 		"bucket" : "testamentbucket"
 	},
 	"paytm-server-url": "https://trust.paytm.in",
+	"paytm-sales-wallet-guid": "bcbedbb2-243c-4073-af6f5B0ede871741",
 	"type" : "PRODUCTION"
 	
 }

@@ -12,6 +12,7 @@ var AWS = config.AWS;
 var envconfig = require('config');
 var userstbl_ddb = envconfig.get('dynamoDB.users_table');
 var paytm_server_url = envconfig.get('paytm-server-url');
+var saleswalletguid = envconfig.get('paytm-sales-wallet-guid');
 
 var uuidGen = require('uuid');
 var httprequest = require('request');
@@ -105,14 +106,14 @@ function getPaytmParams(userpaytmcontact, amount, requestType) {
     return paytm_params = {
         request: {
             requestType: requestType,
-            merchantGuid: "52cd743e-2f83-41b8-8468-ea83daf909e7",
-            merchantOrderId: orderId/*uuid.v4()*/,
-            salesWalletName: null,
-            salesWalletGuid: "05d92f1a-e603-4df4-9034-000c8363dd7b",
+            merchantGuid: 'EASCON85549596094609',//"52cd743e-2f83-41b8-8468-ea83daf909e7",
+            merchantOrderId: orderId,
+            salesWalletName: 'PaytmSubWallet',
+            salesWalletGuid: saleswalletguid,
             payeeEmailId: null,
             payeePhoneNumber: userpaytmcontact,
             payeeSsoId: null,
-            appliedToNewUsers: "Y",
+            appliedToNewUsers: "N",     //Whether is would be applicable to users who do not have a paytm account attached to this phone
             amount: JSON.stringify(amount),
             currencyCode: "INR"
         },
@@ -134,7 +135,7 @@ function checkIfUserPaytmAccExists(amount, userpaytmcontact, checksumhash) {
         var headers = {
             'checksumhash': checksumhash,
             'Content-Type': 'application/json',
-            'mid': '52cd743e-2f83-41b8-8468-ea83daf909e7'
+            'mid': 'EASCON85549596094609'//'52cd743e-2f83-41b8-8468-ea83daf909e7'
         };
 
         // Configure the request
@@ -268,7 +269,7 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
                                         var headers = {
                                             'checksumhash': checksumhash,
                                             'Content-Type': 'application/json',
-                                            'mid': '52cd743e-2f83-41b8-8468-ea83daf909e7'   //Provided by Paytm
+                                            'mid': 'EASCON85549596094609'//'52cd743e-2f83-41b8-8468-ea83daf909e7'   //Provided by Paytm
                                         };
 
                                         // Configure the request
@@ -278,6 +279,8 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
                                             headers: headers,
                                             body: JSON.stringify(getPaytmParams(userpaytmcontact, amount, null))  //Body parameter is required to be Sring or Buffer type
                                         };
+
+                                        console.log("request to paytm is " + JSON.stringify(options, null, 3));
 
                                         httprequest(options, function (err, res, body) {
 

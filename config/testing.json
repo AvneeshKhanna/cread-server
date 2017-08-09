@@ -16,5 +16,8 @@
 		"bucket" : "testamentbucketdev"
 	},
 	"paytm-server-url": "https://trust-uat.paytm.in",
+	"paytm-sales-wallet-guid": "05d92f1a-e603-4df4-9034-000c8363dd7b",
+//	"paytm-server-url": "https://trust.paytm.in",
+//	"paytm-sales-wallet-guid": "bcbedbb2-243c-4073-af6f5B0ede871741",
 	"type" : "DEVELOPMENT"
 }

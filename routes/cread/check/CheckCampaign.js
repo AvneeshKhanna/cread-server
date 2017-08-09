@@ -116,7 +116,7 @@ function getDataForCheck(uuid) {
                 //Retrieve a user's share data for a given cmid who has shared within the last 24 hours and has not been verified
                 connection.query('SELECT Share.sharerate, Share.regdate AS sharetime, Share.shareid, Share.ulinkkey, Share.ulinkvalue, ' +
                     'Campaign.cmid, Campaign.contentbaseurl AS verificationurl, Campaign.title, Campaign.description, Campaign.imagepath, ' +
-                    'users.firstname, users.lastname, users.UUID AS sharerid, users.fbusername ' +
+                    'users.firstname, users.UUID AS sharerid, users.fbusername ' +
                     'FROM Share ' +
                     'JOIN users ' +
                     'ON Share.UUID = users.UUID ' +
@@ -124,10 +124,10 @@ function getDataForCheck(uuid) {
                     'ON Campaign.cmid = Share.cmid ' +
                     'WHERE Share.checkstatus = "PENDING" ' +
                     'AND Share.UUID <> ? ' +
-                    //'AND Share.locked = ? ' + TODO: Uncomment
+                    'AND Share.locked = ? ' + //TODO: Uncomment
                     'ORDER BY RAND() ' +    //To randomise
                     'LIMIT 1 ' +
-                    'FOR UPDATE', [uuid, null/*false*/], function (err, rows) {   //TODO: Uncomment
+                    'FOR UPDATE', [uuid, /*null*/false], function (err, rows) {   //TODO: Uncomment
 
                     console.log('SELECT...FOR UPDATE query executed');
 
@@ -337,8 +337,8 @@ function updateCampaignBudget(sharerate, checkrate, cmid) {
 
     return new Promise(function (resolve, reject) {
 
-        var markup = (parseFloat(sharerate) + parseFloat(checkrate)) * parseFloat(consts.markup/100); //TODO: Update markup
-        var amount = (parseFloat(sharerate) + parseFloat(checkrate) + parseFloat(markup));
+        var markup = parseFloat(parseFloat(sharerate) + parseFloat(checkrate)) * parseFloat(consts.markup/100); //TODO: Update markup
+        var amount = parseFloat(parseFloat(sharerate) + parseFloat(checkrate) + parseFloat(consts.markup/100));
 
         console.log('markup subtracted from budget ' + markup);
         console.log('amount subtracted from budget ' + amount);
