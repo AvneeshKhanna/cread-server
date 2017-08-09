@@ -71,7 +71,9 @@ router.post('/request', function (request, response) {
                     delete row.fbusername;
                 }
 
-                row.checkrate = consts.checkrate_verified;    //TODO: Make the check rate dynamic
+                //TODO: Make the check rate dynamic
+                row.checkrate_verified = consts.checkrate_verified;
+                row.checkrate_not_verified = consts.checkrate_not_verified;
 
                 console.log("row is " + JSON.stringify(row, null, 3));
 
@@ -431,7 +433,8 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid) {
                             resolve("COMPLETE");  //As this action is independent of whether the notification to the user was a success or not
 
                             if (err) {
-                                throw err;
+                                console.error(err);
+                                //throw err;    TODO: Uncomment
                             }
                         });
                     }
@@ -473,8 +476,8 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid) {
                                     resolve("CANCELLED");   //As this action is independent whether the notification to the user was a success or not
 
                                     if (err) {
-                                        console.log(err);
-                                        throw err;
+                                        console.error(err);
+                                        // throw err; TODO: Uncomment
                                     }
                                 });
                             }

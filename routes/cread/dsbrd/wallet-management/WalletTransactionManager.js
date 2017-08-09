@@ -98,7 +98,7 @@ function updateClientWalletBalance(clientid, amount) {
                     }
                     else {
 
-                        var newbalance = parseInt(rows[0].walletbalance) + parseInt(amount);
+                        var newbalance = parseFloat(rows[0].walletbalance) + parseFloat(amount);
 
                         /*if(type == 'ADD'){
                             newbalance = rows[0].walletbalance + amount;

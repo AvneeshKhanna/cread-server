@@ -66,7 +66,12 @@ router.post('/load/', function (request, response) {
                     element.sharerate = consts.sharerate;     //TODO: Make sharerate dynamic
                 });
 
-                connection.query('SELECT fbusername FROM users WHERE UUID = ?', [uuid], function (err, row) {
+                connection.query('SELECT users.fbusername, UserInterestsRel.UUID AS interestedUser ' +
+                    'FROM users ' +
+                    'LEFT JOIN UserInterestsRel ' +
+                    'ON users.UUID = UserInterestsRel.UUID ' +
+                    'WHERE users.UUID = ? ' +
+                    'LIMIT 1', [uuid], function (err, row) {
                     if (err) {
                         throw err;
                     }
@@ -77,7 +82,8 @@ router.post('/load/', function (request, response) {
                             tokenstatus: 'valid',
                             data: {
                                 feed: rows,
-                                fbidstatus: row[0].fbusername != null
+                                fbidstatus: row[0].fbusername != null,
+                                intereststatus: row[0].interestedUser != null
                             }
                         });
                         response.end();

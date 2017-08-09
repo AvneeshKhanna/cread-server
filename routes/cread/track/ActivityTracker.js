@@ -114,7 +114,7 @@ router.post('/', function (request, response) {
                                     .reduce(function (accumulator, element) {
                                         if (element.hasOwnProperty('sharerate')) {
                                             if (!element.donation) {
-                                                return accumulator + parseInt(element.sharerate);
+                                                return accumulator + parseFloat(element.sharerate);
                                             }
                                             else {
                                                 return accumulator;
@@ -183,7 +183,7 @@ router.post('/', function (request, response) {
                                         shared: no_of_shares ? no_of_shares : 0,
                                         measured: no_of_checks ? no_of_checks : 0,
                                         donated: donatedAmt ? donatedAmt : 0,
-                                        minCashInAmt: 5,          //TODO: Can change the amount based on team discussion
+                                        minCashInAmt: consts.min_cash_in_amt,
                                         creditAmt: availableAmt
                                     }
                                 };
