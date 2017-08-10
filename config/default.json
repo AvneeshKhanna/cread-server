@@ -15,8 +15,12 @@
 	"s3" : {
 		"bucket" : "testamentbucket"
 	},
-	"paytm-server-url": "https://trust.paytm.in",
-	"paytm-sales-wallet-guid": "bcbedbb2-243c-4073-af6f5B0ede871741",
+	"paytm-creds": {	//Provided by Paytm
+		"server-url": "https://trust.paytm.in",
+		"sales-wallet-guid": "bcbedbb2-243c-4073-af6f-5B0ede871741",
+		"merchant-guid": "611a377b-360c-4c0b-aa00-ee9459f029d7",
+		"merchant-key": "QJu2GJu3bcLfws&5"
+	},
 	"type" : "PRODUCTION"
 	
 }

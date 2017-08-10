@@ -6,7 +6,7 @@ const sharerate = 10;
 const checkrate_verified = 2.5;
 const checkrate_not_verified = 1;
 
-const markup = 33; //in percentage
+const markup = 33; //in percentage TODO: Update markup
 const minCashInAmt = 1;    //TODO: Can change the amount based on team discussion
 
 function getMarkup(markup) {

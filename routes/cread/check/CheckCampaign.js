@@ -337,10 +337,10 @@ function updateCampaignBudget(sharerate, checkrate, cmid) {
 
     return new Promise(function (resolve, reject) {
 
-        var markup = parseFloat(parseFloat(sharerate) + parseFloat(checkrate)) * parseFloat(consts.markup/100); //TODO: Update markup
-        var amount = parseFloat(parseFloat(sharerate) + parseFloat(checkrate) + parseFloat(consts.markup/100));
+        var calculatedMarkup = parseFloat(parseFloat(sharerate) + parseFloat(checkrate)) * parseFloat(consts.markup/100);
+        var amount = parseFloat(parseFloat(sharerate) + parseFloat(checkrate) + calculatedMarkup);
 
-        console.log('markup subtracted from budget ' + markup);
+        console.log('markup subtracted from budget ' + calculatedMarkup);
         console.log('amount subtracted from budget ' + amount);
 
         connection.query('UPDATE Campaign SET budget = (budget - ?) WHERE cmid = ?', [amount, cmid], function (err, row) {

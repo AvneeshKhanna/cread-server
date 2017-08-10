@@ -11,8 +11,12 @@ var AWS = config.AWS;
 
 var envconfig = require('config');
 var userstbl_ddb = envconfig.get('dynamoDB.users_table');
-var paytm_server_url = envconfig.get('paytm-server-url');
-var saleswalletguid = envconfig.get('paytm-sales-wallet-guid');
+var paytmCreds = envconfig.get('paytm-creds');
+
+var paytm_server_url = paytmCreds.get('server-url');
+var saleswalletguid = paytmCreds.get('sales-wallet-guid');
+var merchantGuid = paytmCreds.get("merchant-guid");
+var paytmMerchantKey = paytmCreds.get('merchant-key');
 
 var uuidGen = require('uuid');
 var httprequest = require('request');
@@ -23,7 +27,6 @@ var _auth = require('../../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 
 var paytmchecksum = require('../../paytmutils/checksum');
-var paytmMerchantKey = 'SY#F6vL_Yke1ey&w';  //Provided by Paytm
 
 var orderId;
 
@@ -106,7 +109,7 @@ function getPaytmParams(userpaytmcontact, amount, requestType) {
     return paytm_params = {
         request: {
             requestType: requestType,
-            merchantGuid: 'EASCON85549596094609',//"52cd743e-2f83-41b8-8468-ea83daf909e7",
+            merchantGuid: merchantGuid,//"52cd743e-2f83-41b8-8468-ea83daf909e7",
             merchantOrderId: orderId,
             salesWalletName: 'PaytmSubWallet',
             salesWalletGuid: saleswalletguid,
@@ -117,7 +120,7 @@ function getPaytmParams(userpaytmcontact, amount, requestType) {
             amount: JSON.stringify(amount),
             currencyCode: "INR"
         },
-        metadata: "Testing Data",
+        metadata: "Cread",
         ipAddress: "127.0.0.1",     //TODO: Check to change
         platformName: "PayTM",
         operationType: "SALES_TO_USER_CREDIT"
@@ -135,7 +138,7 @@ function checkIfUserPaytmAccExists(amount, userpaytmcontact, checksumhash) {
         var headers = {
             'checksumhash': checksumhash,
             'Content-Type': 'application/json',
-            'mid': 'EASCON85549596094609'//'52cd743e-2f83-41b8-8468-ea83daf909e7'
+            'mid': merchantGuid//'52cd743e-2f83-41b8-8468-ea83daf909e7'
         };
 
         // Configure the request
@@ -269,7 +272,7 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
                                         var headers = {
                                             'checksumhash': checksumhash,
                                             'Content-Type': 'application/json',
-                                            'mid': 'EASCON85549596094609'//'52cd743e-2f83-41b8-8468-ea83daf909e7'   //Provided by Paytm
+                                            'mid': merchantGuid//'52cd743e-2f83-41b8-8468-ea83daf909e7'   //Provided by Paytm
                                         };
 
                                         // Configure the request
@@ -297,7 +300,7 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
 
                                                 if (resbody.status == "SUCCESS") {
                                                     connection.commit(function (err) {
-                                                        if (err) {
+                                                        if (err) {  //Could be a caveat, if this happens, paytm transactions would go through but our records won't be updated
                                                             connection.rollback(function () {
                                                                 console.log('Transaction rollbacked');
                                                                 reject(err);
@@ -315,6 +318,9 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
 
                                                         if (resbody.statusCode == 'GE_1032') {    //Case of invalid mobile number
                                                             resolve('invalid-contact');
+                                                        }
+                                                        else if(resbody.statusCode == 'STUC_1002'){ //Payee record not found, please verify emailId/ssoId.
+                                                            resolve("invalid-user");
                                                         }
                                                         else {
                                                             reject(new Error(resbody.statusMessage));
