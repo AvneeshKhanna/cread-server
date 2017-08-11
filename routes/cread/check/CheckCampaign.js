@@ -301,13 +301,13 @@ function updateShareForCheck(shareid, checkstatus) {
 
         if(checkstatus){    //Case where checkresponse is either 'verified' or 2nd for the Share
             params.checkstatus = checkstatus;
-            result.toUpdateBudget = true;
 
             //TODO: Make the checkrate dynamic
             if(checkstatus == "COMPLETE"){
                 result.checkrate = consts.checkrate_verified;
+                result.toUpdateBudget = true;
             }
-            else {
+            else {  //Case where checkstatus = "CANCELLED"
                 result.checkrate = consts.checkrate_not_verified;
             }
 

@@ -15,6 +15,8 @@ var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 
 router.post('/sign-up', function (request, response) {
 
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
     var email = request.body.email;
     var password = request.body.password;
     var contact = request.body.contact;
