@@ -20,6 +20,7 @@ var regdate = moment.utc("2017-07-31T11:06:46.000Z").format("YYYY-MM-DD HH:mm:ss
 
 console.log("diff is " + moment.utc(moment(regdate, "YYYY-MM-DD HH:mm:ss").diff(lowerlimittime, "YYYY-MM-DD HH:mm:ss")).format("HH:mm:ss"));
 
+
 var utils = require('../utils/Utils');
 var consts = require('../utils/Constants');
 
@@ -223,19 +224,32 @@ router.post('/request-unique-link', function (request, response) {
         })
         .then(function (result) {
 
-            if (result["to-share-more"]) {   //A Share doesn't exists within the last 24 hours, proceed the user to Share
-
+            if (result["to-share-this-more"]) {   //A Share doesn't exists within the last 24 hours whose cmid is the same as in the request
                 console.log("result when restricting user is " + JSON.stringify(result, null, 3));
-                return getCampaignBaseLink(cmid);
+
+                if(result["to-share-other-more"]){
+                    return getCampaignBaseLink(cmid);
+                }
+                else {
+                    console.log('!result["to-share-other-more"] block called');
+                    response.send({
+                        tokenstatus: 'valid',
+                        data: {
+                            status: 'proceed',
+                            canusershare: false,
+                            wait_time: result["wait_time"]
+                        }
+                    });
+                    response.end();
+                    throw new BreakPromiseChainError();
+                }
             }
-            else {  //A Share exists within the last 24 hours, restrict the user to Share any more
-
-                console.log("result when restricting user is " + JSON.stringify(result, null, 3));
-
+            else {
                 response.send({
                     tokenstatus: 'valid',
                     data: {
-                        status: 'stop',
+                        status: 'stop', //for restriction on a single campaign shared multiple times within 24 hour
+                        canusershare: false,    //for restriction on any campaign shared multiple times within 30 min
                         wait_time: result["wait_time"]
                     }
                 });
@@ -245,12 +259,13 @@ router.post('/request-unique-link', function (request, response) {
         })
         .then(function (campaign) {
 
-            if(campaign) {
+            if (campaign) { //Case where budget of the Campaign is available
                 console.log("ulinkkey is " + JSON.stringify(ulinkkey, null, 3));
                 console.log("ulinkvalue is " + JSON.stringify(ulinkvalue, null, 3));
 
                 var data = {
                     status: 'proceed',
+                    canusershare: true,
                     budgetavailable: true,
                     campaignlink: utils.updateQueryStringParameter(campaign.contentbaseurl, ulinkkey, ulinkvalue),
                     ulinkkey: ulinkkey,
@@ -266,12 +281,14 @@ router.post('/request-unique-link', function (request, response) {
                 response.end();
                 throw new BreakPromiseChainError();
             }
-            else{   //Case where budget of the Campaign has been exhausted
+            else {   //Case where budget of the Campaign has been exhausted
                 console.log("unavailable budget case is called");
 
                 response.send({
                     tokenstatus: 'valid',
                     data: {
+                        status: 'proceed',
+                        can_user_share: true,
                         budgetavailable: false
                     }
                 });
@@ -297,13 +314,16 @@ router.post('/request-unique-link', function (request, response) {
 function checkUserLastShare(cmid, uuid) {
     return new Promise(function (resolve, reject) {
 
-        var lowerlimittime = moment.utc().subtract(1, "minutes").format('YYYY-MM-DD HH:mm:ss');    //TODO change minutes to days in .subract(1, "minutes")
-        console.log("lowerlimitime is " + JSON.stringify(lowerlimittime, null, 3));
+        var lowerlimittime_24 = moment.utc().subtract(1, "days").format('YYYY-MM-DD HH:mm:ss');      //TODO change
+        var lowerlimittime_30 = moment.utc().subtract(30, "minutes").format('YYYY-MM-DD HH:mm:ss');     //TODO change
 
-        connection.query('SELECT shareid, regdate ' +
+        console.log("lowerlimittime_24 is " + JSON.stringify(lowerlimittime_24, null, 3));
+        console.log("lowerlimittime_30 is " + JSON.stringify(lowerlimittime_30, null, 3));
+
+        connection.query('SELECT cmid, shareid, regdate ' +
             'FROM Share ' +
-            'WHERE cmid = ? AND UUID = ? AND regdate > ? ' +
-            'ORDER BY regdate DESC', [cmid, uuid, lowerlimittime], function (err, rows) {
+            'WHERE UUID = ? AND regdate > ? ' +
+            'ORDER BY regdate DESC', [/*cmid, */uuid, lowerlimittime_24], function (err, rows) {
 
             console.log("rows after checkUserLastShare query is " + JSON.stringify(rows, null, 3));
 
@@ -311,29 +331,91 @@ function checkUserLastShare(cmid, uuid) {
                 reject(err);
             }
             else {
-
                 var result = {};
 
-                if (rows[0]) {    //A Share exists within the last 24 hours, restrict the user to Share any more
+                /*if(rows.map(function (element) {
+                 return moment(element.regdate).isBefore(lowerlimittime_24);
+                 }).indexOf(false) != -1){
+                 console.log('one such share exists');
+                 result["to-share-more"] = true;
+                 resolve(result);
+                 }
+                 else{
+                 result["to-share-more"] = true;
+                 resolve(result);
+                 }*/
 
-                    var regdate = moment.utc(rows[0].regdate).format("YYYY-MM-DD HH:mm:ss");
+                if (rows.length != 0) {    //One or more shares exist within the last 24 hours
+
+                    var thisCmidShareIndex = rows.map(function (element) {
+                        return element.cmid;
+                    }).indexOf(cmid);
+
+                    console.log('thisCmidShareIndex is ' + thisCmidShareIndex);
+
+                    if (thisCmidShareIndex != -1) { //Case where a share exists whose cmid is the same as the one requested to the server
+
+                        console.log('(thisCmidShareIndex != -1) block called');
+
+                        result["to-share-this-more"] = false;    //For 24 hr restriction
+                        result["to-share-other-more"] = false;    //For 30 min restriction
+                        result["wait_time"] = timeDiff(moment.utc(moment(rows[thisCmidShareIndex].regdate)).format("YYYY-MM-DD HH:mm:ss"), lowerlimittime_24);
+                        resolve(result);
+                    }
+                    else if(consts.restrict_every_share) {
+
+                        //Case where all the shares have a cmid different than that requested to the server
+
+                        if (moment(moment.utc(moment(rows[0].regdate)).format('YYYY-MM-DD HH:mm:ss')).isAfter(lowerlimittime_30)) { //Case where a share exists within previous 30 minutes of this server request
+                            result["to-share-this-more"] = true;
+                            result["to-share-other-more"] = false;
+                            result["wait_time"] = timeDiff(moment.utc(moment(rows[0].regdate)).format("YYYY-MM-DD HH:mm:ss"), lowerlimittime_30);
+                            resolve(result);
+                        }
+                        else {  //Case to proceed
+                            result["to-share-this-more"] = true;
+                            result["to-share-other-more"] = true;
+                            resolve(result);
+                        }
+                    }
+                    else{   //Case to proceed
+                        result["to-share-this-more"] = true;
+                        result["to-share-other-more"] = true;
+                        resolve(result);
+                    }
+
+                    /*var regdate = moment.utc(rows[0].regdate).format("YYYY-MM-DD HH:mm:ss");
 
                     console.log("wait time is " + moment.utc(moment(regdate, "YYYY-MM-DD HH:mm:ss").diff(lowerlimittime, "YYYY-MM-DD HH:mm:ss")).format("HH:mm:ss"));
 
                     result["to-share-more"] = false;
                     result["wait_time"] = moment.utc(moment(regdate, "YYYY-MM-DD HH:mm:ss").diff(lowerlimittime, "YYYY-MM-DD HH:mm:ss")).format("HH:mm:ss");//moment(moment(rows[0].regdate, "DD-MM-YYYY hh:mm:ss").diff(moment(moment(), "DD-MM-YYYY hh:mm:ss"))).format("hh:mm:ss");
 
+                    resolve(result);*/
+                }
+                else {  //Case to proceed
+                    result["to-share-this-more"] = true;
+                    result["to-share-other-more"] = true;
                     resolve(result);
                 }
-                else {
-                    result["to-share-more"] = true;
-                    resolve(result);
-                }
-
             }
-
         });
     });
+}
+
+/*
+ * Returns the time difference between currenttime and limittime in HH:mm:ss
+ * */
+function timeDiff(sharetime, limittime) {
+
+    console.log('sharetime is ' + sharetime);
+    console.log('limittime is ' + limittime);
+
+    if (limittime > sharetime) {
+        throw new RangeError('limittime cannot be greater than sharetime');
+    }
+
+    return moment.utc(moment(sharetime, "YYYY-MM-DD HH:mm:ss").diff(limittime, "YYYY-MM-DD HH:mm:ss")).format(/*"x"*/"HH:mm:ss");
 }
 
 /**

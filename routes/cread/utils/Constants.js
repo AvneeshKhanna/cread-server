@@ -7,7 +7,7 @@ const checkrate_verified = 2.5;
 const checkrate_not_verified = 1;
 
 const markup = 33; //in percentage TODO: Update markup
-const minCashInAmt = 1;    //TODO: Can change the amount based on team discussion
+const minCashInAmt = 50;    //TODO: Can change the amount based on team discussion
 
 function getMarkup(markup) {
     if (markup > 100) {
@@ -26,5 +26,6 @@ module.exports = {
     checkrate_verified: checkrate_verified,
     checkrate_not_verified: checkrate_not_verified,
     markup: getMarkup(markup),
-    min_cash_in_amt: minCashInAmt
+    min_cash_in_amt: minCashInAmt,
+    restrict_every_share: true  //TODO: toggle
 };
