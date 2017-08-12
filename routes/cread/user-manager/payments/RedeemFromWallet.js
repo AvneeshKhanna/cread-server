@@ -25,6 +25,7 @@ var docClient = new AWS.DynamoDB.DocumentClient();
 
 var _auth = require('../../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
+var utils = require('../../utils/Utils');
 
 var paytmchecksum = require('../../paytmutils/checksum');
 
@@ -83,7 +84,16 @@ router.post('/', function (request, response) {
                 }
             });
             response.end();
-            throw new BreakPromiseChainError();
+
+            if(status == 'success'){
+                return informUserViaRegisteredContact(uuid, amount, userpaytmcontact);
+            }
+            else {
+                throw new BreakPromiseChainError();
+            }
+        })
+        .then(function () {
+            //SMS sent successfully. Do nothing
         })
         .catch(function (err) {
 
@@ -92,15 +102,49 @@ router.post('/', function (request, response) {
             }
             else {
                 console.error(err);
-                response.status(500).send({
-                    error: 'Some error occurred at the server'
-                });
-                response.end();
+                if(!response.headersSent){  //Because a case can arrive where informUserViaRegisteredContact() throws an error
+                    response.status(500).send({
+                        error: 'Some error occurred at the server'
+                    });
+                    response.end();
+                }
             }
 
         });
 
 });
+
+/**
+ * Sends a confirmation SMS to the user that the amount has been successfully transacted to Paytm
+ * */
+function informUserViaRegisteredContact(uuid, amount, userpaytmcontact){
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT firstname, phoneNo FROM users WHERE uuid = ?', [uuid], function (err, row) {
+            if(err){
+                reject(err);
+            }
+            else{
+
+                var msg = 'Hi ' +
+                    row[0].firstname +
+                    ',\nYour Cread earnings amounting to Rs. ' +
+                    amount +
+                    ' have been successfully transferred to the Paytm wallet attached to +91' +
+                    userpaytmcontact;
+
+                utils.sendAWSSMS(msg, row[0].phoneNo, function (err, data) {
+                    if(err){
+                        reject(err);
+                    }
+                    else{
+                        resolve();
+                    }
+                });
+
+            }
+        });
+    });
+}
 
 /**
  * Formulate request parameters to send to paytm servers
@@ -248,26 +292,6 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
                                     }
                                     else {
 
-                                        /*var paytm_params = {
-                                         request: {
-                                         requestType: "VERIFY",
-                                         merchantGuid: "52cd743e-2f83-41b8-8468-ea83daf909e7",
-                                         merchantOrderId: "123112q",
-                                         salesWalletName: null,
-                                         salesWalletGuid: "05d92f1a-e603-4df4-9034-000c8363dd7b",
-                                         payeeEmailId: null,
-                                         payeePhoneNumber: userpaytmcontact,
-                                         payeeSsoId: null,
-                                         appliedToNewUsers: "Y",
-                                         amount: "10",
-                                         currencyCode: "INR"
-                                         },
-                                         metadata: "Testing Data",
-                                         ipAddress: "122.161.164.208",
-                                         platformName: "PayTM",
-                                         operationType: "SALES_TO_USER_CREDIT"
-                                         };*/
-
                                         // Set the headers
                                         var headers = {
                                             'checksumhash': checksumhash,
@@ -348,7 +372,7 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
 
                     }
 
-                })
+                });
 
             }
         });
