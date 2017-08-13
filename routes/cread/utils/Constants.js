@@ -27,5 +27,5 @@ module.exports = {
     checkrate_not_verified: checkrate_not_verified,
     markup: getMarkup(markup),
     min_cash_in_amt: minCashInAmt,
-    restrict_every_share: false  //TODO: toggle
+    restrict_every_share: true  //TODO: toggle
 };
