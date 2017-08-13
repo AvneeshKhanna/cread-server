@@ -15,7 +15,7 @@ var consts = require('../../utils/Constants');
 var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 
 router.post('/graph', function (request, response) {
-    
+
     console.log("Request is " + JSON.stringify(request.body, null, 3));
 
     var clientid = request.body.clientid;
@@ -44,10 +44,10 @@ router.post('/graph', function (request, response) {
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occured at the server'
@@ -67,10 +67,10 @@ function getShareGraph(cmid, days) {
 
         connection.query('SELECT shareid, regdate FROM Share WHERE cmid = ? ORDER BY regdate DESC', [cmid], function (err, rows) {
 
-            if(err){
+            if (err) {
                 reject(err);
             }
-            else{
+            else {
 
                 console.log("data from query is " + JSON.stringify(rows, null, 3));
 
@@ -123,9 +123,9 @@ function calculateSharesPerDay(arr, date) {
         var thisdate = element.regdate;
         return (moment(thisdate).format('YYYY-MM-DD') == date);
     });
-    
+
     console.log("filteredArray is " + JSON.stringify(filteredArr, null, 3));
-    
+
     return filteredArr.length;
 }
 
@@ -155,10 +155,10 @@ router.post('/real-time-shares', function (request, response) {
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
@@ -184,7 +184,7 @@ function getIndividualShares(cmid, limit) {
             'AND Share.checkstatus = ? ' +
             'ORDER BY Share.regdate DESC LIMIT ?', [cmid, 'COMPLETE', limit], function (err, rows) {
 
-            if(err){
+            if (err) {
                 reject(err);
             }
             else {
@@ -192,7 +192,7 @@ function getIndividualShares(cmid, limit) {
                 for (var i = 0; i < rows.length; i++) {
                     var obj = rows[i];
                     rows[i].regdate = moment(obj.regdate).format('YYYY-MM-DD HH:mm');
-                    rows[i].sharerate = parseFloat(rows[i].sharerate + consts.checkrate_verified) * parseFloat(1 + consts.markup/100);
+                    rows[i].sharerate = parseFloat(rows[i].sharerate + consts.checkrate_verified) * parseFloat(1 + consts.markup / 100) * parseFloat(1 + 18 / 100); //tax
                 }
 
                 resolve(rows);

@@ -96,6 +96,12 @@ function getCampaigns(clientid, cmpstatus) {
                 reject(err);
             }
             else {
+
+                rows.map(function (element) {
+                    element.budget = parseFloat(element.budget).toFixed(2);
+                    return element;
+                });
+
                 resolve(rows);
             }
 
