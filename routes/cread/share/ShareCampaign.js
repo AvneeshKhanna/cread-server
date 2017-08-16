@@ -18,8 +18,7 @@ var lowerlimittime = moment.utc().subtract(1, "days").format('YYYY-MM-DD HH:mm:s
 var regdate = moment.utc("2017-07-31T11:06:46.000Z").format("YYYY-MM-DD HH:mm:ss");
 //console.log("regdate is " + JSON.stringify(regdate, null, 3));
 
-console.log("diff is " + moment.utc(moment(regdate, "YYYY-MM-DD HH:mm:ss").diff(lowerlimittime, "YYYY-MM-DD HH:mm:ss")).format("HH:mm:ss"));
-
+// console.log("diff is " + moment.utc(moment(regdate, "YYYY-MM-DD HH:mm:ss").diff(lowerlimittime, "YYYY-MM-DD HH:mm:ss")).format("HH:mm:ss"));
 
 var utils = require('../utils/Utils');
 var consts = require('../utils/Constants');
@@ -210,8 +209,10 @@ router.post('/request-unique-link', function (request, response) {
     var uuid = request.body.uuid;
     var cmid = request.body.cmid;
 
-    var ulinkkey = new Hashids(uuid + cmid, 10).encode(1);
-    var ulinkvalue = new Hashids(uuid + cmid, 10).encode(2);
+    var keygen = uuidGenerator.v4();
+
+    var ulinkkey = new Hashids(keygen, 10).encode(1);
+    var ulinkvalue = new Hashids(keygen, 10).encode(2);
 
     _auth.authValid(uuid, authkey)
         .then(function () {
@@ -315,7 +316,7 @@ function checkUserLastShare(cmid, uuid) {
     return new Promise(function (resolve, reject) {
 
         var lowerlimittime_24 = moment.utc().subtract(24, "hours").format('YYYY-MM-DD HH:mm:ss');      //TODO change
-        var lowerlimittime_30 = moment.utc().subtract(2, "hours").format('YYYY-MM-DD HH:mm:ss');     //TODO change
+        var lowerlimittime_30 = moment.utc().subtract(90, "minutes").format('YYYY-MM-DD HH:mm:ss');     //TODO change
 
         console.log("lowerlimittime_24 is " + JSON.stringify(lowerlimittime_24, null, 3));
         console.log("lowerlimittime_30 is " + JSON.stringify(lowerlimittime_30, null, 3));

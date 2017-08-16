@@ -10,7 +10,6 @@ var connection = config.createConnection;
 var AWS = config.AWS;
 
 var uuidGenerator = require('uuid');
-var Hashids = require('hashids');
 
 var utils = require('../utils/Utils');
 
