@@ -315,8 +315,8 @@ router.post('/request-unique-link', function (request, response) {
 function checkUserLastShare(cmid, uuid) {
     return new Promise(function (resolve, reject) {
 
-        var lowerlimittime_24 = moment.utc().subtract(24, "hours").format('YYYY-MM-DD HH:mm:ss');      //TODO change
-        var lowerlimittime_30 = moment.utc().subtract(90, "minutes").format('YYYY-MM-DD HH:mm:ss');     //TODO change
+        var lowerlimittime_24 = moment.utc().subtract(1/*24*/, "minutes"/*"hours"*/).format('YYYY-MM-DD HH:mm:ss');      //TODO change
+        var lowerlimittime_30 = moment.utc().subtract(1/*90*/, "minutes").format('YYYY-MM-DD HH:mm:ss');     //TODO change
 
         console.log("lowerlimittime_24 is " + JSON.stringify(lowerlimittime_24, null, 3));
         console.log("lowerlimittime_30 is " + JSON.stringify(lowerlimittime_30, null, 3));
