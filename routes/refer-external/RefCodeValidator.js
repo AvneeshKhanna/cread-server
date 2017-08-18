@@ -14,7 +14,7 @@ var config = require('../Config');
 var connection = config.createConnection;
 
 router.post('/', function(request, response){
-    
+
     var userid = request.body.userid;
     var refcode = request.body.refcode;
     

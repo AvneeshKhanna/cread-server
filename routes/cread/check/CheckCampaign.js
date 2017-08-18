@@ -436,7 +436,7 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid) {
 
                             if (err) {
                                 console.error(err);
-                                throw err;    //TODO: toggle uncomment
+                                //throw err;    //TODO: toggle uncomment
                             }
                         });
                     }
@@ -479,7 +479,7 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid) {
 
                                     if (err) {
                                         console.error(err);
-                                        throw err; //TODO: toggle uncomment
+                                        //throw err; //TODO: toggle uncomment
                                     }
                                 });
                             }
