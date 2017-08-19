@@ -113,7 +113,7 @@ router.post('/', function (request, response) {
                                     .reduce(function (accumulator, element) {
                                         if (element.hasOwnProperty('sharerate')) {
                                             if (!element.donation) {
-                                                return accumulator + parseInt(element.sharerate);
+                                                return accumulator + parseFloat(element.sharerate);
                                             }
                                             else {
                                                 return accumulator;
