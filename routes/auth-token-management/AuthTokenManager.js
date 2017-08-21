@@ -105,7 +105,7 @@ function clientAuthValid(clientid, authkey) {
 
     return new Promise(function (resolve, reject) {
 
-        _connection.query('SELECT clientid, email FROM Client WHERE clientid = ? AND authkey = ?', [clientid, authkey], function (err, row) {
+        _connection.query('SELECT * FROM Client WHERE clientid = ? AND authkey = ?', [clientid, authkey], function (err, row) {
 
             if(err){
                 throw err;

@@ -13,6 +13,7 @@ var Razorpay = require('razorpay');
 var envconfig = require('config');
 
 var razorpay_creds = envconfig.get("razorpay-creds");
+var envtype = envconfig.get("type");
 
 var rzrinstance = new Razorpay({
     key_id: razorpay_creds.key_id,
@@ -66,7 +67,7 @@ router.post('/add-balance', function (request, response) {
             else{
                 console.error(err);
                 response.status(500).send({
-                    error: 'Some error occurred at the server'
+                    error: (envtype === "DEVELOPMENT") ? err : 'Some error occurred at the server'
                 }).end();
             }
         });
