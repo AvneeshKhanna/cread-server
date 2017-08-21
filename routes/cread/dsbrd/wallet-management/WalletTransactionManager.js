@@ -22,6 +22,7 @@ var rzrinstance = new Razorpay({
 
 var _auth = require('../../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
+var transacEmailer = require('./TransactionEmailer');
 
 router.post('/add-balance', function (request, response) {
 
@@ -31,14 +32,27 @@ router.post('/add-balance', function (request, response) {
     var type = "ADD";   //Type of transaction. Values: 'ADD' or 'REMOVE'
     var paymentid = request.body.paymentid; //ID of the payment transacted through payment gateway portal
 
+    var detailsforemail = {
+        paymentdetails: {
+            paymentid: paymentid,
+            amount: amount
+        }
+    };
+
     _auth.clientAuthValid(clientid, authkey)
         .then(function (client) {
+
+            detailsforemail.email = client.email;
+            detailsforemail.name = client.name;
+            detailsforemail.contact = client.contact;
+
             return addTransactionToTable(clientid, amount, type, paymentid);
         }, function () {
             response.send({
                 tokenstatus: 'invalid'
             });
             response.end();
+            sendTranscDetailsToUser("FAIL", "Wallet transaction failure notice: Cread", detailsforemail);
             throw new BreakPromiseChainError();
         })
         .then(function () {
@@ -55,20 +69,20 @@ router.post('/add-balance', function (request, response) {
                 }
             });
             response.end();
+            sendTranscDetailsToUser("SUCCESS", "Funds transacted to wallet successfully: Cread", detailsforemail);
             throw new BreakPromiseChainError();
         })
-        .then(function () {
-            return sendTranscDetailsToUser(email);
-        })
         .catch(function (err) {
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
-                response.status(500).send({
-                    error: (envtype === "DEVELOPMENT") ? err : 'Some error occurred at the server'
-                }).end();
+                if(!response.headersSent){
+                    response.status(500).send({
+                        error: (envtype === "DEVELOPMENT") ? err : 'Some error occurred at the server'
+                    }).end();
+                }
             }
         });
 });
@@ -76,7 +90,7 @@ router.post('/add-balance', function (request, response) {
 function addTransactionToTable(clientid, amount, type, paymentid) {
     return new Promise(function (resolve, reject) {
         connection.beginTransaction(function (err) {
-            if(err){
+            if (err) {
                 connection.rollback(function () {
                     reject(err);
                 });
@@ -157,14 +171,14 @@ function updateClientWalletBalance(clientid, amount) {
 function captureRazorpayPayment(paymentid, amount) {
     return new Promise(function (resolve, reject) {
         rzrinstance.payments.capture(paymentid, amount, function (err, rzrresponse) {
-            if(err){
+            if (err) {
                 connection.rollback(function () {
                     reject(err);
                 });
             }
             else {
                 connection.commit(function (err) {
-                    if(err){
+                    if (err) {
                         connection.rollback(function () {
                             reject(err);
                         });
@@ -185,14 +199,36 @@ function convertINRtoPaise(amount) {
 }
 
 function convertPaiseToINR(amount) {
-    return parseFloat(amount/100);
+    return parseFloat(amount / 100);
 }
 
-//TODO: Implement
-function sendTranscDetailsToUser(email) {
-    return new Promise(function (resolve, reject) {
-        resolve();
-    });
+function sendTranscDetailsToUser(type, subject, details) {
+    var paymentdetails = details.paymentdetails;
+
+    var billingdetails = {
+        billingname: details.name,
+        billingcontact: details.contact
+    };
+
+    var clientdetails = {
+        clientemail: details.email,
+        clientname: details.name
+    };
+
+    transacEmailer.sendTransactionEmail(type,
+        clientdetails,
+        subject,
+        paymentdetails,
+        billingdetails, function (err, data) {
+
+            if(err){
+                throw err;
+            }
+            else{
+                console.log("sendTranscDetailsToUser " + JSON.stringify(data, null, 3));
+            }
+
+        });
 }
 
 router.post('/initiate-refund', function (request, response) {
@@ -202,8 +238,17 @@ router.post('/initiate-refund', function (request, response) {
     var clientid = request.body.clientid;
     var authkey = request.body.authkey;
 
+    var detailsforemail = {
+        paymentdetails: {}
+    };
+
     _auth.clientAuthValid(clientid, authkey)
         .then(function (client) {
+
+            detailsforemail.email = client.email;
+            detailsforemail.name = client.name;
+            detailsforemail.contact = client.contact;
+
             return reduceWalletBalanceToZero(clientid);
         }, function () {
             response.send({
@@ -213,7 +258,7 @@ router.post('/initiate-refund', function (request, response) {
             throw new BreakPromiseChainError();
         })
         .then(function (result) {
-            if(result.status === 'zero-balance'){
+            if (result.status === 'zero-balance') {
                 response.send({
                     tokenstatus: 'valid',
                     data: {
@@ -223,11 +268,19 @@ router.post('/initiate-refund', function (request, response) {
                 response.end();
                 throw new BreakPromiseChainError();
             }
-            else{
+            else {
+
+                detailsforemail.paymentdetails = {
+                    amount: result.amount
+                };
+
                 return addRefundToDB(clientid, 'REFUND', result.amount);
             }
         })
-        .then(function () {
+        .then(function (transid) {
+
+            detailsforemail.paymentdetails.paymentid = transid;
+
             response.send({
                 tokenstatus: 'valid',
                 data: {
@@ -235,13 +288,14 @@ router.post('/initiate-refund', function (request, response) {
                 }
             });
             response.end();
+            sendTranscDetailsToUser("REFUND", "Your refund has been initiated: Cread", detailsforemail);
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
@@ -267,20 +321,20 @@ function addRefundToDB(clientid, type, amount) {
         };
 
         connection.query('INSERT INTO WalletTransaction SET ?', [params], function (err, data) {
-            if(err){
+            if (err) {
                 connection.rollback(function () {
                     reject(err);
                 });
             }
             else {
                 connection.commit(function (err) {
-                    if(err){
+                    if (err) {
                         connection.rollback(function () {
                             reject(err);
                         });
                     }
                     else {
-                        resolve();
+                        resolve(params.transid);
                     }
                 });
             }
@@ -291,28 +345,28 @@ function addRefundToDB(clientid, type, amount) {
 function reduceWalletBalanceToZero(clientid) {
     return new Promise(function (resolve, reject) {
         connection.beginTransaction(function (err) {
-            if(err){
+            if (err) {
                 connection.rollback(function () {
                     reject(err);
                 });
             }
-            else{
+            else {
                 connection.query('SELECT walletbalance FROM Client WHERE clientid = ? FOR UPDATE', [clientid], function (err, row) {
-                    if(err){
+                    if (err) {
                         connection.rollback(function () {
                             reject(err);
                         });
                     }
-                    else{
-                        if(row[0].walletbalance === 0){
+                    else {
+                        if (row[0].walletbalance === 0) {
 
                             connection.commit(function (err) {
-                                if(err){
+                                if (err) {
                                     connection.rollback(function () {
                                         reject(err);
                                     });
                                 }
-                                else{
+                                else {
                                     resolve({
                                         status: 'zero-balance'
                                     });
@@ -321,12 +375,12 @@ function reduceWalletBalanceToZero(clientid) {
                         }
                         else {
                             connection.query('UPDATE Client SET walletbalance = ? WHERE clientid = ?', [0, clientid], function (err, data) {
-                                if(err){
+                                if (err) {
                                     connection.rollback(function () {
                                         reject(err);
                                     });
                                 }
-                                else{
+                                else {
                                     resolve({
                                         status: 'proceed',
                                         amount: row[0].walletbalance

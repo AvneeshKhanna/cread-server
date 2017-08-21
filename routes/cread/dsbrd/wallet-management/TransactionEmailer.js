@@ -4,22 +4,57 @@
 'use strict';
 
 var ejs = require('ejs');
+var path = require('path');
 
-var AWS = require('aws-sdk');
-var ses = new AWS.SES();
+var projectpath = path.join(__dirname, '../../../../');
 
-function sendTransactionEmail(clientemail, paymentdetails, subject, billingdetails, callback) {
+var config = require('../../../Config');
+var AWS = config.AWS;
+/*
+ var renderdata = {
+ clientname: 1,//clientdetails.clientname,
+ paymentid: 1,//paymentdetails.paymentid,
+ billingname: 1,//billingdetails.billingname,
+ billingcontact: 1,//billingdetails.billingcontact,
+ amount: 1,//paymentdetails.amount
+ };
+
+ ejs.renderFile(projectpath + "/views/email/client-wallet-transaction/success.ejs", renderdata, function (err, strhtml) {
+
+ console.log(err);
+ console.log(strhtml)
+
+ });*/
+
+function sendTransactionEmail(type, clientdetails, subject, paymentdetails, billingdetails, callback) {
+
+    var filename;
+
+    switch (type) {
+        case "SUCCESS":
+            filename = "success.ejs";
+            break;
+        case "FAIL":
+            filename = "fail.ejs";
+            break;
+        case "REFUND":
+            filename = "refund.ejs";
+            break;
+        default:
+            callback(new Error("Invalid argument \"type\""));
+            return;
+    }
 
     var renderdata = {
-        clientname: clientname,
+        clientname: clientdetails.clientname,
         paymentid: paymentdetails.paymentid,
         billingname: billingdetails.billingname,
-        billingaddr: billingdetails.billingaddr,
+        billingcontact: billingdetails.billingcontact,
         amount: paymentdetails.amount
     };
 
-    ejs.renderFile(filename, renderdata, function (err, strhtml) {
-        if(err){
+    ejs.renderFile(projectpath + "/views/email/client-wallet-transaction/" + filename, renderdata, function (err, strhtml) {
+        if (err) {
             callback(err, null);
         }
         else {
@@ -27,7 +62,7 @@ function sendTransactionEmail(clientemail, paymentdetails, subject, billingdetai
             var params = {
                 Destination: {
                     ToAddresses: [
-                        clientemail
+                        clientdetails.clientemail
                     ]
                 },
                 Message: {
@@ -46,15 +81,22 @@ function sendTransactionEmail(clientemail, paymentdetails, subject, billingdetai
                         Data: subject
                     }
                 },
-                Source: "admin@cread.in"
+                Source: "Cread Inc. <admin@cread.in>"
             };
 
-            ses.sendEmail(params, function(err, data) {
+            setAWSConfigForSES();
+            var ses = new AWS.SES();
+
+            ses.sendEmail(params, function (err, data) {
+
+                resetAWSConfig();
+
                 if (err) {
                     callback(err, null);
                     //throw err;
                 }
                 else {
+                    console.log("Transaction email response " + JSON.stringify(data, null, 3));
                     callback(null, data);
                 }
 
@@ -68,6 +110,26 @@ function sendTransactionEmail(clientemail, paymentdetails, subject, billingdetai
         }
     });
 
+}
+
+/**
+ * Resets the region and identity-pool-id for AWS to EU_WEST_1
+ * */
+function setAWSConfigForSES() {
+    AWS.config.region = 'eu-west-1';
+    AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+        IdentityPoolId: 'eu-west-1:d29fce0a-ac1a-4aaf-b3f6-0bc48b58b87e'
+    });
+}
+
+/**
+ * Resets the region and identity-pool-id for AWS to AP_NORTHEAST_1
+ * */
+function resetAWSConfig() {
+    AWS.config.region = 'ap-northeast-1';
+    AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+        IdentityPoolId: 'ap-northeast-1:863bdfec-de0f-4e9f-8749-cf7fd96ea2ff'
+    });
 }
 
 module.exports = {

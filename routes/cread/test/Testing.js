@@ -14,10 +14,12 @@ var connection = config.createConnection;
 
 var AWS = require('aws-sdk');
 
+var transEmail = require('../dsbrd/wallet-management/TransactionEmailer');
+
 /*AWS.config.region = 'eu-west-1';
-AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-    IdentityPoolId: 'eu-west-1:d29fce0a-ac1a-4aaf-b3f6-0bc48b58b87e'
-});*/
+ AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+ IdentityPoolId: 'eu-west-1:d29fce0a-ac1a-4aaf-b3f6-0bc48b58b87e'
+ });*/
 
 var interestTableData = {
     'Arts & Entertainment': [
@@ -98,6 +100,31 @@ router.post('/lock', function (request, response) {
 
 });
 
+router.post('/emailer', function (request, response) {
+
+    transEmail.sendTransactionEmail('SUCCESS', {
+            clientname: "Avneesh",
+            clientemail: "avneesh.khanna92@gmail.com"
+        }, "Hello",
+        {paymentid: 'random', amount: "1000"},
+        {billingname: "avneesh", billingcontact: "9999"},
+        function (err, data) {
+
+            if (err) {
+                console.error(err);
+                response.send(err);
+                response.end();
+            }
+            else {
+                console.log(data);
+                response.send(data);
+                response.end();
+            }
+
+        });
+
+});
+
 router.post('/unlock', function (request, response) {
 
     var shareid = request.body.shareid;
@@ -132,7 +159,7 @@ router.post('/user-details', function (request, response) {
     console.log("Params are " + JSON.stringify(params, null, 3));
 
     connection.query('INSERT INTO FbReach SET ?', params, function (err, rows) {
-        if(err){
+        if (err) {
             throw err;
         }
         else {
@@ -147,7 +174,7 @@ router.post('/err', function (req, res) {
 
     connection.query('SELECT * FROM Share WHERE shareid = ?', ["abc"], function (err, data) {
 
-        if(err){
+        if (err) {
             console.error(err);
             throw err;
         }
@@ -164,10 +191,10 @@ router.post('/upload-interests', function (request, response) {
 
     connection.query('INSERT INTO Interests VALUES ?', [values], function (err, data) {
 
-        if(err){
+        if (err) {
             throw err;
         }
-        else{
+        else {
             response.send('Done');
             response.end();
         }
@@ -184,7 +211,7 @@ function restructureInterestList(interestTableData) {
 
     categories.forEach(function (category) {
 
-        for(var i =0; i< interestTableData[category].length; i++){
+        for (var i = 0; i < interestTableData[category].length; i++) {
 
             masterArr.push([
                 uuidGen.v4(),
@@ -200,12 +227,12 @@ function restructureInterestList(interestTableData) {
 
     /*var masterArr = [];
 
-    console.log("interestlist  is " + JSON.stringify(interestlist, null, 3));
+     console.log("interestlist  is " + JSON.stringify(interestlist, null, 3));
 
-    interestlist.forEach(function (interest) {
-        var subArr = [uuid, interest];
-        masterArr.push(subArr);
-    });*/
+     interestlist.forEach(function (interest) {
+     var subArr = [uuid, interest];
+     masterArr.push(subArr);
+     });*/
 
     return masterArr;
 }
@@ -241,7 +268,7 @@ router.post('/send-email', function (request, response) {
         Source: "avneesh.khanna92@gmail.com"
     };
 
-    ses.sendEmail(params, function(err, data) {
+    ses.sendEmail(params, function (err, data) {
         if (err) {  // an error occurred
             console.error(err, err.stack);
             //throw err;

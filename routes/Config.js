@@ -1,11 +1,17 @@
 var mysql = require('mysql');
 var AWS = require('aws-sdk');
+var AWS_EU_WEST_1 = require('aws-sdk');
 var config = require('config');
 var dbConfig = config.get('rdsDB.dbConfig');
 
 AWS.config.region = 'ap-northeast-1';
 AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-    IdentityPoolId: 'ap-northeast-1:863bdfec-de0f-4e9f-8749-cf7fd96ea2ff',
+    IdentityPoolId: 'ap-northeast-1:863bdfec-de0f-4e9f-8749-cf7fd96ea2ff'
+});
+
+AWS_EU_WEST_1.config.region = 'eu-west-1';
+AWS_EU_WEST_1.config.credentials = new AWS_EU_WEST_1.CognitoIdentityCredentials({
+    IdentityPoolId: 'eu-west-1:d29fce0a-ac1a-4aaf-b3f6-0bc48b58b87e'
 });
 
 var connection = mysql.createConnection({
@@ -40,5 +46,6 @@ module.exports = {
     'createConnection' : connection,
     'connectDb' : dbConnect,
     'dynamodbCredentials' : dynamodbCredentials,
-    'AWS' : AWS
+    'AWS' : AWS,
+    'AWS-EU-WEST-1': AWS_EU_WEST_1
 };
