@@ -28,7 +28,7 @@ router.post('/update-budget', function (request, response) {
 
     _auth.clientAuthValid(clientid, authkey)
         .then(function () {
-            return registerBudgetTransfer(cmid, amount, type);
+            return registerBudgetTransfer(clientid, cmid, amount, type);
         }, function () {
             response.send({
                 tokenstatus: 'invalid'
@@ -47,10 +47,10 @@ router.post('/update-budget', function (request, response) {
             throw new BreakPromiseChainError;
         })
         .catch(function (err) {
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
@@ -63,15 +63,16 @@ router.post('/update-budget', function (request, response) {
 /**
  * Function to increase/decrease budget of a campaign by a specified amount
  *
+ * @param clientid Client's account id in context to the transaction
  * @param cmid Campaign ID whose budget is to be modified
  * @param amount Amount to transfer
  * @param type Determines whether to increase or decrease budge. Could either of the values: <b>ADD</b> or <b>REMOVE</b>
-* */
-function registerBudgetTransfer(cmid, amount, type) {
+ * */
+function registerBudgetTransfer(clientid, cmid, amount, type) {
     return new Promise(function (resolve, reject) {
 
         connection.beginTransaction(function (err) {
-            if(err){
+            if (err) {
                 connection.rollback(function () {
                     reject(err);
                 });
@@ -85,14 +86,14 @@ function registerBudgetTransfer(cmid, amount, type) {
                     'WHERE Campaign.cmid = ? ' +
                     'FOR UPDATE', [cmid], function (err, rows) {
 
-                    if(err){
+                    if (err) {
                         connection.rollback(function () {
                             reject(err);
                         });
                     }
-                    else{
+                    else {
 
-                        if(type == 'ALLOCATE' && parseFloat(rows[0].walletbalance) < parseFloat(amount)){
+                        if (type == 'ALLOCATE' && parseFloat(rows[0].walletbalance) < parseFloat(amount)) {
                             connection.commit(function (err) {
                                 if (err) {
                                     connection.rollback(function () {
@@ -106,11 +107,24 @@ function registerBudgetTransfer(cmid, amount, type) {
 
                             });
                         }
+                        else if (type == 'DEALLOCATE' && parseFloat(rows[0].budget) != parseFloat(amount)) {
+                            connection.commit(function (err) {
+                                if (err) {
+                                    connection.rollback(function () {
+                                        reject(err);
+                                    });
+                                }
+                                else {
+                                    console.log('registerTransaction TRANSACTION committed: budget != transact amount');
+                                    resolve('AMOUNT-MISMATCH');
+                                }
+                            });
+                        }
                         else {
                             var newbalance;
                             var newbudget;
 
-                            if(type == 'ALLOCATE'){ //When client wants to add the amount to camp budget from his wallet
+                            if (type == 'ALLOCATE') { //When client wants to add the amount to camp budget from his wallet
                                 newbalance = parseFloat(rows[0].walletbalance) - parseFloat(amount);
                                 newbudget = parseFloat(rows[0].budget) + parseFloat(amount);
                             }
@@ -124,23 +138,41 @@ function registerBudgetTransfer(cmid, amount, type) {
                                 'WHERE Client.clientid = Campaign.clientid ' +
                                 'AND Campaign.cmid = ?', [newbalance, newbudget, cmid], function (err, row) {
 
-                                if(err){
+                                if (err) {
                                     connection.rollback(function () {
                                         reject(err);
                                     });
                                 }
                                 else {
-                                    connection.commit(function (err) {
+
+                                    var transParams = {
+                                        transid: uuid.v4(),
+                                        amount: amount,
+                                        type: type,
+                                        clientid: clientid,
+                                        cmid: cmid
+                                    };
+
+                                    connection.query('INSERT INTO WalletTransaction SET ?', [transParams], function (err, data) {
                                         if (err) {
                                             connection.rollback(function () {
                                                 reject(err);
                                             });
                                         }
                                         else {
-                                            console.log('registerTransaction TRANSACTION committed successfully');
-                                            resolve('SUCCESS');
-                                        }
+                                            connection.commit(function (err) {
+                                                if (err) {
+                                                    connection.rollback(function () {
+                                                        reject(err);
+                                                    });
+                                                }
+                                                else {
+                                                    console.log('registerTransaction TRANSACTION committed successfully');
+                                                    resolve('SUCCESS');
+                                                }
 
+                                            });
+                                        }
                                     });
                                 }
 
@@ -149,12 +181,12 @@ function registerBudgetTransfer(cmid, amount, type) {
 
                     }
 
-                })
+                });
 
             }
-        })
+        });
 
-    })
+    });
 }
 
 module.exports = router;
