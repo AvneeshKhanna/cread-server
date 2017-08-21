@@ -1,26 +1,30 @@
 {
-    "rdsDB" : {
-        "dbConfig" : {
-            "host" : "testrdsinstance.cfjbzkm4dzzx.ap-northeast-1.rds.amazonaws.com",
-            "user" : "ttrds",
-			"password" : "amazonpass2015",
-			"database" : "Cread.Prod",
-            "port" : "3306"
-        }
-    },
-	"dynamoDB" : {
-		"jobs_table" : "Jobs",
-		"users_table" : "User_Profile"
-	},
-	"s3" : {
-		"bucket" : "testamentbucket"
-	},
-	"paytm-creds": {	//Provided by Paytm
-		"server-url": "https://trust.paytm.in",
-		"sales-wallet-guid": "bcbedbb2-243c-4073-af6f-5B0ede871741",
-		"merchant-guid": "611a377b-360c-4c0b-aa00-ee9459f029d7",
-		"merchant-key": "QJu2GJu3bcLfws&5"
-	},
-	"type" : "PRODUCTION"
-	
+  "rdsDB": {
+    "dbConfig": {
+      "host": "testrdsinstance.cfjbzkm4dzzx.ap-northeast-1.rds.amazonaws.com",
+      "user": "ttrds",
+      "password": "amazonpass2015",
+      "database": "Cread.Prod",
+      "port": "3306"
+    }
+  },
+  "dynamoDB": {
+    "jobs_table": "Jobs",
+    "users_table": "User_Profile"
+  },
+  "s3": {
+    "bucket": "testamentbucket"
+  },
+  "paytm-creds": {
+    //Provided by Paytm
+    "server-url": "https://trust.paytm.in",
+    "sales-wallet-guid": "bcbedbb2-243c-4073-af6f-5B0ede871741",
+    "merchant-guid": "611a377b-360c-4c0b-aa00-ee9459f029d7",
+    "merchant-key": "QJu2GJu3bcLfws&5"
+  },
+  "razorpay-creds": {
+    "key_id": "",
+    "key_secret": "NWyy1f1z88NRXFbjGDpjxmXH"
+  },
+  "type": "PRODUCTION"
 }

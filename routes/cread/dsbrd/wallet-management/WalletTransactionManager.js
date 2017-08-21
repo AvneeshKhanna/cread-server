@@ -10,10 +10,13 @@ var connection = config.createConnection;
 var AWS = config.AWS;
 var uuidGen = require('uuid');
 var Razorpay = require('razorpay');
+var envconfig = require('config');
+
+var razorpay_creds = envconfig.get("razorpay-creds");
 
 var rzrinstance = new Razorpay({
-    key_id: 'rzp_test_Q09427lQA9Ol5g',
-    key_secret: 'NWyy1f1z88NRXFbjGDpjxmXH'
+    key_id: razorpay_creds.key_id,
+    key_secret: razorpay_creds.key_secret
 });
 
 var _auth = require('../../../auth-token-management/AuthTokenManager');

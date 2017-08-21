@@ -25,5 +25,9 @@
 //		"merchant-guid": "611a377b-360c-4c0b-aa00-ee9459f029d7",
 //		"merchant-key": "QJu2GJu3bcLfws&5"
 	},
+	"razorpay-creds": {
+		"key_id": "",
+		"key_secret": "NWyy1f1z88NRXFbjGDpjxmXH"
+	},
 	"type" : "DEVELOPMENT"
 }
