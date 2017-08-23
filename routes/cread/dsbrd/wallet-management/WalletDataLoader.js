@@ -60,12 +60,15 @@ router.post('/load-data', function (request, response) {
         });
 });
 
+//TODO: Incomplete
 function getWalletScreenData(clientid) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT Client.walletbalance, WalletTransaction.transid, WalletTransaction.amount, WalletTransaction.type, WalletTransaction.regdate AS transactiondate ' +
+        connection.query('SELECT Campaign.title, Client.walletbalance, WalletTransaction.transid, WalletTransaction.amount, WalletTransaction.type, WalletTransaction.regdate AS transactiondate ' +
             'FROM Client ' +
             'LEFT JOIN WalletTransaction ' +
             'ON Client.clientid = WalletTransaction.clientid ' +
+            'RIGHT JOIN Campaign ' +
+            'ON WalletTransaction.cmid = Campaign.cmid ' +
             'WHERE Client.clientid = ? ' +
             'ORDER BY WalletTransaction.regdate DESC', [clientid], function (err, rows) {
 
