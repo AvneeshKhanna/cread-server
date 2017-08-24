@@ -1,6 +1,8 @@
 /**
  * Created by avnee on 22-08-2017.
  */
+'use-strict;'
+
 var express = require('express');
 var router = express.Router();
 
@@ -24,12 +26,10 @@ router.post('/load-all', function (request, response) {
             response.end();
             throw new BreakPromiseChainError();
         })
-        .then(function (rows) {
+        .then(function (result) {
             response.send({
                 tokenstatus: 'valid',
-                data: {
-                    campaigns: rows
-                }
+                data: result
             });
             response.end();
             throw new BreakPromiseChainError();
@@ -50,8 +50,10 @@ router.post('/load-all', function (request, response) {
 
 function loadCampaigns(clientid) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT Campaign.title, Campaign.cmid, Campaign.description, Campaign.mission, Campaign.regdate, Campaign.contentbaseurl, Campaign.imagepath, SUM(!ISNULL(Share.shareid)) AS sharescount ' +
-            'FROM Campaign ' +
+        connection.query('SELECT Client.bio, Campaign.title, Campaign.cmid, Campaign.description, Campaign.mission, Campaign.regdate, Campaign.contentbaseurl, Campaign.imagepath, SUM(!ISNULL(Share.shareid)) AS sharescount ' +
+            'FROM Client ' +
+            'LEFT JOIN Campaign ' +
+            'ON Client.clientid = Campaign.clientid ' +
             'LEFT JOIN Share ' +
             'ON Campaign.cmid = Share.cmid ' +
             'WHERE Campaign.clientid = ? ' +
@@ -62,7 +64,23 @@ function loadCampaigns(clientid) {
                 reject(err);
             }
             else {
-                resolve(rows);
+
+                var biostatus = rows[0].bio ? true : false;
+
+                rows = rows.map(function (element) {
+
+                    if(element.hasOwnProperty("bio")){
+                        delete element.bio;
+                    }
+
+                    return element;
+                });
+
+
+                resolve({
+                    campaigns: rows,
+                    biostatus: biostatus
+                });
             }
 
         });
