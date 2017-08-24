@@ -123,11 +123,12 @@ function getDataForCheck(uuid) {
                     'JOIN Campaign ' +
                     'ON Campaign.cmid = Share.cmid ' +
                     'WHERE Share.checkstatus = "PENDING" ' +
-                    'AND Share.UUID <> ? ' +
-                    'AND Share.locked = ? ' + //TODO: Uncomment
+                    'AND Share.regdate < DATE_SUB(NOW(), INTERVAL 90 MINUTE) ' +    //To get only those shares which have been live for 90 minutes
+                    'AND Share.UUID <> ? ' +    //To get shares other than those done by this user
+                    'AND Share.locked = ? ' + //To get unlocked shares TODO: toggle comment
                     'ORDER BY RAND() ' +    //To randomise
                     'LIMIT 1 ' +
-                    'FOR UPDATE', [uuid, /*null*/false], function (err, rows) {   //TODO: Uncomment
+                    'FOR UPDATE', [uuid, /*null*/false], function (err, rows) {   //TODO: toggle comment
 
                     console.log('SELECT...FOR UPDATE query executed');
 
