@@ -207,12 +207,28 @@ router.post('/update-fb-username', function (request, response) {
 
     _auth.authValid(uuid, authkey)
         .then(function () {
-            return updateFbUsername(uuid, fbusername);
+            return checkIfUsernameAlreadyExists(fbusername);
         }, function () {
             response.send({
                 tokenstatus: 'invalid'
             });
             response.end();
+        })
+        .then(function (exists) {
+            if(exists){
+                response.send({
+                    tokenstatus: 'valid',
+                    data: {
+                        status: 'username-exists'
+                    }
+                });
+                response.end();
+                throw new BreakPromiseChainError();
+            }
+            else{
+                //Proceed
+                return updateFbUsername(uuid, fbusername);
+            }
         })
         .then(function () {
 
@@ -224,15 +240,38 @@ router.post('/update-fb-username', function (request, response) {
             });
             response.end();
 
-        }, function (err) {
-            console.error(err);
-            response.status(500).send({
-                error: 'Some error occurred at the server'
-            });
-            response.end();
+        })
+        .catch(function (err) {
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
         })
 
 });
+
+function checkIfUsernameAlreadyExists(fbusername){
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT UUID FROM users WHERE fbusername = ?', [fbusername], function (err, row) {
+            if(err){
+                reject(err);
+            }
+            else{
+                if(row.length != 0){
+                    resolve(true);
+                }
+                else{
+                    resolve(false);
+                }
+            }
+        })
+    })
+}
 
 function updateFbUsername(uuid, fbusername) {
     return new Promise(function (resolve, reject) {
