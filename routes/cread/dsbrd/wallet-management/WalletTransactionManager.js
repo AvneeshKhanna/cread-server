@@ -83,6 +83,7 @@ router.post('/add-balance', function (request, response) {
                         error: (envtype === "DEVELOPMENT") ? err : 'Some error occurred at the server'
                     }).end();
                 }
+                sendTranscDetailsToUser("FAIL", "Wallet transaction failure notice: Cread", detailsforemail);
             }
         });
 });

@@ -50,7 +50,9 @@ router.post('/load-all', function (request, response) {
 
 function loadCampaigns(clientid) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT Client.bio, Campaign.title, Campaign.cmid, Campaign.description, Campaign.mission, Campaign.regdate, Campaign.contentbaseurl, Campaign.imagepath, SUM(!ISNULL(Share.shareid)) AS sharescount ' +
+        connection.query('SELECT Client.bio, Campaign.title, Campaign.cmid, Campaign.description, ' +
+            'Campaign.mission, Campaign.regdate, Campaign.contentbaseurl, Campaign.imagepath, ' +
+            'SUM(!ISNULL(Share.shareid)) AS sharescount ' +
             'FROM Client ' +
             'LEFT JOIN Campaign ' +
             'ON Client.clientid = Campaign.clientid ' +
@@ -65,7 +67,7 @@ function loadCampaigns(clientid) {
             }
             else {
 
-                var biostatus = rows[0].bio ? true : false;
+                var biostatus = !!rows[0].bio;
 
                 rows = rows.map(function (element) {
 

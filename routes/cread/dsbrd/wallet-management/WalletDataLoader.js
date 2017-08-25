@@ -67,7 +67,7 @@ function getWalletScreenData(clientid) {
             'FROM Client ' +
             'LEFT JOIN WalletTransaction ' +
             'ON Client.clientid = WalletTransaction.clientid ' +
-            'RIGHT JOIN Campaign ' +
+            'LEFT JOIN Campaign ' +
             'ON WalletTransaction.cmid = Campaign.cmid ' +
             'WHERE Client.clientid = ? ' +
             'ORDER BY WalletTransaction.regdate DESC', [clientid], function (err, rows) {
