@@ -14,12 +14,12 @@ const minCashInAmt = 30;    //TODO: Can change the amount based on team discussi
 
 const share_time_interval = {
     same_share : {
-        time_diff: config_type == 'PRODUCTION' ? 24 : 1,
+        time_diff: config_type == 'PRODUCTION' ? 24 : 2,
         time_diff_unit: config_type == 'PRODUCTION' ? "hours" : "minutes"
     },
     diff_share: {
-        time_diff: config_type == 'PRODUCTION' ? 90 : 1,
-        time_diff_unit: "minutes"
+        time_diff: config_type == 'PRODUCTION' ? 6 : 1,
+        time_diff_unit: config_type == 'PRODUCTION' ? "hours" : "minutes"
     }
 };
 
