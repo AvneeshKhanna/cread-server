@@ -46,7 +46,7 @@ var registerFCM = function (uuid, fcmToken, localJson, name, emailid, contactnum
         response.send(JSON.stringify(localJson));
         response.end();
     });
-}
+};
 
 var loginFCM = function (uuid, fcmToken, localJson, response) {
     console.log(uuid);
@@ -90,7 +90,7 @@ var loginFCM = function (uuid, fcmToken, localJson, response) {
             });
         }
     });
-}
+};
 
 module.exports.registerFCM = registerFCM;
 module.exports.loginFCM = loginFCM;

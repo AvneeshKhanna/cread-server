@@ -8,6 +8,7 @@ var mysql = require('mysql');
 var cors = require('cors');
 
 var top_givers_notification = require('./routes/notification-system/NotificationScheduler');
+var monitorAccountActivity = require('./routes/cread/security/UserActivityMonitor');
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
@@ -193,5 +194,6 @@ app.use(function (err, req, res, next) {
 });
 
 top_givers_notification.start(); //TODO: toggle uncomment
+monitorAccountActivity.start(); //To monitor user accounts activity
 
 module.exports = app;

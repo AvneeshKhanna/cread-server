@@ -44,54 +44,108 @@ router.post('/register', function (request, response, next) {
     var key = password + phoneNo;
     var name = firstname + ' ' + lastname;
 
-    //checking if user already exists in db use deasync
-    _connection.query('SELECT UUID FROM users WHERE phoneNo=?', [phoneNo], function (error, row) {
+    var device_imei = request.body.device_imei;
 
-        var localJson = {};
-
-        if (error) throw error;
-
-        else if (row.length == 1) {
-
-            localJson['authtoken'] = 'false';
-            localJson['uuid'] = 'false';
-            response.send(JSON.stringify(localJson));
-            response.end();
+    _connection.beginTransaction(function (err) {
+        if (err) {
+            _connection.rollback(function () {
+                throw err;
+            });
         }
         else {
+            //checking if user already exists in db use deasync
+            _connection.query('SELECT UUID FROM users WHERE phoneNo=?', [phoneNo], function (error, row) {
 
-            //Send OTP for verification of phonenumber to user
-            var uuid = uuidGenerator.v4();
-            var Id = _auth.getToken(key);
-            localJson['authtoken'] = Id;
-            localJson['uuid'] = uuid;
+                var localJson = {};
 
-            var user = {
-                UUID: uuid,
-                password: password,
-                firstname: firstname,
-                lastname: lastname,
-                email: emailid,
-                phoneNo: phoneNo,
-                Auth_key: Id
-            };
+                if (error) {
+                    _connection.rollback(function () {
+                        throw error;
+                    });
+                }
+                else if (row.length == 1) {
 
-            /*var user = new _User({
-             UUID: uuid,
-             password: password,
-             firstname: firstname,
-             lastname: lastname,
-             email: emailid,
-             phoneNo: phoneNo,
-             Auth_key: Id
-             });*/
+                    _connection.commit(function (err) {
+                        if (err) {
+                            _connection.rollback(function () {
+                                throw err;
+                            });
+                        }
+                        else {
+                            localJson['authtoken'] = 'false';
+                            localJson['uuid'] = 'false';
+                            response.send(JSON.stringify(localJson));
+                            response.end();
+                        }
+                    });
+                }
+                else {
 
-            console.log('user details are ' + JSON.stringify(user, null, 3));
+                    //Send OTP for verification of phonenumber to user
+                    var uuid = uuidGenerator.v4();
+                    var Id = _auth.getToken(key);
+                    localJson['authtoken'] = Id;
+                    localJson['uuid'] = uuid;
 
-            _connection.query('INSERT INTO users SET ?', user, function (err, result) {
-                if (err) throw err;
+                    var user = {
+                        UUID: uuid,
+                        password: password,
+                        firstname: firstname,
+                        lastname: lastname,
+                        email: emailid,
+                        phoneNo: phoneNo,
+                        Auth_key: Id
+                    };
 
-                notify.registerFCM(uuid, fcmToken, localJson, name, emailid, phoneNo, city, response);
+                    /*var user = new _User({
+                     UUID: uuid,
+                     password: password,
+                     firstname: firstname,
+                     lastname: lastname,
+                     email: emailid,
+                     phoneNo: phoneNo,
+                     Auth_key: Id
+                     });*/
+
+                    console.log('user details are ' + JSON.stringify(user, null, 3));
+
+                    _connection.query('INSERT INTO users SET ?', user, function (err, result) {
+                        if (err) {
+                            _connection.rollback(function () {
+                                throw err;
+                            });
+                        }
+                        else {
+
+                            var params = {
+                                activityid: uuidGenerator.v4(),
+                                uuid: uuid,
+                                action: 'register',
+                                device_imei: device_imei
+                            };
+
+                            _connection.query('INSERT INTO UserActivity SET ?', params, function (err, dta) {
+                                if (err) {
+                                    _connection.rollback(function () {
+                                        throw err;
+                                    });
+                                }
+                                else {
+                                    _connection.commit(function (err) {
+                                        if (err) {
+                                            _connection.rollback(function () {
+                                                throw err;
+                                            });
+                                        }
+                                        else {
+                                            notify.registerFCM(uuid, fcmToken, localJson, name, emailid, phoneNo, city, response);
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
             });
         }
     });
@@ -102,6 +156,8 @@ router.post('/sign-in', function (request, response, next) {
     var phoneNo = request.body.contactnumber;
     var password = request.body.password;
     var fcmtoken = request.body.fcmtoken;
+
+    var device_imei = request.body.device_imei;
 
     console.log(JSON.stringify(request.body, null, 3));
 
@@ -150,7 +206,22 @@ router.post('/sign-in', function (request, response, next) {
              localJson['authtoken'] = result[0].Auth_key;
              localJson['name'] = result[0].firstname + " " + result[0].lastname;*/
 //            response.send(result[0].Auth_key);
-            notify.loginFCM(result[0].UUID, fcmtoken, localJson, response);
+
+            var params = {
+                activityid: uuidGenerator.v4(),
+                uuid: result[0].UUID,
+                action: 'sign-in',
+                device_imei: device_imei
+            };
+
+            _connection.query('INSERT INTO UserActivity SET ?', params, function (err, data) {
+                if(err){
+                    throw err;
+                }
+                else{
+                    notify.loginFCM(result[0].UUID, fcmtoken, localJson, response);
+                }
+            });
         }
     });
 });
@@ -199,6 +270,7 @@ router.post('/logout', function (request, response, next) {
     var uuid = request.body.uuid;
     var fcmToken = request.body.fcmtoken;
     var table = userstbl_ddb;
+    var device_imei = request.body.device_imei;
 
     console.log(JSON.stringify(request.body, null, 3));
     console.log('users/logout Request is ' + uuid);
@@ -218,7 +290,7 @@ router.post('/logout', function (request, response, next) {
             throw error;
         }
         else {
-            deleteupdateItem(data.Item.Fcm_token, fcmToken, uuid, response);
+            deleteupdateItem(data.Item.Fcm_token, fcmToken, uuid, device_imei, response);
         }
     });
 });
@@ -275,7 +347,7 @@ function refreshToken(uuid, newFcm, oldFcm, items, response) {
     });
 }
 
-function deleteupdateItem(items, fcmtoken, uuid, response) {
+function deleteupdateItem(items, fcmtoken, uuid, device_imei, response) {
     items.splice(items.indexOf(fcmtoken), 1);
 
     var table = userstbl_ddb;
@@ -295,9 +367,23 @@ function deleteupdateItem(items, fcmtoken, uuid, response) {
     docClient.update(addParams, function (error, data) {
         if (error) throw error;
 
-        console.log(JSON.stringify(data, null, 3));
-        response.send('Logged out');
-        response.end();
+        var params = {
+            activityid: uuidGenerator.v4(),
+            uuid: uuid,
+            action: 'log-out',
+            device_imei: device_imei
+        };
+
+        _connection.query('INSERT INTO UserActivity SET ?', params, function (err, data) {
+            if(err){
+                throw err;
+            }
+            else{
+                console.log(JSON.stringify(data, null, 3));
+                response.send('Logged out');
+                response.end();
+            }
+        });
     });
 }
 
