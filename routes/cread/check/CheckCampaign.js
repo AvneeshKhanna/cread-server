@@ -44,7 +44,9 @@ router.post('/request', function (request, response) {
             throw new BreakPromiseChainError();
 
         })
-        .then(function (row) {
+        .then(function (result) {
+
+            var row = result.row;
 
             if (row === undefined) {    //Case of no data
                 console.log("row before response " + JSON.stringify(row, null, 3));
@@ -56,6 +58,7 @@ router.post('/request', function (request, response) {
                 throw new BreakPromiseChainError();
             }
             else {
+                row.accountstatus = result.accountstatus;
                 row.verificationurl = utils.updateQueryStringParameter(row.verificationurl, row.ulinkkey, row.ulinkvalue);
 
                 /*if(row.hasOwnProperty("ulinkkey")){
@@ -113,59 +116,37 @@ function getDataForCheck(uuid) {
                 throw err;
             }
             else {
-                //Retrieve a user's share data for a given cmid who has shared within the last 24 hours and has not been verified
-                connection.query('SELECT Share.sharerate, Share.regdate AS sharetime, Share.shareid, Share.ulinkkey, Share.ulinkvalue, ' +
-                    'Campaign.cmid, Campaign.contentbaseurl AS verificationurl, Campaign.title, Campaign.description, Campaign.imagepath, ' +
-                    'users.firstname, users.UUID AS sharerid, users.fbusername ' +
-                    'FROM Share ' +
-                    'JOIN users ' +
-                    'ON Share.UUID = users.UUID ' +
-                    'JOIN Campaign ' +
-                    'ON Campaign.cmid = Share.cmid ' +
-                    'WHERE Share.checkstatus = "PENDING" ' +
-                    'AND Share.regdate < DATE_SUB(NOW(), INTERVAL 90 MINUTE) ' +    //To get only those shares which have been live for 90 minutes
-                    'AND Share.UUID <> ? ' +    //To get shares other than those done by this user
-                    'AND Share.locked = ? ' + //To get unlocked shares TODO: toggle comment
-                    'ORDER BY RAND() ' +    //To randomise
-                    'LIMIT 1 ' +
-                    'FOR UPDATE', [uuid, /*null*/false], function (err, rows) {   //TODO: toggle comment
-
-                    console.log('SELECT...FOR UPDATE query executed');
-
-                    if (err) {
-                        console.error(err);
-                        throw err;
-                    }
-                    else if (rows.length == 0) {
-
-                        connection.commit(function (err) {
-                            if (err) {
-                                connection.rollback(function () {
-                                    console.error(err);
-                                    throw err;
-                                });
-                            }
-                            else {
-                                console.log('NO DATA: TRANSACTION committed');
-                                resolve();
-                            }
-
+                connection.query('SELECT accountstatus FROM users WHERE UUID = ?', [uuid], function (err, userdata) {
+                    if(err){
+                        connection.rollback(function () {
+                            reject(err);
                         });
-
                     }
-                    else {
-                        //Update the 'locked' and 'locked_at' columns for the 'shareid' retrieved in the previous query
-                        connection.query('UPDATE Share SET locked = ?, locked_at = NOW() WHERE shareid = ?', [true, rows[0].shareid], function (err, qdata) {
+                    else{
+                        //Retrieve a user's share data for a given cmid who has shared within the last 24 hours and has not been verified
+                        connection.query('SELECT Share.sharerate, Share.regdate AS sharetime, Share.shareid, Share.ulinkkey, Share.ulinkvalue, ' +
+                            'Campaign.cmid, Campaign.contentbaseurl AS verificationurl, Campaign.title, Campaign.description, Campaign.imagepath, ' +
+                            'users.firstname, users.UUID AS sharerid, users.fbusername ' +
+                            'FROM Share ' +
+                            'JOIN users ' +
+                            'ON Share.UUID = users.UUID ' +
+                            'JOIN Campaign ' +
+                            'ON Campaign.cmid = Share.cmid ' +
+                            'WHERE Share.checkstatus = "PENDING" ' +
+                            'AND Share.regdate < DATE_SUB(NOW(), INTERVAL 90 MINUTE) ' +    //To get only those shares which have been live for 90 minutes
+                            'AND Share.UUID <> ? ' +    //To get shares other than those done by this user
+                            'AND Share.locked = ? ' + //To get unlocked shares TODO: toggle comment
+                            'ORDER BY RAND() ' +    //To randomise
+                            'LIMIT 1 ' +
+                            'FOR UPDATE', [uuid, /*null*/false], function (err, rows) {   //TODO: toggle comment
 
-                            console.log("UPDATE query executed");
+                            console.log('SELECT...FOR UPDATE query executed');
 
                             if (err) {
-                                connection.rollback(function () {
-                                    console.error(err);
-                                    throw err;
-                                });
+                                console.error(err);
+                                throw err;
                             }
-                            else {
+                            else if (rows.length == 0) {
 
                                 connection.commit(function (err) {
                                     if (err) {
@@ -175,8 +156,43 @@ function getDataForCheck(uuid) {
                                         });
                                     }
                                     else {
-                                        console.log('TRANSACTION committed successfully');
-                                        resolve(rows[0]);
+                                        console.log('NO DATA: TRANSACTION committed');
+                                        resolve();
+                                    }
+
+                                });
+
+                            }
+                            else {
+                                //Update the 'locked' and 'locked_at' columns for the 'shareid' retrieved in the previous query
+                                connection.query('UPDATE Share SET locked = ?, locked_at = NOW() WHERE shareid = ?', [true, rows[0].shareid], function (err, qdata) {
+
+                                    console.log("UPDATE query executed");
+
+                                    if (err) {
+                                        connection.rollback(function () {
+                                            console.error(err);
+                                            throw err;
+                                        });
+                                    }
+                                    else {
+
+                                        connection.commit(function (err) {
+                                            if (err) {
+                                                connection.rollback(function () {
+                                                    console.error(err);
+                                                    throw err;
+                                                });
+                                            }
+                                            else {
+                                                console.log('TRANSACTION committed successfully');
+                                                resolve({
+                                                    row: rows[0],
+                                                    accountstatus: (userdata[0].accountstatus != "ENABLED")
+                                                });
+                                            }
+
+                                        });
                                     }
 
                                 });
@@ -184,9 +200,7 @@ function getDataForCheck(uuid) {
 
                         });
                     }
-
                 });
-
             }
         });
 

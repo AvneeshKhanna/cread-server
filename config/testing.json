@@ -17,9 +17,9 @@
 	},
 	"paytm-creds": {	//Provided by Paytm
 		"server-url": "https://trust-uat.paytm.in",
-		"sales-wallet-guid": "05d92f1a-e603-4df4-9034-000c8363dd7b",
-		"merchant-guid": "52cd743e-2f83-41b8-8468-ea83daf909e7",
-		"merchant-key": "SY#F6vL_Yke1ey&w"
+        "sales-wallet-guid": "05d92f1a-e603-4df4-9034-000c8363dd7b",
+        "merchant-guid": "52cd743e-2f83-41b8-8468-ea83daf909e7",
+        "merchant-key": "SY#F6vL_Yke1ey&w"
 //		"server-url": "https://trust.paytm.in",
 //		"sales-wallet-guid": "bcbedbb2-243c-4073-af6f-5B0ede871741",
 //		"merchant-guid": "611a377b-360c-4c0b-aa00-ee9459f029d7",

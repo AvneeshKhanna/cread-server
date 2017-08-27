@@ -66,7 +66,7 @@ router.post('/load/', function (request, response) {
                     element.sharerate = consts.sharerate;     //TODO: Make sharerate dynamic
                 });
 
-                connection.query('SELECT users.fbusername, UserInterestsRel.UUID AS interestedUser ' +
+                connection.query('SELECT users.accountstatus, users.fbusername, UserInterestsRel.UUID AS interestedUser ' +
                     'FROM users ' +
                     'LEFT JOIN UserInterestsRel ' +
                     'ON users.UUID = UserInterestsRel.UUID ' +
@@ -76,6 +76,7 @@ router.post('/load/', function (request, response) {
                         throw err;
                     }
                     else {
+                        console.log("user data after querying is " + JSON.stringify(row, null, 3))
                         console.log("rows after querying is " + JSON.stringify(rows, null, 3));
 
                         response.send({
@@ -83,6 +84,7 @@ router.post('/load/', function (request, response) {
                             data: {
                                 feed: rows,
                                 fbidstatus: row[0].fbusername != null,
+                                accountstatus: (row[0].accountstatus != "ENABLED"),
                                 intereststatus: row[0].interestedUser != null
                             }
                         });

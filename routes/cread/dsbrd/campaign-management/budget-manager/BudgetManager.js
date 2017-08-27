@@ -107,7 +107,7 @@ function registerBudgetTransfer(clientid, cmid, amount, type) {
 
                             });
                         }
-                        else if (type == 'DEALLOCATE' && parseFloat(rows[0].budget) != parseFloat(amount)) {
+                        /*else if (type == 'DEALLOCATE' && parseFloat(rows[0].budget) != parseFloat(amount)) {
                             connection.commit(function (err) {
                                 if (err) {
                                     connection.rollback(function () {
@@ -119,7 +119,7 @@ function registerBudgetTransfer(clientid, cmid, amount, type) {
                                     resolve('AMOUNT-MISMATCH');
                                 }
                             });
-                        }
+                        }*/
                         else {
                             var newbalance;
                             var newbudget;
@@ -147,7 +147,7 @@ function registerBudgetTransfer(clientid, cmid, amount, type) {
 
                                     var transParams = {
                                         transid: uuid.v4(),
-                                        amount: amount,
+                                        amount: (type == 'ALLOCATE') ? amount : rows[0].budget,
                                         type: type,
                                         clientid: clientid,
                                         cmid: cmid
