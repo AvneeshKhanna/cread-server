@@ -38,6 +38,14 @@ router.post('/', function (request, response) {
     var amount = request.body.amount;
     var userpaytmcontact = request.body.userpaytmcontact;
 
+    //TODO: Remove
+    //This has been done due to insufficient Paytm wallet balance but server records being updated nonetheless
+    response.status(500).send({
+        error: 'Some error occurred at the server'
+    });
+    response.end();
+    return;
+
     console.log("request is " + JSON.stringify(request.body, null, 3));
 
     orderId = uuidGen.v4();
