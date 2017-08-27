@@ -6,6 +6,7 @@
 * This module is used to set 'accountstatus' as DISABLED for users which have either signed-in, signed-out or registered within last 24 hours
 * from a single device registering at least 2 UUIDs
 * */
+
 'use-strict';
 
 var express = require('express');
@@ -21,7 +22,7 @@ try{
     var monitorAccountActivity = new CronJob({
         /*
          * Runs every-day
-         * at 12:30:00 PM
+         * at 12:00:00 PM
          */
         cronTime: '0 0 12 * * *', //second | minute | hour | day-of-month | month | day-of-week
         onTick: checkForMultipleAccOnDevice,
@@ -126,8 +127,8 @@ function checkForSuspicion(suspiciousData) {
     });
 }
 
-/*
- * Checks if the array contains multiple UUID values. Returns true if it does
+/**
+ * Checks if the array contains multiple but unique UUID values. Returns true if it does
  * */
 function checkForMultipleUUIDs(array) {
     var uniqueids = new Set(array);
