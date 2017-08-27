@@ -12,22 +12,10 @@ var uuidGen = require('uuid');
 //--------------
 
 var config = require('../../Config');
-//var connection = config.createConnection;
+var connection = config.createConnection;
 
 var envconfig = require('config');
 var dbConfig = envconfig.get('rdsDB.dbConfig');
-
-var mysql = require('mysql');
-
-var connection = mysql.createPool({
-    connectionLimit : 1,
-    host : dbConfig.host,
-    user : dbConfig.user,
-    password : dbConfig.password,
-    database : dbConfig.database,
-    timezone: 'UTC',
-    port : dbConfig.port
-});
 
 //--------------
 
@@ -39,6 +27,8 @@ var transEmail = require('../dsbrd/wallet-management/TransactionEmailer');
  AWS.config.credentials = new AWS.CognitoIdentityCredentials({
  IdentityPoolId: 'eu-west-1:d29fce0a-ac1a-4aaf-b3f6-0bc48b58b87e'
  });*/
+
+var monitor = require('../security/UserActivityMonitor');
 
 var interestTableData = {
     'Arts & Entertainment': [
@@ -99,6 +89,13 @@ var interestTableData = {
         'World'
     ]
 };
+
+router.post('/monitor-user', function (request, response) {
+
+    monitor.checkForMultipleAccOnDevice();
+    response.send("Done").end();
+
+});
 
 router.post('/lock', function (request, response) {
 

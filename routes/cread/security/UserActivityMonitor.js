@@ -1,6 +1,11 @@
 /**
  * Created by avnee on 26-08-2017.
  */
+
+/*
+* This module is used to set 'accountstatus' as DISABLED for users which have either signed-in, signed-out or registered within last 24 hours
+* from a single device registering at least 2 UUIDs
+* */
 'use-strict';
 
 var express = require('express');
@@ -18,18 +23,18 @@ try{
          * Runs every-day
          * at 12:30:00 PM
          */
-        cronTime: '30 * * * * *', //second | minute | hour | day-of-month | month | day-of-week
+        cronTime: '0 0 12 * * *', //second | minute | hour | day-of-month | month | day-of-week
         onTick: checkForMultipleAccOnDevice,
         start: false,   //Whether to start just now
         timeZone: 'Asia/Kolkata'
     });
 }
 catch(ex){
-    console.error("Invalid cron pattern")
+    console.error(new Error("Invalid cron pattern"));
 }
 
 function checkForMultipleAccOnDevice() {
-    connection.query("SELECT * FROM UserActivity WHERE regdate > DATE_SUB(NOW(), INTERVAL 1 DAY) AND device_imei <> NULL",
+    connection.query("SELECT * FROM UserActivity WHERE device_imei IS NOT NULL AND regdate > DATE_SUB(NOW(), INTERVAL 1 DAY)",
         null, function (err, data) {
             if (err) {
                 throw err;
@@ -75,10 +80,11 @@ function groupData(data) {
         groupedData[element.device_imei].push(element);
     });
 
+    //Removing those IMEIs which have actions < 5
     for (var prop in groupedData) {
 
-        if (prop.length < 5) {
-            groupedData.removeProperty(prop.valueOf());
+        if (groupedData[prop].length < 5) {
+            delete groupedData[prop];
         }
     }
 
@@ -99,6 +105,7 @@ function checkForSuspicion(suspiciousData) {
 
         //Check if multiple UUIDs have been registered as action for a single IMEI
         if (checkForMultipleUUIDs(uuids)) {
+            console.log("a few accounts deactivated");
             connection.query('UPDATE users SET accountstatus = ?, disabletime = NOW() WHERE UUID IN (?)', ["DISABLED", uuids], function (err, data) {
                 if (err) {
                     callback(err);
@@ -123,7 +130,11 @@ function checkForSuspicion(suspiciousData) {
  * Checks if the array contains multiple UUID values. Returns true if it does
  * */
 function checkForMultipleUUIDs(array) {
-    return !(array.length === new Set(arr).length);
+    var uniqueids = new Set(array);
+    return uniqueids.size > 1;
 }
 
-module.exports = monitorAccountActivity;
+module.exports = {
+    accountActivity: monitorAccountActivity,
+    checkForMultipleAccOnDevice: checkForMultipleAccOnDevice
+};
