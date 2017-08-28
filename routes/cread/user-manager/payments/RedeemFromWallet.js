@@ -1,11 +1,14 @@
 /**
  * Created by avnee on 20-07-2017.
  */
+'use-strict';
 
 var express = require('express');
 var router = express.Router();
 
 var config = require('../../../Config');
+
+//TODO: Need to make it a local variable. If another router-endpoint in the same module uses the same var concurrently in future, it can lead to problems
 var connection /*= config.createConnection*/;
 var AWS = config.AWS;
 
@@ -29,8 +32,6 @@ var utils = require('../../utils/Utils');
 
 var paytmchecksum = require('../../paytmutils/checksum');
 
-var orderId;
-
 router.post('/', function (request, response) {
 
     var uuid = request.body.uuid;
@@ -48,7 +49,7 @@ router.post('/', function (request, response) {
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
 
-    orderId = uuidGen.v4();
+    var orderId = uuidGen.v4();
 
     console.log("orderId is " + JSON.stringify(orderId, null, 3));
 
@@ -62,15 +63,15 @@ router.post('/', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return generatePaytmChecksumHash(paytmMerchantKey, userpaytmcontact, amount, "VERIFY");
+            return generatePaytmChecksumHash(paytmMerchantKey, userpaytmcontact, amount, orderId, "VERIFY");
         })
         .then(function (checksumhash) {
-            return checkIfUserPaytmAccExists(amount, userpaytmcontact, checksumhash);
+            return checkIfUserPaytmAccExists(amount, userpaytmcontact, orderId, checksumhash);
         })
         .then(function (status) {
 
             if (status == "SUCCESS") {
-                return generatePaytmChecksumHash(paytmMerchantKey, userpaytmcontact, amount, null);
+                return generatePaytmChecksumHash(paytmMerchantKey, userpaytmcontact, amount, orderId, null);
             }
             else {  //status == "NOT-FOUND"
                 response.send({
@@ -84,7 +85,7 @@ router.post('/', function (request, response) {
             }
         })
         .then(function (checksumhash) {
-            return transactToPaytm(uuid, amount, userpaytmcontact, checksumhash);
+            return transactToPaytm(uuid, amount, userpaytmcontact, orderId, checksumhash);
         })
         .then(function (status) {
             response.send({
@@ -162,7 +163,7 @@ function informUserViaRegisteredContact(uuid, amount, userpaytmcontact){
 /**
  * Formulate request parameters to send to paytm servers
  * */
-function getPaytmParams(userpaytmcontact, amount, requestType) {
+function getPaytmParams(userpaytmcontact, amount, orderId, requestType) {
     return paytm_params = {
         request: {
             requestType: requestType,
@@ -187,7 +188,7 @@ function getPaytmParams(userpaytmcontact, amount, requestType) {
 /**
  * Function to check if user's paytm
  * */
-function checkIfUserPaytmAccExists(amount, userpaytmcontact, checksumhash) {
+function checkIfUserPaytmAccExists(amount, userpaytmcontact, orderId, checksumhash) {
     console.log("checkIfUserPaytmAccExists called");
     return new Promise(function (resolve, reject) {
 
@@ -203,7 +204,7 @@ function checkIfUserPaytmAccExists(amount, userpaytmcontact, checksumhash) {
             url: paytm_server_url + "/wallet-web/salesToUserCredit",
             method: 'POST',
             headers: headers,
-            body: JSON.stringify(getPaytmParams(userpaytmcontact, amount, "VERIFY"))  //Body parameter is required to be Sring or Buffer type
+            body: JSON.stringify(getPaytmParams(userpaytmcontact, amount, orderId, "VERIFY"))  //Body parameter is required to be Sring or Buffer type
         };
 
         httprequest(options, function (err, res, body) {
@@ -228,10 +229,10 @@ function checkIfUserPaytmAccExists(amount, userpaytmcontact, checksumhash) {
     });
 }
 
-function generatePaytmChecksumHash(aesKey, userpaytmcontact, amount, requestType) {
+function generatePaytmChecksumHash(aesKey, userpaytmcontact, amount, orderId, requestType) {
     return new Promise(function (resolve, reject) {
 
-        paytmchecksum.genchecksumbystring(JSON.stringify(getPaytmParams(userpaytmcontact, amount, requestType)), aesKey, function (err, hash) {
+        paytmchecksum.genchecksumbystring(JSON.stringify(getPaytmParams(userpaytmcontact, amount, orderId, requestType)), aesKey, function (err, hash) {
             if (err) {
                 reject(err);
             }
@@ -246,10 +247,9 @@ function generatePaytmChecksumHash(aesKey, userpaytmcontact, amount, requestType
 /**
  * Function to transact amount to user's paytm wallet
  * */
-function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
+function transactToPaytm(uuid, amount, userpaytmcontact, orderId, checksumhash) {
     console.log("transactToPaytm called");
     return new Promise(function (resolve, reject) {
-
         connection.beginTransaction(function (err) {
             if (err) {
                 connection.rollback(function () {
@@ -279,10 +279,10 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
 
                         //Updating Share table
                         connection.query('UPDATE Share ' +
-                            'JOIN Checks ' +
-                            'ON Share.shareid = Checks.shareid ' +
-                            'SET Share.cashed_in = ?, Share.transid = ? ' +
-                            'WHERE Checks.responses = ? AND Share.UUID = ?', [1, usrtransparams.transid, 'verified', uuid], function (err, row) {
+                            'SET cashed_in = 1, transid = ? ' +
+                            'WHERE UUID = ? ' +
+                            'AND checkstatus = ?' +
+                            'AND cashed_in = 0', [usrtransparams.transid, uuid, 'COMPLETE'], function (err, row) {
 
                             if (err) {
                                 connection.rollback(function () {
@@ -294,8 +294,9 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
 
                                 //Updating Checks table
                                 connection.query('UPDATE Checks ' +
-                                    'SET Checks.cashed_in = 1, Checks.transid = ? ' +
-                                    'WHERE Checks.UUID = ?', [usrtransparams.transid, uuid], function (err, data) {
+                                    'SET cashed_in = 1, transid = ? ' +
+                                    'WHERE UUID = ? ' +
+                                    'AND cashed_in = 0', [usrtransparams.transid, uuid], function (err, data) {
 
                                     if (err) {
                                         connection.rollback(function () {
@@ -309,7 +310,7 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
                                         var headers = {
                                             'checksumhash': checksumhash,
                                             'Content-Type': 'application/json',
-                                            'mid': merchantGuid//'52cd743e-2f83-41b8-8468-ea83daf909e7'   //Provided by Paytm
+                                            'mid': merchantGuid   //Provided by Paytm
                                         };
 
                                         // Configure the request
@@ -317,7 +318,7 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
                                             url: paytm_server_url + "/wallet-web/salesToUserCredit",
                                             method: 'POST',
                                             headers: headers,
-                                            body: JSON.stringify(getPaytmParams(userpaytmcontact, amount, null))  //Body parameter is required to be Sring or Buffer type
+                                            body: JSON.stringify(getPaytmParams(userpaytmcontact, amount, orderId, null))  //Body parameter is required to be Sring or Buffer type
                                         };
 
                                         console.log("request to paytm is " + JSON.stringify(options, null, 3));

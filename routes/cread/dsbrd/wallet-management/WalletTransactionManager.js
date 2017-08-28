@@ -6,7 +6,7 @@ var express = require('express');
 var router = express.Router();
 
 var config = require('../../../Config');
-var connection = config.createConnection;
+var connection /*= config.createConnection*/;
 var AWS = config.AWS;
 var uuidGen = require('uuid');
 var Razorpay = require('razorpay');
@@ -46,7 +46,7 @@ router.post('/add-balance', function (request, response) {
             detailsforemail.name = client.name;
             detailsforemail.contact = client.contact;
 
-            return addTransactionToTable(clientid, amount, type, paymentid);
+            return config.getNewConnection();
         }, function () {
             response.send({
                 tokenstatus: 'invalid'
@@ -54,6 +54,10 @@ router.post('/add-balance', function (request, response) {
             response.end();
             sendTranscDetailsToUser("FAIL", "Wallet transaction failure notice: Cread", detailsforemail);
             throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return addTransactionToTable(clientid, amount, type, paymentid);
         })
         .then(function () {
             return updateClientWalletBalance(clientid, amount)
@@ -73,6 +77,9 @@ router.post('/add-balance', function (request, response) {
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
+
+            config.disconnect(connection);
+
             if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
@@ -83,6 +90,7 @@ router.post('/add-balance', function (request, response) {
                         error: (envtype === "DEVELOPMENT") ? err : 'Some error occurred at the server'
                     }).end();
                 }
+                sendTranscDetailsToUser("FAIL", "Wallet transaction failure notice: Cread", detailsforemail);
             }
         });
 });
@@ -249,13 +257,17 @@ router.post('/initiate-refund', function (request, response) {
             detailsforemail.name = client.name;
             detailsforemail.contact = client.contact;
 
-            return reduceWalletBalanceToZero(clientid);
+            return config.getNewConnection();
         }, function () {
             response.send({
                 tokenstatus: 'invalid'
             });
             response.end();
             throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return reduceWalletBalanceToZero(clientid);
         })
         .then(function (result) {
             if (result.status === 'zero-balance') {
@@ -292,6 +304,7 @@ router.post('/initiate-refund', function (request, response) {
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
+            config.disconnect(connection);
             if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }

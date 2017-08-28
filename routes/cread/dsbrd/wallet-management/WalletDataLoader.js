@@ -32,10 +32,11 @@ router.post('/load-data', function (request, response) {
 
             var resdata = {};
 
-            resdata.walletbalance = rows[0].walletbalance;
+            resdata.walletbalance = parseFloat(rows[0].walletbalance).toFixed(2);
             resdata.transactions = rows.filter(function (element) {
                 if (element.transid != null) {
                     delete element['walletbalance'];
+                    element.amount = parseFloat(element.amount).toFixed(2);
                     return element;
                 }
             });
@@ -60,12 +61,15 @@ router.post('/load-data', function (request, response) {
         });
 });
 
+//TODO: Incomplete
 function getWalletScreenData(clientid) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT Client.walletbalance, WalletTransaction.transid, WalletTransaction.amount, WalletTransaction.type, WalletTransaction.regdate AS transactiondate ' +
+        connection.query('SELECT Campaign.title, Client.walletbalance, WalletTransaction.transid, WalletTransaction.amount, WalletTransaction.type, WalletTransaction.regdate AS transactiondate ' +
             'FROM Client ' +
             'LEFT JOIN WalletTransaction ' +
             'ON Client.clientid = WalletTransaction.clientid ' +
+            'LEFT JOIN Campaign ' +
+            'ON WalletTransaction.cmid = Campaign.cmid ' +
             'WHERE Client.clientid = ? ' +
             'ORDER BY WalletTransaction.regdate DESC', [clientid], function (err, rows) {
 

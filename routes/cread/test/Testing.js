@@ -12,7 +12,7 @@ var uuidGen = require('uuid');
 //--------------
 
 var config = require('../../Config');
-var connection = config.createConnection;
+var connection /*= config.createConnection*/;
 
 var envconfig = require('config');
 var dbConfig = envconfig.get('rdsDB.dbConfig');
@@ -141,138 +141,224 @@ router.post('/emailer', function (request, response) {
 
 });
 
+router.post('/sql-trans-rollback', function (req, res) {
+    var time = req.body.time;
+    var phoneNo = req.body.phoneNo;
+
+    config.getNewConnection()
+        .then(function (conn) {
+            connection = conn;
+
+            connection.beginTransaction(function (err) {
+                if (err) {
+                    connection.rollback(function () {
+                        connection.release();
+                        console.error(err);
+                    });
+                }
+                else {
+                    connection.query('UPDATE users SET firstname = ? WHERE phoneNo = ?', [phoneNo + ' changed', phoneNo], function (err, data) {
+
+                        if (err) {
+                            connection.rollback(function () {
+                                connection.release();
+                                console.error(err);
+                            });
+                        }
+                        else {
+                            setTimeout(function () {
+                                connection.rollback(function () {
+                                    connection.release();
+                                    res.send('completed').end();
+                                });
+                            }, time);
+                        }
+                    })
+                }
+            })
+
+        });
+
+});
+
+router.post('/sql-trans-commit', function (req, res) {
+    var time = req.body.time;
+    var phoneNo = req.body.phoneNo;
+
+    config.getNewConnection()
+        .then(function (conn) {
+            connection = conn;
+
+            connection.beginTransaction(function (err) {
+                if (err) {
+                    connection.rollback(function () {
+                        connection.release();
+                        console.error(err);
+                    });
+                }
+                else {
+                    connection.query('UPDATE users SET firstname = ? WHERE phoneNo = ?', [phoneNo + ' changed', phoneNo], function (err, data) {
+                        if (err) {
+                            connection.rollback(function () {
+                                connection.release();
+                                console.error(err);
+                            });
+                        }
+                        else {
+                            connection.commit(function (err) {
+                                if (err) {
+                                    connection.rollback(function () {
+                                        connection.release();
+                                        console.error(err);
+                                    });
+                                }
+                                else {
+                                    connection.release();
+                                    console.log('/sql-trans-commit: COMMITTED');
+                                    res.send('completed').end();
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
+        });
+
+});
+
 router.post('/sql-trans-1', function (req, res) {
 
     var time = req.body.time;
     var rerror = req.body.rerror;
     var phoneNo = req.body.phoneNo;
 
-    // pool.getConnection(function (err, connection) {
-    //     if(err){
-    //         console.error(err);
-    //         res.send(err);
-    //         res.end();
-    //     }
-    //     else{
-    //         connection.beginTransaction(function (err) {
-    //             if(err){
-    //                 connection.rollback(function () {
-    //                     connection.release();
-    //                     console.error(err);
-    //                 });
-    //             }
-    //             else{
-    //                 connection.query('UPDATE users SET firstname = ? WHERE phoneNo = ?', [phoneNo + ' step-1', phoneNo], function (err, data) {
-    //                     if(err){
-    //                         connection.rollback(function () {
-    //                             connection.release();
-    //                             console.error(err);
-    //                         });
-    //                     }
-    //                     else{
-    //
-    //                         console.log('Step 1 executed successfully');
-    //
-    //                         setTimeout(function () {
-    //                             connection.query('UPDATE users SET firstname = ? WHERE phoneNo = ?', [phoneNo + ' step-2', phoneNo], function (err, data) {
-    //
-    //                                 if(rerror){
-    //                                     connection.rollback(function () {
-    //                                         connection.release();
-    //                                         console.error(new Error("Forced error"));
-    //                                     });
-    //                                 }
-    //                                 else{
-    //                                     if(err){
-    //                                         connection.rollback(function () {
-    //                                             connection.release();
-    //                                             console.error(err);
-    //                                         });
-    //                                     }
-    //                                     else{
-    //                                         connection.commit(function (err) {
-    //                                             if(err){
-    //                                                 connection.rollback(function () {
-    //                                                     connection.release();
-    //                                                     console.error(err);
-    //                                                 });
-    //                                             }
-    //                                             else{
-    //                                                 connection.release();
-    //                                                 console.log("TRANSACTION COMMITTED");
-    //                                                 res.send('done');
-    //                                                 res.end();
-    //                                             }
-    //                                         })
-    //                                     }
-    //                                 }
-    //                             });
-    //                         }, time);
-    //                     }
-    //                 });
-    //             }
-    //         });
-    //     }
-    // })
-
-    connection.beginTransaction(function (err) {
+    config.connectionPool.getConnection(function (err, connection) {
         if(err){
-            connection.rollback(function () {
-                // connection.release();
-                console.error(err);
-            });
+            console.error(err);
+            res.send(err);
+            res.end();
         }
         else{
-            connection.query('UPDATE users SET firstname = ? WHERE phoneNo = ?', [phoneNo + ' step-1', phoneNo], function (err, data) {
+            connection.beginTransaction(function (err) {
                 if(err){
                     connection.rollback(function () {
-                        // connection.release();
+                        connection.release();
                         console.error(err);
                     });
                 }
                 else{
+                    connection.query('UPDATE users SET firstname = ? WHERE phoneNo = ?', [phoneNo + ' step-1', phoneNo], function (err, data) {
+                        if(err){
+                            connection.rollback(function () {
+                                connection.release();
+                                console.error(err);
+                            });
+                        }
+                        else{
 
-                    console.log('Step 1 executed successfully');
+                            console.log('Step 1 executed successfully');
 
-                    setTimeout(function () {
-                        connection.query('UPDATE users SET firstname = ? WHERE phoneNo = ?', [phoneNo + ' step-2', phoneNo], function (err, data) {
+                            setTimeout(function () {
+                                connection.query('UPDATE users SET firstname = ? WHERE phoneNo = ?', [phoneNo + ' step-2', phoneNo], function (err, data) {
 
-                            if(rerror){
-                                connection.rollback(function () {
-                                    // connection.release();
-                                    console.error(new Error("Forced error"));
-                                });
-                            }
-                            else{
-                                if(err){
-                                    connection.rollback(function () {
-                                        // connection.release();
-                                        console.error(err);
-                                    });
-                                }
-                                else{
-                                    connection.commit(function (err) {
+                                    if(rerror){
+                                        connection.rollback(function () {
+                                            connection.release();
+                                            console.error(new Error("Forced error"));
+                                        });
+                                    }
+                                    else{
                                         if(err){
                                             connection.rollback(function () {
-                                                // connection.release();
+                                                connection.release();
                                                 console.error(err);
                                             });
                                         }
                                         else{
-                                            // connection.release();
-                                            console.log("TRANSACTION COMMITTED");
-                                            res.send('done');
-                                            res.end();
+                                            connection.commit(function (err) {
+                                                if(err){
+                                                    connection.rollback(function () {
+                                                        connection.release();
+                                                        console.error(err);
+                                                    });
+                                                }
+                                                else{
+                                                    connection.release();
+                                                    console.log("TRANSACTION COMMITTED");
+                                                    res.send('done');
+                                                    res.end();
+                                                }
+                                            })
                                         }
-                                    })
-                                }
-                            }
-                        });
-                    }, time);
+                                    }
+                                });
+                            }, time);
+                        }
+                    });
                 }
             });
         }
-    })
+    });
+
+    // connection.beginTransaction(function (err) {
+    //     if (err) {
+    //         connection.rollback(function () {
+    //             // connection.release();
+    //             console.error(err);
+    //         });
+    //     }
+    //     else {
+    //         connection.query('UPDATE users SET firstname = ? WHERE phoneNo = ?', [phoneNo + ' step-1', phoneNo], function (err, data) {
+    //             if (err) {
+    //                 connection.rollback(function () {
+    //                     // connection.release();
+    //                     console.error(err);
+    //                 });
+    //             }
+    //             else {
+    //
+    //                 console.log('Step 1 executed successfully');
+    //
+    //                 setTimeout(function () {
+    //                     connection.query('UPDATE users SET firstname = ? WHERE phoneNo = ?', [phoneNo + ' step-2', phoneNo], function (err, data) {
+    //
+    //                         if (rerror) {
+    //                             connection.rollback(function () {
+    //                                 // connection.release();
+    //                                 console.error(new Error("Forced error"));
+    //                             });
+    //                         }
+    //                         else {
+    //                             if (err) {
+    //                                 connection.rollback(function () {
+    //                                     // connection.release();
+    //                                     console.error(err);
+    //                                 });
+    //                             }
+    //                             else {
+    //                                 connection.commit(function (err) {
+    //                                     if (err) {
+    //                                         connection.rollback(function () {
+    //                                             // connection.release();
+    //                                             console.error(err);
+    //                                         });
+    //                                     }
+    //                                     else {
+    //                                         // connection.release();
+    //                                         console.log("TRANSACTION COMMITTED");
+    //                                         res.send('done');
+    //                                         res.end();
+    //                                     }
+    //                                 })
+    //                             }
+    //                         }
+    //                     });
+    //                 }, time);
+    //             }
+    //         });
+    //     }
+    // })
 
 });
 
