@@ -194,6 +194,6 @@ app.use(function (err, req, res, next) {
 });
 
 top_givers_notification.start();
-monitorAccountActivity.start(); //To monitor user accounts activity
+// monitorAccountActivity.start(); //To monitor user accounts activity TODO: Uncomment
 
 module.exports = app;

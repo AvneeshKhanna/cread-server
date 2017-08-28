@@ -3,9 +3,9 @@
  */
 
 /*
-* This module is used to set 'accountstatus' as DISABLED for users which have either signed-in, signed-out or registered within last 24 hours
-* from a single device registering at least 2 UUIDs
-* */
+ * This module is used to set 'accountstatus' as DISABLED for users which have either signed-in, signed-out or registered within last 24 hours
+ * from a single device registering at least 2 UUIDs
+ * */
 
 'use-strict';
 
@@ -18,22 +18,42 @@ var connection = config.createConnection;
 var async = require('async');
 var CronJob = require('cron').CronJob;
 
-try{
+try {
     var monitorAccountActivity = new CronJob({
         /*
-         * Runs every-day
-         * at 12:00:00 PM
+         * Runs every-day every hour
          */
-        cronTime: '0 0 12 * * *', //second | minute | hour | day-of-month | month | day-of-week
-        onTick: checkForMultipleAccOnDevice,
+        cronTime: '0 0 * * * *', //second | minute | hour | day-of-month | month | day-of-week TODO: Revert back
+        onTick: enableTemporarilyActiveAccounts,
         start: false,   //Whether to start just now
         timeZone: 'Asia/Kolkata'
     });
 }
-catch(ex){
+catch (ex) {
     console.error(new Error("Invalid cron pattern"));
 }
 
+/**
+ * Enable accounts which have temporarily-enabled for more than 24 hours that were manually catered-to after suspicious activity
+ * */
+function enableTemporarilyActiveAccounts() {
+    connection.query('UPDATE users ' +
+        'SET accountstatus = ?, disabletime = ? ' +
+        'WHERE accountstatus = ? ' +
+        'AND reg_date > DATE_SUB(NOW(), INTERVAL 1 DAY)', ["ENABLED", null, "TEMP-ENABLED"], function (err, data) {
+        if(err){
+            console.error(err);
+            throw err;
+        }
+        else{
+            checkForMultipleAccOnDevice();
+        }
+    })
+}
+
+/**
+ * Retrieve user-actions for the past 24-hours
+ * */
 function checkForMultipleAccOnDevice() {
     connection.query("SELECT * FROM UserActivity WHERE device_imei IS NOT NULL AND regdate > DATE_SUB(NOW(), INTERVAL 1 DAY)",
         null, function (err, data) {
@@ -107,7 +127,10 @@ function checkForSuspicion(suspiciousData) {
         //Check if multiple UUIDs have been registered as action for a single IMEI
         if (checkForMultipleUUIDs(uuids)) {
             console.log("a few accounts deactivated");
-            connection.query('UPDATE users SET accountstatus = ?, disabletime = NOW() WHERE UUID IN (?)', ["DISABLED", uuids], function (err, data) {
+            connection.query('UPDATE users ' +
+                'SET accountstatus = ?, disabletime = NOW() ' +
+                'WHERE UUID IN (?) ' +
+                'AND accountstatus = ?', ["DISABLED", uuids, "ENABLED"], function (err, data) {
                 if (err) {
                     callback(err);
                 }
@@ -121,7 +144,7 @@ function checkForSuspicion(suspiciousData) {
         }
 
     }, function (err) {
-        if(err){
+        if (err) {
             console.error(err);
         }
     });

@@ -51,8 +51,6 @@ router.post('/', function (request, response) {
 
     var orderId = uuidGen.v4();
 
-    console.log("orderId is " + JSON.stringify(orderId, null, 3));
-
     _auth.authValid(uuid, authkey)
         .then(config.getNewConnection, function () {
             response.send({
@@ -63,8 +61,9 @@ router.post('/', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return generatePaytmChecksumHash(paytmMerchantKey, userpaytmcontact, amount, orderId, "VERIFY");
-        })
+            return generatePaytmChecksumHash(paytmMerchantKey, userpaytmcontact, amount, orderId, null);
+            //return generatePaytmChecksumHash(paytmMerchantKey, userpaytmcontact, amount, orderId, "VERIFY");
+        })/*
         .then(function (checksumhash) {
             return checkIfUserPaytmAccExists(amount, userpaytmcontact, orderId, checksumhash);
         })
@@ -83,7 +82,7 @@ router.post('/', function (request, response) {
                 response.end();
                 throw new BreakPromiseChainError();
             }
-        })
+        })*/
         .then(function (checksumhash) {
             return transactToPaytm(uuid, amount, userpaytmcontact, orderId, checksumhash);
         })
@@ -188,6 +187,7 @@ function getPaytmParams(userpaytmcontact, amount, orderId, requestType) {
 /**
  * Function to check if user's paytm
  * */
+/*
 function checkIfUserPaytmAccExists(amount, userpaytmcontact, orderId, checksumhash) {
     console.log("checkIfUserPaytmAccExists called");
     return new Promise(function (resolve, reject) {
@@ -228,6 +228,7 @@ function checkIfUserPaytmAccExists(amount, userpaytmcontact, orderId, checksumha
 
     });
 }
+*/
 
 function generatePaytmChecksumHash(aesKey, userpaytmcontact, amount, orderId, requestType) {
     return new Promise(function (resolve, reject) {

@@ -76,7 +76,7 @@ router.post('/load/', function (request, response) {
                         throw err;
                     }
                     else {
-                        console.log("user data after querying is " + JSON.stringify(row, null, 3))
+                        console.log("user data after querying is " + JSON.stringify(row, null, 3));
                         console.log("rows after querying is " + JSON.stringify(rows, null, 3));
 
                         response.send({
@@ -84,7 +84,7 @@ router.post('/load/', function (request, response) {
                             data: {
                                 feed: rows,
                                 fbidstatus: row[0].fbusername != null,
-                                accountstatus: (row[0].accountstatus != "ENABLED"),
+                                accountstatus: (row[0].accountstatus === "DISABLED"), //true for account-suspension, false otherwise
                                 intereststatus: row[0].interestedUser != null
                             }
                         });

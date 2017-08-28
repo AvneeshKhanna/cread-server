@@ -188,7 +188,7 @@ function getDataForCheck(uuid) {
                                                 console.log('TRANSACTION committed successfully');
                                                 resolve({
                                                     row: rows[0],
-                                                    accountstatus: (userdata[0].accountstatus != "ENABLED")
+                                                    accountstatus: (userdata[0].accountstatus === "DISABLED") //true for account-suspension, false otherwise
                                                 });
                                             }
 
