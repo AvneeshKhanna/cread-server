@@ -32,6 +32,8 @@ router.post('/request', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
 
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
     _auth.authValid(uuid, authkey)
         .then(function () {
             return getDataForCheck(uuid);
@@ -85,6 +87,7 @@ router.post('/request', function (request, response) {
                     data: row
                 });
                 response.end();
+                throw new BreakPromiseChainError();
             }
 
         })
@@ -93,7 +96,11 @@ router.post('/request', function (request, response) {
                 //Do nothing
             }
             else {
-                throw err;
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                });
+                response.end();
             }
         });
 
@@ -113,7 +120,7 @@ function getDataForCheck(uuid) {
         connection.beginTransaction(function (err) {
             if (err) {
                 console.error(err);
-                throw err;
+                reject(err);
             }
             else {
                 connection.query('SELECT accountstatus FROM users WHERE UUID = ?', [uuid], function (err, userdata) {
@@ -144,7 +151,7 @@ function getDataForCheck(uuid) {
 
                             if (err) {
                                 console.error(err);
-                                throw err;
+                                reject(err);
                             }
                             else if (rows.length == 0) {
 
@@ -152,12 +159,14 @@ function getDataForCheck(uuid) {
                                     if (err) {
                                         connection.rollback(function () {
                                             console.error(err);
-                                            throw err;
+                                            reject(err);
                                         });
                                     }
                                     else {
                                         console.log('NO DATA: TRANSACTION committed');
-                                        resolve();
+                                        resolve({
+                                            accountstatus: (userdata[0].accountstatus === "DISABLED") //true for account-suspension, false otherwise
+                                        });
                                     }
 
                                 });
@@ -172,7 +181,7 @@ function getDataForCheck(uuid) {
                                     if (err) {
                                         connection.rollback(function () {
                                             console.error(err);
-                                            throw err;
+                                            reject(err);
                                         });
                                     }
                                     else {
@@ -181,7 +190,7 @@ function getDataForCheck(uuid) {
                                             if (err) {
                                                 connection.rollback(function () {
                                                     console.error(err);
-                                                    throw err;
+                                                    reject(err);
                                                 });
                                             }
                                             else {

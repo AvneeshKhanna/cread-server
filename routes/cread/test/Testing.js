@@ -8,11 +8,12 @@ var router = express.Router();
 
 var moment = require('moment');
 var uuidGen = require('uuid');
+var async = require('async');
 
 //--------------
 
 var config = require('../../Config');
-var connection /*= config.createConnection*/;
+var connection = config.createConnection;
 
 var envconfig = require('config');
 var dbConfig = envconfig.get('rdsDB.dbConfig');
@@ -90,10 +91,120 @@ var interestTableData = {
     ]
 };
 
-router.post('/monitor-user', function (request, response) {
+router.post('/send-bulk-sms', function (request, response) {
 
-    monitor.checkForMultipleAccOnDevice();
-    response.send("Done").end();
+    var users = [
+        {
+            name: "Vishal",
+            number: "9999656496"
+        },
+        {
+            name: "Shivam",
+            number: "8586904878"
+        },
+        {
+            name: "Shivam",
+            number: "8512008435"
+        },
+        {
+            name: "Shivam",
+            number: "9198697174"
+        },
+        {
+            name: "Shivam",
+            number: "8090392031"
+        },
+        {
+            name: "Amit",
+            number: "9919630078"
+        },
+        {
+            name: "Prince",
+            number: "7503370436"
+        },
+        {
+            name: "Sanjay",
+            number: "9717491076"
+        },
+        {
+            name: "Prince",
+            number: "7011582488"
+        },
+        {
+            name: "Shivam",
+            number: "8005011881"
+        },
+        {
+            name: "Shivam",
+            number: "8756479132"
+        },
+        {
+            name: "Ashok",
+            number: "9871122780"
+        },
+        {
+            name: "Shivam",
+            number: "8700760237"
+        },
+        {
+            name: "Manorama",
+            number: "7531075543"
+        },
+        {
+            name: "Shivam",
+            number: "9716280720"
+        }
+    ];
+
+    var sns = new AWS.SNS();
+
+    var params = {
+        attributes : {
+            DefaultSMSType : 'Transactional'
+        }
+    };
+
+    async.eachSeries(users, function(user, callback){
+
+        sns.setSMSAttributes(params, function(err, data){
+
+            if(err){
+                callback(err);
+            }
+            else{
+
+                var params = {
+
+                    Message : "Hi " + user.name + ",\nWe have noticed some unusual usage activity from your Cread account linked to this number. Please make sure that you are not using multiple accounts to use the platform. " +
+                    "We appreciate following fair practices of use and we hope you do as well. Failing to do so might result in deactivation of your account. You can read more about our terms of service here: https://goo.gl/m1NFVq.\n\n" +
+                    "For any queries, you can mail us at: admin@cread.in. We would like to serve you in the best possible way.\n\n" +
+                    "Team Cread",
+                    PhoneNumber : '+91' + user.number
+                };
+
+                console.log('sns request sending');
+
+                sns.publish(params, function(err, data){
+
+                    if(err){
+                        callback(err);
+                    }
+                    else{
+                        console.log(data);
+                        callback();
+                    }
+
+                });
+            }
+        });
+
+    }, function (err) {
+        if(err){
+            console.error(err);
+        }
+    });
+
+    response.send('Initiated').end();
 
 });
 

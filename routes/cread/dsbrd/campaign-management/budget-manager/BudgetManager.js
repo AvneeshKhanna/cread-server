@@ -6,7 +6,7 @@ var express = require('express');
 var router = express.Router();
 
 var config = require('../../../../Config');
-var connection = config.createConnection;
+var connection /*= config.createConnection*/;
 var AWS = config.AWS;
 var uuid = require('uuid');
 
@@ -28,13 +28,17 @@ router.post('/update-budget', function (request, response) {
 
     _auth.clientAuthValid(clientid, authkey)
         .then(function () {
-            return registerBudgetTransfer(clientid, cmid, amount, type);
+            return config.getNewConnection();
         }, function () {
             response.send({
                 tokenstatus: 'invalid'
             });
             response.end();
             throw new BreakPromiseChainError;
+        })
+        .then(function (conn) {
+            connection = conn;
+            return registerBudgetTransfer(connection, clientid, cmid, amount, type);
         })
         .then(function (status) {
             response.send({
@@ -47,6 +51,7 @@ router.post('/update-budget', function (request, response) {
             throw new BreakPromiseChainError;
         })
         .catch(function (err) {
+            config.disconnect(connection);
             if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
@@ -68,7 +73,7 @@ router.post('/update-budget', function (request, response) {
  * @param amount Amount to transfer
  * @param type Determines whether to increase or decrease budge. Could either of the values: <b>ADD</b> or <b>REMOVE</b>
  * */
-function registerBudgetTransfer(clientid, cmid, amount, type) {
+function registerBudgetTransfer(connection, clientid, cmid, amount, type) {
     return new Promise(function (resolve, reject) {
 
         connection.beginTransaction(function (err) {

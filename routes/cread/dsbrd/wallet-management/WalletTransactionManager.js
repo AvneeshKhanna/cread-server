@@ -6,7 +6,7 @@ var express = require('express');
 var router = express.Router();
 
 var config = require('../../../Config');
-var connection /*= config.createConnection*/;
+/*var connection = config.createConnection;*/
 var AWS = config.AWS;
 var uuidGen = require('uuid');
 var Razorpay = require('razorpay');
@@ -25,6 +25,8 @@ var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 var transacEmailer = require('./TransactionEmailer');
 
 router.post('/add-balance', function (request, response) {
+
+    var connection;
 
     var clientid = request.body.clientid;
     var authkey = request.body.authkey;
@@ -57,13 +59,13 @@ router.post('/add-balance', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return addTransactionToTable(clientid, amount, type, paymentid);
+            return addTransactionToTable(connection, clientid, amount, type, paymentid);
         })
         .then(function () {
-            return updateClientWalletBalance(clientid, amount)
+            return updateClientWalletBalance(connection, clientid, amount)
         })
         .then(function () {
-            return captureRazorpayPayment(paymentid, convertINRtoPaise(amount));
+            return captureRazorpayPayment(connection, paymentid, convertINRtoPaise(amount));
         })
         .then(function () {
             response.send({
@@ -95,7 +97,7 @@ router.post('/add-balance', function (request, response) {
         });
 });
 
-function addTransactionToTable(clientid, amount, type, paymentid) {
+function addTransactionToTable(connection, clientid, amount, type, paymentid) {
     return new Promise(function (resolve, reject) {
         connection.beginTransaction(function (err) {
             if (err) {
@@ -128,7 +130,7 @@ function addTransactionToTable(clientid, amount, type, paymentid) {
     });
 }
 
-function updateClientWalletBalance(clientid, amount) {
+function updateClientWalletBalance(connection, clientid, amount) {
     return new Promise(function (resolve, reject) {
 
         connection.query('SELECT clientid, walletbalance FROM Client WHERE clientid = ? FOR UPDATE', [clientid], function (err, rows) {
@@ -176,7 +178,7 @@ function updateClientWalletBalance(clientid, amount) {
  * This method captures a pending (or authorized) payment from Razorpay.
  * For more info, read: <a href="https://docs.razorpay.com/docs">https://docs.razorpay.com/docs</a>
  * */
-function captureRazorpayPayment(paymentid, amount) {
+function captureRazorpayPayment(connection, paymentid, amount) {
     return new Promise(function (resolve, reject) {
         rzrinstance.payments.capture(paymentid, amount, function (err, rzrresponse) {
             if (err) {
@@ -241,6 +243,8 @@ function sendTranscDetailsToUser(type, subject, details) {
 
 router.post('/initiate-refund', function (request, response) {
 
+    var connection;
+
     console.log("request is " + JSON.stringify(request.body, null, 3));
 
     var clientid = request.body.clientid;
@@ -267,7 +271,7 @@ router.post('/initiate-refund', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return reduceWalletBalanceToZero(clientid);
+            return reduceWalletBalanceToZero(connection, clientid);
         })
         .then(function (result) {
             if (result.status === 'zero-balance') {
@@ -286,7 +290,7 @@ router.post('/initiate-refund', function (request, response) {
                     amount: result.amount
                 };
 
-                return addRefundToDB(clientid, 'REFUND', result.amount);
+                return addRefundToDB(connection, clientid, 'REFUND', result.amount);
             }
         })
         .then(function (transid) {
@@ -321,7 +325,7 @@ router.post('/initiate-refund', function (request, response) {
 /**
  * Function to register a record in WalletTransaction table to initiate a refund to the client
  * */
-function addRefundToDB(clientid, type, amount) {
+function addRefundToDB(connection, clientid, type, amount) {
     return new Promise(function (resolve, reject) {
 
         var params = {
@@ -355,7 +359,7 @@ function addRefundToDB(clientid, type, amount) {
     });
 }
 
-function reduceWalletBalanceToZero(clientid) {
+function reduceWalletBalanceToZero(connection, clientid) {
     return new Promise(function (resolve, reject) {
         connection.beginTransaction(function (err) {
             if (err) {

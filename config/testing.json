@@ -28,6 +28,8 @@
 	"razorpay-creds": {
 		"key_id": "rzp_test_Q09427lQA9Ol5g",
 		"key_secret": "NWyy1f1z88NRXFbjGDpjxmXH"
+//		"key_id": "rzp_live_R8v2wfBMmMnHVy",
+//		"key_secret": "hd1eG3aeID0mwdaJua1Zm9O5"
 	},
 	"type" : "DEVELOPMENT"
 }
