@@ -6,7 +6,7 @@ var express = require('express');
 var router = express.Router();
 
 var config = require('../../../Config');
-var connection = config.createConnection;
+var connection /*= config.createConnection*/;
 var AWS = config.AWS;
 
 var envconfig = require('config');
@@ -40,11 +40,11 @@ router.post('/', function (request, response) {
 
     //TODO: Remove
     //This has been done due to insufficient Paytm wallet balance but server records being updated nonetheless
-    response.status(500).send({
+    /*response.status(500).send({
         error: 'Some error occurred at the server'
     });
     response.end();
-    return;
+    return;*/
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
 
@@ -53,14 +53,16 @@ router.post('/', function (request, response) {
     console.log("orderId is " + JSON.stringify(orderId, null, 3));
 
     _auth.authValid(uuid, authkey)
-        .then(function () {
-            return generatePaytmChecksumHash(paytmMerchantKey, userpaytmcontact, amount, "VERIFY");
-        }, function () {
+        .then(config.getNewConnection, function () {
             response.send({
                 tokenstatus: 'invalid'
             });
             response.end();
             throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return generatePaytmChecksumHash(paytmMerchantKey, userpaytmcontact, amount, "VERIFY");
         })
         .then(function (checksumhash) {
             return checkIfUserPaytmAccExists(amount, userpaytmcontact, checksumhash);
@@ -101,9 +103,12 @@ router.post('/', function (request, response) {
             }
         })
         .then(function () {
-            //SMS sent successfully. Do nothing
+            //SMS sent successfully. Disconnect connection
+            config.disconnect(connection);
         })
         .catch(function (err) {
+
+            config.disconnect(connection);
 
             if (err instanceof BreakPromiseChainError) {
                 //Do nothing
