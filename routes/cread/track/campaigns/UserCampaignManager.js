@@ -74,6 +74,7 @@ function loadCampaigns(connection, clientid) {
                 reject(err);
             }
             else {
+
                 if(rows[0]){
                     var biostatus = !!rows[0].bio;
 
@@ -91,14 +92,12 @@ function loadCampaigns(connection, clientid) {
                         biostatus: biostatus
                     });
                 }
-                else{
+                else{   //Case of no campaigns
                     resolve({
                         campaigns: [],
                         biostatus: false
                     });
                 }
-
-
             }
 
         });
