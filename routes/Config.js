@@ -23,6 +23,36 @@ var connection = mysql.createConnection({
             port : dbConfig.port
 		});
 
+var connectionPool = mysql.createPool({
+    connectionLimit : 50,
+    host: dbConfig.host,
+    user: dbConfig.user,
+    password: dbConfig.password,
+    database: dbConfig.database,
+    timezone: 'UTC',
+    port: dbConfig.port
+});
+
+function getNewConnection() {
+    return new Promise(function (resolve, reject) {
+        connectionPool.getConnection(function (err, connection) {
+            if(err){
+                reject(err);
+            }
+            else{
+                resolve(connection);
+            }
+        })
+    })
+}
+
+function disconnect(connection) {
+    if(connection.state != "disconnected"){
+        console.log('connection released');
+        connection.release();
+    }
+}
+
 var dbConnect = function(){
     connection.connect(function(err, result){
         if (err) {
@@ -44,6 +74,8 @@ var dynamodbCredentials = function(){
 module.exports = {
 	'secretKey' : '12345-67890-09876-54321',
     'createConnection' : connection,
+    'getNewConnection': getNewConnection,
+    'disconnect': disconnect,
     'connectDb' : dbConnect,
     'dynamodbCredentials' : dynamodbCredentials,
     'AWS' : AWS,
