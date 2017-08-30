@@ -23,7 +23,7 @@ try {
         /*
          * Runs every-day every hour
          */
-        cronTime: '0 0 * * * *', //second | minute | hour | day-of-month | month | day-of-week
+        cronTime: '0 0 * * * *', //second | minute | hour | day-of-month | month | day-of-week TODO: Revert Back
         onTick: enableTemporarilyActiveAccounts,
         start: false,   //Whether to start just now
         timeZone: 'Asia/Kolkata'
@@ -37,10 +37,11 @@ catch (ex) {
  * Enable accounts which have temporarily-enabled for more than 24 hours that were manually catered-to after suspicious activity
  * */
 function enableTemporarilyActiveAccounts() {
+    console.log("CronJob: running");
     connection.query('UPDATE users ' +
         'SET accountstatus = ?, disabletime = ? ' +
         'WHERE accountstatus = ? ' +
-        'AND reg_date > DATE_SUB(NOW(), INTERVAL 1 DAY)', ["ENABLED", null, "TEMP-ENABLED"], function (err, data) {
+        'AND disabletime < DATE_SUB(NOW(), INTERVAL 1 DAY)', ["ENABLED", null, "TEMP-ENABLED"], function (err, data) {
         if(err){
             console.error(err);
             throw err;
@@ -48,7 +49,7 @@ function enableTemporarilyActiveAccounts() {
         else{
             checkForMultipleAccOnDevice();
         }
-    })
+    });
 }
 
 /**
