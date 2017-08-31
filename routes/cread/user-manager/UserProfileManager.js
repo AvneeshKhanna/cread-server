@@ -254,6 +254,9 @@ function updateFbUsername(uuid, fbusername) {
     })
 }
 
+/**
+ * Checks if a user is registered as a client. If not, creates the user's Client Table records
+ * */
 router.post('/check-for-client', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;

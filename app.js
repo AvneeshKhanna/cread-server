@@ -134,7 +134,7 @@ app.use('/user-interests', require('./routes/cread/user-manager/interests/Intere
 app.use('/user-campaigns', require('./routes/cread/track/campaigns/UserCampaignManager'));
 app.use('/explore-feed', require('./routes/cread/feed/explore/ExploreFeedManager'));
 app.use('/share-campaign-explore', require('./routes/cread/share/ShareCampaignExplore'));
-app.use('/explore-campaign',require('./routes/cread/campaign/CampaignManagerExplore'));
+app.use('/explore-campaign', require('./routes/cread/campaign/CampaignManagerExplore'));
 
 //-dashboard-
 app.use('/campaign-details', require('./routes/cread/dsbrd/campaign-details/CampaignDetails'));

@@ -1,6 +1,11 @@
 /**
  * Created by avnee on 31-08-2017.
  */
+
+/**
+ * This module takes care of handling 'add' and 'edit' events for creating campaigns by a user from the app explore feed
+ * */
+
 'use-strict';
 
 var express = require('express');
