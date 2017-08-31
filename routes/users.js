@@ -164,7 +164,7 @@ router.post('/login', function (request, response, next) {
 
     console.log(JSON.stringify(request.body));
 
-    _connection.query('SELECT Auth_key, UUID, firstname, lastname FROM users WHERE phoneNo=? AND password=?', [phoneNo, password], function (err, result) {
+    _connection.query('SELECT Auth_key, UUID, firstname, lastname, clientid FROM users WHERE phoneNo=? AND password=?', [phoneNo, password], function (err, result) {
 
         var localJson = {};
 
@@ -186,6 +186,7 @@ router.post('/login', function (request, response, next) {
             localJson['uuid'] = result[0].UUID;
             localJson['authtoken'] = result[0].Auth_key;
             localJson['name'] = result[0].firstname + " " + result[0].lastname;
+            localJson['clientid'] = result[0].clientid;
 
             //response.send(result[0].Auth_key);
 

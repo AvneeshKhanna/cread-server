@@ -77,7 +77,7 @@ var loginFCM = function (uuid, fcmToken, localJson, response) {
         if (error) throw error;
 
         else if (data.Item.Fcm_token.indexOf(fcmToken) !== -1) {
-            response.send(JSON.stringify(localJson));
+            response.send(localJson);
             response.end();
         }
         else {
@@ -85,7 +85,7 @@ var loginFCM = function (uuid, fcmToken, localJson, response) {
                 if (error) throw error;
 
                 console.log(data);
-                response.send(JSON.stringify(localJson));
+                response.send(localJson);
                 response.end();
             });
         }
