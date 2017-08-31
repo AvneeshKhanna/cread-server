@@ -26,6 +26,8 @@ var consts = require('../utils/Constants');
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
+var share_utils = require('./ShareUtils');
+
 router.post('/add-donation-cause', function (request, response) {
 
     var uuid = request.body.uuid;
@@ -117,7 +119,7 @@ router.post('/save', function (request, response) {
                 params.causeid = cause_id;
             }
 
-            return saveShareToDb(params);
+            return share_utils.saveShareToDb(params);
         }, function () {
             response.send({
                 tokenstatus: 'invalid'
@@ -161,29 +163,6 @@ router.post('/save', function (request, response) {
 });
 
 /**
- * Function to add a user's share's details to the database
- * */
-function saveShareToDb(params) {
-
-    return new Promise(function (resolve, reject) {
-
-        connection.query('INSERT INTO Share SET ?', params, function (error, data) {
-
-            if (error) {
-                reject(error);
-            }
-            else {
-                console.log('Query executed');
-                resolve();
-            }
-
-        });
-
-    });
-
-}
-
-/**
  * Return all the causes saved in the DB
  * */
 function getCausesData() {
@@ -222,6 +201,7 @@ router.post('/request-unique-link', function (request, response) {
                 tokenstatus: 'invalid'
             });
             response.end();
+            throw new BreakPromiseChainError();
         })
         .then(function (result) {
 

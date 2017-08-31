@@ -11,6 +11,7 @@ var AWS = config.AWS;
 var uuid = require('uuid');
 
 var _auth = require('../../../auth-token-management/AuthTokenManager');
+var clientprofile_utils = require('./ClientProfileUtils');
 var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 
 router.post('/sign-up', function (request, response) {
@@ -408,7 +409,7 @@ router.post('/update', function (request, response) {
 
    _auth.clientAuthValid(clientid, authkey)
        .then(function () {
-           return updateClientProfile(clientid, params);
+           return clientprofile_utils.updateClientProfile(clientid, params);
        }, function () {
            response.send({
                tokenstatus: 'invalid'
@@ -440,7 +441,7 @@ router.post('/update', function (request, response) {
 
 });
 
-function updateClientProfile(clientid, params){
+/*function updateClientProfile(clientid, params){
     return new Promise(function (resolve, reject) {
         connection.query('UPDATE Client SET ? WHERE clientid = ?', [params, clientid], function (err, row) {
             if(err){
@@ -451,6 +452,6 @@ function updateClientProfile(clientid, params){
             }
         });
     })
-}
+}*/
 
 module.exports = router;
