@@ -7,7 +7,6 @@ var express = require('express');
 var router = express.Router();
 
 var config = require('../../Config');
-var connection = config.createConnection;
 var AWS = config.AWS;
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
@@ -34,9 +33,11 @@ router.post('/request', function (request, response) {
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
 
+    var connection;
+
     _auth.authValid(uuid, authkey)
         .then(function () {
-            return getDataForCheck(uuid);
+            return config.getNewConnection();
         }, function () {
 
             response.send({
@@ -45,6 +46,10 @@ router.post('/request', function (request, response) {
             response.end();
             throw new BreakPromiseChainError();
 
+        })
+        .then(function (conn) {
+            connection = conn;
+            return getDataForCheck(uuid, connection);
         })
         .then(function (result) {
 
@@ -92,6 +97,7 @@ router.post('/request', function (request, response) {
 
         })
         .catch(function (err) {
+            config.disconnect(connection);
             if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
@@ -109,7 +115,7 @@ router.post('/request', function (request, response) {
 /**
  * Function to retrieve a random user's data from the profile who has shared a given campaign
  * */
-function getDataForCheck(uuid) {
+function getDataForCheck(uuid, connection) {
 
     return new Promise(function (resolve, reject) {
 
@@ -131,7 +137,7 @@ function getDataForCheck(uuid) {
                     }
                     else{
                         //Retrieve a user's share data for a given cmid who has shared within the last 24 hours and has not been verified
-                        connection.query('SELECT Share.sharerate, Share.regdate AS sharetime, Share.shareid, Share.ulinkkey, Share.ulinkvalue, ' +
+                        connection.query('SELECT Share.sharerate, Share.regdate AS sharetime, Share.shareid, Share.ulinkkey, Share.ulinkvalue, Checks.uuid AS checkerid, ' +
                             'Campaign.cmid, Campaign.contentbaseurl AS verificationurl, Campaign.title, Campaign.description, Campaign.imagepath, ' +
                             'users.firstname, users.UUID AS sharerid, users.fbusername ' +
                             'FROM Share ' +
@@ -139,15 +145,18 @@ function getDataForCheck(uuid) {
                             'ON Share.UUID = users.UUID ' +
                             'JOIN Campaign ' +
                             'ON Campaign.cmid = Share.cmid ' +
+                            'LEFT JOIN Checks ' +
+                            'ON Share.shareid = Checks.shareid ' +
                             'WHERE Share.checkstatus = "PENDING" ' +
                             'AND Share.regdate < DATE_SUB(NOW(), INTERVAL 90 MINUTE) ' +    //To get only those shares which have been live for 90 minutes
                             'AND Share.UUID <> ? ' +    //To get shares other than those done by this user
-                            'AND Share.locked = ? ' + //To get unlocked shares TODO: toggle comment
-                            'ORDER BY RAND() ' +    //To randomise
+                            'AND Share.locked = ? ' +   //To get unlocked shares TODO: toggle comment
+                            'HAVING checkerid <> ? ' +  //To get only those shares which haven't been checked by this user even once
+                            'ORDER BY RAND() ' +        //To randomise
                             'LIMIT 1 ' +
-                            'FOR UPDATE', [uuid, /*null*/false], function (err, rows) {   //TODO: toggle comment
+                            'FOR UPDATE', [uuid, /*null*/false, uuid], function (err, rows) {   //TODO: toggle comment
 
-                            console.log('SELECT...FOR UPDATE query executed');
+                            console.log('SELECT...FOR UPDATE query response ' + JSON.stringify(rows, null, 3));
 
                             if (err) {
                                 console.error(err);
@@ -231,6 +240,8 @@ router.post('/register', function (request, response) {
     var cmid = request.body.cmid;
     var sharerate = request.body.sharerate;
 
+    var connection;
+
     var checkdata = {
         checkresponse: validateCheckResponse(request.body.checkresponse), //Should be one of the following constants: VERIFIED, ABSENT_PROFILE, WRONG_PERSON, ABSENT_SHARE
         fblikes: request.body.fblikes,
@@ -240,7 +251,7 @@ router.post('/register', function (request, response) {
 
     _auth.authValid(uuid, authkey)
         .then(function () {
-            return registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid);
+            return config.getNewConnection();
         }, function () {
             response.send({
                 tokenstatus: 'invalid'
@@ -248,18 +259,22 @@ router.post('/register', function (request, response) {
             response.end();
             throw new BreakPromiseChainError();
         })
+        .then(function (conn) {
+            connection = conn;
+            return registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid, connection);
+        })
         .then(function (checkstatus) {
 
             if(checkstatus){
-                return updateShareForCheck(shareid, checkstatus);   //If the checkresponse was 'verified'. If not, then it was the 2nd for the Share
+                return updateShareForCheck(connection, shareid, checkstatus);   //If the checkresponse was 'verified'. If not, then it was the 2nd for the Share
             }
             else{
-                return updateShareForCheck(shareid);    //If the checkresponse was not 'verified' and was the 1st for the Share
+                return updateShareForCheck(connection, shareid);    //If the checkresponse was not 'verified' and was the 1st for the Share
             }
         })
         .then(function (result) {
             if(result.toUpdateBudget){
-                return updateCampaignBudget(sharerate, result.checkrate, cmid);
+                return updateCampaignBudget(connection, sharerate, result.checkrate, cmid);
             }
         })
         .then(function () {
@@ -274,6 +289,7 @@ router.post('/register', function (request, response) {
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
+            config.disconnect(connection);
             if(err instanceof BreakPromiseChainError){
                 //Do nothing
             }
@@ -283,7 +299,6 @@ router.post('/register', function (request, response) {
                     error: 'Some error occurred at the server'
                 });
                 response.end();
-                throw new Error(err);
             }
         });
 
@@ -308,7 +323,7 @@ function validateCheckResponse(res) {
 /**
  * Update the 'checkstatus' column of 'Share' table after the check has been registered
  * */
-function updateShareForCheck(shareid, checkstatus) {
+function updateShareForCheck(connection, shareid, checkstatus) {
 
     console.log('updateShareForCheck called');
 
@@ -355,7 +370,7 @@ function updateShareForCheck(shareid, checkstatus) {
 /**
  * Function to update the budget of a campaign based on whether the share was valid or not
  * */
-function updateCampaignBudget(sharerate, checkrate, cmid) {
+function updateCampaignBudget(connection, sharerate, checkrate, cmid) {
 
     console.log('updateCampaignBudget called');
 
@@ -388,7 +403,7 @@ function updateCampaignBudget(sharerate, checkrate, cmid) {
  * Insert a row into 'Checks' table and calls resolve OR reject based on whether
  * this is the second time a check is being registered or first time for a given 'shareid'
  * */
-function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid) {
+function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid, connection) {
 
     console.log('registerCheckResponse called');
 

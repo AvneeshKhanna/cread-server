@@ -18,7 +18,7 @@ const share_time_interval = {
         time_diff_unit: config_type == 'PRODUCTION' ? "hours" : "minutes"
     },
     diff_share: {
-        time_diff: config_type == 'PRODUCTION' ? 6 : 1,
+        time_diff: config_type == 'PRODUCTION' ? 4 : 1,
         time_diff_unit: config_type == 'PRODUCTION' ? "hours" : "minutes"
     }
 };
