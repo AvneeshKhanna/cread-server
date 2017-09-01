@@ -140,7 +140,7 @@ function getDataForCheck(uuid, connection) {
                     else{
                         //Retrieve a user's share data for a given cmid who has shared within the last 24 hours and has not been verified
                         connection.query('SELECT Share.sharerate, Share.regdate AS sharetime, Share.shareid, Share.ulinkkey, Share.ulinkvalue, ' +
-                            '(CASE WHEN(Checks.UUID IS NULL) THEN "INVALID" ELSE Checks.UUID END) AS checkerid, ' + //Since NULL values in SQL cannot be compared with <>, it has to be compared into a NON-NULL value (INVALID in this case)
+                            '(CASE WHEN(Checks.UUID IS NULL) THEN "INVALID" ELSE Checks.UUID END) AS checkerid, ' + //Since NULL values in SQL cannot be compared with <>, it has to be converted into a NON-NULL value like 'INVALID' in this case
                             'Campaign.cmid, Campaign.contentbaseurl AS verificationurl, Campaign.title, Campaign.description, Campaign.imagepath, ' +
                             'users.firstname, users.UUID AS sharerid, users.fbusername ' +
                             'FROM Share ' +
