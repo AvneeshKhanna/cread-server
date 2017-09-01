@@ -1,6 +1,7 @@
 /**
  * Created by avnee on 12-06-2017.
  */
+'use-strict';
 
 /*
  * Returns the details of the campaigns to the app which were shared by the given user
@@ -54,7 +55,7 @@ router.post('/', function (request, response) {
                     data[i].type = 0;   //Share Code
                 }*/
 
-                connection.query('SELECT Campaign.title, Checks.responses, Checks.regdate, Checks.cashed_in ' +
+                connection.query('SELECT Campaign.title, Checks.responses, Checks.regdate, Checks.cashed_in, Checks.checkrate ' +
                     'FROM Checks ' +
                     'INNER JOIN Campaign ' +
                     'ON Checks.cmid = Campaign.cmid ' +
@@ -95,12 +96,12 @@ router.post('/', function (request, response) {
                                             element.type = 0; //Share Code
                                         }
                                         else {
-                                            if (element.responses == 'verified'){
+                                            /*if (element.responses == 'verified'){
                                                 element.checkrate = consts.checkrate_verified;  //TODO: Make checkrate dynamic
                                             }
                                             else {
                                                 element.checkrate = consts.checkrate_not_verified;  //TODO: Make checkrate dynamic
-                                            }
+                                            }*/
                                             element.type = 1;   //Checks Code
                                         }
 
@@ -121,12 +122,15 @@ router.post('/', function (request, response) {
                                             }
                                         }
                                         else {
-                                            if (element.responses == 'verified') {
+
+                                            return accumulator + element.checkrate;
+
+                                            /*if (element.responses == 'verified') {
                                                 return accumulator + consts.checkrate_verified; //TODO: Make the checkrate dynamic
                                             }
                                             else {
                                                 return accumulator + consts.checkrate_not_verified; //TODO: Make the checkrate dynamic
-                                            }
+                                            }*/
                                         }
                                     }, 0);
 

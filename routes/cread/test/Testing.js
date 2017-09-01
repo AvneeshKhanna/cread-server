@@ -91,6 +91,22 @@ var interestTableData = {
     ]
 };
 
+router.post('/update-checkrate', function (request, response) {
+    config.getNewConnection()
+        .then(function (connection) {
+            connection.query('UPDATE Checks SET checkrate = (CASE WHEN (responses = "verified") THEN 2.5 ELSE 1 END)', [], function (err, data) {
+                config.disconnect(connection);
+                if(err){
+                    console.error(err);
+                    response.status(500).send(err).end();
+                }
+                else{
+                    response.send(data).end();
+                }
+            });
+        });
+});
+
 router.post('/send-bulk-sms', function (request, response) {
 
     var users = [

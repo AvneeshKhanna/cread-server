@@ -126,7 +126,9 @@ function getDataForCheck(uuid, connection) {
         connection.beginTransaction(function (err) {
             if (err) {
                 console.error(err);
-                reject(err);
+                connection.rollback(function () {
+                    reject(err);
+                });
             }
             else {
                 connection.query('SELECT accountstatus FROM users WHERE UUID = ?', [uuid], function (err, userdata) {
@@ -137,7 +139,8 @@ function getDataForCheck(uuid, connection) {
                     }
                     else{
                         //Retrieve a user's share data for a given cmid who has shared within the last 24 hours and has not been verified
-                        connection.query('SELECT Share.sharerate, Share.regdate AS sharetime, Share.shareid, Share.ulinkkey, Share.ulinkvalue, Checks.uuid AS checkerid, ' +
+                        connection.query('SELECT Share.sharerate, Share.regdate AS sharetime, Share.shareid, Share.ulinkkey, Share.ulinkvalue, ' +
+                            '(CASE WHEN(Checks.UUID IS NULL) THEN "INVALID" ELSE Checks.UUID END) AS checkerid, ' + //Since NULL values in SQL cannot be compared with <>, it has to be compared into a NON-NULL value (INVALID in this case)
                             'Campaign.cmid, Campaign.contentbaseurl AS verificationurl, Campaign.title, Campaign.description, Campaign.imagepath, ' +
                             'users.firstname, users.UUID AS sharerid, users.fbusername ' +
                             'FROM Share ' +
@@ -160,7 +163,9 @@ function getDataForCheck(uuid, connection) {
 
                             if (err) {
                                 console.error(err);
-                                reject(err);
+                                connection.rollback(function () {
+                                    reject(err);
+                                });
                             }
                             else if (rows.length == 0) {
 
@@ -276,6 +281,15 @@ router.post('/register', function (request, response) {
             if(result.toUpdateBudget){
                 return updateCampaignBudget(connection, sharerate, result.checkrate, cmid);
             }
+            else{
+                connection.commit(function (err) {
+                    if(err){
+                        connection.rollback(function () {
+                            throw err;
+                        });
+                    }
+                });
+            }
         })
         .then(function () {
             console.log('Sending back response');
@@ -355,7 +369,9 @@ function updateShareForCheck(connection, shareid, checkstatus) {
         connection.query('UPDATE Share SET ? WHERE shareid = ?', [params, shareid], function (err, rows) {
 
             if (err) {
-                reject(err);
+                connection.rollback(function () {
+                    reject(err);
+                });
             }
             else {
                 resolve(result);
@@ -387,10 +403,21 @@ function updateCampaignBudget(connection, sharerate, checkrate, cmid) {
         connection.query('UPDATE Campaign SET budget = (budget - ?) WHERE cmid = ?', [grossAmount, cmid], function (err, row) {
 
             if (err) {
-               reject(err);
+               connection.rollback(function () {
+                   reject(err);
+               })
             }
             else {
-                resolve();
+                connection.commit(function (err) {
+                    if(err){
+                        connection.rollback(function () {
+                            reject(err);
+                        });
+                    }
+                    else {
+                        resolve();
+                    }
+                })
             }
 
         });
@@ -417,93 +444,62 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid, connect
             responses: checkdata.checkresponse,
             fblikes: checkdata.fblikes,
             fbcomments: checkdata.fbcomments,
-            fbshares: checkdata.fbshares
+            fbshares: checkdata.fbshares,
+            checkrate: (checkdata.checkresponse == "verified" ? consts.checkrate_verified : consts.checkrate_not_verified)
         };
 
         var cmptitle;
 
         console.log("shareid is " + JSON.stringify(shareid, null, 3));
 
-        connection.query('SELECT title FROM Campaign WHERE cmid = ?', [cmid], function (err, cmp) {
+        connection.beginTransaction(function (err) {
             if(err){
-                reject(err);
+                connection.rollback(function () {
+                    reject(err);
+                });
             }
-            else {
-
-                cmptitle = cmp[0].title;
-
-                /*
-                 The logic table for below callback statements is
-
-                 Condition 1 (C1) : res == 'verified'
-                 Condition 2 (C2) : checkcount > 1
-
-                 C1   C2    Update Share Table
-                 0    0              0
-                 0    1              1
-                 1    0              1
-                 1    1              1
-
-                 */
-
-                //Register the check into 'Checks' table
-                connection.query('INSERT INTO Checks SET ?', params, function (err, rows) {
-
-                    if (err) {
-                        reject(err);
-                    }
-                    //If the response is 'verified', then update the 'Share' table
-                    else if (checkdata.checkresponse == 'verified') {
-
-                        var notifData = {
-                            AppModel: "2.0",
-                            Category: 'share_status',
-                            // Status: 'verified',
-                            Message: 'Your share for ' + cmptitle + ' has been reviewed',
-                            Shareid: shareid,
-                            Cmid: cmid,
-                            Persist: "Yes"
-                        };
-
-                        var notifUser = new Array(sharerid);
-
-                        notify.notification(notifUser, notifData, function (err) {
-
-                            console.log('notification sent');
-
-                            resolve("COMPLETE");  //As this action is independent of whether the notification to the user was a success or not
-
-                            if (err) {
-                                console.error(err);
-                                //throw err;    //TODO: toggle uncomment
-                            }
+            else{
+                connection.query('SELECT title FROM Campaign WHERE cmid = ?', [cmid], function (err, cmp) {
+                    if(err){
+                        connection.rollback(function () {
+                            reject(err);
                         });
                     }
-                    //If the response is NOT 'verified', then count the no of checks this share has received,
-                    // if the count == 1 then do not update the 'Share' table otherwise do.
                     else {
 
-                        connection.query('SELECT * FROM Checks WHERE shareid = ?', [shareid], function (err, row) {
+                        cmptitle = cmp[0].title;
 
-                            console.log("row is " + JSON.stringify(row, null, 3));
-                            var checkcount = row.length;
+                        /*
+                         The logic table for below callback statements is
+
+                         Condition 1 (C1) : res == 'verified'
+                         Condition 2 (C2) : checkcount > 1
+
+                         C1   C2    Update Share Table
+                         0    0              0
+                         0    1              1
+                         1    0              1
+                         1    1              1
+
+                         */
+
+                        //Register the check into 'Checks' table
+                        connection.query('INSERT INTO Checks SET ?', params, function (err, rows) {
 
                             if (err) {
-                                reject(err);
+                                connection.rollback(function () {
+                                    reject(err);
+                                });
                             }
-                            //Only one check, do not update the share table
-                            else if (checkcount == 1) {
-                                resolve();
-                            }
-                            //Two checks, update the share table
-                            else {
+                            //If the response is 'verified', then update the 'Share' table
+                            else if (checkdata.checkresponse == 'verified') {
 
                                 var notifData = {
                                     AppModel: "2.0",
                                     Category: 'share_status',
-                                    Shareid: shareid,
                                     // Status: 'verified',
                                     Message: 'Your share for ' + cmptitle + ' has been reviewed',
+                                    Shareid: shareid,
                                     Cmid: cmid,
                                     Persist: "Yes"
                                 };
@@ -514,22 +510,70 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid, connect
 
                                     console.log('notification sent');
 
-                                    resolve("CANCELLED");   //As this action is independent whether the notification to the user was a success or not
+                                    resolve("COMPLETE");  //As this action is independent of whether the notification to the user was a success or not
 
                                     if (err) {
                                         console.error(err);
-                                        //throw err; //TODO: toggle uncomment
+                                        //throw err;    //TODO: toggle uncomment
                                     }
                                 });
                             }
+                            //If the response is NOT 'verified', then count the no of checks this share has received,
+                            // if the count == 1 then do not update the 'Share' table otherwise do.
+                            else {
+
+                                connection.query('SELECT * FROM Checks WHERE shareid = ?', [shareid], function (err, row) {
+
+                                    console.log("row is " + JSON.stringify(row, null, 3));
+                                    var checkcount = row.length;
+
+                                    if (err) {
+                                        connection.rollback(function () {
+                                            reject(err);
+                                        });
+                                    }
+                                    //Only one check, do not update the share table
+                                    else if (checkcount == 1) {
+                                        resolve();
+                                    }
+                                    //Two checks, update the share table
+                                    else {
+
+                                        var notifData = {
+                                            AppModel: "2.0",
+                                            Category: 'share_status',
+                                            Shareid: shareid,
+                                            // Status: 'verified',
+                                            Message: 'Your share for ' + cmptitle + ' has been reviewed',
+                                            Cmid: cmid,
+                                            Persist: "Yes"
+                                        };
+
+                                        var notifUser = new Array(sharerid);
+
+                                        notify.notification(notifUser, notifData, function (err) {
+
+                                            console.log('notification sent');
+
+                                            resolve("CANCELLED");   //As this action is independent whether the notification to the user was a success or not
+
+                                            if (err) {
+                                                console.error(err);
+                                                //throw err; //TODO: toggle uncomment
+                                            }
+                                        });
+                                    }
+
+                                });
+
+                            }
 
                         });
-
                     }
-
                 });
             }
-        });
+        })
+
     });
 
 }

@@ -65,7 +65,10 @@ function getShareGraph(cmid, days) {
 
     return new Promise(function (resolve, reject) {
 
-        connection.query('SELECT shareid, regdate FROM Share WHERE cmid = ? ORDER BY regdate DESC', [cmid], function (err, rows) {
+        connection.query('SELECT shareid, regdate ' +
+            'FROM Share ' +
+            'WHERE cmid = ? ' +
+            'ORDER BY regdate DESC', [cmid], function (err, rows) {
 
             if (err) {
                 reject(err);
@@ -176,13 +179,16 @@ function getIndividualShares(cmid, limit) {
 
     return new Promise(function (resolve, reject) {
 
-        connection.query('SELECT users.firstname, users.lastname, Share.sharerate, Share.regdate, Share.checkstatus ' +
+        connection.query('SELECT users.firstname, users.lastname, Share.sharerate, Share.regdate, Share.checkstatus, Checks.checkrate ' +
             'FROM Share ' +
             'JOIN users ' +
             'ON Share.UUID = users.UUID ' +
+            'JOIN Checks ' +
+            'ON Share.shareid = Checks.shareid ' +
             'WHERE Share.cmid = ? ' +
             'AND Share.checkstatus = ? ' +
-            'ORDER BY Share.regdate DESC LIMIT ?', [cmid, 'COMPLETE', limit], function (err, rows) {
+            'AND Checks.responses = ? ' +
+            'ORDER BY Share.regdate DESC LIMIT ?', [cmid, 'COMPLETE', 'verified', limit], function (err, rows) {
 
             if (err) {
                 reject(err);
@@ -192,7 +198,7 @@ function getIndividualShares(cmid, limit) {
                 for (var i = 0; i < rows.length; i++) {
                     var obj = rows[i];
                     rows[i].regdate = moment(obj.regdate).format('YYYY-MM-DD HH:mm');
-                    rows[i].sharerate = parseFloat(rows[i].sharerate + consts.checkrate_verified) * parseFloat(1 + consts.markup / 100) * parseFloat(1 + 18 / 100); //tax
+                    rows[i].sharerate = parseFloat(rows[i].sharerate +  rows[i].checkrate) * parseFloat(1 + consts.markup / 100) * parseFloat(1 + 18 / 100); //tax
                 }
 
                 resolve(rows);
