@@ -268,13 +268,15 @@ router.post('/emailer', function (request, response) {
 
 });
 
-router.post('/sql-trans-rollback', function (req, res) {
-    var time = req.body.time;
-    var phoneNo = req.body.phoneNo;
+router.post('/sql-trans-deadlock', function (request, response) {
+    var name = request.body.name;
+    var time = request.body.time;
+    var isErr = request.body.isErr;
+
+    console.log("request is " + JSON.stringify(request.body, null, 3));
 
     config.getNewConnection()
-        .then(function (conn) {
-            connection = conn;
+        .then(function (connection) {
 
             connection.beginTransaction(function (err) {
                 if (err) {
@@ -284,7 +286,9 @@ router.post('/sql-trans-rollback', function (req, res) {
                     });
                 }
                 else {
-                    connection.query('UPDATE users SET firstname = ? WHERE phoneNo = ?', [phoneNo + ' changed', phoneNo], function (err, data) {
+                    connection.query('SELECT * FROM users ORDER BY RAND()', [/*'9999015838'*/], function (err, data) {
+
+                        console.log('SELECT FOR UPDATE query executed ' + name);
 
                         if (err) {
                             connection.rollback(function () {
@@ -294,15 +298,33 @@ router.post('/sql-trans-rollback', function (req, res) {
                         }
                         else {
                             setTimeout(function () {
-                                connection.rollback(function () {
-                                    connection.release();
-                                    res.send('completed').end();
+                                connection.query('UPDATE users SET firstname = ?', [name/*, '9999015838'*/], function (err, data) {
+                                    if(err){
+                                        connection.rollback(function () {
+                                            connection.release();
+                                            console.error(err);
+                                        });
+                                    }
+                                    else{
+                                        connection.commit(function (err) {
+                                            if(err){
+                                                connection.rollback(function () {
+                                                    connection.release();
+                                                    console.error(err);
+                                                });
+                                            }
+                                            else {
+                                                console.log("Sending response for " + name);
+                                                response.send(data).end();
+                                            }
+                                        });
+                                    }
                                 });
                             }, time);
                         }
-                    })
+                    });
                 }
-            })
+            });
 
         });
 

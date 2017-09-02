@@ -1,6 +1,7 @@
 /**
  * Created by avnee on 25-06-2017.
  */
+'use-strict';
 
 var express = require('express');
 var router = express.Router();
@@ -8,7 +9,6 @@ var router = express.Router();
 var moment = require('moment');
 
 var config = require('../../../Config');
-var connection = config.createConnection;
 var _auth = require('../../../auth-token-management/AuthTokenManager');
 var consts = require('../../utils/Constants');
 
@@ -23,17 +23,21 @@ router.post('/graph', function (request, response) {
     var cmid = request.body.cmid;
     var days = request.body.days;
 
+    var connection;
+
     _auth.clientAuthValid(clientid, authkey)
         .then(function () {
-            return getShareGraph(cmid, days);
+            return config.getNewConnection();
         }, function () {
-
             response.send({
                 tokenstatus: 'invalid'
             });
             response.end();
             throw new BreakPromiseChainError();
-
+        })
+        .then(function (conn) {
+            connection = conn;
+            return getShareGraph(connection, cmid, days);
         })
         .then(function (data) {
             response.send({
@@ -44,6 +48,7 @@ router.post('/graph', function (request, response) {
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
+            config.disconnect(connection);
             if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
@@ -61,7 +66,7 @@ router.post('/graph', function (request, response) {
 /**
  * Function to get data for the no of shares for a given 'Campaign'
  * */
-function getShareGraph(cmid, days) {
+function getShareGraph(connection, cmid, days) {
 
     return new Promise(function (resolve, reject) {
 
@@ -137,17 +142,22 @@ router.post('/real-time-shares', function (request, response) {
     var clientid = request.body.clientid;
     var authkey = request.body.authkey;
     var cmid = request.body.cmid;
-    var limit = request.body.limit;
+    var connection;
+    //var limit = request.body.limit;
 
     _auth.clientAuthValid(clientid, authkey)
         .then(function () {
-            return getIndividualShares(cmid, limit);
+            return config.getNewConnection();
         }, function () {
             response.send({
                 tokenstatus: 'invalid'
             });
             response.end();
             throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return getIndividualShares(connection, cmid);
         })
         .then(function (data) {
             response.send({
@@ -158,6 +168,7 @@ router.post('/real-time-shares', function (request, response) {
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
+            config.disconnect(connection);
             if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
@@ -175,7 +186,7 @@ router.post('/real-time-shares', function (request, response) {
 /**
  * Function to return all the specific shares for a given 'Campaign'
  * */
-function getIndividualShares(cmid, limit) {
+function getIndividualShares(connection, cmid) {
 
     return new Promise(function (resolve, reject) {
 
@@ -188,7 +199,7 @@ function getIndividualShares(cmid, limit) {
             'WHERE Share.cmid = ? ' +
             'AND Share.checkstatus = ? ' +
             'AND Checks.responses = ? ' +
-            'ORDER BY Share.regdate DESC LIMIT ?', [cmid, 'COMPLETE', 'verified', limit], function (err, rows) {
+            'ORDER BY Share.regdate DESC', [cmid, 'COMPLETE', 'verified'], function (err, rows) {
 
             if (err) {
                 reject(err);

@@ -196,7 +196,8 @@ function checkForAuthKey(userdata){
 
                     resolve({
                         authkey: authkey,
-                        clientid: userdata.clientid
+                        clientid: userdata.clientid,
+                        name: userdata.name
                     });
                 }
 
