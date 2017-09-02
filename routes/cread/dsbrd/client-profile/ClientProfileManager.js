@@ -175,11 +175,11 @@ function checkForAuthKey(userdata){
         if(userdata.authkey){
             resolve({
                 authkey: userdata.authkey,
-                clientid: userdata.clientid
+                clientid: userdata.clientid,
+                name: userdata.name
             });
         }
         else{
-
             var payload = {
                 id: userdata.clientid
             };
