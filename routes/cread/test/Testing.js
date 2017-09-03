@@ -278,18 +278,12 @@ router.post('/sql-trans-deadlock', function (request, response) {
     config.getNewConnection()
         .then(function (connection) {
 
-            connection.beginTransaction(function (err) {
-                if (err) {
-                    connection.rollback(function () {
-                        connection.release();
-                        console.error(err);
-                    });
+            connection.query('SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED', null, function (err, data) {
+                if(err){
+                    throw err;
                 }
-                else {
-                    connection.query('SELECT * FROM users ORDER BY RAND()', [/*'9999015838'*/], function (err, data) {
-
-                        console.log('SELECT FOR UPDATE query executed ' + name);
-
+                else{
+                    connection.beginTransaction(function (err) {
                         if (err) {
                             connection.rollback(function () {
                                 connection.release();
@@ -297,30 +291,46 @@ router.post('/sql-trans-deadlock', function (request, response) {
                             });
                         }
                         else {
-                            setTimeout(function () {
-                                connection.query('UPDATE users SET firstname = ?', [name/*, '9999015838'*/], function (err, data) {
-                                    if(err){
-                                        connection.rollback(function () {
-                                            connection.release();
-                                            console.error(err);
-                                        });
-                                    }
-                                    else{
-                                        connection.commit(function (err) {
+                            connection.query('SELECT * FROM users ORDER BY RAND() FOR UPDATE', [/*'9999015838'*/], function (err, data) {
+
+                                console.log('SELECT FOR UPDATE query executed ' + name);
+
+                                if (err) {
+                                    connection.rollback(function () {
+                                        connection.release();
+                                        console.error(err);
+                                    });
+                                }
+                                else {
+                                    setTimeout(function () {
+                                        connection.query('UPDATE users SET firstname = ?', [name/*, '9999015838'*/], function (err, data) {
+
+                                            console.log('UPDATE query executed ' + name);
+
                                             if(err){
                                                 connection.rollback(function () {
                                                     connection.release();
                                                     console.error(err);
                                                 });
                                             }
-                                            else {
-                                                console.log("Sending response for " + name);
-                                                response.send(data).end();
+                                            else{
+                                                connection.commit(function (err) {
+                                                    if(err){
+                                                        connection.rollback(function () {
+                                                            connection.release();
+                                                            console.error(err);
+                                                        });
+                                                    }
+                                                    else {
+                                                        console.log("Sending response for " + name);
+                                                        response.send(data).end();
+                                                    }
+                                                });
                                             }
                                         });
-                                    }
-                                });
-                            }, time);
+                                    }, time);
+                                }
+                            });
                         }
                     });
                 }

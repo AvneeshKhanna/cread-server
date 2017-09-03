@@ -7,7 +7,7 @@ var config_type = envconfig.get("type");
 
 const sharerate = 10;
 const checkrate_verified = 2.5;
-const checkrate_not_verified = 1;
+const checkrate_not_verified = 0;
 
 const markup = 33; //in percentage TODO: Update markup
 const minCashInAmt = 30;    //TODO: Can change the amount based on team discussion
