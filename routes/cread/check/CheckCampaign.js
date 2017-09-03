@@ -125,7 +125,6 @@ function getDataForCheck(uuid, connection) {
         // in the same session
         connection.beginTransaction(function (err) {
             if (err) {
-                console.error(err);
                 connection.rollback(function () {
                     reject(err);
                 });
@@ -135,6 +134,20 @@ function getDataForCheck(uuid, connection) {
                     if(err){
                         connection.rollback(function () {
                             reject(err);
+                        });
+                    }
+                    else if(userdata[0].accountstatus === "DISABLED"){
+                        connection.commit(function (err) {
+                            if(err){
+                                connection.rollback(function () {
+                                    reject(err);
+                                });
+                            }
+                            else{
+                                resolve({
+                                    accountstatus: (userdata[0].accountstatus === "DISABLED") //true for account-suspension, false otherwise
+                                });
+                            }
                         });
                     }
                     else{
@@ -162,7 +175,6 @@ function getDataForCheck(uuid, connection) {
                             console.log('SELECT...FOR UPDATE query response ' + JSON.stringify(rows, null, 3));
 
                             if (err) {
-                                console.error(err);
                                 connection.rollback(function () {
                                     reject(err);
                                 });
@@ -172,7 +184,6 @@ function getDataForCheck(uuid, connection) {
                                 connection.commit(function (err) {
                                     if (err) {
                                         connection.rollback(function () {
-                                            console.error(err);
                                             reject(err);
                                         });
                                     }
@@ -182,9 +193,7 @@ function getDataForCheck(uuid, connection) {
                                             accountstatus: (userdata[0].accountstatus === "DISABLED") //true for account-suspension, false otherwise
                                         });
                                     }
-
                                 });
-
                             }
                             else {
                                 //Update the 'locked' and 'locked_at' columns for the 'shareid' retrieved in the previous query
@@ -194,7 +203,6 @@ function getDataForCheck(uuid, connection) {
 
                                     if (err) {
                                         connection.rollback(function () {
-                                            console.error(err);
                                             reject(err);
                                         });
                                     }
@@ -203,7 +211,6 @@ function getDataForCheck(uuid, connection) {
                                         connection.commit(function (err) {
                                             if (err) {
                                                 connection.rollback(function () {
-                                                    console.error(err);
                                                     reject(err);
                                                 });
                                             }
