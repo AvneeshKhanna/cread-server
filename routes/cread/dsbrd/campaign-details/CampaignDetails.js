@@ -73,7 +73,8 @@ function getShareGraph(connection, cmid, days) {
         connection.query('SELECT shareid, regdate ' +
             'FROM Share ' +
             'WHERE cmid = ? ' +
-            'ORDER BY regdate DESC', [cmid], function (err, rows) {
+            'AND checkstatus = ? ' +
+            'ORDER BY regdate DESC', [cmid, 'COMPLETE'], function (err, rows) {
 
             if (err) {
                 reject(err);
