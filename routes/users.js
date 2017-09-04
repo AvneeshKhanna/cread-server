@@ -105,7 +105,7 @@ router.post('/sign-in', function (request, response, next) {
 
     console.log(JSON.stringify(request.body, null, 3));
 
-    _connection.query('SELECT Auth_key, UUID, firstname, lastname, password ' +
+    _connection.query('SELECT Auth_key, UUID, clientid, firstname, lastname, password ' +
         'FROM users ' +
         'WHERE phoneNo = ?', [phoneNo], function (err, result) {
 
@@ -142,6 +142,7 @@ router.post('/sign-in', function (request, response, next) {
                 data: {
                     uuid: result[0].UUID,
                     authtoken: result[0].Auth_key,
+                    clientid: (result[0].clientid) ? clientid : null,
                     name: result[0].firstname + " " + result[0].lastname
                 }
             };
