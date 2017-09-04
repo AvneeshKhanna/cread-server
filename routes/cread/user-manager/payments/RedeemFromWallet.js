@@ -268,8 +268,12 @@ function transactToPaytm(uuid, amount, userpaytmcontact, checksumhash) {
                         connection.query('UPDATE Share ' +
                             'JOIN Checks ' +
                             'ON Share.shareid = Checks.shareid ' +
+                            'JOIN Campaign ' +
+                            'ON Share.cmid = Campaign.cmid ' +
                             'SET Share.cashed_in = ?, Share.transid = ? ' +
-                            'WHERE Checks.responses = ? AND Share.UUID = ?', [1, usrtransparams.transid, 'verified', uuid], function (err, row) {
+                            'WHERE Checks.responses = ? ' +
+                            'AND Share.UUID = ? ' +
+                            'AND Campaign.main_feed = ?', [1, usrtransparams.transid, 'verified', uuid, true], function (err, row) {
 
                             if (err) {
                                 connection.rollback(function () {

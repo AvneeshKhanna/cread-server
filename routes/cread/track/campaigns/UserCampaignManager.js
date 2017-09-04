@@ -104,6 +104,64 @@ function loadCampaigns(connection, clientid) {
     });
 }
 
+router.post('/load/specific', function (request, response) {
+
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var cmid = request.body.cmid;
+
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return loadSpecificCampaign(connection, cmid);
+        })
+        .then(function (row) {
+            response.send({
+                tokenstatus: 'valid',
+                data: row
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
+
+function loadSpecificCampaign(connection, cmid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT * FROM Campaign WHERE cmid = ?', [cmid], function (err, row) {
+            if(err){
+                reject(err);
+            }
+            else{
+                resolve(row);
+            }
+        });
+    });
+}
+
 router.post('/deactivate', function (request, response) {
 
     var uuid = request.body.uuid;

@@ -43,7 +43,8 @@ router.post('/', function (request, response) {
                 'FROM Share ' +
                 'INNER JOIN Campaign ' +
                 'ON Share.cmid = Campaign.cmid ' +
-                'WHERE Share.UUID = ?', [uuid], function (err, data) {
+                'WHERE Share.UUID = ? ' +
+                'AND Campaign.main_feed = ?', [uuid, true], function (err, data) {
 
                 if (err) {
                     console.error(err);
@@ -58,7 +59,8 @@ router.post('/', function (request, response) {
                     'FROM Checks ' +
                     'INNER JOIN Campaign ' +
                     'ON Checks.cmid = Campaign.cmid ' +
-                    'WHERE Checks.UUID = ?', [uuid], function (err, rows) {
+                    'WHERE Checks.UUID = ? ' +
+                    'AND Campaign.main_feed = ?', [uuid, true], function (err, rows) {
 
                     if (err) {
                         console.error(err);

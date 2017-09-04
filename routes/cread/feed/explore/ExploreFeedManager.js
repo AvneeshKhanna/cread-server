@@ -13,7 +13,7 @@ var _auth = require('../../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 var consts = require('../../utils/Constants');
 
-router.post('/load/', function (request, response) {
+router.post('/load', function (request, response) {
 
     var authkey = request.body.authkey;
     var uuid = request.body.uuid;

@@ -123,11 +123,12 @@ function getDataForCheck(uuid) {
                     'JOIN Campaign ' +
                     'ON Campaign.cmid = Share.cmid ' +
                     'WHERE Share.checkstatus = "PENDING" ' +
+                    'AND Campaign.main_feed + ? ' +
                     'AND Share.UUID <> ? ' +
                     'AND Share.locked = ? ' + //TODO: Uncomment
                     'ORDER BY RAND() ' +    //To randomise
                     'LIMIT 1 ' +
-                    'FOR UPDATE', [uuid, /*null*/false], function (err, rows) {   //TODO: Uncomment
+                    'FOR UPDATE', [true, uuid, /*null*/false], function (err, rows) {   //TODO: Uncomment
 
                     console.log('SELECT...FOR UPDATE query executed');
 
