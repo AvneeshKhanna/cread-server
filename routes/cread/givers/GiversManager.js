@@ -100,7 +100,7 @@ function getGiversData() {
             'ON Share.cmid = Campaign.cmid ' +
             'WHERE Share.donation = ? ' +
             'AND Share.checkstatus = ? ' +
-            'AND Campaign.main_feed = ?' +
+            'AND Campaign.main_feed = ? ' +
             'GROUP BY users.UUID', [true, 'COMPLETE', true], function (err, rows) {
 
             if (err) {

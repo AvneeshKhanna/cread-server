@@ -142,7 +142,7 @@ router.post('/sign-in', function (request, response, next) {
                 data: {
                     uuid: result[0].UUID,
                     authtoken: result[0].Auth_key,
-                    clientid: (result[0].clientid) ? clientid : null,
+                    clientid: (result[0].clientid) ? result[0].clientid : null,
                     name: result[0].firstname + " " + result[0].lastname
                 }
             };

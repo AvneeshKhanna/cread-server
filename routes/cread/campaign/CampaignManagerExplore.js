@@ -11,6 +11,8 @@
 var express = require('express');
 var router = express.Router();
 
+var uuidGenerator = require('uuid');
+
 var config = require('../../Config');
 var AWS = config.AWS;
 
@@ -19,6 +21,8 @@ var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var campaign_utils = require('./CampaignUtils');
 
 router.post('/add', function (request, response) {
+
+    console.log("request is " + JSON.stringify(request.body, null, 3));
 
     var uuid = request.body.uuid;
     var title = request.body.title;
@@ -34,8 +38,6 @@ router.post('/add', function (request, response) {
     var mission = request.body.mission;
 
     var connection;
-
-    console.log("request is " + JSON.stringify(request.body, null, 3));
 
     var sqlparams = {
         cmid: cmid,
@@ -65,6 +67,16 @@ router.post('/add', function (request, response) {
             connection = conn;
             return campaign_utils.addCampaign(sqlparams, connection);
         })
+        .then(function () {
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    status: 'done'
+                }
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
         .catch(function (err) {
             config.disconnect(connection);
             if(err instanceof BreakPromiseChainError){
@@ -91,13 +103,17 @@ router.post('/edit', function (request, response) {
     var cmid = request.body.cmid;
 
     var connection;
+    var sqlparams = {};
 
-    var sqlparams = {
-        description: description,
-        //budget: budget,
-        imagepath: imagepath,
-        mission: mission
-    };
+    if(description){
+        sqlparams.description = description;
+    }
+    if(imagepath){
+        sqlparams.imagepath = imagepath;
+    }
+    if(mission){
+        sqlparams.mission = mission;
+    }
 
     _auth.authValid(uuid, authkey)
         .then(function () {
@@ -112,6 +128,16 @@ router.post('/edit', function (request, response) {
         .then(function (conn) {
             connection = conn;
             return campaign_utils.updateCampaign(cmid, sqlparams, connection);
+        })
+        .then(function () {
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    status: 'done'
+                }
+            });
+            response.end();
+            throw new BreakPromiseChainError();
         })
         .catch(function (err) {
             config.disconnect(connection);

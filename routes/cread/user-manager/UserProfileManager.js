@@ -258,6 +258,9 @@ function updateFbUsername(uuid, fbusername) {
  * Checks if a user is registered as a client. If not, creates the user's Client Table records
  * */
 router.post('/check-for-client', function (request, response) {
+
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var bio = request.body.bio;
@@ -333,10 +336,13 @@ function checkUserRegisteredAsClient(uuid, connection) {
         connection.query('SELECT clientid ' +
             'FROM users ' +
             'WHERE uuid = ?', [uuid], function (err, row) {
+
+            console.log("query result " + JSON.stringify(row, null, 3));
+
             if (err) {
                 reject(err);
             }
-            else if (!row[0]) {
+            else if (!row[0].clientid) {
                 resolve({
                     isClient: false
                 });
@@ -376,8 +382,7 @@ function registerUserAsClient(uuid, userdetails, connection){
                         });
                     }
                     else{
-                        var clientid = uuidGenerator.v4();
-                        connection.query('UPDATE users SET clientid = ? WHERE uuid = ?', [clientid, uuid], function (err, row) {
+                        connection.query('UPDATE users SET clientid = ? WHERE uuid = ?', [params.clientid, uuid], function (err, row) {
                             if(err){
                                 connection.rollback(function () {
                                     reject(err);
@@ -391,7 +396,7 @@ function registerUserAsClient(uuid, userdetails, connection){
                                         });
                                     }
                                     else{
-                                        resolve(clientid);
+                                        resolve(params.clientid);
                                     }
                                 });
                             }

@@ -13,8 +13,9 @@ var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 router.post('/load-all', function (request, response) {
 
     var uuid = request.body.uuid;
-    var clientid = request.body.clientid;
     var authkey = request.body.authkey;
+    
+    console.log("request is " + JSON.stringify(request.body, null, 3));
 
     var connection;
 
@@ -30,7 +31,7 @@ router.post('/load-all', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return loadCampaigns(connection, clientid);
+            return loadCampaigns(connection, uuid);
         })
         .then(function (result) {
             response.send({
@@ -55,56 +56,77 @@ router.post('/load-all', function (request, response) {
 
 });
 
-function loadCampaigns(connection, clientid) {
+function loadCampaigns(connection, uuid) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT Client.name, Client.bio, Campaign.title, Campaign.cmid, Campaign.description, ' +
-            'Campaign.mission, Campaign.regdate, Campaign.contentbaseurl, Campaign.imagepath, ' +
-            'SUM(!ISNULL(Share.shareid)) AS sharescount ' +
-            'FROM Client ' +
-            'LEFT JOIN Campaign ' +
-            'ON Client.clientid = Campaign.clientid ' +
-            'LEFT JOIN Share ' +
-            'ON Campaign.cmid = Share.cmid ' +
-            'WHERE Campaign.clientid = ? ' +
-            'AND Campaign.cmpstatus = ? ' +
-            'AND Campaign.main_feed = ? ' +
-            'GROUP BY Campaign.cmid', [clientid, "ACTIVE", false], function (err, rows) {
 
-            if(err) {
+        connection.query('SELECT users.clientid, Client.bio ' +
+            'FROM users ' +
+            'JOIN Client ' +
+            'ON users.clientid = Client.clientid ' +
+            'WHERE users.uuid = ?', [uuid], function (err, row) {
+
+            if(err){
                 reject(err);
             }
-            else {
+            else{
 
-                if(rows[0]){
-                    var biostatus = !!rows[0].bio;
+                var biostatus = !!row[0].bio;
 
-                    rows = rows.map(function (element) {
+                connection.query('SELECT Campaign.title, Campaign.cmid, Campaign.description, ' +
+                    'Campaign.mission, Campaign.regdate, Campaign.contentbaseurl, Campaign.imagepath, ' +
+                    'SUM(!ISNULL(Share.shareid)) AS sharescount ' +
+                    'FROM Campaign ' +
+                    'LEFT JOIN Share ' +
+                    'ON Campaign.cmid = Share.cmid ' +
+                    'WHERE Campaign.clientid = ? ' +
+                    'AND Campaign.cmpstatus = ? ' +
+                    'AND Campaign.main_feed = ? ' +
+                    'GROUP BY Campaign.cmid', [row[0].clientid, "ACTIVE", false], function (err, rows) {
 
-                        if(element.hasOwnProperty("bio")){
-                            delete element.bio;
+                    if(err) {
+                        reject(err);
+                    }
+                    else {
+                        console.log("query result " + JSON.stringify(rows, null, 3));
+
+                        resolve({
+                            campaigns: rows,
+                            biostatus: biostatus
+                        });
+
+                        /*if(rows[0]){    //Case where clientid exists
+                            var biostatus = !!rows[0].bio;
+
+                            rows = rows.map(function (element) {
+
+                                if(element.hasOwnProperty("bio")){
+                                    delete element.bio;
+                                }
+
+                                return element;
+                            });
+
+                            resolve({
+                                campaigns: rows,
+                                biostatus: biostatus
+                            });
                         }
+                        else{   //Case where user hasn't registered as a client
+                            resolve({
+                                campaigns: [],
+                                biostatus: false
+                            });
+                        }*/
+                    }
 
-                        return element;
-                    });
-
-                    resolve({
-                        campaigns: rows,
-                        biostatus: biostatus
-                    });
-                }
-                else{   //Case of no campaigns
-                    resolve({
-                        campaigns: [],
-                        biostatus: false
-                    });
-                }
+                });
             }
 
         });
     });
 }
 
-router.post('/load/specific', function (request, response) {
+router.post('/load-specific', function (request, response) {
 
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
@@ -156,7 +178,7 @@ function loadSpecificCampaign(connection, cmid) {
                 reject(err);
             }
             else{
-                resolve(row);
+                resolve(row[0]);
             }
         });
     });
@@ -165,7 +187,6 @@ function loadSpecificCampaign(connection, cmid) {
 router.post('/deactivate', function (request, response) {
 
     var uuid = request.body.uuid;
-    var clientid = request.body.clientid;
     var authkey = request.body.authkey;
     var cmid = request.body.cmid;
 
@@ -215,11 +236,9 @@ router.post('/deactivate', function (request, response) {
  * */
 function deactivateCampaign(connection, cmid) {
 
-    var deactvtntime = new Date().toISOString();
-
-    return new Promise(function (resolve, reject) {
-        connection.query('UPDATE Campaign SET cmpstatus = ?, deactvtntime = ? ' +
-            'WHERE cmid = ?', ['DEACTIVE', deactvtntime, cmid], function (err, row) {
+   return new Promise(function (resolve, reject) {
+        connection.query('UPDATE Campaign SET cmpstatus = ?, deactvtntime = NOW() ' +
+            'WHERE cmid = ?', ['DEACTIVE', cmid], function (err, row) {
 
             if (err) {
                 reject(err);

@@ -17,7 +17,6 @@ router.post('/load', function (request, response) {
 
     var authkey = request.body.authkey;
     var uuid = request.body.uuid;
-    var clientid = request.body.clientid;
 
     var connection;
 
@@ -37,7 +36,7 @@ router.post('/load', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return loadExploreFeed(connection, clientid);
+            return loadExploreFeed(connection, uuid);
         })
         .then(function (data) {
             response.send({
@@ -61,7 +60,7 @@ router.post('/load', function (request, response) {
         });
 });
 
-function loadExploreFeed(connection, clientid) {
+function loadExploreFeed(connection, uuid) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT Campaign.cmid, Campaign.title, Campaign.description, Campaign.mission, Campaign.type, Campaign.contentbaseurl, ' +
             'Campaign.imagepath, Campaign.regdate, SUM(!ISNULL(Share.shareid)) AS sharescount, ' +
@@ -78,44 +77,47 @@ function loadExploreFeed(connection, clientid) {
             if (err) {
                 reject(err);
             }
+            else {
+                //Sorting according to last created
+                rows.sort(function (a, b) {
+                    if (a.regdate < b.regdate) {
+                        return 1;
+                    }
+                    else {
+                        return -1;
+                    }
+                });
 
-            //Sorting according last created
-            rows.sort(function (a, b) {
-                if (a.regdate < b.regdate) {
-                    return 1;
-                }
-                else {
-                    return -1;
-                }
-            });
+                rows.map(function (element) {
+                    element.sharerate = consts.sharerate;     //TODO: Make sharerate dynamic
+                });
 
-            rows.map(function (element) {
-                element.sharerate = consts.sharerate;     //TODO: Make sharerate dynamic
-            });
-
-            if (clientid) {
-
-                connection.query('SELECT bio ' +
+                connection.query('SELECT Client.bio ' +
                     'FROM Client ' +
-                    'WHERE clientid = ? ', [clientid], function (err, row) {
+                    'JOIN users ' +
+                    'ON users.clientid = Client.clientid ' +
+                    'WHERE users.uuid = ? ', [uuid], function (err, row) {
+
                     if (err) {
                         reject(err);
                     }
                     else {
                         console.log("rows after querying is " + JSON.stringify(rows, null, 3));
 
-                        resolve({
-                            explorefeed: rows,
-                            biostatus: row[0].bio != null
-                        });
-                    }
-                });
+                        if(row[0]){
+                            resolve({
+                                explorefeed: rows,
+                                biostatus: !!row[0].bio
+                            });
+                        }
+                        else{
+                            resolve({
+                                explorefeed: rows,
+                                biostatus: false
+                            });
+                        }
 
-            }
-            else {
-                resolve({
-                    explorefeed: rows,
-                    biostatus: false
+                    }
                 });
             }
 
