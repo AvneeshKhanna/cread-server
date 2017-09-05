@@ -9,6 +9,8 @@ var router = express.Router();
 var config = require('../../../Config');
 var AWS = config.AWS;
 
+var envconfig = require('config');
+
 var _auth = require('../../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 var consts = require('../../utils/Constants');
@@ -62,12 +64,14 @@ router.post('/load', function (request, response) {
 
 function loadExploreFeed(connection, uuid) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT Campaign.cmid, Campaign.title, Campaign.description, Campaign.mission, Campaign.type, Campaign.contentbaseurl, ' +
+        connection.query('SELECT users.uuid, Campaign.cmid, Campaign.title, Campaign.description, Campaign.mission, Campaign.type, Campaign.contentbaseurl, ' +
             'Campaign.imagepath, Campaign.regdate, SUM(!ISNULL(Share.shareid)) AS sharescount, ' +
             'Client.name AS clientname, Client.bio AS clientbio ' +
             'FROM Campaign ' +
             'JOIN Client ' +
             'ON Campaign.clientid = Client.clientid ' +
+            'JOIN users ' +
+            'ON users.clientid = Client.clientid ' +
             'LEFT JOIN Share ' +
             'ON Campaign.cmid = Share.cmid ' +
             'WHERE Campaign.cmpstatus = ? ' +
@@ -90,6 +94,11 @@ function loadExploreFeed(connection, uuid) {
 
                 rows.map(function (element) {
                     element.sharerate = consts.sharerate;     //TODO: Make sharerate dynamic
+                    element.clientprofilepath = "https://s3-ap-northeast-1.amazonaws.com/" +
+                        envconfig.get("s3").get("bucket") +
+                        "/Users/" +
+                        element.uuid +
+                        "/Profile/display-pic.jpg";
                 });
 
                 connection.query('SELECT Client.bio ' +
