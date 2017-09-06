@@ -280,10 +280,14 @@ function transactToPaytm(uuid, amount, userpaytmcontact, orderId, checksumhash) 
 
                         //Updating Share table
                         connection.query('UPDATE Share ' +
-                            'SET cashed_in = 1, transid = ? ' +
-                            'WHERE UUID = ? ' +
-                            'AND checkstatus = ?' +
-                            'AND cashed_in = 0', [usrtransparams.transid, uuid, 'COMPLETE'], function (err, row) {
+                            'JOIN Checks ' +
+                            'ON Share.shareid = Checks.shareid ' +
+                            'JOIN Campaign ' +
+                            'ON Share.cmid = Campaign.cmid ' +
+                            'SET Share.cashed_in = ?, Share.transid = ? ' +
+                            'WHERE Checks.responses = ? ' +
+                            'AND Share.UUID = ? ' +
+                            'AND Campaign.main_feed = ?', [1, usrtransparams.transid, 'verified', uuid, true], function (err, row) {
 
                             if (err) {
                                 connection.rollback(function () {

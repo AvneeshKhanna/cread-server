@@ -61,6 +61,7 @@ router.post('/load-data', function (request, response) {
         });
 });
 
+//TODO: Incomplete
 function getWalletScreenData(clientid) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT Campaign.title, Client.walletbalance, WalletTransaction.transid, WalletTransaction.amount, WalletTransaction.type, WalletTransaction.regdate AS transactiondate ' +

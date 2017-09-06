@@ -12,6 +12,7 @@ var router = express.Router();
 var config = require('../../../Config');
 var connection = config.createConnection;
 var _auth = require('../../../auth-token-management/AuthTokenManager');
+var campaign_utils = require('../../campaign/CampaignUtils');
 
 var AWS = config.AWS;
 var uuidGenerator = require('uuid');
@@ -153,7 +154,7 @@ router.post('/add', function (request, response) {
 
     _auth.clientAuthValid(clientid, authkey)
         .then(function () {
-            return addCampaign(sqlparams);
+            return campaign_utils.addCampaign(sqlparams);
         }, function () {
             response.send({
                 tokenstatus: 'invalid'
@@ -184,7 +185,7 @@ router.post('/add', function (request, response) {
 
 });
 
-function addCampaign(params) {
+/*function addCampaign(params) {
     return new Promise(function (resolve, reject) {
         connection.query('INSERT INTO Campaign SET ?', params, function (err, result) {
             if (err) {
@@ -195,7 +196,7 @@ function addCampaign(params) {
             }
         });
     })
-}
+}*/
 
 router.post('/specific', function (request, response) {
 
@@ -274,7 +275,7 @@ router.post('/edit', function (request, response) {
 
     _auth.clientAuthValid(clientid, authkey)
         .then(function () {
-            return updateCampaign(cmid, sqlparams);
+            return campaign_utils.updateCampaign(cmid, sqlparams);
         }, function () {
             response.send({
                 tokenstatus: 'invalid'
@@ -304,7 +305,7 @@ router.post('/edit', function (request, response) {
         });
 });
 
-function updateCampaign(cmid, params){
+/*function updateCampaign(cmid, params){
     return new Promise(function (resolve, reject) {
         connection.query('UPDATE Campaign SET ? WHERE cmid = ?', [params, cmid], function (err, result) {
             if (err) {
@@ -315,7 +316,7 @@ function updateCampaign(cmid, params){
             }
         });
     });
-}
+}*/
 
 router.post('/deactivate', function (request, response) {
 

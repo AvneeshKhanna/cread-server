@@ -5,13 +5,13 @@
 var express = require('express');
 var router = express.Router();
 
-var config = require('../../Config');
+var config = require('../../../Config');
 var connection = config.createConnection;
 var AWS = config.AWS;
 
-var _auth = require('../../auth-token-management/AuthTokenManager');
-var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
-var consts = require('../utils/Constants');
+var _auth = require('../../../auth-token-management/AuthTokenManager');
+var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
+var consts = require('../../utils/Constants');
 
 router.post('/load/', function (request, response) {
 
@@ -44,8 +44,10 @@ router.post('/load/', function (request, response) {
                 'ON Campaign.clientid = Client.clientid ' +
                 'LEFT JOIN Share ' +
                 'ON Campaign.cmid = Share.cmid ' +
-                'WHERE Campaign.cmpstatus = ? AND Campaign.budget > 0 ' +
-                'GROUP BY Campaign.regdate', ['ACTIVE'], function (err, rows) {
+                'WHERE Campaign.cmpstatus = ? ' +
+                'AND Campaign.budget > 0 ' +
+                'AND Campaign.main_feed = ? ' +
+                'GROUP BY Campaign.regdate', ['ACTIVE', true], function (err, rows) {
 
                 if (err) {
                     console.error(err);

@@ -78,10 +78,10 @@ router.post('/load', function (request, response) {
 
         })
         .catch(function (err) {
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
@@ -96,9 +96,12 @@ function getGiversData() {
             'FROM users ' +
             'LEFT JOIN Share ' +
             'ON users.UUID = Share.UUID ' +
+            'LEFT JOIN Campaign ' +
+            'ON Share.cmid = Campaign.cmid ' +
             'WHERE Share.donation = ? ' +
             'AND Share.checkstatus = ? ' +
-            'GROUP BY users.UUID', [true, 'COMPLETE'], function (err, rows) {
+            'AND Campaign.main_feed = ? ' +
+            'GROUP BY users.UUID', [true, 'COMPLETE', true], function (err, rows) {
 
             if (err) {
                 reject(err);

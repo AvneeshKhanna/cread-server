@@ -60,8 +60,9 @@ function getLatestUpdates(clientid, limit) {
             'INNER JOIN Campaign ' +
             'ON Share.cmid = Campaign.cmid ' +
             'WHERE Campaign.clientid = ? ' +
+            'AND Campaign.main_feed = ? ' +
             'ORDER BY Share.regdate DESC ' +
-            'LIMIT ?', [clientid, limit], function (err, rows) {
+            'LIMIT ?', [clientid, limit, true], function (err, rows) {
 
             if (err) {
                 reject(err);

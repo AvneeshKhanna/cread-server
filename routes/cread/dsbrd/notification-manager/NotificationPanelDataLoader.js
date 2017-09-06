@@ -41,7 +41,7 @@ router.post('/load', function (request, response) {
 
 function loadCampaignNames() {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT title, cmid, regdate FROM Campaign WHERE cmpstatus = ?', ['ACTIVE'], function (err, rows) {
+        connection.query('SELECT title, cmid, regdate FROM Campaign WHERE cmpstatus = ? AND main_feed = ?', ['ACTIVE', true], function (err, rows) {
             if(err){
                 reject(err);
             }

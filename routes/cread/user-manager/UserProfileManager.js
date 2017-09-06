@@ -15,11 +15,13 @@ var AWS = config.AWS;
 
 var envconfig = require('config');
 var userstbl_ddb = envconfig.get('dynamoDB.users_table');
+var uuidGenerator = require('uuid');
 
 var docClient = new AWS.DynamoDB.DocumentClient();
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
+var clientprofile_utils = require('../dsbrd/client-profile/ClientProfileUtils');
 
 router.post('/request/', function (request, response) {
 
@@ -53,10 +55,10 @@ router.post('/request/', function (request, response) {
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
@@ -290,5 +292,199 @@ function updateFbUsername(uuid, fbusername) {
         })
     })
 }
+
+/**
+ * Checks if a user is registered as a client. If not, creates the user's Client Table records
+ * */
+router.post('/check-for-client', function (request, response) {
+
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var bio = request.body.bio;
+    var contact = request.body.contact;
+    var name = request.body.name;
+
+    var userdetails = {
+        bio: bio,
+        name: name,
+        contact: contact
+    };
+
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return checkUserRegisteredAsClient(uuid, connection);
+        })
+        .then(function (result) {
+            if (result.isClient) {
+                response.send({
+                    tokenstatus: 'valid',
+                    data: {
+                        status: 'done',
+                        clientid: result.clientid
+                    }
+                });
+                response.end();
+                throw new BreakPromiseChainError();
+            }
+            else{
+                return registerUserAsClient(uuid, userdetails, connection);
+            }
+        })
+        .then(function (clientid) {
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    clientid: clientid,
+                    status: 'done'
+                }
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
+
+function checkUserRegisteredAsClient(uuid, connection) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT clientid ' +
+            'FROM users ' +
+            'WHERE uuid = ?', [uuid], function (err, row) {
+
+            console.log("query result " + JSON.stringify(row, null, 3));
+
+            if (err) {
+                reject(err);
+            }
+            else if (!row[0].clientid) {
+                resolve({
+                    isClient: false
+                });
+            }
+            else {
+                resolve({
+                    isClient: true,
+                    clientid: row[0].clientid
+                });
+            }
+        });
+    })
+}
+
+function registerUserAsClient(uuid, userdetails, connection){
+    return new Promise(function (resolve, reject) {
+        connection.beginTransaction(function (err) {
+            if(err){
+                connection.rollback(function () {
+                    reject(err);
+                });
+            }
+            else{
+
+                var params = {
+                    clientid: uuidGenerator.v4(),
+                    bio: userdetails.bio,
+                    is_user: true,
+                    contact: userdetails.contact,
+                    name: userdetails.name
+                };
+
+                connection.query('INSERT INTO Client SET ?', [params], function (err, row) {
+                    if(err){
+                        connection.rollback(function () {
+                            reject(err);
+                        });
+                    }
+                    else{
+                        connection.query('UPDATE users SET clientid = ? WHERE uuid = ?', [params.clientid, uuid], function (err, row) {
+                            if(err){
+                                connection.rollback(function () {
+                                    reject(err);
+                                });
+                            }
+                            else{
+                                connection.commit(function (err) {
+                                    if(err){
+                                        connection.rollback(function () {
+                                            reject(err);
+                                        });
+                                    }
+                                    else{
+                                        resolve(params.clientid);
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    });
+}
+
+/*router.post('/update-client-bio', function (request, response) {
+
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var clientid = request.body.clientid;
+    var bio = request.body.bio;
+
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+
+            var sqlparams = {
+                bio: bio
+            };
+
+            return clientprofile_utils.updateClientProfile(clientid, sqlparams, connection);
+        })
+        .then(function () {
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    status: 'done'
+                }
+            })
+        })
+        .catch()
+
+})*/
 
 module.exports = router;
