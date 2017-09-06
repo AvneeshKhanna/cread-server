@@ -301,10 +301,14 @@ function checkUserLastShare(cmid, uuid) {
         console.log("lowerlimittime_24 is " + JSON.stringify(lowerlimittime_24, null, 3));
         console.log("lowerlimittime_30 is " + JSON.stringify(lowerlimittime_30, null, 3));
 
-        connection.query('SELECT cmid, shareid, regdate ' +
+        connection.query('SELECT Share.cmid, Share.shareid, Share.regdate ' +
             'FROM Share ' +
-            'WHERE UUID = ? AND regdate > ? ' +
-            'ORDER BY regdate DESC', [/*cmid, */uuid, lowerlimittime_24], function (err, rows) {
+            'JOIN Campaign ' +
+            'ON Share.cmid = Campaign.cmid ' +
+            'WHERE Share.UUID = ? ' +
+            'AND Share.regdate > ? ' +
+            'AND Campaign.main_feed = ? ' +
+            'ORDER BY Share.regdate DESC', [/*cmid, */uuid, lowerlimittime_24, true], function (err, rows) {
 
             console.log("rows after checkUserLastShare query is " + JSON.stringify(rows, null, 3));
 
