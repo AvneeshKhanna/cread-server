@@ -152,26 +152,19 @@ function getDataForCheck(uuid, connection) {
                     }
                     else{
                         //Retrieve a user's share data for a given cmid who has shared within the last 24 hours and has not been verified
-                        connection.query('SELECT Share.sharerate, Share.regdate AS sharetime, Share.shareid, Share.ulinkkey, Share.ulinkvalue, ' +
-                            '(CASE WHEN(Checks.UUID IS NULL) THEN "INVALID" ELSE Checks.UUID END) AS checkerid, ' + //Since NULL values in SQL cannot be compared with <>, it has to be converted into a NON-NULL value like 'INVALID' in this case
-                            'Campaign.cmid, Campaign.contentbaseurl AS verificationurl, Campaign.title, Campaign.description, Campaign.imagepath, ' +
-                            'users.firstname, users.UUID AS sharerid, users.fbusername ' +
+                        connection.query('SELECT Share.UUID AS sh_uuid, Share.cmid AS sh_cmid, Share.sharerate, Share.regdate AS sharetime, Share.shareid, Share.ulinkkey, Share.ulinkvalue, ' +
+                            '(CASE WHEN(Checks.UUID IS NULL) THEN "INVALID" ELSE Checks.UUID END) AS checkerid ' + //Since NULL values in SQL cannot be compared with <>, it has to be converted into a NON-NULL value like 'INVALID' in this case
                             'FROM Share ' +
-                            'JOIN users ' +
-                            'ON Share.UUID = users.UUID ' +
-                            'JOIN Campaign ' +
-                            'ON Campaign.cmid = Share.cmid ' +
                             'LEFT JOIN Checks ' +
                             'ON Share.shareid = Checks.shareid ' +
                             'WHERE Share.checkstatus = "PENDING" ' +
-                            'AND Campaign.main_feed = ? ' +
                             'AND Share.regdate < DATE_SUB(NOW(), INTERVAL 90 MINUTE) ' +    //To get only those shares which have been live for 90 minutes
                             'AND Share.UUID <> ? ' +    //To get shares other than those done by this user
                             'AND Share.locked = ? ' +   //To get unlocked shares
                             'HAVING checkerid <> ? ' +  //To get only those shares which haven't been checked by this user even once
                             'ORDER BY RAND() ' +        //To randomise
                             'LIMIT 1 ' +
-                            'FOR UPDATE', [true, uuid, false, uuid], function (err, rows) {
+                            'FOR UPDATE', [uuid, false, uuid], function (err, rows) {
 
                             console.log('SELECT...FOR UPDATE query response ' + JSON.stringify(rows, null, 3));
 
@@ -197,29 +190,62 @@ function getDataForCheck(uuid, connection) {
                                 });
                             }
                             else {
-                                //Update the 'locked' and 'locked_at' columns for the 'shareid' retrieved in the previous query
-                                connection.query('UPDATE Share SET locked = ?, locked_at = NOW() WHERE shareid = ?', [true, rows[0].shareid], function (err, qdata) {
+                                //This query is not JOINED to the above query because the data being fetched is for read-only. Including it in a
+                                //SELECT...FOR UPDATE would lock the rows corresponding to Campaign and users table as well which can increase chances
+                                //of DEADLOCKS
+                                connection.query('SELECT Campaign.cmid, Campaign.contentbaseurl AS verificationurl, Campaign.title, Campaign.description, Campaign.imagepath, ' +
+                                'users.firstname, users.UUID AS sharerid, users.fbusername ' +
+                                'FROM users, Campaign ' +
+                                'WHERE users.uuid = ? ' +
+                                'AND Campaign.cmid = ?', [rows[0].sh_uuid, rows[0].sh_cmid], function (err, cm_usr_data) {
 
-                                    console.log("UPDATE query executed");
-
-                                    if (err) {
+                                    if(err){
                                         connection.rollback(function () {
                                             reject(err);
                                         });
                                     }
-                                    else {
+                                    else{
 
-                                        connection.commit(function (err) {
+                                        console.log("before: cm_usr_data is " + JSON.stringify(cm_usr_data, null, 3));
+                                        console.log("before: rows is " + JSON.stringify(rows, null, 3));
+
+                                        //Concatenate 'cm_usr_data' and 'rows'
+                                        rows[0] = Object.assign({}, cm_usr_data[0], rows[0]);
+
+                                        if(rows[0].hasOwnProperty('sh_uuid')){
+                                            delete rows[0].sh_uuid;
+                                        }
+
+                                        if(rows[0].hasOwnProperty('sh_cmid')){
+                                            delete rows[0].sh_cmid;
+                                        }
+
+                                        console.log("after: rows is " + JSON.stringify(rows, null, 3));
+
+                                        //Update the 'locked' and 'locked_at' columns for the 'shareid' retrieved in the previous query
+                                        connection.query('UPDATE Share SET locked = ?, locked_at = NOW() WHERE shareid = ?', [true, rows[0].shareid], function (err, qdata) {
+
+                                            console.log("UPDATE query executed");
+
                                             if (err) {
                                                 connection.rollback(function () {
                                                     reject(err);
                                                 });
                                             }
                                             else {
-                                                console.log('TRANSACTION committed successfully');
-                                                resolve({
-                                                    row: rows[0],
-                                                    accountstatus: (userdata[0].accountstatus === "DISABLED") //true for account-suspension, false otherwise
+                                                connection.commit(function (err) {
+                                                    if (err) {
+                                                        connection.rollback(function () {
+                                                            reject(err);
+                                                        });
+                                                    }
+                                                    else {
+                                                        console.log('TRANSACTION committed successfully');
+                                                        resolve({
+                                                            row: rows[0],
+                                                            accountstatus: (userdata[0].accountstatus === "DISABLED") //true for account-suspension, false otherwise
+                                                        });
+                                                    }
                                                 });
                                             }
 
