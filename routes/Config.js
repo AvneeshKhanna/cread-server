@@ -20,7 +20,8 @@ var connection = mysql.createConnection({
     password: dbConfig.password,
     database: dbConfig.database,
     timezone: 'UTC',
-    port: dbConfig.port
+    port: dbConfig.port,
+    charset: 'utf8mb4_unicode_ci'
 });
 
 var connectionPool = mysql.createPool({
@@ -30,7 +31,8 @@ var connectionPool = mysql.createPool({
     password: dbConfig.password,
     database: dbConfig.database,
     timezone: 'UTC',
-    port: dbConfig.port
+    port: dbConfig.port,
+    charset: 'utf8mb4_unicode_ci'
 });
 
 function getNewConnection() {

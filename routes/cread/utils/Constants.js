@@ -10,7 +10,7 @@ const checkrate_verified = 2.5;
 const checkrate_not_verified = 0;
 
 const markup = 33; //in percentage TODO: Update markup
-const minCashInAmt = 30;    //TODO: Can change the amount based on team discussion
+const minCashInAmt = (config_type == 'PRODUCTION') ? 30 : 2;    //TODO: Can change the amount based on team discussion
 
 const share_time_interval = {
     same_share : {

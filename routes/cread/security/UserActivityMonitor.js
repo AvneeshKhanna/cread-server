@@ -23,7 +23,7 @@ try {
         /*
          * Runs every-day every hour
          */
-        cronTime: '0 0 * * * *', //second | minute | hour | day-of-month | month | day-of-week TODO: Revert Back
+        cronTime: '0 0 * * * *', //second | minute | hour | day-of-month | month | day-of-week
         onTick: enableTemporarilyActiveAccounts,
         start: false,   //Whether to start just now
         timeZone: 'Asia/Kolkata'

@@ -164,13 +164,14 @@ function getDataForCheck(uuid, connection) {
                             'LEFT JOIN Checks ' +
                             'ON Share.shareid = Checks.shareid ' +
                             'WHERE Share.checkstatus = "PENDING" ' +
+                            'AND Campaign.main_feed = ? ' +
                             'AND Share.regdate < DATE_SUB(NOW(), INTERVAL 90 MINUTE) ' +    //To get only those shares which have been live for 90 minutes
                             'AND Share.UUID <> ? ' +    //To get shares other than those done by this user
-                            'AND Share.locked = ? ' +   //To get unlocked shares TODO: toggle comment
+                            'AND Share.locked = ? ' +   //To get unlocked shares
                             'HAVING checkerid <> ? ' +  //To get only those shares which haven't been checked by this user even once
                             'ORDER BY RAND() ' +        //To randomise
                             'LIMIT 1 ' +
-                            'FOR UPDATE', [uuid, /*null*/false, uuid], function (err, rows) {   //TODO: toggle comment
+                            'FOR UPDATE', [true, uuid, false, uuid], function (err, rows) {
 
                             console.log('SELECT...FOR UPDATE query response ' + JSON.stringify(rows, null, 3));
 
@@ -521,7 +522,6 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid, connect
 
                                     if (err) {
                                         console.error(err);
-                                        //throw err;    //TODO: toggle uncomment
                                     }
                                 });
                             }
@@ -566,7 +566,6 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid, connect
 
                                             if (err) {
                                                 console.error(err);
-                                                //throw err; //TODO: toggle uncomment
                                             }
                                         });
                                     }

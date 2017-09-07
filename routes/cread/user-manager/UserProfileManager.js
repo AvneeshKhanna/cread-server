@@ -330,15 +330,20 @@ router.post('/check-for-client', function (request, response) {
         })
         .then(function (result) {
             if (result.isClient) {
-                response.send({
-                    tokenstatus: 'valid',
-                    data: {
-                        status: 'done',
-                        clientid: result.clientid
-                    }
-                });
-                response.end();
-                throw new BreakPromiseChainError();
+                if(result.biostatus){   //Case where client and bio both exist
+                    response.send({
+                        tokenstatus: 'valid',
+                        data: {
+                            status: 'done',
+                            clientid: result.clientid
+                        }
+                    });
+                    response.end();
+                    throw new BreakPromiseChainError();
+                }
+                else {  //Case where client exists but bio doesn't
+                    return updateClientBio(connection, result.clientid, bio)
+                }
             }
             else{
                 return registerUserAsClient(uuid, userdetails, connection);
@@ -372,8 +377,10 @@ router.post('/check-for-client', function (request, response) {
 
 function checkUserRegisteredAsClient(uuid, connection) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT clientid ' +
+        connection.query('SELECT Client.clientid, Client.bio ' +
             'FROM users ' +
+            'JOIN Client ' +
+            'ON users.clientid = Client.clientid ' +
             'WHERE uuid = ?', [uuid], function (err, row) {
 
             console.log("query result " + JSON.stringify(row, null, 3));
@@ -381,14 +388,16 @@ function checkUserRegisteredAsClient(uuid, connection) {
             if (err) {
                 reject(err);
             }
-            else if (!row[0].clientid) {
+            else if (!row[0]) {    //Client doesn't exists
                 resolve({
-                    isClient: false
+                    isClient: false,
+                    biostatus: false
                 });
             }
-            else {
+            else {  //Client exists
                 resolve({
                     isClient: true,
+                    biostatus: !!row[0].bio,
                     clientid: row[0].clientid
                 });
             }
@@ -442,6 +451,19 @@ function registerUserAsClient(uuid, userdetails, connection){
                         });
                     }
                 });
+            }
+        });
+    });
+}
+
+function updateClientBio(connection, clientid, bio){
+    return new Promise(function (resolve, reject) {
+        connection.query('UPDATE Client SET bio = ? WHERE clientid = ?', [bio, clientid], function (err, row) {
+            if(err){
+                reject(err);
+            }
+            else{
+                resolve(clientid);
             }
         });
     });

@@ -298,8 +298,8 @@ function checkUserLastShare(cmid, uuid) {
         var same_share_interval = consts.share_time_interval.same_share;
         var diff_share_interval = consts.share_time_interval.diff_share;
 
-        var lowerlimittime_24 = moment.utc().subtract(same_share_interval.time_diff, same_share_interval.time_diff_unit).format('YYYY-MM-DD HH:mm:ss');      //TODO change
-        var lowerlimittime_30 = moment.utc().subtract(diff_share_interval.time_diff, diff_share_interval.time_diff_unit).format('YYYY-MM-DD HH:mm:ss');     //TODO change
+        var lowerlimittime_24 = moment.utc().subtract(same_share_interval.time_diff, same_share_interval.time_diff_unit).format('YYYY-MM-DD HH:mm:ss');
+        var lowerlimittime_30 = moment.utc().subtract(diff_share_interval.time_diff, diff_share_interval.time_diff_unit).format('YYYY-MM-DD HH:mm:ss');
 
         console.log("lowerlimittime_24 is " + JSON.stringify(lowerlimittime_24, null, 3));
         console.log("lowerlimittime_30 is " + JSON.stringify(lowerlimittime_30, null, 3));
