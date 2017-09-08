@@ -114,7 +114,11 @@ function sendResetEmail(clientemail, clientname, resetlink) {
                 Body: {
                     Html: {
                         Charset: "UTF-8",
-                        Data: "Hi " + clientname + ",<br><br> You can reset your password from the link mentioned below:<br><br>" + resetlink
+                        Data: "Hi " +
+                        clientname +
+                        ",<br><br> You can reset your password from the link mentioned below:<br><br>" +
+                        resetlink +
+                        "<br><br>Team Cread"
                     }
                 },
                 Subject: {
