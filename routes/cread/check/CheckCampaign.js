@@ -144,6 +144,7 @@ function getDataForCheck(uuid, connection) {
                                 });
                             }
                             else{
+                                console.log('Account disabled: TRANSACTION COMMITTED');
                                 resolve({
                                     accountstatus: (userdata[0].accountstatus === "DISABLED") //true for account-suspension, false otherwise
                                 });
@@ -173,7 +174,7 @@ function getDataForCheck(uuid, connection) {
                                     reject(err);
                                 });
                             }
-                            else if (rows.length == 0) {
+                            else if (rows.length === 0) {
 
                                 connection.commit(function (err) {
                                     if (err) {
