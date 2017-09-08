@@ -47,7 +47,7 @@ function getNewConnection() {
 }
 
 function disconnect(connection) {
-    if(connection.state != "disconnected"){
+    if(connection.state !== "disconnected"){
         console.log('connection released');
         connection.release();
     }
@@ -80,5 +80,6 @@ module.exports = {
     'connectDb': dbConnect,
     'dynamodbCredentials': dynamodbCredentials,
     'AWS': AWS,
-    'AWS-EU-WEST-1': AWS_EU_WEST_1
+    'AWS-EU-WEST-1': AWS_EU_WEST_1,
+    'crypto-secret-key': "0da2d13d-3eaa-4ee8-a918-d0ca08d1e897"
 };

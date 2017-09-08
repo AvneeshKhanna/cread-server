@@ -84,12 +84,12 @@ function sendTransactionEmail(type, clientdetails, subject, paymentdetails, bill
                 Source: "Cread Inc. <admin@cread.in>"
             };
 
-            setAWSConfigForSES();
+            setAWSConfigForSES(AWS);
             var ses = new AWS.SES();
 
             ses.sendEmail(params, function (err, data) {
 
-                resetAWSConfig();
+                resetAWSConfig(AWS);
 
                 if (err) {
                     callback(err, null);
@@ -115,7 +115,7 @@ function sendTransactionEmail(type, clientdetails, subject, paymentdetails, bill
 /**
  * Resets the region and identity-pool-id for AWS to EU_WEST_1
  * */
-function setAWSConfigForSES() {
+function setAWSConfigForSES(AWS) {
     AWS.config.region = 'eu-west-1';
     AWS.config.credentials = new AWS.CognitoIdentityCredentials({
         IdentityPoolId: 'eu-west-1:d29fce0a-ac1a-4aaf-b3f6-0bc48b58b87e'
@@ -125,7 +125,7 @@ function setAWSConfigForSES() {
 /**
  * Resets the region and identity-pool-id for AWS to AP_NORTHEAST_1
  * */
-function resetAWSConfig() {
+function resetAWSConfig(AWS) {
     AWS.config.region = 'ap-northeast-1';
     AWS.config.credentials = new AWS.CognitoIdentityCredentials({
         IdentityPoolId: 'ap-northeast-1:863bdfec-de0f-4e9f-8749-cf7fd96ea2ff'
@@ -133,5 +133,7 @@ function resetAWSConfig() {
 }
 
 module.exports = {
-    sendTransactionEmail: sendTransactionEmail
+    sendTransactionEmail: sendTransactionEmail,
+    setAWSConfigForSES: setAWSConfigForSES,
+    resetAWSConfig: resetAWSConfig
 };
