@@ -208,7 +208,7 @@ function getDataForCheck(uuid, connection) {
                                     else{
 
                                         console.log("before: cm_usr_data is " + JSON.stringify(cm_usr_data, null, 3));
-                                        console.log("before: rows is " + JSON.stringify(rows, null, 3));
+                                        console.log("before:  rows is " + JSON.stringify(rows, null, 3));
 
                                         //Concatenate 'cm_usr_data' and 'rows'
                                         rows[0] = Object.assign({}, cm_usr_data[0], rows[0]);
