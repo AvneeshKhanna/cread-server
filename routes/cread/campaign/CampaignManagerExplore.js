@@ -43,11 +43,11 @@ router.post('/add', function (request, response) {
         cmid: cmid,
         clientid: clientid,
         title: title,
-        description: description,
+        description: description ? description : null ,
         budget: budget,
         type: type,
         cmpstatus: cmpstatus,
-        imagepath: imagepath,
+        imagepath: imagepath ? imagepath : "NA",
         mission: mission,
         contentbaseurl: contentbaseurl,
         main_feed: false

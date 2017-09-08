@@ -68,7 +68,13 @@ function loadCampaigns(connection, uuid) {
             if(err){
                 reject(err);
             }
-            else{
+            else if(!row[0]){   //Case where client doesn't exists
+                resolve({
+                    campaigns: row,
+                    biostatus: false
+                });
+            }
+            else{   //Case where client exists
 
                 var biostatus = !!row[0].bio;
 
