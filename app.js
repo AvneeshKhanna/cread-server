@@ -145,6 +145,8 @@ app.use('/wallet-screen', require('./routes/cread/dsbrd/wallet-management/Wallet
 app.use('/wallet-management', require('./routes/cread/dsbrd/wallet-management/WalletTransactionManager'));
 app.use('/budget-management', require('./routes/cread/dsbrd/campaign-management/budget-manager/BudgetManager'));
 app.use('/latest-updates', require('./routes/cread/dsbrd/latest-updates/LatestUpdates'));
+app.use('/password-link', require('./routes/cread/dsbrd/client-profile/password-update/PasswordLinkGenerator'));
+app.use('/reset-password', require('./routes/cread/dsbrd/client-profile/password-update/PasswordUpdateManager'));
 
 app.use('/cread-test', require('./routes/cread/test/Testing'));
 
