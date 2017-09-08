@@ -8,6 +8,8 @@ var router = express.Router();
 
 var config = require('../../../../Config');
 var AWS = config.AWS;
+var envconfig = require('config');
+var envtype = envconfig.get('type');
 
 var _auth = require('../../../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../../../utils/BreakPromiseChainError');
@@ -28,7 +30,7 @@ router.post('/request', function (request, response) {
         })
         .then(function (result) {
             if(result.status === "valid-email") {
-                var resetlink = generatePasswordUpdateLink(email);
+                var resetlink = generatePasswordUpdateLink(email, result.clientid);
                 return sendResetEmail(email, result.clientname, resetlink)
             }
             else{
@@ -70,7 +72,8 @@ function checkValidEmail(connection, email){
             else if(row[0]){    //Email is registered
                 resolve({
                     status: 'valid-email',
-                    clientname: row[0].name
+                    clientname: row[0].name,
+                    clientid: row[0].clientid
                 });
             }
             else{
@@ -82,20 +85,24 @@ function checkValidEmail(connection, email){
     });
 }
 
-function generatePasswordUpdateLink(email) {
+function generatePasswordUpdateLink(email, clientid) {
 
     var timestamp = moment().format('x');
 
     var payload = {
         timestamp: timestamp,
-        email: email
+        email: email,
+        clientid: clientid
     };
 
     // Encrypt
     var ciphertext = cryptojs.AES.encrypt(JSON.stringify(payload), config['crypto-secret-key']);
 
-    return 'http://dashboard.cread.in/#!/resetpassword?payload=' +
-        ciphertext;
+    var baseurl = (envtype === 'PRODUCTION') ? 'http://dashboard.cread.in/#!/resetpassword' : 'http://localhost:63342/creaddashboardfinal/WebContent/index.html#!/resetpassword';
+
+    return baseurl +
+        '?payload=' +
+        encodeURIComponent(ciphertext);
 }
 
 function sendResetEmail(clientemail, clientname, resetlink) {

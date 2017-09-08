@@ -7,6 +7,8 @@ var express = require('express');
 var router = express.Router();
 
 var config = require('../../../../Config');
+var envconfig = require('config');
+var envtype = envconfig.get('type');
 
 var BreakPromiseChainError = require('../../../utils/BreakPromiseChainError');
 
@@ -15,14 +17,18 @@ var cryptojs = require('crypto-js');
 
 router.post('/verify-user', function (request, response) {
 
-    var ciphertext = request.body.ciphertext;
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
+    var cipher = decodeURIComponent(request.body.payload);
 
     var payload;
 
     try{
-        payload = decode(ciphertext);
+        payload = decode(cipher);
+        console.log("decoded cipher is " + JSON.stringify(payload, null, 3));
     }
     catch(ex){
+        console.error(ex);
         response.send({
             status: 'bad-link'
         });
@@ -30,17 +36,28 @@ router.post('/verify-user', function (request, response) {
         return;
     }
 
-    if(isExpired(payload.timestamp)){
-        response.send({
-            status: 'bad-link'
-        });
-        response.end();
+    try{
+        if(isExpired(payload.timestamp)){
+            console.log('link expired');
+            response.send({
+                status: 'bad-link'
+            });
+            response.end();
+        }
+        else{
+            response.send({
+                status: 'done',
+                clientid: payload.clientid
+            });
+            response.end();
+        }
     }
-    else{
-        response.send({
-            status: 'done'
+    catch (ex){
+        console.error(ex);
+        response.status(500).send({
+            error: 'Some error occurred at the server'
         });
-        response.end();
+        response.end()
     }
 
 });
@@ -52,36 +69,31 @@ function decode(ciphertext) {
 
 /*Timestamps are in milliseconds*/
 function isExpired(timestamp){
-    var currenttime = moment().valueOf();
-    var emailtimestamp = moment(timestamp);
+    var currenttime = moment();
+    var emailtimestamp = moment(parseInt(timestamp));
 
-    return emailtimestamp.diff(currenttime) > (24 * 60 * 60 * 1000);
+    console.log('current timestamp is ' + currenttime.toString());
+    console.log('email timestamp is ' + emailtimestamp.toString());
+    console.log('diff is ' + currenttime.diff(emailtimestamp).toString());
+
+    var expiryinterval = (envtype === 'PRODUCTION') ? 24 * 60 * 60 * 1000 : 60 * 1000;
+
+    return currenttime.diff(emailtimestamp) > expiryinterval;
 }
 
 router.post('/update-password', function (request, response) {
 
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
     var password = request.body.password;
-    var ciphertext = request.body.ciphertext;
-
-    var payload;
-
-    try{
-        payload = decode(ciphertext);
-    }
-    catch(ex){
-        response.send({
-            status: 'bad-link'
-        });
-        response.end();
-        return;
-    }
+    var clientid = request.body.clientid;
 
     var connection;
 
     config.getNewConnection()
         .then(function (conn) {
             connection = conn;
-            return updatePassword(connection, payload.email, password);
+            return updatePassword(connection, clientid, password);
         })
         .then(function () {
             response.send({
@@ -104,9 +116,9 @@ router.post('/update-password', function (request, response) {
         });
 });
 
-function updatePassword(connection, email, password){
+function updatePassword(connection, clientid, password){
     return new Promise(function (resolve, reject) {
-        connection.query('UPDATE Client SET password = ? WHERE email = ?', [password, email], function (err, row) {
+        connection.query('UPDATE Client SET password = ? WHERE clientid = ?', [password, clientid], function (err, row) {
             if(err){
                 reject(err);
             }
