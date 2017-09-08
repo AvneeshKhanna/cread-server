@@ -8,9 +8,7 @@ var router = express.Router();
 
 var config = require('../../../../Config');
 
-var _auth = require('../../../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../../../utils/BreakPromiseChainError');
-var sesEmailer = require('../../wallet-management/TransactionEmailer');
 
 var moment = require('moment');
 var cryptojs = require('crypto-js');
