@@ -290,8 +290,8 @@ router.post('/register', function (request, response) {
         fbshares: request.body.fbshares
     };
 
-    //A recursive approach is used in case of deadlocks. This would ensure that the functions are performed at least twice before being subject
-    //to an error and a failed SQL Transaction
+    //A recursive approach is used in case of deadlock aversion. This would ensure that the functions are executed at least thrice
+    // before being subject to an error and a failed SQL Transaction
     function recurrent(retrycount) {
 
         console.log('retry no - ' + retrycount);
@@ -532,18 +532,18 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, connection) {
             }
             else{
                 /*
-                         The logic table for below callback statements is
+                     The logic table for below callback statements is
 
-                         Condition 1 (C1) : res == 'verified'
-                         Condition 2 (C2) : checkcount > 1
+                     Condition 1 (C1) : res == 'verified'
+                     Condition 2 (C2) : checkcount > 1
 
-                         C1   C2    Update Share Table
-                         0    0              0
-                         0    1              1
-                         1    0              1
-                         1    1              1
+                     C1   C2    Update Share Table
+                     0    0              0
+                     0    1              1
+                     1    0              1
+                     1    1              1
 
-                         */
+                 */
 
                 //Register the check into 'Checks' table
                 connection.query('INSERT INTO Checks SET ?', params, function (err, rows) {
