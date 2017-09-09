@@ -253,6 +253,7 @@ router.post('/register', function (request, response) {
     var cmid = request.body.cmid;
     var sharerate = request.body.sharerate;
 
+    var retrycount = 0;     //For deadlock errors
     var connection;
 
     var checkdata = {
@@ -262,67 +263,95 @@ router.post('/register', function (request, response) {
         fbshares: request.body.fbshares
     };
 
-    _auth.authValid(uuid, authkey)
-        .then(function () {
-            return config.getNewConnection();
-        }, function () {
-            response.send({
-                tokenstatus: 'invalid'
-            });
-            response.end();
-            throw new BreakPromiseChainError();
-        })
-        .then(function (conn) {
-            connection = conn;
-            return registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid, connection);
-        })
-        .then(function (checkstatus) {
+    //A recursive approach is used in case of deadlocks. This would ensure that the functions are performed at least twice before being subject
+    //to an error and a failed SQL Transaction
+    function recurrent(retrycount) {
 
-            if(checkstatus){
-                return updateShareForCheck(connection, shareid, checkstatus);   //If the checkresponse was 'verified'. If not, then it was the 2nd for the Share
-            }
-            else{
-                return updateShareForCheck(connection, shareid);    //If the checkresponse was not 'verified' and was the 1st for the Share
-            }
-        })
-        .then(function (result) {
-            if(result.toUpdateBudget){
-                return updateCampaignBudget(connection, sharerate, result.checkrate, cmid);
-            }
-            else{
-                connection.commit(function (err) {
-                    if(err){
-                        connection.rollback(function () {
-                            throw err;
-                        });
-                    }
-                });
-            }
-        })
-        .then(function () {
-            console.log('Sending back response');
-            response.send({
-                tokenstatus: 'valid',
-                data: {
-                    status: 'completed'
-                }
-            });
-            response.end();
-            throw new BreakPromiseChainError();
-        })
-        .catch(function (err) {
-            config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
-                //Do nothing
-            }
-            else{
-                console.error(err);
-                response.status(500).send({
-                    error: 'Some error occurred at the server'
+        console.log('retry no - ' + retrycount);
+        var toNotify = false;
+
+        _auth.authValid(uuid, authkey)
+            .then(function () {
+                return config.getNewConnection();
+            }, function () {
+                response.send({
+                    tokenstatus: 'invalid'
                 });
                 response.end();
-            }
-        });
+                throw new BreakPromiseChainError();
+            })
+            .then(function (conn) {
+                connection = conn;
+                return registerCheckResponse(checkdata, shareid, cmid, uuid, connection);
+            })
+            .then(function (checkstatus) {
+
+                if(checkstatus){
+                    toNotify = true;
+                    return updateShareForCheck(connection, shareid, checkstatus);   //If the checkresponse was 'verified'. If not, then it was the 2nd for the Share
+                }
+                else{
+                    return updateShareForCheck(connection, shareid);    //If the checkresponse was not 'verified' and was the 1st for the Share
+                }
+            })
+            .then(function (result) {
+                if(result.toUpdateBudget){
+                    return updateCampaignBudget(connection, sharerate, result.checkrate, cmid);
+                }
+                else{
+                    connection.commit(function (err) {
+                        if(err){
+                            connection.rollback(function () {
+                                throw err;
+                            });
+                        }
+                    });
+                }
+            })
+            .then(function () {
+                console.log('Sending back response');
+                response.send({
+                    tokenstatus: 'valid',
+                    data: {
+                        status: 'completed'
+                    }
+                });
+                response.end();
+
+                if(toNotify){
+                    notifyUserForCheck(cmid, shareid, sharerid);
+                }
+
+                throw new BreakPromiseChainError();
+            })
+            .catch(function (err) {
+                config.disconnect(connection);
+                if(err instanceof BreakPromiseChainError){
+                    //Do nothing
+                }
+                else if(err.code === 'ER_LOCK_DEADLOCK'){   //To add 2 retries if a transaction fails due to deadlock error
+                    retrycount++;
+                    if(retrycount < 3){
+                        recurrent(retrycount);  //Recursion
+                    }
+                    else{
+                        console.error(err);
+                        response.status(500).send({
+                            error: 'Some error occurred at the server'
+                        });
+                        response.end();
+                    }
+                }
+                else{
+                    console.error(err);
+                    response.status(500).send({
+                        error: 'Some error occurred at the server'
+                    });
+                    response.end();
+                }
+            });
+    }
+    recurrent(retrycount);
 
 });
 
@@ -351,6 +380,14 @@ function updateShareForCheck(connection, shareid, checkstatus) {
 
     return new Promise(function (resolve, reject) {
 
+        //TODO: Remove
+        connection.rollback(function () {
+            var ferr = new Error('Forced error');
+            ferr.code = 'ER_LOCK_DEADLOCK';
+            reject(ferr);
+        });
+        return;
+
         var result = {
             toUpdateBudget: false
         };
@@ -364,7 +401,7 @@ function updateShareForCheck(connection, shareid, checkstatus) {
             params.checkstatus = checkstatus;
 
             //TODO: Make the checkrate dynamic
-            if(checkstatus == "COMPLETE"){
+            if(checkstatus === "COMPLETE"){
                 result.checkrate = consts.checkrate_verified;
                 result.toUpdateBudget = true;
             }
@@ -438,7 +475,7 @@ function updateCampaignBudget(connection, sharerate, checkrate, cmid) {
  * Insert a row into 'Checks' table and calls resolve OR reject based on whether
  * this is the second time a check is being registered or first time for a given 'shareid'
  * */
-function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid, connection) {
+function registerCheckResponse(checkdata, shareid, cmid, uuid, connection) {
 
     console.log('registerCheckResponse called');
 
@@ -453,7 +490,7 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid, connect
             fblikes: checkdata.fblikes,
             fbcomments: checkdata.fbcomments,
             fbshares: checkdata.fbshares,
-            checkrate: (checkdata.checkresponse == "verified" ? consts.checkrate_verified : consts.checkrate_not_verified)
+            checkrate: (checkdata.checkresponse === "verified" ? consts.checkrate_verified : consts.checkrate_not_verified)
         };
 
         var cmptitle;
@@ -467,17 +504,7 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid, connect
                 });
             }
             else{
-                connection.query('SELECT title FROM Campaign WHERE cmid = ?', [cmid], function (err, cmp) {
-                    if(err){
-                        connection.rollback(function () {
-                            reject(err);
-                        });
-                    }
-                    else {
-
-                        cmptitle = cmp[0].title;
-
-                        /*
+                /*
                          The logic table for below callback statements is
 
                          Condition 1 (C1) : res == 'verified'
@@ -491,97 +518,85 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, sharerid, connect
 
                          */
 
-                        //Register the check into 'Checks' table
-                        connection.query('INSERT INTO Checks SET ?', params, function (err, rows) {
+                //Register the check into 'Checks' table
+                connection.query('INSERT INTO Checks SET ?', params, function (err, rows) {
+
+                    if (err) {
+                        connection.rollback(function () {
+                            reject(err);
+                        });
+                    }
+                    //If the response is 'verified', then update the 'Share' table
+                    else if (checkdata.checkresponse === 'verified') {
+                        resolve("COMPLETE");  //As this action is independent of whether the notification to the user was a success or not
+                    }
+                    //If the response is NOT 'verified', then count the no of checks this share has received,
+                    // if the count == 1 then do not update the 'Share' table otherwise do.
+                    else {
+
+                        connection.query('SELECT * FROM Checks WHERE shareid = ?', [shareid], function (err, row) {
+
+                            console.log("row is " + JSON.stringify(row, null, 3));
+                            var checkcount = row.length;
 
                             if (err) {
                                 connection.rollback(function () {
                                     reject(err);
                                 });
                             }
-                            //If the response is 'verified', then update the 'Share' table
-                            else if (checkdata.checkresponse == 'verified') {
-
-                                var notifData = {
-                                    AppModel: "2.0",
-                                    Category: 'share_status',
-                                    // Status: 'verified',
-                                    Message: 'Your share for ' + cmptitle + ' has been reviewed',
-                                    Shareid: shareid,
-                                    Cmid: cmid,
-                                    Persist: "Yes"
-                                };
-
-                                var notifUser = new Array(sharerid);
-
-                                notify.notification(notifUser, notifData, function (err) {
-
-                                    console.log('notification sent');
-
-                                    resolve("COMPLETE");  //As this action is independent of whether the notification to the user was a success or not
-
-                                    if (err) {
-                                        console.error(err);
-                                    }
-                                });
+                            //Only one check, do not update the share table
+                            else if (checkcount === 1) {
+                                resolve();
                             }
-                            //If the response is NOT 'verified', then count the no of checks this share has received,
-                            // if the count == 1 then do not update the 'Share' table otherwise do.
+                            //Two checks, update the share table
                             else {
-
-                                connection.query('SELECT * FROM Checks WHERE shareid = ?', [shareid], function (err, row) {
-
-                                    console.log("row is " + JSON.stringify(row, null, 3));
-                                    var checkcount = row.length;
-
-                                    if (err) {
-                                        connection.rollback(function () {
-                                            reject(err);
-                                        });
-                                    }
-                                    //Only one check, do not update the share table
-                                    else if (checkcount == 1) {
-                                        resolve();
-                                    }
-                                    //Two checks, update the share table
-                                    else {
-
-                                        var notifData = {
-                                            AppModel: "2.0",
-                                            Category: 'share_status',
-                                            Shareid: shareid,
-                                            // Status: 'verified',
-                                            Message: 'Your share for ' + cmptitle + ' has been reviewed',
-                                            Cmid: cmid,
-                                            Persist: "Yes"
-                                        };
-
-                                        var notifUser = new Array(sharerid);
-
-                                        notify.notification(notifUser, notifData, function (err) {
-
-                                            console.log('notification sent');
-
-                                            resolve("CANCELLED");   //As this action is independent whether the notification to the user was a success or not
-
-                                            if (err) {
-                                                console.error(err);
-                                            }
-                                        });
-                                    }
-
-                                });
-
+                                resolve("CANCELLED");   //As this action is independent whether the notification to the user was a success or not
                             }
 
                         });
+
                     }
+
                 });
             }
         })
 
     });
 
+}
+
+/**
+ * To send a notification to the user that his/her share has been checked
+ * */
+function notifyUserForCheck(cmid, shareid, sharerid) {
+    config.getNewConnection()
+        .then(function (connection) {
+            connection.query('SELECT title FROM Campaign WHERE cmid = ?', [cmid], function (err, row) {
+                if(err){
+                    console.error(err);
+                }
+                else{
+
+                    var notifData = {
+                        AppModel: "2.0",
+                        Category: 'share_status',
+                        // Status: 'verified',
+                        Message: 'Your share for ' + row[0].title + ' has been reviewed',
+                        Shareid: shareid,
+                        Cmid: cmid,
+                        Persist: "Yes"
+                    };
+
+                    var user = new Array(sharerid);
+
+                    notify.notification(user, notifData, function (err, data) {
+                        if(err){
+                            console.error(err);
+                        }
+                    })
+                }
+            });
+        });
 }
 
 module.exports = router;
