@@ -41,7 +41,29 @@ function updateCampaign(cmid, params, connection){
     });
 }
 
+function getCampaignShares(connection, cmid, sharetypeflag) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT users.firstname, users.lastname, users.UUID, Share.shareid, COUNT(*) AS sharescount ' +
+            'FROM Share ' +
+            'JOIN users ' +
+            'ON Share.UUID = users.UUID ' +
+            'WHERE Share.cmid = ? ' +
+            'AND Share.checkstatus = ? ' +
+            'GROUP BY users.UUID ', [cmid, sharetypeflag], function (err, rows) {
+
+            if(err){
+                reject(err);
+            }
+            else{
+                resolve(rows);
+            }
+
+        });
+    });
+}
+
 module.exports = {
     addCampaign: addCampaign,
-    updateCampaign: updateCampaign
+    updateCampaign: updateCampaign,
+    getCampaignShares: getCampaignShares
 };

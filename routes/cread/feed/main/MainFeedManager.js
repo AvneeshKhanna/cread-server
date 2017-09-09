@@ -12,6 +12,7 @@ var AWS = config.AWS;
 var _auth = require('../../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 var consts = require('../../utils/Constants');
+var campaignutils = require('../../campaign/CampaignUtils');
 
 router.post('/load/', function (request, response) {
 
@@ -163,6 +164,51 @@ router.post('/load/specific', function (request, response) {
         }
     });
 
+});
+
+router.post('/campaign-shares', function (request, response) {
+
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var cmid = request.body.cmid;
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return campaignutils.getCampaignShares(connection, cmid, 'COMPLETE');
+        })
+        .then(function (rows) {
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    shares: rows
+                }
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
 });
 
 module.exports = router;
