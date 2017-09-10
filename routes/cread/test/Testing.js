@@ -271,6 +271,7 @@ router.post('/emailer', function (request, response) {
 router.post('/sql-trans-deadlock', function (request, response) {
     var name = request.body.name;
     var time = request.body.time;
+    var phone = request.body.phone;
     var isErr = request.body.isErr;
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
@@ -278,7 +279,7 @@ router.post('/sql-trans-deadlock', function (request, response) {
     config.getNewConnection()
         .then(function (connection) {
 
-            connection.query('SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED', null, function (err, data) {
+            connection.query('SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ', null, function (err, data) {
                 if(err){
                     throw err;
                 }
@@ -291,9 +292,9 @@ router.post('/sql-trans-deadlock', function (request, response) {
                             });
                         }
                         else {
-                            connection.query('SELECT * FROM users ORDER BY RAND() FOR UPDATE', [/*'9999015838'*/], function (err, data) {
+                            connection.query('SELECT UUID FROM users WHERE phoneNo <> ? FOR UPDATE', [phone], function (err, row) {
 
-                                console.log('SELECT FOR UPDATE query executed ' + name);
+                                console.log('SELECT FOR UPDATE query executed ' + name +  ' with row ' + JSON.stringify(row, null, 3));
 
                                 if (err) {
                                     connection.rollback(function () {
@@ -303,7 +304,7 @@ router.post('/sql-trans-deadlock', function (request, response) {
                                 }
                                 else {
                                     setTimeout(function () {
-                                        connection.query('UPDATE users SET firstname = ?', [name/*, '9999015838'*/], function (err, data) {
+                                        connection.query('UPDATE users SET firstname = ? WHERE uuid = ?', [name, row[0].UUID], function (err, data) {
 
                                             console.log('UPDATE query executed ' + name);
 
@@ -322,6 +323,7 @@ router.post('/sql-trans-deadlock', function (request, response) {
                                                         });
                                                     }
                                                     else {
+                                                        connection.release();
                                                         console.log("Sending response for " + name);
                                                         response.send(data).end();
                                                     }
