@@ -131,19 +131,19 @@ function getDataForCheck(uuid, connection) {
             }
             else {
                 connection.query('SELECT accountstatus FROM users WHERE UUID = ?', [uuid], function (err, userdata) {
-                    if(err){
+                    if (err) {
                         connection.rollback(function () {
                             reject(err);
                         });
                     }
-                    else if(userdata[0].accountstatus === "DISABLED"){
+                    else if (userdata[0].accountstatus === "DISABLED") {
                         connection.commit(function (err) {
-                            if(err){
+                            if (err) {
                                 connection.rollback(function () {
                                     reject(err);
                                 });
                             }
-                            else{
+                            else {
                                 console.log('Account disabled: TRANSACTION COMMITTED');
                                 resolve({
                                     accountstatus: (userdata[0].accountstatus === "DISABLED") //true for account-suspension, false otherwise
@@ -151,7 +151,7 @@ function getDataForCheck(uuid, connection) {
                             }
                         });
                     }
-                    else{
+                    else {
                         //Retrieve a user's share data for a given cmid who has shared within the last 24 hours and has not been verified
                         connection.query('SELECT Share.UUID AS sh_uuid, Share.cmid AS sh_cmid, Share.sharerate, Share.regdate AS sharetime, Share.shareid, Share.ulinkkey, Share.ulinkvalue, ' +
                             '(CASE WHEN(Checks.UUID IS NULL) THEN "INVALID" ELSE Checks.UUID END) AS checkerid ' + //Since NULL values in SQL cannot be compared with <>, it has to be converted into a NON-NULL value like 'INVALID' in this case
@@ -195,17 +195,17 @@ function getDataForCheck(uuid, connection) {
                                 //SELECT...FOR UPDATE would lock the rows corresponding to Campaign and users table as well which can increase chances
                                 //of DEADLOCKS
                                 connection.query('SELECT Campaign.cmid, Campaign.contentbaseurl AS verificationurl, Campaign.title, Campaign.description, Campaign.imagepath, ' +
-                                'users.firstname, users.UUID AS sharerid, users.fbusername ' +
-                                'FROM users, Campaign ' +
-                                'WHERE users.uuid = ? ' +
-                                'AND Campaign.cmid = ?', [rows[0].sh_uuid, rows[0].sh_cmid], function (err, cm_usr_data) {
+                                    'users.firstname, users.UUID AS sharerid, users.fbusername ' +
+                                    'FROM users, Campaign ' +
+                                    'WHERE users.uuid = ? ' +
+                                    'AND Campaign.cmid = ?', [rows[0].sh_uuid, rows[0].sh_cmid], function (err, cm_usr_data) {
 
-                                    if(err){
+                                    if (err) {
                                         connection.rollback(function () {
                                             reject(err);
                                         });
                                     }
-                                    else{
+                                    else {
 
                                         console.log("before: cm_usr_data is " + JSON.stringify(cm_usr_data, null, 3));
                                         console.log("before:  rows is " + JSON.stringify(rows, null, 3));
@@ -213,11 +213,11 @@ function getDataForCheck(uuid, connection) {
                                         //Concatenate 'cm_usr_data' and 'rows'
                                         rows[0] = Object.assign({}, cm_usr_data[0], rows[0]);
 
-                                        if(rows[0].hasOwnProperty('sh_uuid')){
+                                        if (rows[0].hasOwnProperty('sh_uuid')) {
                                             delete rows[0].sh_uuid;
                                         }
 
-                                        if(rows[0].hasOwnProperty('sh_cmid')){
+                                        if (rows[0].hasOwnProperty('sh_cmid')) {
                                             delete rows[0].sh_cmid;
                                         }
 
@@ -313,21 +313,21 @@ router.post('/register', function (request, response) {
             })
             .then(function (checkstatus) {
 
-                if(checkstatus){
+                if (checkstatus) {
                     toNotify = true;
                     return updateShareForCheck(connection, shareid, checkstatus);   //If the checkresponse was 'verified'. If not, then it was the 2nd for the Share
                 }
-                else{
+                else {
                     return updateShareForCheck(connection, shareid);    //If the checkresponse was not 'verified' and was the 1st for the Share
                 }
             })
             .then(function (result) {
-                if(result.toUpdateBudget){
+                if (result.toUpdateBudget) {
                     return updateCampaignBudget(connection, sharerate, result.checkrate, cmid);
                 }
-                else{
+                else {
                     connection.commit(function (err) {
-                        if(err){
+                        if (err) {
                             connection.rollback(function () {
                                 throw err;
                             });
@@ -345,7 +345,7 @@ router.post('/register', function (request, response) {
                 });
                 response.end();
 
-                if(toNotify){
+                if (toNotify) {
                     notifyUserForCheck(cmid, shareid, sharerid);
                 }
 
@@ -353,15 +353,15 @@ router.post('/register', function (request, response) {
             })
             .catch(function (err) {
                 config.disconnect(connection);
-                if(err instanceof BreakPromiseChainError){
+                if (err instanceof BreakPromiseChainError) {
                     //Do nothing
                 }
-                else if(err.code === 'ER_LOCK_DEADLOCK'){   //To add 2 retries if a transaction fails due to deadlock error
+                else if (err.code === 'ER_LOCK_DEADLOCK') {   //To add 2 retries if a transaction fails due to deadlock error
                     retrycount++;
-                    if(retrycount < 3){
+                    if (retrycount < 3) {
                         recurrent(retrycount);  //Recursion
                     }
-                    else{
+                    else {
                         console.error(err);
                         response.status(500).send({
                             error: 'Some error occurred at the server'
@@ -369,7 +369,7 @@ router.post('/register', function (request, response) {
                         response.end();
                     }
                 }
-                else{
+                else {
                     console.error(err);
                     response.status(500).send({
                         error: 'Some error occurred at the server'
@@ -378,6 +378,7 @@ router.post('/register', function (request, response) {
                 }
             });
     }
+
     recurrent(retrycount);
 
 });
@@ -424,11 +425,11 @@ function updateShareForCheck(connection, shareid, checkstatus) {
             locked_at: null
         };
 
-        if(checkstatus){    //Case where checkresponse is either 'verified' or 2nd for the Share
+        if (checkstatus) {    //Case where checkresponse is either 'verified' or 2nd for the Share
             params.checkstatus = checkstatus;
 
             //TODO: Make the checkrate dynamic
-            if(checkstatus === "COMPLETE"){
+            if (checkstatus === "COMPLETE") {
                 result.checkrate = consts.checkrate_verified;
                 result.toUpdateBudget = true;
             }
@@ -464,9 +465,9 @@ function updateCampaignBudget(connection, sharerate, checkrate, cmid) {
 
     return new Promise(function (resolve, reject) {
 
-        var calculatedMarkup = parseFloat(parseFloat(sharerate) + parseFloat(checkrate)) * parseFloat(consts.markup/100);
+        var calculatedMarkup = parseFloat(parseFloat(sharerate) + parseFloat(checkrate)) * parseFloat(consts.markup / 100);
         var amount = parseFloat(parseFloat(sharerate) + parseFloat(checkrate) + calculatedMarkup);
-        var calculatedTax = parseFloat(parseFloat(amount) * parseFloat(18/100));    //18%
+        var calculatedTax = parseFloat(parseFloat(amount) * parseFloat(18 / 100));    //18%
         var grossAmount = parseFloat(amount + calculatedTax);
 
         console.log('markup subtracted from budget ' + calculatedMarkup);
@@ -475,13 +476,13 @@ function updateCampaignBudget(connection, sharerate, checkrate, cmid) {
         connection.query('UPDATE Campaign SET budget = (budget - ?) WHERE cmid = ?', [grossAmount, cmid], function (err, row) {
 
             if (err) {
-               connection.rollback(function () {
-                   reject(err);
-               })
+                connection.rollback(function () {
+                    reject(err);
+                })
             }
             else {
                 connection.commit(function (err) {
-                    if(err){
+                    if (err) {
                         connection.rollback(function () {
                             reject(err);
                         });
@@ -525,12 +526,12 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, connection) {
         console.log("shareid is " + JSON.stringify(shareid, null, 3));
 
         connection.beginTransaction(function (err) {
-            if(err){
+            if (err) {
                 connection.rollback(function () {
                     reject(err);
                 });
             }
-            else{
+            else {
                 /*
                      The logic table for below callback statements is
 
@@ -599,10 +600,10 @@ function notifyUserForCheck(cmid, shareid, sharerid) {
     config.getNewConnection()
         .then(function (connection) {
             connection.query('SELECT title FROM Campaign WHERE cmid = ?', [cmid], function (err, row) {
-                if(err){
+                if (err) {
                     console.error(err);
                 }
-                else{
+                else {
 
                     var notifData = {
                         AppModel: "2.0",
@@ -617,7 +618,7 @@ function notifyUserForCheck(cmid, shareid, sharerid) {
                     var user = new Array(sharerid);
 
                     notify.notification(user, notifData, function (err, data) {
-                        if(err){
+                        if (err) {
                             console.error(err);
                         }
                     })
