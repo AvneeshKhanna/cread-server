@@ -39,17 +39,31 @@ router.post('/request', function (request, response) {
         .then(function () {
             return config.getNewConnection();
         }, function () {
-
             response.send({
                 tokenstatus: 'invalid'
             });
             response.end();
             throw new BreakPromiseChainError();
-
         })
         .then(function (conn) {
             connection = conn;
-            return getDataForCheck(uuid, connection);
+            return checkPermissionForFind(connection, uuid);
+        })
+        .then(function (result) {
+
+            if(result.restrictfind){
+                response.send({
+                    tokenstatus: 'valid',
+                    restrictfind: result.restrictfind,
+                    restrictfindtime: result.restrictfindtime,
+                    data: result
+                });
+                response.end();
+                throw new BreakPromiseChainError();
+            }
+            else{
+                return getDataForCheck(uuid, connection);
+            }
         })
         .then(function (result) {
 
@@ -59,6 +73,8 @@ router.post('/request', function (request, response) {
                 console.log("row before response " + JSON.stringify(row, null, 3));
                 response.send({
                     tokenstatus: 'valid',
+                    restrictfind: false,
+                    restrictfindtime: null,
                     data: {}
                 });
                 response.end();
@@ -89,6 +105,8 @@ router.post('/request', function (request, response) {
 
                 response.send({
                     tokenstatus: 'valid',
+                    restrictfind: false,
+                    restrictfindtime: null,
                     data: row
                 });
                 response.end();
@@ -111,6 +129,28 @@ router.post('/request', function (request, response) {
         });
 
 });
+
+function checkPermissionForFind(connection, uuid){
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT last_find_restrict FROM users WHERE uuid = ? AND last_find_restrict > DATE_SUB(NOW(), INTERVAL 3 HOUR)', [uuid], function(err, rows){
+            console.log("response from checkPermission is " + JSON.stringify(rows, null, 3));
+            if(err){
+                reject(err);
+            }
+            else if(rows[0]){   //Restriction exists
+                resolve({
+                    restrictfind: true,
+                    restrictfindtime: rows[0].last_find_restrict
+                });
+            }
+            else{   //Restriction does not exists
+                resolve({
+                    restrictfind: false
+                });
+            }
+        });
+    });
+}
 
 /**
  * Function to retrieve a random user's data from the profile who has shared a given campaign
@@ -408,14 +448,6 @@ function updateShareForCheck(connection, shareid, checkstatus) {
 
     return new Promise(function (resolve, reject) {
 
-        //TODO: Remove
-        /*connection.rollback(function () {
-            var ferr = new Error('Forced error');
-            ferr.code = 'ER_LOCK_DEADLOCK';
-            reject(ferr);
-        });
-        return;*/
-
         var result = {
             toUpdateBudget: false
         };
@@ -625,6 +657,67 @@ function notifyUserForCheck(cmid, shareid, sharerid) {
                 }
             });
         });
+}
+
+/**
+ * Used to restrict the find action of a person if he clicks too many times on the 'Find' button on the app within a minute
+ * */
+router.post('/restrict-find', function (request, response) {
+
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return restrictFind(connection, uuid);
+        })
+        .then(function () {
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    status: 'done'
+                }
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+});
+
+function restrictFind(connection, uuid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('UPDATE users SET last_find_restrict = NOW() WHERE uuid = ?', [uuid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
 }
 
 module.exports = router;

@@ -8,18 +8,19 @@ var config_type = envconfig.get("type");
 const sharerate = 10;
 const checkrate_verified = 2.5;
 const checkrate_not_verified = 0;
+const restrict_find_frequency = 50; //Measured in 'clicks per minute'
 
 const markup = 33; //in percentage TODO: Update markup
-const minCashInAmt = (config_type == 'PRODUCTION') ? 30 : 2;    //TODO: Can change the amount based on team discussion
+const minCashInAmt = (config_type === 'PRODUCTION') ? 30 : 2;    //TODO: Can change the amount based on team discussion
 
 const share_time_interval = {
     same_share : {
-        time_diff: config_type == 'PRODUCTION' ? 24 : 2,
-        time_diff_unit: config_type == 'PRODUCTION' ? "hours" : "minutes"
+        time_diff: config_type === 'PRODUCTION' ? 24 : 2,
+        time_diff_unit: config_type === 'PRODUCTION' ? "hours" : "minutes"
     },
     diff_share: {
-        time_diff: config_type == 'PRODUCTION' ? 12 : 1,
-        time_diff_unit: config_type == 'PRODUCTION' ? "hours" : "minutes"
+        time_diff: config_type === 'PRODUCTION' ? 12 : 1,
+        time_diff_unit: config_type === 'PRODUCTION' ? "hours" : "minutes"
     }
 };
 
@@ -42,5 +43,6 @@ module.exports = {
     markup: getMarkup(markup),
     min_cash_in_amt: minCashInAmt,
     restrict_every_share: true,  //TODO: toggle
-    share_time_interval: share_time_interval
+    share_time_interval: share_time_interval,
+    restrict_find_frequency: restrict_find_frequency
 };
