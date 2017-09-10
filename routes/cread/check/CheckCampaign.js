@@ -408,12 +408,12 @@ function updateShareForCheck(connection, shareid, checkstatus) {
     return new Promise(function (resolve, reject) {
 
         //TODO: Remove
-        connection.rollback(function () {
+        /*connection.rollback(function () {
             var ferr = new Error('Forced error');
             ferr.code = 'ER_LOCK_DEADLOCK';
             reject(ferr);
         });
-        return;
+        return;*/
 
         var result = {
             toUpdateBudget: false
@@ -563,7 +563,7 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, connection) {
 
                         connection.query('SELECT * FROM Checks WHERE shareid = ?', [shareid], function (err, row) {
 
-                            console.log("row is " + JSON.stringify(row, null, 3));
+                            console.log("checks are " + JSON.stringify(row, null, 3));
                             var checkcount = row.length;
 
                             if (err) {
