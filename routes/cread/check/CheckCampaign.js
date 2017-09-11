@@ -141,7 +141,7 @@ function checkPermissionForFind(connection, uuid){
             else if(rows[0]){   //Restriction exists
                 resolve({
                     restrictfind: true,
-                    restrictfindtime: rows[0].last_find_restrict
+                    restrictfindtime: 3*60*60 - (moment().diff(moment(rows[0].last_find_restrict))/1000)    //time left for find to be activated in seconds
                 });
             }
             else{   //Restriction does not exists
