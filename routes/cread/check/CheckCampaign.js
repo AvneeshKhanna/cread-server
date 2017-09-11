@@ -436,11 +436,9 @@ function updateShareForCheck(connection, shareid, checkstatus) {
             else {  //Case where checkstatus = "CANCELLED"
                 result.checkrate = consts.checkrate_not_verified;
             }
-
         }
 
         connection.query('UPDATE Share SET ? WHERE shareid = ?', [params, shareid], function (err, rows) {
-
             if (err) {
                 connection.rollback(function () {
                     reject(err);
@@ -449,11 +447,8 @@ function updateShareForCheck(connection, shareid, checkstatus) {
             else {
                 resolve(result);
             }
-
-        })
-
+        });
     });
-
 }
 
 /**
@@ -465,8 +460,8 @@ function updateCampaignBudget(connection, sharerate, checkrate, cmid) {
 
     return new Promise(function (resolve, reject) {
 
-        var calculatedMarkup = parseFloat(parseFloat(sharerate) + parseFloat(checkrate)) * parseFloat(consts.markup / 100);
-        var amount = parseFloat(parseFloat(sharerate) + parseFloat(checkrate) + calculatedMarkup);
+        var calculatedMarkup = parseFloat(parseFloat(sharerate) + (parseFloat(checkrate) * consts.required_verified_checks)) * parseFloat(consts.markup / 100);
+        var amount = parseFloat(parseFloat(sharerate) + (parseFloat(checkrate) * consts.required_verified_checks) + calculatedMarkup);
         var calculatedTax = parseFloat(parseFloat(amount) * parseFloat(18 / 100));    //18%
         var grossAmount = parseFloat(amount + calculatedTax);
 
@@ -562,29 +557,43 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, connection) {
                     // if the count == 1 then do not update the 'Share' table otherwise do.
                     else {
 
-                        connection.query('SELECT * FROM Checks WHERE shareid = ?', [shareid], function (err, row) {
+                        connection.query('SELECT (CASE WHEN(Checks.responses = "verified") THEN "verified" ELSE "un-verified" END) AS cresponse, ' +
+                            'COUNT(*) AS responsecount ' +
+                            'FROM Checks ' +
+                            'WHERE shareid = ? ' +
+                            'GROUP BY cresponse ' +
+                            'ORDER BY cresponse DESC', [shareid], function (err, row) {
 
                             console.log("checks are " + JSON.stringify(row, null, 3));
                             var checkcount = row.length;
+
+                            var isVerified = (row[0].responsecount >= consts.required_verified_checks);
+                            var isCancelled = (row[1].responsecount >= consts.required_unverified_checks);
 
                             if (err) {
                                 connection.rollback(function () {
                                     reject(err);
                                 });
                             }
+                            else if(isVerified){    //Case when the no of verified checks >= 3, update Share.checkstatus
+                                resolve("COMPLETE");
+                            }
+                            else if (isCancelled){  //Case when the no of unverified checks >= 5, update Share.checkstatus
+                                resolve("CANCELLED");
+                            }
+                            else{   //Case when the no of verified checks < 3 and unverified checks < 5, don't update Share.checkstatus
+                                resolve();
+                            }
                             //Only one check, do not update the share table
-                            else if (checkcount === 1) {
+                            /*else if (checkcount === 1) {
                                 resolve();
                             }
                             //Two checks, update the share table
                             else {
-                                resolve("CANCELLED");   //As this action is independent whether the notification to the user was a success or not
-                            }
-
+                                resolve("CANCELLED");
+                            }*/
                         });
-
                     }
-
                 });
             }
         })

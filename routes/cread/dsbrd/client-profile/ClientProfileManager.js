@@ -25,7 +25,7 @@ router.post('/sign-up', function (request, response) {
 
     checkIfClientUserAlreadyExists(email)
         .then(function (row) {
-            if(row.length == 0){
+            if(row.length === 0){
                 return createNewClientUser(email, password, contact, name);
             }
             else {
@@ -118,7 +118,7 @@ router.post('/sign-in', function (request, response) {
 
             if(userdata){   //Email exists
 
-                if(userdata.password == password){  //Password matches
+                if(userdata.password === password){  //Password matches
                     return checkForAuthKey(userdata);
                 }
                 else {  //Password doesn't match

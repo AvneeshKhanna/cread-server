@@ -34,7 +34,7 @@ router.post('/load-data', function (request, response) {
 
             resdata.walletbalance = parseFloat(rows[0].walletbalance).toFixed(2);
             resdata.transactions = rows.filter(function (element) {
-                if (element.transid != null) {
+                if (element.transid !== null) {
                     delete element['walletbalance'];
                     element.amount = parseFloat(element.amount).toFixed(2);
                     return element;

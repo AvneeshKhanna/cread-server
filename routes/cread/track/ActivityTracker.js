@@ -91,10 +91,10 @@ router.post('/', function (request, response) {
                                 //Calculate availableAmount
                                 var availableAmt = resarray.map(function (element) {
 
-                                        element.cashed_in = (element.cashed_in == 1);
+                                        element.cashed_in = (element.cashed_in === 1);
 
                                         if (element.hasOwnProperty('sharerate')) {
-                                            element.donation = (element.donation == 1);
+                                            element.donation = (element.donation === 1);
                                             element.type = 0; //Share Code
                                         }
                                         else {
@@ -110,9 +110,9 @@ router.post('/', function (request, response) {
                                         return element;
                                     })
                                     .filter(function (element) {
-                                        return (element.cashed_in == false)
+                                        return (element.cashed_in === false)
                                             && (!element.hasOwnProperty('sharerate')
-                                            || element.checkstatus == 'COMPLETE');
+                                            || element.checkstatus === 'COMPLETE');
                                     })
                                     .reduce(function (accumulator, element) {
                                         if (element.hasOwnProperty('sharerate')) {
@@ -138,7 +138,7 @@ router.post('/', function (request, response) {
 
                                 var validactivityarray = resarray.filter(function (element) {
                                     if(element.hasOwnProperty('sharerate')){
-                                        return (element.checkstatus != "CANCELLED");
+                                        return (element.checkstatus !== "CANCELLED");
                                     }
                                     else {
                                         return true;
@@ -153,8 +153,8 @@ router.post('/', function (request, response) {
 
                                 var donatedAmt = validactivityarray.filter(function (element) {
                                     return element.hasOwnProperty('sharerate')
-                                        && (element.donation == true)
-                                        && (element.checkstatus == "COMPLETE");
+                                        && (element.donation === true)
+                                        && (element.checkstatus === "COMPLETE");
                                 }).reduce(function (accumuator, element) {
                                     accumuator += element.sharerate;
                                     return accumuator;

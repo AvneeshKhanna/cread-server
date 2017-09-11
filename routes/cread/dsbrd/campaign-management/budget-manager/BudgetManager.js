@@ -98,7 +98,7 @@ function registerBudgetTransfer(connection, clientid, cmid, amount, type) {
                     }
                     else {
 
-                        if (type == 'ALLOCATE' && parseFloat(rows[0].walletbalance) < parseFloat(amount)) {
+                        if (type === 'ALLOCATE' && parseFloat(rows[0].walletbalance) < parseFloat(amount)) {
                             connection.commit(function (err) {
                                 if (err) {
                                     connection.rollback(function () {
@@ -129,7 +129,7 @@ function registerBudgetTransfer(connection, clientid, cmid, amount, type) {
                             var newbalance;
                             var newbudget;
 
-                            if (type == 'ALLOCATE') { //When client wants to add the amount to camp budget from his wallet
+                            if (type === 'ALLOCATE') { //When client wants to add the amount to camp budget from his wallet
                                 newbalance = parseFloat(rows[0].walletbalance) - parseFloat(amount);
                                 newbudget = parseFloat(rows[0].budget) + parseFloat(amount);
                             }
@@ -152,7 +152,7 @@ function registerBudgetTransfer(connection, clientid, cmid, amount, type) {
 
                                     var transParams = {
                                         transid: uuid.v4(),
-                                        amount: (type == 'ALLOCATE') ? amount : rows[0].budget,
+                                        amount: (type === 'ALLOCATE') ? amount : rows[0].budget,
                                         type: type,
                                         clientid: clientid,
                                         cmid: cmid
