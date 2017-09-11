@@ -14,6 +14,7 @@ var notify = require('../../notification-system/notificationFramework');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
 var uuidGenerator = require('uuid');
+var moment = require('moment');
 
 var utils = require('../utils/Utils');
 var consts = require('../utils/Constants');

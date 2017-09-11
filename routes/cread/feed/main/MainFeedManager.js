@@ -29,7 +29,7 @@ router.post('/load/', function (request, response) {
             console.error(err);
             throw err;
         }
-        else if (datasize == 0) {
+        else if (datasize === 0) {
 
             resdata.tokenstatus = 'invalid';
             response.send(resdata);
@@ -118,7 +118,7 @@ router.post('/load/specific', function (request, response) {
             console.error(err);
             throw err;
         }
-        else if (datasize == 0) {
+        else if (datasize === 0) {
 
             resdata.tokenstatus = 'invalid';
             response.send(resdata);
@@ -154,7 +154,7 @@ router.post('/load/specific', function (request, response) {
                             tokenstatus: 'valid',
                             data: {
                                 campaign: row[0],
-                                fbidstatus: user[0].fbusername != null
+                                fbidstatus: user[0].fbusername !== null
                             }
                         });
                         response.end();

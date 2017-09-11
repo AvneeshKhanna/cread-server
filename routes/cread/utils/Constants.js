@@ -8,7 +8,7 @@ var config_type = envconfig.get("type");
 const sharerate = 10;
 const checkrate_verified = 2.5;
 const checkrate_not_verified = 0;
-const restrict_find_frequency = 50; //Measured in 'clicks per minute'
+const restrict_find_frequency = 1; //Measured in 'clicks per minute'
 
 const markup = 33; //in percentage TODO: Update markup
 const minCashInAmt = (config_type === 'PRODUCTION') ? 30 : 2;    //TODO: Can change the amount based on team discussion
