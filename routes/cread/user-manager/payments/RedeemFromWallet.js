@@ -41,11 +41,11 @@ router.post('/', function (request, response) {
 
     //TODO: Toggle comment
     //This has been done due to insufficient Paytm wallet balance but server records being updated nonetheless
-    response.status(500).send({
+    /*response.status(500).send({
         error: 'Some error occurred at the server'
     });
     response.end();
-    return;
+    return;*/
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
 
