@@ -231,7 +231,7 @@ router.post('/top-campaign-shares', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            campaignutils.getTopCampaignShares(connection, cmid, 'verified');
+            return campaignutils.getTopCampaignShares(connection, cmid, 'COMPLETE');
         })
         .then(function (rows) {
             response.send({

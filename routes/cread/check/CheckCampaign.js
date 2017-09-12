@@ -52,7 +52,7 @@ router.post('/request', function (request, response) {
         })
         .then(function (result) {
 
-            if(result.restrictfind){
+            if (result.restrictfind) {
                 response.send({
                     tokenstatus: 'valid',
                     restrictfind: result.restrictfind,
@@ -62,7 +62,7 @@ router.post('/request', function (request, response) {
                 response.end();
                 throw new BreakPromiseChainError();
             }
-            else{
+            else {
                 return getDataForCheck(uuid, connection);
             }
         })
@@ -131,20 +131,20 @@ router.post('/request', function (request, response) {
 
 });
 
-function checkPermissionForFind(connection, uuid){
+function checkPermissionForFind(connection, uuid) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT last_find_restrict FROM users WHERE uuid = ? AND last_find_restrict > DATE_SUB(NOW(), INTERVAL 3 HOUR)', [uuid], function(err, rows){
+        connection.query('SELECT last_find_restrict FROM users WHERE uuid = ? AND last_find_restrict > DATE_SUB(NOW(), INTERVAL 3 HOUR)', [uuid], function (err, rows) {
             console.log("response from checkPermission is " + JSON.stringify(rows, null, 3));
-            if(err){
+            if (err) {
                 reject(err);
             }
-            else if(rows[0]){   //Restriction exists
+            else if (rows[0]) {   //Restriction exists
                 resolve({
                     restrictfind: true,
-                    restrictfindtime: 3*60*60 - (moment().diff(moment(rows[0].last_find_restrict))/1000)    //time left for find to be activated in seconds
+                    restrictfindtime: 3 * 60 * 60 - (moment().diff(moment(rows[0].last_find_restrict)) / 1000)    //time left for find to be activated in seconds
                 });
             }
-            else{   //Restriction does not exists
+            else {   //Restriction does not exists
                 resolve({
                     restrictfind: false
                 });
@@ -583,9 +583,9 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, connection) {
                         });
                     }
                     //If the response is 'verified', then update the 'Share' table
-                    else if (checkdata.checkresponse === 'verified') {
+                    /*else if (checkdata.checkresponse === 'verified') {
                         resolve("COMPLETE");  //As this action is independent of whether the notification to the user was a success or not
-                    }
+                    }*/
                     //If the response is NOT 'verified', then count the no of checks this share has received,
                     // if the count == 1 then do not update the 'Share' table otherwise do.
                     else {
@@ -600,21 +600,21 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, connection) {
                             console.log("checks are " + JSON.stringify(row, null, 3));
                             var checkcount = row.length;
 
-                            var isVerified = (row[0].responsecount >= consts.required_verified_checks);
-                            var isCancelled = (row[1].responsecount >= consts.required_unverified_checks);
+                            var isVerified = row[0] ? (row[0].responsecount >= consts.required_verified_checks) : false;
+                            var isCancelled = row[1] ? (row[1].responsecount >= consts.required_unverified_checks) : false;
 
                             if (err) {
                                 connection.rollback(function () {
                                     reject(err);
                                 });
                             }
-                            else if(isVerified){    //Case when the no of verified checks >= 3, update Share.checkstatus
+                            else if (isVerified) {    //Case when the no of verified checks >= 3, update Share.checkstatus
                                 resolve("COMPLETE");
                             }
-                            else if (isCancelled){  //Case when the no of unverified checks >= 5, update Share.checkstatus
+                            else if (isCancelled) {  //Case when the no of unverified checks >= 5, update Share.checkstatus
                                 resolve("CANCELLED");
                             }
-                            else{   //Case when the no of verified checks < 3 and unverified checks < 5, don't update Share.checkstatus
+                            else {   //Case when the no of verified checks < 3 and unverified checks < 5, don't update Share.checkstatus
                                 resolve();
                             }
                             //Only one check, do not update the share table
@@ -705,10 +705,10 @@ router.post('/restrict-find', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'

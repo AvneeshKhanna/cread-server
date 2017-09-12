@@ -8,7 +8,7 @@ var AWS = config.AWS;
 var envconfig = require('config');
 
 var s3bucket = envconfig.get('s3.bucket');
-var s3bucketheader = s3bucket + '.s3-ap-northeast-1.amazonaws.com';
+var s3bucketheader = 's3-ap-northeast-1.amazonaws.com';
 var profilepicfilename = 'display-pic.jpg';
 var urlprotocol = 'https://';
 
@@ -75,7 +75,7 @@ function sendAWSSMS(message, phonenumber, callback){
 }
 
 function profilePicUrlCreator(uuid) {
-    return urlprotocol + s3bucketheader + '/Users/' + uuid + '/Profile/' + profilepicfilename;
+    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Profile/' + profilepicfilename;
 }
 
 module.exports = {
