@@ -264,7 +264,7 @@ function checkIfUsernameAlreadyExists(fbusername){
                 reject(err);
             }
             else{
-                if(row.length != 0){
+                if(row.length !== 0){
                     resolve(true);
                 }
                 else{

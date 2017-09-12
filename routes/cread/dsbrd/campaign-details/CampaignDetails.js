@@ -130,7 +130,7 @@ function calculateSharesPerDay(arr, date) {
 
     var filteredArr = arr.filter(function (element) {
         var thisdate = element.regdate;
-        return (moment(thisdate).format('YYYY-MM-DD') == date);
+        return (moment(thisdate).format('YYYY-MM-DD') === date);
     });
 
     console.log("filteredArray is " + JSON.stringify(filteredArr, null, 3));
@@ -210,15 +210,15 @@ function getIndividualShares(connection, cmid) {
                 for (var i = 0; i < rows.length; i++) {
                     var obj = rows[i];
                     rows[i].regdate = moment(obj.regdate).format('YYYY-MM-DD HH:mm');
-                    rows[i].sharerate = parseFloat(rows[i].sharerate +  rows[i].checkrate) * parseFloat(1 + consts.markup / 100) * parseFloat(1 + 18 / 100); //tax
+                    rows[i].sharerate = parseFloat(rows[i].sharerate +  (rows[i].checkrate * rows.length)) * parseFloat(1 + consts.markup / 100) * parseFloat(1 + 18 / 100); //tax
                 }
 
                 resolve(rows);
 
             }
-        })
+        });
 
-    })
+    });
 
 }
 

@@ -57,7 +57,7 @@ router.post('/load', function (request, response) {
 
             var thisuser;
 
-            if (thisuserindex == -1) {
+            if (thisuserindex === -1) {
                 thisuser = {};
             }
             else {

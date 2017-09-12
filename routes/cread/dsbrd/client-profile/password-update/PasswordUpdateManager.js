@@ -11,6 +11,7 @@ var envconfig = require('config');
 var envtype = envconfig.get('type');
 
 var BreakPromiseChainError = require('../../../utils/BreakPromiseChainError');
+var _auth = require('../../../../auth-token-management/AuthTokenManager');
 
 var moment = require('moment');
 var cryptojs = require('crypto-js');
@@ -23,11 +24,11 @@ router.post('/verify-user', function (request, response) {
 
     var payload;
 
-    try{
+    try {
         payload = decode(cipher);
         console.log("decoded cipher is " + JSON.stringify(payload, null, 3));
     }
-    catch(ex){
+    catch (ex) {
         console.error(ex);
         response.send({
             status: 'bad-link'
@@ -36,15 +37,15 @@ router.post('/verify-user', function (request, response) {
         return;
     }
 
-    try{
-        if(isExpired(payload.timestamp)){
+    try {
+        if (isExpired(payload.timestamp)) {
             console.log('link expired');
             response.send({
                 status: 'bad-link'
             });
             response.end();
         }
-        else{
+        else {
             response.send({
                 status: 'done',
                 clientid: payload.clientid
@@ -52,7 +53,7 @@ router.post('/verify-user', function (request, response) {
             response.end();
         }
     }
-    catch (ex){
+    catch (ex) {
         console.error(ex);
         response.status(500).send({
             error: 'Some error occurred at the server'
@@ -63,12 +64,12 @@ router.post('/verify-user', function (request, response) {
 });
 
 function decode(ciphertext) {
-    var bytes  = cryptojs.AES.decrypt(ciphertext.toString(), config['crypto-secret-key']);
+    var bytes = cryptojs.AES.decrypt(ciphertext.toString(), config['crypto-secret-key']);
     return JSON.parse(bytes.toString(cryptojs.enc.Utf8));
 }
 
 /*Timestamps are in milliseconds*/
-function isExpired(timestamp){
+function isExpired(timestamp) {
     var currenttime = moment();
     var emailtimestamp = moment(parseInt(timestamp));
 
@@ -104,10 +105,10 @@ router.post('/update-password', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
@@ -116,13 +117,24 @@ router.post('/update-password', function (request, response) {
         });
 });
 
-function updatePassword(connection, clientid, password){
+function updatePassword(connection, clientid, password) {
     return new Promise(function (resolve, reject) {
-        connection.query('UPDATE Client SET password = ? WHERE clientid = ?', [password, clientid], function (err, row) {
-            if(err){
+
+        var payload = {
+            clientid: clientid
+        };
+
+        var authkey = _auth.generateToken(payload);
+
+        connection.query('UPDATE Client ' +
+            'SET password = ? ' +
+            'WHERE clientid = ? ' +
+            'AND authkey = ?', [password, clientid, authkey], function (err, row) {
+
+            if (err) {
                 reject(err);
             }
-            else{
+            else {
                 resolve();
             }
         });

@@ -29,7 +29,7 @@ router.post('/load/', function (request, response) {
             console.error(err);
             throw err;
         }
-        else if (datasize == 0) {
+        else if (datasize === 0) {
 
             resdata.tokenstatus = 'invalid';
             response.send(resdata);
@@ -86,9 +86,9 @@ router.post('/load/', function (request, response) {
                             tokenstatus: 'valid',
                             data: {
                                 feed: rows,
-                                fbidstatus: row[0].fbusername != null,
+                                fbidstatus: row[0].fbusername !== null,
                                 accountstatus: (row[0].accountstatus === "DISABLED"), //true for account-suspension, false otherwise
-                                intereststatus: row[0].interestedUser != null
+                                intereststatus: row[0].interestedUser !== null
                             }
                         });
                         response.end();
@@ -117,7 +117,7 @@ router.post('/load/specific', function (request, response) {
             console.error(err);
             throw err;
         }
-        else if (datasize == 0) {
+        else if (datasize === 0) {
 
             resdata.tokenstatus = 'invalid';
             response.send(resdata);
@@ -153,7 +153,7 @@ router.post('/load/specific', function (request, response) {
                             tokenstatus: 'valid',
                             data: {
                                 campaign: row[0],
-                                fbidstatus: user[0].fbusername != null
+                                fbidstatus: user[0].fbusername !== null
                             }
                         });
                         response.end();

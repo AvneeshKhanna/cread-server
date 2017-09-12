@@ -95,7 +95,7 @@ router.post('/', function (request, response) {
             });
             response.end();
 
-            if(status == 'success'){
+            if(status === 'success'){
                 return informUserViaRegisteredContact(uuid, amount, userpaytmcontact);
             }
             else {
@@ -339,7 +339,7 @@ function transactToPaytm(uuid, amount, userpaytmcontact, orderId, checksumhash) 
                                                 var resbody = JSON.parse(body);
                                                 console.log("paytm response resbody is " + JSON.stringify(resbody, null, 3));
 
-                                                if (resbody.status == "SUCCESS") {
+                                                if (resbody.status === "SUCCESS") {
                                                     connection.commit(function (err) {
                                                         if (err) {  //Could be a caveat, if this happens, paytm transactions would go through but our records won't be updated
                                                             connection.rollback(function () {
@@ -353,14 +353,14 @@ function transactToPaytm(uuid, amount, userpaytmcontact, orderId, checksumhash) 
                                                         }
                                                     });
                                                 }
-                                                else if (resbody.status == "FAILURE") {
+                                                else if (resbody.status === "FAILURE") {
                                                     connection.rollback(function () {
                                                         console.log('Transaction rollbacked');
 
-                                                        if (resbody.statusCode == 'GE_1032') {    //Case of invalid mobile number
+                                                        if (resbody.statusCode === 'GE_1032') {    //Case of invalid mobile number
                                                             resolve('invalid-contact');
                                                         }
-                                                        else if(resbody.statusCode == 'STUC_1002'){ //Payee record not found, please verify emailId/ssoId.
+                                                        else if(resbody.statusCode === 'STUC_1002'){ //Payee record not found, please verify emailId/ssoId.
                                                             resolve("invalid-user");
                                                         }
                                                         else {

@@ -333,7 +333,7 @@ function checkUserLastShare(cmid, uuid) {
                  resolve(result);
                  }*/
 
-                if (rows.length != 0) {    //One or more shares exist within the last 24 hours
+                if (rows.length !== 0) {    //One or more shares exist within the last 24 hours
 
                     var thisCmidShareIndex = rows.map(function (element) {
                         return element.cmid;
@@ -341,7 +341,7 @@ function checkUserLastShare(cmid, uuid) {
 
                     console.log('thisCmidShareIndex is ' + thisCmidShareIndex);
 
-                    if (thisCmidShareIndex != -1) { //Case where a share exists whose cmid is the same as the one requested to the server
+                    if (thisCmidShareIndex !== -1) { //Case where a share exists whose cmid is the same as the one requested to the server
 
                         console.log('(thisCmidShareIndex != -1) block called');
 

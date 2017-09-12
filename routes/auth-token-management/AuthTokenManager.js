@@ -85,7 +85,7 @@ function authValid(uuid, authkey) {
             if(err){
                 throw err;
             }
-            else if(datasize == 0){
+            else if(datasize === 0){
                 reject();
             }
             else{
@@ -110,7 +110,7 @@ function clientAuthValid(clientid, authkey) {
             if(err){
                 throw err;
             }
-            else if(row.length == 0){
+            else if(row.length === 0){
                 reject();
             }
             else{
