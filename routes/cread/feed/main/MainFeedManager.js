@@ -88,7 +88,8 @@ router.post('/load/', function (request, response) {
                                 feed: rows,
                                 fbidstatus: row[0].fbusername !== null,
                                 accountstatus: (row[0].accountstatus === "DISABLED"), //true for account-suspension, false otherwise
-                                intereststatus: row[0].interestedUser !== null
+                                intereststatus: row[0].interestedUser !== null,
+                                restrictfindfrequency: consts.restrict_find_frequency
                             }
                         });
                         response.end();
