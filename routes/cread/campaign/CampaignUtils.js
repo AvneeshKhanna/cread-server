@@ -4,6 +4,7 @@
 'use-strict';
 
 var config = require('../../Config');
+var utils = require('../utils/Utils');
 
 function addCampaign(params, connection) {
     return new Promise(function (resolve, reject) {
@@ -62,8 +63,35 @@ function getCampaignShares(connection, cmid, sharetypeflag) {
     });
 }
 
+function getTopCampaignShares(connection, cmid, typeshareflag) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT users.firstname, users.uuid ' +
+            'FROM Share ' +
+            'JOIN users ' +
+            'ON Share.uuid = users.uuid ' +
+            'WHERE Share.cmid = ? ' +
+            'AND Share.checkstatus = ? ' +
+            'ORDER BY Share.regdate DESC ' +
+            'LIMIT 2', [cmid, typeshareflag], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                if(rows.length !== 0){
+                    rows = rows.map(function (element) {
+                        element.profilepicurl = utils.profilePicUrlCreator(element.uuid);
+                        return element;
+                    });
+                }
+                resolve(rows);
+            }
+        });
+    });
+}
+
 module.exports = {
     addCampaign: addCampaign,
     updateCampaign: updateCampaign,
-    getCampaignShares: getCampaignShares
+    getCampaignShares: getCampaignShares,
+    getTopCampaignShares: getTopCampaignShares
 };

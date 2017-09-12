@@ -211,4 +211,50 @@ router.post('/campaign-shares', function (request, response) {
         });
 });
 
+router.post('/top-campaign-shares', function (request, response) {
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var cmid = request.body.cmid;
+
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            campaignutils.getTopCampaignShares(connection, cmid, 'verified');
+        })
+        .then(function (rows) {
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    shares: rows
+                }
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
+
 module.exports = router;

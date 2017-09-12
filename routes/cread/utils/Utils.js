@@ -5,6 +5,13 @@
 var config = require('../../Config');
 var AWS = config.AWS;
 
+var envconfig = require('config');
+
+var s3bucket = envconfig.get('s3.bucket');
+var s3bucketheader = s3bucket + '.s3-ap-northeast-1.amazonaws.com';
+var profilepicfilename = 'display-pic.jpg';
+var urlprotocol = 'https://';
+
 /**
  * Function to add/update the given key value as query parameter to the uri
  * */
@@ -24,7 +31,7 @@ function updateQueryStringParameter(uri, key, value) {
 * */
 function sendAWSSMS(message, phonenumber, callback){
 
-    if(phonenumber.length != 10){
+    if(phonenumber.length !== 10){
         var err = new Error('Phone number must be exactly 10-digits in length');
         callback(err, null);
         return;
@@ -67,7 +74,12 @@ function sendAWSSMS(message, phonenumber, callback){
 
 }
 
+function profilePicUrlCreator(uuid) {
+    return urlprotocol + s3bucketheader + '/Users/' + uuid + '/Profile/' + profilepicfilename;
+}
+
 module.exports = {
     updateQueryStringParameter: updateQueryStringParameter,
-    sendAWSSMS: sendAWSSMS
+    sendAWSSMS: sendAWSSMS,
+    profilePicUrlCreator: profilePicUrlCreator
 };
