@@ -6,7 +6,7 @@ var envconfig = require('config');
 var config_type = envconfig.get("type");
 
 const sharerate = 10;
-const checkrate_verified = 2.5;
+const checkrate_verified = 1;
 const checkrate_not_verified = 0;
 const required_verified_checks = 3;
 const required_unverified_checks = 5;

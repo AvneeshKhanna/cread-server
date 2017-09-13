@@ -194,16 +194,16 @@ function getDataForCheck(uuid, connection) {
                     }
                     else {
                         //Retrieve a user's share data for a given cmid who has shared within the last 24 hours and has not been verified
-                        connection.query('SELECT Share.UUID AS sh_uuid, Share.cmid AS sh_cmid, Share.sharerate, Share.regdate AS sharetime, Share.shareid, Share.ulinkkey, Share.ulinkvalue, ' +
-                            '(CASE WHEN(Checks.UUID IS NULL) THEN "INVALID" ELSE Checks.UUID END) AS checkerid ' + //Since NULL values in SQL cannot be compared with <>, it has to be converted into a NON-NULL value like 'INVALID' in this case
-                            'FROM Share ' +
-                            'LEFT JOIN Checks ' +
+                        connection.query('SELECT Share.UUID AS sh_uuid, Share.cmid AS sh_cmid, Share.sharerate, Share.regdate AS sharetime, Share.shareid, Share.ulinkkey, Share.ulinkvalue ' +
+                            /*'(CASE WHEN(Checks.UUID IS NULL) THEN "INVALID" ELSE Checks.UUID END) AS checkerid ' + //Since NULL values in SQL cannot be compared with <>, it has to be converted into a NON-NULL value like 'INVALID' in this case
+                            */'FROM Share ' +
+                            /*'LEFT JOIN Checks ' +
                             'ON Share.shareid = Checks.shareid ' +
-                            'WHERE Share.checkstatus = "PENDING" ' +
+                            */'WHERE Share.checkstatus = "PENDING" ' +
                             'AND Share.regdate < DATE_SUB(NOW(), INTERVAL 90 MINUTE) ' +    //To get only those shares which have been live for 90 minutes
                             'AND Share.UUID <> ? ' +    //To get shares other than those done by this user
                             'AND Share.locked = ? ' +   //To get unlocked shares
-                            'HAVING checkerid <> ? ' +  //To get only those shares which haven't been checked by this user even once
+                            'AND Share.shareid NOT IN (SELECT shareid FROM Checks WHERE uuid = ?) ' +  //To get only those shares which haven't been checked by this user even once
                             'ORDER BY RAND() ' +        //To randomise
                             'LIMIT 1 ' +
                             'FOR UPDATE', [uuid, false, uuid], function (err, rows) {
@@ -518,7 +518,7 @@ function updateCampaignBudget(connection, sharerate, checkrate, cmid) {
                     else {
                         resolve();
                     }
-                })
+                });
             }
 
         });
@@ -590,18 +590,16 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, connection) {
                     // if the count == 1 then do not update the 'Share' table otherwise do.
                     else {
 
-                        connection.query('SELECT (CASE WHEN(Checks.responses = "verified") THEN "verified" ELSE "un-verified" END) AS cresponse, ' +
-                            'COUNT(*) AS responsecount ' +
+                        connection.query('SELECT SUM(CASE WHEN(responses = "verified") THEN 1 ELSE 0 END) AS verifiedCount, ' +
+                            'SUM(CASE WHEN(responses <> "verified") THEN 1 ELSE 0 END) AS unverifiedCount ' +
                             'FROM Checks ' +
-                            'WHERE shareid = ? ' +
-                            'GROUP BY cresponse ' +
-                            'ORDER BY cresponse DESC', [shareid], function (err, row) {
+                            'WHERE shareid = ?', [shareid], function (err, row) {
 
                             console.log("checks are " + JSON.stringify(row, null, 3));
                             var checkcount = row.length;
 
-                            var isVerified = row[0] ? (row[0].responsecount >= consts.required_verified_checks) : false;
-                            var isCancelled = row[1] ? (row[1].responsecount >= consts.required_unverified_checks) : false;
+                            var isVerified = row[0].verifiedCount >= consts.required_verified_checks;
+                            var isCancelled = row[0].unverifiedCount >= consts.required_unverified_checks;
 
                             if (err) {
                                 connection.rollback(function () {

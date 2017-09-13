@@ -191,7 +191,7 @@ function getIndividualShares(connection, cmid) {
 
     return new Promise(function (resolve, reject) {
 
-        connection.query('SELECT users.firstname, users.lastname, Share.sharerate, Share.regdate, Share.checkstatus, Checks.checkrate ' +
+        connection.query('SELECT users.firstname, users.lastname, Share.sharerate, Share.regdate, Share.checkstatus, Checks.checkrate, COUNT(*) AS shares_verified_count ' +
             'FROM Share ' +
             'JOIN users ' +
             'ON Share.UUID = users.UUID ' +
@@ -200,6 +200,7 @@ function getIndividualShares(connection, cmid) {
             'WHERE Share.cmid = ? ' +
             'AND Share.checkstatus = ? ' +
             'AND Checks.responses = ? ' +
+            'GROUP BY Share.shareid ' +
             'ORDER BY Share.regdate DESC', [cmid, 'COMPLETE', 'verified'], function (err, rows) {
 
             if (err) {
@@ -210,7 +211,7 @@ function getIndividualShares(connection, cmid) {
                 for (var i = 0; i < rows.length; i++) {
                     var obj = rows[i];
                     rows[i].regdate = moment(obj.regdate).format('YYYY-MM-DD HH:mm');
-                    rows[i].sharerate = parseFloat(rows[i].sharerate +  (rows[i].checkrate * rows.length)) * parseFloat(1 + consts.markup / 100) * parseFloat(1 + 18 / 100); //tax
+                    rows[i].sharerate = parseFloat(rows[i].sharerate +  (rows[i].checkrate * rows[i].shares_verified_count)) * parseFloat(1 + consts.markup / 100) * parseFloat(1 + 18 / 100); //tax
                 }
 
                 resolve(rows);
