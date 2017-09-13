@@ -104,16 +104,29 @@ router.post('/request', function (request, response) {
 
                 console.log("row is " + JSON.stringify(row, null, 3));
 
-                response.send({
+                return checkToRateUser(connection, row.sh_uuid, uuid, row)
+
+                /*response.send({
                     tokenstatus: 'valid',
                     restrictfind: false,
                     restrictfindtime: null,
                     data: row
                 });
                 response.end();
-                throw new BreakPromiseChainError();
+                throw new BreakPromiseChainError();*/
             }
 
+        })
+        .then(function (result) {
+            response.send({
+                tokenstatus: 'valid',
+                restrictfind: false,
+                restrictfindtime: null,
+                torate: result.torate,
+                data: result.row
+            });
+            response.end();
+            throw new BreakPromiseChainError();
         })
         .catch(function (err) {
             config.disconnect(connection);
@@ -254,9 +267,9 @@ function getDataForCheck(uuid, connection) {
                                         //Concatenate 'cm_usr_data' and 'rows'
                                         rows[0] = Object.assign({}, cm_usr_data[0], rows[0]);
 
-                                        if (rows[0].hasOwnProperty('sh_uuid')) {
+                                        /*if (rows[0].hasOwnProperty('sh_uuid')) {
                                             delete rows[0].sh_uuid;
-                                        }
+                                        }*/
 
                                         if (rows[0].hasOwnProperty('sh_cmid')) {
                                             delete rows[0].sh_cmid;
@@ -308,6 +321,37 @@ function getDataForCheck(uuid, connection) {
 }
 
 /**
+ * Checks whether the sharer's profile has been rated atleast once by the checker
+ * */
+function checkToRateUser(connection, sharerid, checkerid, row) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT Share.shareid ' +
+            'FROM Share ' +
+            'JOIN Checks ' +
+            'ON Share.shareid = Checks.shareid ' +
+            'WHERE Share.uuid = ? ' +
+            'AND Checks.uuid = ? ' +
+            'AND Checks.profilerating IS NOT NULL', [sharerid, checkerid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else if (rows.length === 0) { //The checker is reviewing sharer's profile for the first time
+                resolve({
+                    row: row,
+                    torate: true
+                });
+            }
+            else {
+                resolve({
+                    row: row,
+                    torate: false
+                });
+            }
+        });
+    });
+}
+
+/**
  * Function to register the check of a share
  * */
 router.post('/register', function (request, response) {
@@ -328,7 +372,8 @@ router.post('/register', function (request, response) {
         checkresponse: validateCheckResponse(request.body.checkresponse), //Should be one of the following constants: VERIFIED, ABSENT_PROFILE, WRONG_PERSON, ABSENT_SHARE
         fblikes: request.body.fblikes,
         fbcomments: request.body.fbcomments,
-        fbshares: request.body.fbshares
+        fbshares: request.body.fbshares,
+        profilereviewscore: request.body.profilereviewscore
     };
 
     //A recursive approach is used in case of deadlock aversion. This would ensure that the functions are executed at least thrice
@@ -419,7 +464,6 @@ router.post('/register', function (request, response) {
                 }
             });
     }
-
     recurrent(retrycount);
 
 });
@@ -546,6 +590,7 @@ function registerCheckResponse(checkdata, shareid, cmid, uuid, connection) {
             fblikes: checkdata.fblikes,
             fbcomments: checkdata.fbcomments,
             fbshares: checkdata.fbshares,
+            profilerating: checkdata.profilereviewscore,
             checkrate: (checkdata.checkresponse === "verified" ? consts.checkrate_verified : consts.checkrate_not_verified)
         };
 
