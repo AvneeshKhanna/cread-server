@@ -369,7 +369,7 @@ router.post('/register', function (request, response) {
         fblikes: request.body.fblikes,
         fbcomments: request.body.fbcomments,
         fbshares: request.body.fbshares,
-        profilereviewscore: (request.body.profilereviewscore) ? request.body.profilereviewscore : -1
+        profilereviewscore: (request.body.profilereviewscore) ? request.body.profilereviewscore  : -1
     };
 
     //A recursive approach is used in case of deadlock aversion. This would ensure that the functions are executed at least thrice
