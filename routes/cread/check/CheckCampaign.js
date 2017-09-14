@@ -539,7 +539,7 @@ function updateCampaignBudget(connection, sharerate, checkrate, cmid) {
         var grossAmount = parseFloat(amount + calculatedTax);
 
         console.log('markup subtracted from budget ' + calculatedMarkup);
-        console.log('amount subtracted from budget ' + amount);
+        console.log('amount subtracted from budget ' + grossAmount);
 
         connection.query('UPDATE Campaign SET budget = (budget - ?) WHERE cmid = ?', [grossAmount, cmid], function (err, row) {
 
