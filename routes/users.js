@@ -170,7 +170,7 @@ router.post('/sign-in', function (request, response, next) {
         if (err) {
             throw err;
         }
-        else if (result.length == 0) {  //Case of unidentified contact
+        else if (result.length === 0) {  //Case of unidentified contact
 
             localJson = {
                 status: 'invalid-contact'
@@ -182,7 +182,7 @@ router.post('/sign-in', function (request, response, next) {
             response.send(localJson);
             response.end();
         }
-        else if (result[0].password != password) {   //Case of unidentified password
+        else if (result[0].password !== password) {   //Case of unidentified password
 
             localJson = {
                 status: 'invalid-password'

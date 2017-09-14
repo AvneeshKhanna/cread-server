@@ -19,7 +19,7 @@ router.post('/load/', function (request, response) {
     var authkey = request.body.authkey;
     var uuid = request.body.uuid;
 
-    console.log("authkey is " + JSON.stringify(authkey, null, 3));
+    console.log("request is " + JSON.stringify(request.body, null, 3));
 
     var resdata = {};
 
