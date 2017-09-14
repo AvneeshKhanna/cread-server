@@ -117,13 +117,12 @@ router.post('/request', function (request, response) {
             }
 
         })
-        .then(function (result) {
+        .then(function (row) {
             response.send({
                 tokenstatus: 'valid',
                 restrictfind: false,
                 restrictfindtime: null,
-                torate: result.torate,
-                data: result.row
+                data: row
             });
             response.end();
             throw new BreakPromiseChainError();
@@ -331,21 +330,18 @@ function checkToRateUser(connection, sharerid, checkerid, row) {
             'ON Share.shareid = Checks.shareid ' +
             'WHERE Share.uuid = ? ' +
             'AND Checks.uuid = ? ' +
-            'AND Checks.profilerating IS NOT NULL', [sharerid, checkerid], function (err, rows) {
+            'AND Checks.profilerating <> -1', [sharerid, checkerid], function (err, rows) {
             if (err) {
                 reject(err);
             }
             else if (rows.length === 0) { //The checker is reviewing sharer's profile for the first time
-                resolve({
-                    row: row,
-                    torate: true
-                });
+
+                row.torate = true;
+                resolve(row);
             }
             else {
-                resolve({
-                    row: row,
-                    torate: false
-                });
+                row.torate = false;
+                resolve(row);
             }
         });
     });
@@ -685,6 +681,7 @@ function notifyUserForCheck(cmid, shareid, sharerid) {
     config.getNewConnection()
         .then(function (connection) {
             connection.query('SELECT title FROM Campaign WHERE cmid = ?', [cmid], function (err, row) {
+                config.disconnect(connection);
                 if (err) {
                     console.error(err);
                 }
@@ -706,7 +703,7 @@ function notifyUserForCheck(cmid, shareid, sharerid) {
                         if (err) {
                             console.error(err);
                         }
-                    })
+                    });
                 }
             });
         });
