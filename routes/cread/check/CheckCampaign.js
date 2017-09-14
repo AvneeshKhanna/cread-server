@@ -640,6 +640,7 @@ function notifyUserForCheck(cmid, shareid, sharerid) {
     config.getNewConnection()
         .then(function (connection) {
             connection.query('SELECT title FROM Campaign WHERE cmid = ?', [cmid], function (err, row) {
+                config.disconnect(connection);
                 if (err) {
                     console.error(err);
                 }
@@ -661,7 +662,7 @@ function notifyUserForCheck(cmid, shareid, sharerid) {
                         if (err) {
                             console.error(err);
                         }
-                    })
+                    });
                 }
             });
         });
