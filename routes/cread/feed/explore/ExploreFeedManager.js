@@ -137,6 +137,8 @@ function loadExploreFeed(connection, uuid) {
 
 router.post('/campaign-shares', function (request, response) {
 
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var cmid = request.body.cmid;
@@ -157,6 +159,7 @@ router.post('/campaign-shares', function (request, response) {
             return campaignutils.getCampaignShares(connection, cmid, 'NA');
         })
         .then(function (rows) {
+            console.log("rows from getCampaignShares is " + JSON.stringify(rows, null, 3));
             response.send({
                 tokenstatus: 'valid',
                 data: {

@@ -74,12 +74,12 @@ function sendAWSSMS(message, phonenumber, callback){
 
 }
 
-function profilePicUrlCreator(uuid) {
+function createProfilePicUrl(uuid) {
     return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Profile/' + profilepicfilename;
 }
 
 module.exports = {
     updateQueryStringParameter: updateQueryStringParameter,
     sendAWSSMS: sendAWSSMS,
-    profilePicUrlCreator: profilePicUrlCreator
+    createProfilePicUrl: createProfilePicUrl
 };

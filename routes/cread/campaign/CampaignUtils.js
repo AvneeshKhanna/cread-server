@@ -44,18 +44,24 @@ function updateCampaign(cmid, params, connection){
 
 function getCampaignShares(connection, cmid, sharetypeflag) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT users.firstname, users.lastname, users.UUID, Share.shareid, COUNT(*) AS sharescount ' +
+        connection.query('SELECT users.firstname, users.lastname, users.uuid, Share.shareid, COUNT(*) AS sharescount ' +
             'FROM Share ' +
             'JOIN users ' +
-            'ON Share.UUID = users.UUID ' +
+            'ON Share.uuid = users.uuid ' +
             'WHERE Share.cmid = ? ' +
             'AND Share.checkstatus = ? ' +
-            'GROUP BY users.UUID ', [cmid, sharetypeflag], function (err, rows) {
+            'GROUP BY users.uuid ', [cmid, sharetypeflag], function (err, rows) {
 
             if(err){
                 reject(err);
             }
             else{
+
+                rows = rows.map(function (element) {
+                    element.profilepicurl = utils.createProfilePicUrl(element.uuid);
+                    return element;
+                });
+
                 resolve(rows);
             }
 
@@ -79,7 +85,7 @@ function getTopCampaignShares(connection, cmid, typeshareflag) {
             else {
                 if(rows.length !== 0){
                     rows = rows.map(function (element) {
-                        element.profilepicurl = utils.profilePicUrlCreator(element.uuid);
+                        element.profilepicurl = utils.createProfilePicUrl(element.uuid);
                         return element;
                     });
                 }

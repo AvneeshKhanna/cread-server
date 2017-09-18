@@ -38,7 +38,7 @@ router.post('/load/', function (request, response) {
         }
         else {
             connection.query('SELECT Campaign.cmid, Campaign.title, Campaign.description, Campaign.mission, Campaign.type, Campaign.contentbaseurl, ' +
-                'Campaign.imagepath, Campaign.regdate, SUM(!ISNULL(Share.shareid)) AS sharescount, ' +
+                'Campaign.imagepath, Campaign.regdate, SUM(CASE WHEN(Share.checkstatus = "COMPLETE") THEN 1 ELSE 0 END) AS sharescount, ' +
                 'Client.name AS clientname, Client.bio AS clientbio ' +
                 'FROM Campaign ' +
                 'JOIN Client ' +
@@ -189,6 +189,9 @@ router.post('/campaign-shares', function (request, response) {
             return campaignutils.getCampaignShares(connection, cmid, 'COMPLETE');
         })
         .then(function (rows) {
+            
+            console.log("rows from getCampaignShares is " + JSON.stringify(rows, null, 3));
+            
             response.send({
                 tokenstatus: 'valid',
                 data: {
