@@ -42,33 +42,71 @@ function updateCampaign(cmid, params, connection){
     });
 }
 
-function getCampaignShares(connection, cmid, sharetypeflag) {
-    return new Promise(function (resolve, reject) {
-        connection.query('SELECT users.firstname, users.lastname, users.uuid, Share.shareid, COUNT(*) AS sharescount ' +
-            'FROM Share ' +
-            'JOIN users ' +
-            'ON Share.uuid = users.uuid ' +
-            'WHERE Share.cmid = ? ' +
-            'AND Share.checkstatus = ? ' +
-            'GROUP BY users.uuid ', [cmid, sharetypeflag], function (err, rows) {
+/**
+ * Returns the details of the users who have shared a particular campaign. Implements pagination
+ * */
+function getCampaignShares(connection, cmid, sharetypeflag, limit, page) {
 
+    var query = 'SELECT users.firstname, users.lastname, users.uuid, Share.shareid, COUNT(*) AS sharescount ' +
+        'FROM Share ' +
+        'JOIN users ' +
+        'ON Share.uuid = users.uuid ' +
+        'WHERE Share.cmid = ? ' +
+        'AND Share.checkstatus = ? ' +
+        'GROUP BY users.uuid ' +
+        'ORDER BY Share.regdate DESC ';
+
+    var offset = 0;
+
+    if(page === -1){
+        //For backward compatibility
+        //Do nothing
+    }
+    else{
+        //Modify the query
+        offset = page * limit;
+        query += 'LIMIT ? OFFSET ?';
+    }
+
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT COUNT(DISTINCT uuid) AS totalcount ' +
+            'FROM Share ' +
+            'WHERE cmid = ? ' +
+            'AND checkstatus = ? ', [cmid, sharetypeflag], function(err, data){
             if(err){
                 reject(err);
             }
             else{
 
-                rows = rows.map(function (element) {
-                    element.profilepicurl = utils.createProfilePicUrl(element.uuid);
-                    return element;
+                var totalcount = data[0].totalcount;
+
+                connection.query(query, [cmid, sharetypeflag, limit, offset], function (err, rows) {
+
+                    if(err){
+                        reject(err);
+                    }
+                    else{
+
+                        rows = rows.map(function (element) {
+                            element.profilepicurl = utils.createProfilePicUrl(element.uuid);
+                            return element;
+                        });
+
+                        resolve({
+                            rows: rows,
+                            requestmore: totalcount > (offset + limit)
+                        });
+                    }
+
                 });
-
-                resolve(rows);
             }
-
         });
     });
 }
 
+/**
+ * Returns top 2 users' details who have shared the given campaign
+ * */
 function getTopCampaignShares(connection, cmid, typeshareflag) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT users.firstname, users.uuid ' +

@@ -142,6 +142,9 @@ router.post('/campaign-shares', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var cmid = request.body.cmid;
+    var page = request.body.page ? request.body.page : -1;
+
+    var limit = 30;
     var connection;
 
     _auth.authValid(uuid, authkey)
@@ -156,14 +159,15 @@ router.post('/campaign-shares', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return campaignutils.getCampaignShares(connection, cmid, 'NA');
+            return campaignutils.getCampaignShares(connection, cmid, 'NA', limit, page);
         })
-        .then(function (rows) {
-            console.log("rows from getCampaignShares is " + JSON.stringify(rows, null, 3));
+        .then(function (result) {
+            console.log("rows from getCampaignShares is " + JSON.stringify(result.rows, null, 3));
             response.send({
                 tokenstatus: 'valid',
                 data: {
-                    shares: rows
+                    shares: result.rows,
+                    requestmore: result.requestmore
                 }
             });
             response.end();
