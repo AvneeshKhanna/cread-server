@@ -47,6 +47,8 @@ function updateCampaign(cmid, params, connection){
  * */
 function getCampaignShares(connection, cmid, sharetypeflag, limit, page) {
 
+    console.log("limit and page is " + JSON.stringify(limit + " " + page, null, 3));
+
     var query = 'SELECT users.firstname, users.lastname, users.uuid, Share.shareid, COUNT(*) AS sharescount ' +
         'FROM Share ' +
         'JOIN users ' +
@@ -78,6 +80,7 @@ function getCampaignShares(connection, cmid, sharetypeflag, limit, page) {
             }
             else{
 
+                console.log("totalcount is " + JSON.stringify(data[0].totalcount, null, 3));
                 var totalcount = data[0].totalcount;
 
                 connection.query(query, [cmid, sharetypeflag, limit, offset], function (err, rows) {

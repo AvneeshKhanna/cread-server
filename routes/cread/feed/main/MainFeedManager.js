@@ -1,6 +1,7 @@
 /**
  * Created by avnee on 07-06-2017.
  */
+'use-strict';
 
 var express = require('express');
 var router = express.Router();
@@ -172,9 +173,9 @@ router.post('/campaign-shares', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var cmid = request.body.cmid;
-    var page = request.body.page ? request.body.page : -1;
+    var page = (request.body.page !== undefined) ? request.body.page : -1;
 
-    var limit = 10; //TODO: Revert to 30
+    var limit = 30; //TODO: Revert to 30
     var connection;
 
     console.log("request is " + JSON.stringify(request.body, null, 3));

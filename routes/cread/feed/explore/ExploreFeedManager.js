@@ -142,7 +142,7 @@ router.post('/campaign-shares', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var cmid = request.body.cmid;
-    var page = request.body.page ? request.body.page : -1;
+    var page = (request.body.page !== undefined) ? request.body.page : -1;
 
     var limit = 30;
     var connection;
