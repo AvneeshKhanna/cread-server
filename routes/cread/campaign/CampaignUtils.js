@@ -108,6 +108,59 @@ function getCampaignShares(connection, cmid, sharetypeflag, limit, page) {
 }
 
 /**
+* Returns a campaign's hatsoffs with pagination system
+* */
+function getCampaignHatsOffs(connection, cmid, limit, page) {
+    console.log("limit and page is " + JSON.stringify(limit + " " + page, null, 3));
+
+    var query = 'SELECT users.firstname, users.lastname, users.uuid ' +
+        'FROM HatsOff ' +
+        'JOIN users ' +
+        'ON HatsOff.uuid = users.uuid ' +
+        'WHERE HatsOff.cmid = ? ' +
+        'ORDER BY HatsOff.regdate DESC ' +
+        'LIMIT ? ' +
+        'OFFSET ?';
+
+    var offset = page * limit;
+
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT COUNT(*) AS totalcount ' +
+            'FROM HatsOff ' +
+            'WHERE cmid = ? ', [cmid], function(err, data){
+            if(err){
+                reject(err);
+            }
+            else{
+
+                console.log("totalcount is " + JSON.stringify(data[0].totalcount, null, 3));
+                var totalcount = data[0].totalcount;
+
+                connection.query(query, [cmid, limit, offset], function (err, rows) {
+
+                    if(err){
+                        reject(err);
+                    }
+                    else{
+
+                        rows = rows.map(function (element) {
+                            element.profilepicurl = utils.createProfilePicUrl(element.uuid);
+                            return element;
+                        });
+
+                        resolve({
+                            rows: rows,
+                            requestmore: totalcount > (offset + limit)
+                        });
+                    }
+
+                });
+            }
+        });
+    });
+}
+
+/**
  * Returns top 2 users' details who have shared the given campaign
  * */
 function getTopCampaignShares(connection, cmid, typeshareflag) {
@@ -140,5 +193,6 @@ module.exports = {
     addCampaign: addCampaign,
     updateCampaign: updateCampaign,
     getCampaignShares: getCampaignShares,
-    getTopCampaignShares: getTopCampaignShares
+    getTopCampaignShares: getTopCampaignShares,
+    getCampaignHatsOffs: getCampaignHatsOffs
 };

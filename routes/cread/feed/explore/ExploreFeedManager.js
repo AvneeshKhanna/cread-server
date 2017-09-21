@@ -67,12 +67,15 @@ function loadExploreFeed(connection, uuid) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT users.uuid, Campaign.cmid, Campaign.title, Campaign.description, Campaign.mission, Campaign.type, Campaign.contentbaseurl, ' +
             'Campaign.imagepath, Campaign.regdate, SUM(!ISNULL(Share.shareid)) AS sharescount, ' +
-            'Client.name AS clientname, Client.bio AS clientbio ' +
+            'Client.name AS clientname, Client.bio AS clientbio, ' +
+            'SUM(!ISNULL(HatsOff.hoid)) AS hatsoffcount ' +
             'FROM Campaign ' +
             'JOIN Client ' +
             'ON Campaign.clientid = Client.clientid ' +
             'JOIN users ' +
             'ON users.clientid = Client.clientid ' +
+            'LEFT JOIN HatsOff ' +
+            'ON Campaign.cmid = HatsOff.cmid ' +
             'LEFT JOIN Share ' +
             'ON Campaign.cmid = Share.cmid ' +
             'WHERE Campaign.cmpstatus = ? ' +
@@ -234,6 +237,50 @@ router.post('/top-campaign-shares', function (request, response) {
             }
         });
 
+});
+
+router.post('/campaign-hatsoffs', function (request, response) {
+
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var cmid = request.body.cmid;
+    var page = request.body.page;
+
+    var limit = 30;
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return campaignutils.getCampaignHatsOffs(connection, cmid, limit, page);
+        })
+        .then(function (result) {
+            console.log("rows from getCampaignHatsOffs is " + JSON.stringify(result.rows, null, 3));
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    hatsoffs: result.rows,
+                    requestmore: result.requestmore
+                }
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
 });
 
 module.exports = router;
