@@ -136,6 +136,7 @@ app.use('/user-campaigns', require('./routes/cread/track/campaigns/UserCampaignM
 app.use('/explore-feed', require('./routes/cread/feed/explore/ExploreFeedManager'));
 app.use('/share-campaign-explore', require('./routes/cread/share/ShareCampaignExplore'));
 app.use('/explore-campaign', require('./routes/cread/campaign/CampaignManagerExplore'));
+app.use('/hatsoff', require('./routes/cread/hats-off/HatsOffManager'));
 
 //-dashboard-
 app.use('/campaign-details', require('./routes/cread/dsbrd/campaign-details/CampaignDetails'));
