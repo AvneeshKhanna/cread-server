@@ -165,7 +165,7 @@ function getCampaignHatsOffs(connection, cmid, limit, page) {
  * */
 function getTopCampaignShares(connection, cmid, typeshareflag) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT users.firstname, users.uuid ' +
+        connection.query('SELECT users.firstname, users.lastname, users.uuid ' +
             'FROM Share ' +
             'JOIN users ' +
             'ON Share.uuid = users.uuid ' +
