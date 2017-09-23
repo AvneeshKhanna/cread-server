@@ -308,7 +308,7 @@ router.post('/campaign-hatsoffs', function (request, response) {
     var cmid = request.body.cmid;
     var page = request.body.page;
 
-    var limit = 30;
+    var limit = 10; //TODO: Change to 30
     var connection;
 
     _auth.authValid(uuid, authkey)
