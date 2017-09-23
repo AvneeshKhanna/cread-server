@@ -68,7 +68,7 @@ function loadExploreFeed(connection, uuid) {
         connection.query('SELECT users.uuid, Campaign.cmid, Campaign.title, Campaign.description, Campaign.mission, Campaign.type, Campaign.contentbaseurl, ' +
             'Campaign.imagepath, Campaign.regdate, SUM(!ISNULL(Share.shareid)) AS sharescount, ' +
             'Client.name AS clientname, Client.bio AS clientbio, ' +
-            'SUM(!ISNULL(HatsOff.hoid)) AS hatsoffcount ' +
+            'COUNT (DISTINCT HatsOff.hoid) AS hatsoffcount ' +
             'FROM Campaign ' +
             'JOIN Client ' +
             'ON Campaign.clientid = Client.clientid ' +
@@ -80,7 +80,7 @@ function loadExploreFeed(connection, uuid) {
             'ON Campaign.cmid = Share.cmid ' +
             'WHERE Campaign.cmpstatus = ? ' +
             'AND Campaign.main_feed = ? ' +
-            'GROUP BY Campaign.regdate', ['ACTIVE', false], function (err, rows) {
+            'GROUP BY Campaign.cmid', ['ACTIVE', false], function (err, rows) {
 
             if (err) {
                 reject(err);
@@ -117,19 +117,50 @@ function loadExploreFeed(connection, uuid) {
                     else {
                         console.log("rows after querying is " + JSON.stringify(rows, null, 3));
 
-                        if(row[0]){
-                            resolve({
-                                explorefeed: rows,
-                                biostatus: !!row[0].bio
-                            });
-                        }
-                        else{
-                            resolve({
-                                explorefeed: rows,
-                                biostatus: false
-                            });
-                        }
+                        var activeCmpns = rows.map(function (element) {
+                            return element.cmid;
+                        });
 
+                        connection.query('SELECT cmid, uuid ' +
+                            'FROM HatsOff ' +
+                            'WHERE uuid = ? ' +
+                            'AND cmid IN (?) ' +
+                            'GROUP BY cmid', [uuid, activeCmpns], function (err, data) {
+
+                            if (err) {
+                                reject(err);
+                            }
+                            else {
+
+                                rows.map(function (element) {
+
+                                    var thisCampaignIndex = data.map(function (el) {
+                                        return el.cmid;
+                                    }).indexOf(element.cmid);
+
+                                    element.hatsoffstatus = thisCampaignIndex !== -1;
+                                    // element.hatsoffcount = (thisCampaignIndex !== -1 ? data[thisCampaignIndex].hatsoffcount : 0);
+
+                                    return element;
+                                });
+
+                                console.log("response rows are " + JSON.stringify(rows, null, 3));
+
+                                if(row[0]){
+                                    resolve({
+                                        explorefeed: rows,
+                                        biostatus: !!row[0].bio
+                                    });
+                                }
+                                else{
+                                    resolve({
+                                        explorefeed: rows,
+                                        biostatus: false
+                                    });
+                                }
+                            }
+
+                        });
                     }
                 });
             }

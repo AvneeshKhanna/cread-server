@@ -19,7 +19,9 @@ var utils = require('../utils/Utils');
 var consts = require('../utils/Constants');
 
 router.post('/on-click', function (request, response) {
-    
+
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var cmid = request.body.cmid;

@@ -41,7 +41,7 @@ router.post('/load/', function (request, response) {
             connection.query('SELECT Campaign.cmid, Campaign.title, Campaign.description, Campaign.mission, Campaign.type, Campaign.contentbaseurl, ' +
                 'Campaign.imagepath, Campaign.regdate, SUM(CASE WHEN(Share.checkstatus = "COMPLETE") THEN 1 ELSE 0 END) AS sharescount, ' +
                 'Client.name AS clientname, Client.bio AS clientbio, ' +
-                'SUM(!ISNULL(HatsOff.hoid)) AS hatsoffcount ' +
+                'COUNT (DISTINCT HatsOff.hoid) AS hatsoffcount ' +
                 'FROM Campaign ' +
                 'JOIN Client ' +
                 'ON Campaign.clientid = Client.clientid ' +
@@ -52,7 +52,7 @@ router.post('/load/', function (request, response) {
                 'WHERE Campaign.cmpstatus = ? ' +
                 'AND Campaign.budget > 0 ' +
                 'AND Campaign.main_feed = ? ' +
-                'GROUP BY Campaign.regdate', ['ACTIVE', true], function (err, rows) {
+                'GROUP BY Campaign.cmid', ['ACTIVE', true], function (err, rows) {
 
                 if (err) {
                     console.error(err);
@@ -86,17 +86,47 @@ router.post('/load/', function (request, response) {
                         console.log("user data after querying is " + JSON.stringify(row, null, 3));
                         console.log("rows after querying is " + JSON.stringify(rows, null, 3));
 
-                        response.send({
-                            tokenstatus: 'valid',
-                            data: {
-                                feed: rows,
-                                fbidstatus: row[0].fbusername !== null,
-                                accountstatus: (row[0].accountstatus === "DISABLED"), //true for account-suspension, false otherwise
-                                intereststatus: row[0].interestedUser !== null,
-                                restrictfindfrequency: consts.restrict_find_frequency
-                            }
+                        var activeCmpns = rows.map(function (element) {
+                            return element.cmid;
                         });
-                        response.end();
+
+                        connection.query('SELECT cmid, uuid ' +
+                            'FROM HatsOff ' +
+                            'WHERE uuid = ? ' +
+                            'AND cmid IN (?) ' +
+                            'GROUP BY cmid', [uuid, activeCmpns], function (err, data) {
+
+                            if (err) {
+                                console.error(err);
+                                throw err;
+                            }
+                            else {
+
+                                rows.map(function (element) {
+                                    var thisCampaignIndex = data.map(function (el) {
+                                        return el.cmid;
+                                    }).indexOf(element.cmid);
+
+                                    element.hatsoffstatus = thisCampaignIndex !== -1;
+                                    // element.hatsoffcount = (thisCampaignIndex !== -1 ? data[thisCampaignIndex].hatsoffcount : 0);
+
+                                    return element;
+                                });
+
+                                response.send({
+                                    tokenstatus: 'valid',
+                                    data: {
+                                        feed: rows,
+                                        fbidstatus: row[0].fbusername !== null,
+                                        accountstatus: (row[0].accountstatus === "DISABLED"), //true for account-suspension, false otherwise
+                                        intereststatus: row[0].interestedUser !== null,
+                                        restrictfindfrequency: consts.restrict_find_frequency
+                                    }
+                                });
+                                response.end();
+                            }
+
+                        });
                     }
                 });
 
@@ -198,9 +228,9 @@ router.post('/campaign-shares', function (request, response) {
             return campaignutils.getCampaignShares(connection, cmid, 'COMPLETE', limit, page);
         })
         .then(function (result) {
-            
+
             console.log("rows from getCampaignShares is " + JSON.stringify(result.rows, null, 3));
-            
+
             response.send({
                 tokenstatus: 'valid',
                 data: {
@@ -213,10 +243,10 @@ router.post('/campaign-shares', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
@@ -258,10 +288,10 @@ router.post('/top-campaign-shares', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
@@ -303,10 +333,10 @@ router.post('/campaign-hatsoffs', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
