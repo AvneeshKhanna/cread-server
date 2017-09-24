@@ -39,7 +39,7 @@ router.post('/load/', function (request, response) {
         }
         else {
             connection.query('SELECT Campaign.cmid, Campaign.title, Campaign.description, Campaign.mission, Campaign.type, Campaign.contentbaseurl, ' +
-                'Campaign.imagepath, Campaign.regdate, COUNT(CASE WHEN(Share.checkstatus = "COMPLETE") THEN 1 END) AS sharescount, ' +
+                'Campaign.imagepath, Campaign.regdate, COUNT(DISTINCT CASE WHEN(Share.checkstatus = "COMPLETE") THEN Share.shareid END) AS sharescount, ' +
                 'Client.name AS clientname, Client.bio AS clientbio, ' +
                 'COUNT (DISTINCT HatsOff.hoid) AS hatsoffcount ' +
                 'FROM Campaign ' +
