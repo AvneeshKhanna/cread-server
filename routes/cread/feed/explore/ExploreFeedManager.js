@@ -66,7 +66,7 @@ router.post('/load', function (request, response) {
 function loadExploreFeed(connection, uuid) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT users.uuid, Campaign.cmid, Campaign.title, Campaign.description, Campaign.mission, Campaign.type, Campaign.contentbaseurl, ' +
-            'Campaign.imagepath, Campaign.regdate, SUM(!ISNULL(Share.shareid)) AS sharescount, ' +
+            'Campaign.imagepath, Campaign.regdate, COUNT(DISTINCT Share.shareid) AS sharescount, ' +
             'Client.name AS clientname, Client.bio AS clientbio, ' +
             'COUNT (DISTINCT HatsOff.hoid) AS hatsoffcount ' +
             'FROM Campaign ' +

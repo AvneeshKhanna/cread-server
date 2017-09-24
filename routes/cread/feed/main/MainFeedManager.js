@@ -39,7 +39,7 @@ router.post('/load/', function (request, response) {
         }
         else {
             connection.query('SELECT Campaign.cmid, Campaign.title, Campaign.description, Campaign.mission, Campaign.type, Campaign.contentbaseurl, ' +
-                'Campaign.imagepath, Campaign.regdate, SUM(CASE WHEN(Share.checkstatus = "COMPLETE") THEN 1 ELSE 0 END) AS sharescount, ' +
+                'Campaign.imagepath, Campaign.regdate, COUNT(CASE WHEN(Share.checkstatus = "COMPLETE") THEN 1 END) AS sharescount, ' +
                 'Client.name AS clientname, Client.bio AS clientbio, ' +
                 'COUNT (DISTINCT HatsOff.hoid) AS hatsoffcount ' +
                 'FROM Campaign ' +
@@ -177,7 +177,12 @@ router.post('/load/specific', function (request, response) {
                     element.sharerate = consts.sharerate;     //TODO: Make sharerate dynamic
                 });
 
-                connection.query('SELECT fbusername FROM users WHERE UUID = ?', [uuid], function (err, user) {
+                connection.query('SELECT users.fbusername, HatsOff.cmid ' +
+                    'FROM users ' +
+                    'LEFT JOIN HatsOff ' +
+                    'ON users.UUID = HatsOff.uuid ' +
+                    'WHERE users.UUID = ? ' +
+                    'AND HatsOff.cmid = ? ', [uuid, cmid], function (err, user) {
                     if (err) {
                         throw err;
                     }
@@ -188,7 +193,8 @@ router.post('/load/specific', function (request, response) {
                             tokenstatus: 'valid',
                             data: {
                                 campaign: row[0],
-                                fbidstatus: user[0].fbusername !== null
+                                fbidstatus: user[0].fbusername !== null,
+                                hatsoffstatus: (user[0].cmid !== null)
                             }
                         });
                         response.end();
