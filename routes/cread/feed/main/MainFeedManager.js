@@ -214,7 +214,7 @@ router.post('/campaign-shares', function (request, response) {
     var cmid = request.body.cmid;
     var page = (request.body.page !== undefined) ? request.body.page : -1;
 
-    var limit = 30; //TODO: Revert to 30
+    var limit = 30;
     var connection;
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
@@ -314,7 +314,7 @@ router.post('/campaign-hatsoffs', function (request, response) {
     var cmid = request.body.cmid;
     var page = request.body.page;
 
-    var limit = 10; //TODO: Change to 30
+    var limit = 30;
     var connection;
 
     _auth.authValid(uuid, authkey)
