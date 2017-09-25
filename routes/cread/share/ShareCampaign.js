@@ -203,15 +203,17 @@ router.post('/request-unique-link', function (request, response) {
             response.end();
             throw new BreakPromiseChainError();
         })
-        .then(function (toProceed) {
-            if(toProceed){
+        .then(function (result) {
+            if(result.toProceed){
                 return checkUserLastShare(cmid, uuid);
             }
             else{
                 response.send({
                     tokenstatus: 'valid',
                     data: {
-                        status: 'multiple-shares'   //to restruct user if he/she has shared a campaign multiple times
+                        status: 'multiple-shares',   //to restruct user if he/she has shared a campaign multiple times
+                        sharecount: result.sharecount,
+                        contentbaseurl: result.contentbaseurl
                     }
                 });
                 response.end();
@@ -309,16 +311,28 @@ router.post('/request-unique-link', function (request, response) {
 
 function checkUserShareCount(cmid, uuid) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT COUNT(*) AS sharecount FROM Share WHERE cmid = ? AND uuid = ?', [cmid, uuid], function (err, row) {
+        connection.query('SELECT COUNT(*) AS sharecount, Campaign.contentbaseurl ' +
+            'FROM Share ' +
+            'JOIN Campaign ' +
+            'ON Campaign.cmid = Share.cmid ' +
+            'WHERE Share.cmid = ? ' +
+            'AND Share.uuid = ? ', [cmid, uuid], function (err, row) {
             if (err) {
                 reject(err);
             }
             else {
-                if (row[0].totalcount >= 5) {
-                    resolve(false);
+                if (row[0].sharecount >= 4) {
+                    resolve({
+                        toProceed: false,
+                        sharecount: row[0].sharecount,
+                        contentbaseurl: row[0].contentbaseurl
+                    });
                 }
                 else{
-                    resolve(true);
+                    resolve({
+                        toProceed: true,
+                        sharecount: row[0].sharecount
+                    });
                 }
             }
         });
