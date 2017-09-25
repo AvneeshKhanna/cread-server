@@ -316,7 +316,8 @@ function checkUserShareCount(cmid, uuid) {
             'JOIN Campaign ' +
             'ON Campaign.cmid = Share.cmid ' +
             'WHERE Share.cmid = ? ' +
-            'AND Share.uuid = ? ', [cmid, uuid], function (err, row) {
+            'AND Share.uuid = ? ' +
+            'AND Share.checkstatus = "COMPLETE"', [cmid, uuid], function (err, row) {
             if (err) {
                 reject(err);
             }
