@@ -32,6 +32,7 @@ router.post('/add', function (request, response) {
     var cmpstatus = 'ACTIVE';   //Default status
     var imagepath = request.body.imagepath;
     var contentbaseurl = request.body.contentbaseurl;
+    var entid = uuidGenerator.v4();
     var cmid = uuidGenerator.v4();
     var clientid = request.body.clientid;
     var authkey = request.body.authkey;
@@ -42,6 +43,7 @@ router.post('/add', function (request, response) {
     var sqlparams = {
         cmid: cmid,
         clientid: clientid,
+        entid: entid,
         title: title,
         description: description ? description : null ,
         budget: budget,

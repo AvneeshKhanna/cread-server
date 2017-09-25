@@ -13,12 +13,41 @@ function addCampaign(params, connection) {
             connection = config.createConnection;
         }
 
-        connection.query('INSERT INTO Campaign SET ?', params, function (err, result) {
-            if (err) {
-                reject(err);
+        connection.beginTransaction(function (err) {
+            if(err){
+                connection.rollback(function () {
+                    reject(err);
+                });
             }
-            else {
-                resolve();
+            else{
+                connection.query('INSERT INTO Entity SET entid = ? AND type = "CAMPAIGN"', [params.entid], function (err, dta) {
+                    if(err){
+                        connection.rollback(function () {
+                            reject(err);
+                        });
+                    }
+                    else{
+                        connection.query('INSERT INTO Campaign SET ?', params, function (err, result) {
+                            if (err) {
+                                connection.rollback(function () {
+                                    reject(err);
+                                });
+                            }
+                            else {
+                                connection.commit(function (err) {
+                                    if(err){
+                                        connection.rollback(function () {
+                                            reject(err);
+                                        });
+                                    }
+                                    else{
+                                        resolve();
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
             }
         });
     })

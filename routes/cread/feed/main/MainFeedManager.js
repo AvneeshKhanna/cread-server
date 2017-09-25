@@ -41,7 +41,8 @@ router.post('/load/', function (request, response) {
             connection.query('SELECT Campaign.cmid, Campaign.title, Campaign.description, Campaign.mission, Campaign.type, Campaign.contentbaseurl, ' +
                 'Campaign.imagepath, Campaign.regdate, COUNT(DISTINCT CASE WHEN(Share.checkstatus = "COMPLETE") THEN Share.shareid END) AS sharescount, ' +
                 'Client.name AS clientname, Client.bio AS clientbio, ' +
-                'COUNT (DISTINCT HatsOff.hoid) AS hatsoffcount ' +
+                'COUNT (DISTINCT HatsOff.hoid) AS hatsoffcount, ' +
+                'COUNT (DISTINCT Comment.commid) AS commentcount ' +
                 'FROM Campaign ' +
                 'JOIN Client ' +
                 'ON Campaign.clientid = Client.clientid ' +
@@ -49,6 +50,10 @@ router.post('/load/', function (request, response) {
                 'ON Campaign.cmid = HatsOff.cmid ' +
                 'LEFT JOIN Share ' +
                 'ON Campaign.cmid = Share.cmid ' +
+                'JOIN Entity ' +
+                'ON Campaign.entid = Entity.entid ' +
+                'JOIN Comment ' +
+                'ON Comment.entid = Entity.entid ' +
                 'WHERE Campaign.cmpstatus = ? ' +
                 'AND Campaign.budget > 0 ' +
                 'AND Campaign.main_feed = ? ' +
