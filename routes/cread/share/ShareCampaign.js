@@ -195,13 +195,28 @@ router.post('/request-unique-link', function (request, response) {
 
     _auth.authValid(uuid, authkey)
         .then(function () {
-            return checkUserLastShare(cmid, uuid);
+            return checkUserShareCount(cmid, uuid);
         }, function () {
             response.send({
                 tokenstatus: 'invalid'
             });
             response.end();
             throw new BreakPromiseChainError();
+        })
+        .then(function (toProceed) {
+            if(toProceed){
+                return checkUserLastShare(cmid, uuid);
+            }
+            else{
+                response.send({
+                    tokenstatus: 'valid',
+                    data: {
+                        status: 'multiple-shares'   //to restruct user if he/she has shared a campaign multiple times
+                    }
+                });
+                response.end();
+                throw new BreakPromiseChainError();
+            }
         })
         .then(function (result) {
 
@@ -291,6 +306,24 @@ router.post('/request-unique-link', function (request, response) {
         });
 
 });
+
+function checkUserShareCount(cmid, uuid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT COUNT(*) AS sharecount FROM Share WHERE cmid = ? AND uuid = ?', [cmid, uuid], function (err, row) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                if (row[0].totalcount >= 5) {
+                    resolve(false);
+                }
+                else{
+                    resolve(true);
+                }
+            }
+        });
+    });
+}
 
 function checkUserLastShare(cmid, uuid) {
     return new Promise(function (resolve, reject) {
