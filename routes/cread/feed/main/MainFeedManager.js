@@ -51,9 +51,9 @@ router.post('/load/', function (request, response) {
                 'LEFT JOIN Share ' +
                 'ON Campaign.cmid = Share.cmid ' +
                 'JOIN Entity ' +
-                'ON Campaign.entid = Entity.entid ' +
+                'ON Campaign.entityid = Entity.entityid ' +
                 'JOIN Comment ' +
-                'ON Comment.entid = Entity.entid ' +
+                'ON Comment.entityid = Entity.entityid ' +
                 'WHERE Campaign.cmpstatus = ? ' +
                 'AND Campaign.budget > 0 ' +
                 'AND Campaign.main_feed = ? ' +

@@ -20,7 +20,7 @@ function addCampaign(params, connection) {
                 });
             }
             else{
-                connection.query('INSERT INTO Entity SET entid = ? AND type = "CAMPAIGN"', [params.entid], function (err, dta) {
+                connection.query('INSERT INTO Entity SET entityid = ? AND type = "CAMPAIGN"', [params.entityid], function (err, dta) {
                     if(err){
                         connection.rollback(function () {
                             reject(err);

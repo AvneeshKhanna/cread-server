@@ -12,9 +12,9 @@ function loadComments(connection, cmid, limit, page, loadAll) {
         'JOIN Comment ' +
         'ON users.uuid = Comment.uuid ' +
         'JOIN Entity ' +
-        'ON Entity.entid = Comment.entid ' +
+        'ON Entity.entityid = Comment.entityid ' +
         'JOIN Campaign ' +
-        'ON Campaign.entid = Campaign.entid ' +
+        'ON Campaign.entityid = Campaign.entityid ' +
         'WHERE Campaign.cmid = ? ' +
         'ORDER BY Comment.regdate DESC ' +
         'LIMIT ? ' +
@@ -34,9 +34,9 @@ function loadComments(connection, cmid, limit, page, loadAll) {
         connection.query('SELECT COUNT(*) AS totalcount ' +
             'FROM Comment ' +
             'JOIN Entity ' +
-            'ON Comment.entid = Entity.entid ' +
+            'ON Comment.entityid = Entity.entityid ' +
             'JOIN Campaign ' +
-            'ON Campaign.entid = Entity.entid ' +
+            'ON Campaign.entityid = Entity.entityid ' +
             'WHERE Campaign.cmid = ?', [cmid], function (err, data) {
 
             if(err){
@@ -72,10 +72,10 @@ function loadComments(connection, cmid, limit, page, loadAll) {
 
 function addComment(connection, cmid, comment, uuid) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT Entity.entid ' +
+        connection.query('SELECT Entity.entityid ' +
             'FROM Entity ' +
             'JOIN Campaign ' +
-            'ON Entity.entid = Campaign.entid ' +
+            'ON Entity.entityid = Campaign.entityid ' +
             'WHERE Campaign.cmid = ?', [cmid], function (err, ent) {
             if(err){
                 reject(err);
@@ -84,7 +84,7 @@ function addComment(connection, cmid, comment, uuid) {
 
                 var params = {
                     commid: uuidGen.v4(),
-                    entid: ent[0].entid,
+                    entityid: ent[0].entityid,
                     txt: comment,
                     uuid: uuid
                 };
