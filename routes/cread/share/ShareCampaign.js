@@ -322,7 +322,7 @@ function checkUserShareCount(cmid, uuid) {
                 reject(err);
             }
             else {
-                if (row[0].sharecount >= 4) {
+                if (row[0].sharecount >= 3) {
                     resolve({
                         toProceed: false,
                         sharecount: row[0].sharecount,
