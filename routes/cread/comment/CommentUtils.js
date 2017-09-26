@@ -102,9 +102,11 @@ function addComment(connection, cmid, comment, uuid) {
     });
 }
 
-function deleteComment(connection, commid) {
+function deleteComment(connection, commid, uuid) {
     return new Promise(function (resolve, reject) {
-        connection.query('DELETE FROM Comment WHERE commid = ?', [commid], function (err, rows) {
+        //For precaution, both 'commid' and 'uuid' are used here so that any potential error on the app where a user
+        //sends another user's 'commid' for a delete request, the comment shouldn't get deleted
+        connection.query('DELETE FROM Comment WHERE commid = ? AND uuid = ?', [commid, uuid], function (err, rows) {
             if (err) {
                 reject(err);
             }

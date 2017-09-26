@@ -128,7 +128,7 @@ router.post('/delete', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return commentutils.deleteComment(connection, commid);
+            return commentutils.deleteComment(connection, commid, uuid);
         })
         .then(function () {
             response.send({
