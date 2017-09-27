@@ -14,7 +14,7 @@ function loadComments(connection, cmid, limit, page, loadAll) {
         'JOIN Entity ' +
         'ON Entity.entityid = Comment.entityid ' +
         'JOIN Campaign ' +
-        'ON Campaign.entityid = Campaign.entityid ' +
+        'ON Entity.entityid = Campaign.entityid ' +
         'WHERE Campaign.cmid = ? ' +
         'ORDER BY Comment.regdate DESC ' +
         'LIMIT ? ' +

@@ -22,6 +22,8 @@ router.post('/load', function (request, response) {
     var page = request.body.page;
     var loadAll = request.body.loadAll; //Whether to load all comments or top comments [true | false]
 
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
     var limit = 30;
     var connection;
 
