@@ -94,7 +94,7 @@ function loadExploreFeed(connection, uuid) {
                 //Sorting according to last created
                 rows.sort(function (a, b) {
                     if (a.regdate < b.regdate) {
-                        return 1;
+                        return 1; 
                     }
                     else {
                         return -1;
