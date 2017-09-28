@@ -94,7 +94,7 @@ function addComment(connection, cmid, comment, uuid) {
                         reject(err);
                     }
                     else {
-                        resolve();
+                        resolve(params.commid);
                     }
                 });
             }

@@ -4,7 +4,7 @@
 
 /*
  * This module is used to set 'accountstatus' as DISABLED for users which have either signed-in, signed-out or registered within last 24 hours
- * from a single device registering at least 2 UUIDs
+ * from a single device using at least 2 different UUIDs
  * */
 
 'use-strict';

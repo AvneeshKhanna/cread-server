@@ -9,6 +9,8 @@ var utils = require('../utils/Utils');
 function addCampaign(params, connection) {
     return new Promise(function (resolve, reject) {
 
+        console.log("addCampaign() sqlparams are " + JSON.stringify(params, null, 3));
+
         if(!connection){
             connection = config.createConnection;
         }
@@ -20,7 +22,7 @@ function addCampaign(params, connection) {
                 });
             }
             else{
-                connection.query('INSERT INTO Entity SET entityid = ? AND type = "CAMPAIGN"', [params.entityid], function (err, dta) {
+                connection.query('INSERT INTO Entity SET entityid = ?, type = "CAMPAIGN"', [params.entityid], function (err, dta) {
                     if(err){
                         connection.rollback(function () {
                             reject(err);

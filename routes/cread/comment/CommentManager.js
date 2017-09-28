@@ -11,6 +11,7 @@ var config = require('../../Config');
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var commentutils = require('./CommentUtils');
+var utils = require('../utils/Utils');
 
 var uuidGenerator = require('uuid');
 
@@ -24,7 +25,7 @@ router.post('/load', function (request, response) {
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
 
-    var limit = 30;
+    var limit = 20;
     var connection;
 
     _auth.authValid(uuid, authkey)
@@ -86,11 +87,15 @@ router.post('/add', function (request, response) {
             connection = conn;
             return commentutils.addComment(connection, cmid, comment, uuid);
         })
-        .then(function () {
+        .then(function (commid) {
             response.send({
                 tokenstatus: 'valid',
                 data: {
-                    status: 'done'
+                    status: 'done',
+                    comment: {
+                        commid: commid,
+                        profilepicurl: utils.createProfilePicUrl(uuid)
+                    }
                 }
             });
             response.end();
