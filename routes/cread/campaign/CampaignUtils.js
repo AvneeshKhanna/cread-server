@@ -9,16 +9,47 @@ var utils = require('../utils/Utils');
 function addCampaign(params, connection) {
     return new Promise(function (resolve, reject) {
 
+        console.log("addCampaign() sqlparams are " + JSON.stringify(params, null, 3));
+
         if(!connection){
             connection = config.createConnection;
         }
 
-        connection.query('INSERT INTO Campaign SET ?', params, function (err, result) {
-            if (err) {
-                reject(err);
+        connection.beginTransaction(function (err) {
+            if(err){
+                connection.rollback(function () {
+                    reject(err);
+                });
             }
-            else {
-                resolve();
+            else{
+                connection.query('INSERT INTO Entity SET entityid = ?, type = "CAMPAIGN"', [params.entityid], function (err, dta) {
+                    if(err){
+                        connection.rollback(function () {
+                            reject(err);
+                        });
+                    }
+                    else{
+                        connection.query('INSERT INTO Campaign SET ?', params, function (err, result) {
+                            if (err) {
+                                connection.rollback(function () {
+                                    reject(err);
+                                });
+                            }
+                            else {
+                                connection.commit(function (err) {
+                                    if(err){
+                                        connection.rollback(function () {
+                                            reject(err);
+                                        });
+                                    }
+                                    else{
+                                        resolve();
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
             }
         });
     })

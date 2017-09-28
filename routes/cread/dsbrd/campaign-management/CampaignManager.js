@@ -133,6 +133,7 @@ router.post('/add', function (request, response) {
     var imagepath = request.body.imagepath;
     var contentbaseurl = request.body.contentbaseurl;
     var cmid = uuidGenerator.v4();
+    var entityid = uuidGenerator.v4();
     var clientid = request.body.clientid;
     var authkey = request.body.authkey;
     var mission = request.body.mission;
@@ -142,6 +143,7 @@ router.post('/add', function (request, response) {
     var sqlparams = {
         cmid: cmid,
         clientid: clientid,
+        entityid: entityid,
         title: title,
         description: description,
         budget: budget,

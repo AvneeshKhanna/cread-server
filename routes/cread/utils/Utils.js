@@ -74,6 +74,9 @@ function sendAWSSMS(message, phonenumber, callback){
 
 }
 
+/**
+ * Returns a url storing the profile pic of an app user using uuid
+ * */
 function createProfilePicUrl(uuid) {
     return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Profile/' + profilepicfilename;
 }

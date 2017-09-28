@@ -120,6 +120,7 @@ app.use('/generate-pictorial', require('./routes/pictorial/generatePictorial'));
 //CREAD
 app.use('/social-reach', require('./routes/thetestament/social-reach-survey/SocialReachSurvey'));
 app.use('/dev-utils', require('./routes/dev-utils/DevUtils'));
+app.use('/one-time', require('./routes/cread/utils/OneTimeTasks'));
 
 //CREAD
 
@@ -137,6 +138,7 @@ app.use('/explore-feed', require('./routes/cread/feed/explore/ExploreFeedManager
 app.use('/share-campaign-explore', require('./routes/cread/share/ShareCampaignExplore'));
 app.use('/explore-campaign', require('./routes/cread/campaign/CampaignManagerExplore'));
 app.use('/hatsoff', require('./routes/cread/hats-off/HatsOffManager'));
+app.use('/comment', require('./routes/cread/comment/CommentManager'));
 
 //-dashboard-
 app.use('/campaign-details', require('./routes/cread/dsbrd/campaign-details/CampaignDetails'));

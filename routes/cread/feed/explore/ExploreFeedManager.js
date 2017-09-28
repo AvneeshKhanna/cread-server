@@ -68,7 +68,8 @@ function loadExploreFeed(connection, uuid) {
         connection.query('SELECT users.uuid, Campaign.cmid, Campaign.title, Campaign.description, Campaign.mission, Campaign.type, Campaign.contentbaseurl, ' +
             'Campaign.imagepath, Campaign.regdate, COUNT(DISTINCT Share.shareid) AS sharescount, ' +
             'Client.name AS clientname, Client.bio AS clientbio, ' +
-            'COUNT (DISTINCT HatsOff.hoid) AS hatsoffcount ' +
+            'COUNT (DISTINCT HatsOff.hoid) AS hatsoffcount, ' +
+            'COUNT (DISTINCT Comment.commid) AS commentcount ' +
             'FROM Campaign ' +
             'JOIN Client ' +
             'ON Campaign.clientid = Client.clientid ' +
@@ -78,6 +79,10 @@ function loadExploreFeed(connection, uuid) {
             'ON Campaign.cmid = HatsOff.cmid ' +
             'LEFT JOIN Share ' +
             'ON Campaign.cmid = Share.cmid ' +
+            'JOIN Entity ' +
+            'ON Entity.entityid = Campaign.entityid ' +
+            'LEFT JOIN Comment ' +
+            'ON Entity.entityid = Comment.entityid ' +
             'WHERE Campaign.cmpstatus = ? ' +
             'AND Campaign.main_feed = ? ' +
             'GROUP BY Campaign.cmid', ['ACTIVE', false], function (err, rows) {

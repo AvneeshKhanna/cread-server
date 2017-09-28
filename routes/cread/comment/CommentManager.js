@@ -1,59 +1,32 @@
 /**
- * Created by avnee on 31-08-2017.
+ * Created by avnee on 25-09-2017.
  */
-
-/**
- * This module takes care of handling 'add' and 'edit' events for creating campaigns by a user from the app explore feed
- * */
-
 'use-strict';
 
 var express = require('express');
 var router = express.Router();
 
-var uuidGenerator = require('uuid');
-
 var config = require('../../Config');
-var AWS = config.AWS;
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
-var campaign_utils = require('./CampaignUtils');
+var commentutils = require('./CommentUtils');
+var utils = require('../utils/Utils');
 
-router.post('/add', function (request, response) {
+var uuidGenerator = require('uuid');
+
+router.post('/load', function (request, response) {
+
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var cmid = request.body.cmid;
+    var page = request.body.page;
+    var loadAll = request.body.loadAll; //Whether to load all comments or top comments [true | false]
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
 
-    var uuid = request.body.uuid;
-    var title = request.body.title;
-    var description = request.body.description;
-    var budget = 0;
-    var type = "Web";
-    var cmpstatus = 'ACTIVE';   //Default status
-    var imagepath = request.body.imagepath;
-    var contentbaseurl = request.body.contentbaseurl;
-    var entityid = uuidGenerator.v4();
-    var cmid = uuidGenerator.v4();
-    var clientid = request.body.clientid;
-    var authkey = request.body.authkey;
-    var mission = request.body.mission;
-
+    var limit = 20;
     var connection;
-
-    var sqlparams = {
-        cmid: cmid,
-        clientid: clientid,
-        entityid: entityid,
-        title: title,
-        description: description ? description : null ,
-        budget: budget,
-        type: type,
-        cmpstatus: cmpstatus,
-        imagepath: imagepath ? imagepath : "NA",
-        mission: mission,
-        contentbaseurl: contentbaseurl,
-        main_feed: false
-    };
 
     _auth.authValid(uuid, authkey)
         .then(function () {
@@ -67,13 +40,62 @@ router.post('/add', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return campaign_utils.addCampaign(sqlparams, connection);
+            return commentutils.loadComments(connection, cmid, limit, page, loadAll);
         })
+        .then(function (result) {
+            response.send({
+                tokenstatus: 'valid',
+                data: result
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+});
+
+router.post('/add', function (request, response) {
+
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var cmid = request.body.cmid;
+    var comment = request.body.comment;
+
+    var connection;
+
+    _auth.authValid(uuid, authkey)
         .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return commentutils.addComment(connection, cmid, comment, uuid);
+        })
+        .then(function (commid) {
             response.send({
                 tokenstatus: 'valid',
                 data: {
-                    status: 'done'
+                    status: 'done',
+                    comment: {
+                        commid: commid,
+                        profilepicurl: utils.createProfilePicUrl(uuid)
+                    }
                 }
             });
             response.end();
@@ -94,28 +116,12 @@ router.post('/add', function (request, response) {
 
 });
 
-router.post('/edit', function (request, response) {
-
+router.post('/delete', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
-    var description = request.body.description;
-    //var budget = 0; //request.body.budget;
-    var mission = request.body.mission;
-    var imagepath = request.body.imagepath;
-    var cmid = request.body.cmid;
+    var commid = request.body.commid;
 
     var connection;
-    var sqlparams = {};
-
-    if(description){
-        sqlparams.description = description;
-    }
-    if(imagepath){
-        sqlparams.imagepath = imagepath;
-    }
-    if(mission){
-        sqlparams.mission = mission;
-    }
 
     _auth.authValid(uuid, authkey)
         .then(function () {
@@ -129,7 +135,7 @@ router.post('/edit', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return campaign_utils.updateCampaign(cmid, sqlparams, connection);
+            return commentutils.deleteComment(connection, commid, uuid);
         })
         .then(function () {
             response.send({
