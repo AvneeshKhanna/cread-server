@@ -1,22 +1,166 @@
 /**
- * Created by avnee on 29-08-2017.
+ * Created by avnee on 31-08-2017.
  */
-'use-strict;'
 
-//TODO: Delete file after users have updated their apps
+/**
+ * This module takes care of handling events from the app related to campaigns
+ * */
+
+'use-strict';
 
 var express = require('express');
 var router = express.Router();
 
-var config = require('../../../Config');
-var _auth = require('../../../auth-token-management/AuthTokenManager');
-var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
+var uuidGenerator = require('uuid');
+
+var config = require('../../Config');
+var AWS = config.AWS;
+
+var _auth = require('../../auth-token-management/AuthTokenManager');
+var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
+var campaign_utils = require('./CampaignUtils');
+
+router.post('/add', function (request, response) {
+
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
+    var uuid = request.body.uuid;
+    var title = request.body.title;
+    var description = request.body.description;
+    var budget = 0;
+    var type = "Web";
+    var cmpstatus = 'ACTIVE';   //Default status
+    var imagepath = request.body.imagepath;
+    var contentbaseurl = request.body.contentbaseurl;
+    var entityid = uuidGenerator.v4();
+    var cmid = uuidGenerator.v4();
+    var clientid = request.body.clientid;
+    var authkey = request.body.authkey;
+    var mission = request.body.mission;
+
+    var connection;
+
+    var sqlparams = {
+        cmid: cmid,
+        clientid: clientid,
+        entityid: entityid,
+        title: title,
+        description: description ? description : null ,
+        budget: budget,
+        type: type,
+        cmpstatus: cmpstatus,
+        imagepath: imagepath ? imagepath : "NA",
+        mission: mission,
+        contentbaseurl: contentbaseurl,
+        main_feed: false
+    };
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return campaign_utils.addCampaign(sqlparams, connection);
+        })
+        .then(function () {
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    status: 'done'
+                }
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
+
+router.post('/edit', function (request, response) {
+
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var description = request.body.description;
+    //var budget = 0; //request.body.budget;
+    var mission = request.body.mission;
+    var imagepath = request.body.imagepath;
+    var cmid = request.body.cmid;
+
+    var connection;
+    var sqlparams = {};
+
+    if(description){
+        sqlparams.description = description;
+    }
+    if(imagepath){
+        sqlparams.imagepath = imagepath;
+    }
+    if(mission){
+        sqlparams.mission = mission;
+    }
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return campaign_utils.updateCampaign(cmid, sqlparams, connection);
+        })
+        .then(function () {
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    status: 'done'
+                }
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
 
 router.post('/load-all', function (request, response) {
 
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
-    
+
     console.log("request is " + JSON.stringify(request.body, null, 3));
 
     var connection;
@@ -244,7 +388,7 @@ router.post('/deactivate', function (request, response) {
  * */
 function deactivateCampaign(connection, cmid) {
 
-   return new Promise(function (resolve, reject) {
+    return new Promise(function (resolve, reject) {
         connection.query('UPDATE Campaign SET cmpstatus = ?, deactvtntime = NOW() ' +
             'WHERE cmid = ?', ['DEACTIVE', cmid], function (err, row) {
 
@@ -260,5 +404,103 @@ function deactivateCampaign(connection, cmid) {
     })
 
 }
+
+router.post('/load-shares', function (request, response) {
+
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var cmid = request.body.cmid;
+    var page = (request.body.page !== undefined) ? request.body.page : -1;
+
+    var limit = 30;
+    var connection;
+
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return campaign_utils.getCampaignShares(connection, cmid, 'COMPLETE', limit, page);
+        })
+        .then(function (result) {
+
+            console.log("rows from getCampaignShares is " + JSON.stringify(result.rows, null, 3));
+
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    shares: result.rows,
+                    requestmore: result.requestmore
+                }
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if (err instanceof BreakPromiseChainError) {
+                //Do nothing
+            }
+            else {
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+});
+
+router.post('/load-hatsoffs', function (request, response) {
+
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var cmid = request.body.cmid;
+    var page = request.body.page;
+
+    var limit = 30;
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return campaign_utils.getCampaignHatsOffs(connection, cmid, limit, page);
+        })
+        .then(function (result) {
+            console.log("rows from getCampaignHatsOffs is " + JSON.stringify(result.rows, null, 3));
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    hatsoffs: result.rows,
+                    requestmore: result.requestmore
+                }
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if (err instanceof BreakPromiseChainError) {
+                //Do nothing
+            }
+            else {
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+});
 
 module.exports = router;

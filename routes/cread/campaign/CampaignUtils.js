@@ -85,7 +85,7 @@ function getCampaignShares(connection, cmid, sharetypeflag, limit, page) {
         'JOIN users ' +
         'ON Share.uuid = users.uuid ' +
         'WHERE Share.cmid = ? ' +
-        'AND Share.checkstatus = ? ' +
+        'AND checkstatus IN ("COMPLETE", "NA") ' +
         'GROUP BY users.uuid ' +
         'ORDER BY Share.regdate DESC ';
 
@@ -105,7 +105,7 @@ function getCampaignShares(connection, cmid, sharetypeflag, limit, page) {
         connection.query('SELECT COUNT(DISTINCT uuid) AS totalcount ' +
             'FROM Share ' +
             'WHERE cmid = ? ' +
-            'AND checkstatus = ? ', [cmid, sharetypeflag], function(err, data){
+            'AND checkstatus IN ("COMPLETE", "NA") ', [cmid/*, sharetypeflag*/], function(err, data){
             if(err){
                 reject(err);
             }
@@ -114,7 +114,7 @@ function getCampaignShares(connection, cmid, sharetypeflag, limit, page) {
                 console.log("totalcount is " + JSON.stringify(data[0].totalcount, null, 3));
                 var totalcount = data[0].totalcount;
 
-                connection.query(query, [cmid, sharetypeflag, limit, offset], function (err, rows) {
+                connection.query(query, [cmid/*, sharetypeflag*/, limit, offset], function (err, rows) {
 
                     if(err){
                         reject(err);
