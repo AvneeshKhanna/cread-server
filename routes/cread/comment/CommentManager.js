@@ -116,6 +116,52 @@ router.post('/add', function (request, response) {
 
 });
 
+router.post('/update', function (request, response) {
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var commid = request.body.commid;
+    var comment = request.body.comment;
+
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return commentutils.updateComment(connection, commid, uuid, comment);
+        })
+        .then(function () {
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    status: 'done'
+                }
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+});
+
 router.post('/delete', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
