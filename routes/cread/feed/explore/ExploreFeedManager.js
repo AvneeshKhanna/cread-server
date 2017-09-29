@@ -15,6 +15,7 @@ var _auth = require('../../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 var consts = require('../../utils/Constants');
 var campaignutils = require('../../campaign/CampaignUtils');
+var utils = require('../../utils/Utils');
 
 router.post('/load', function (request, response) {
 
@@ -103,11 +104,7 @@ function loadExploreFeed(connection, uuid) {
 
                 rows.map(function (element) {
                     element.sharerate = consts.sharerate;     //TODO: Make sharerate dynamic
-                    element.clientprofilepath = "https://s3-ap-northeast-1.amazonaws.com/" +
-                        envconfig.get("s3").get("bucket") +
-                        "/Users/" +
-                        element.uuid +
-                        "/Profile/display-pic.jpg";
+                    element.clientprofilepath = utils.createProfilePicUrl(element.uuid);
                 });
 
                 connection.query('SELECT Client.bio ' +
