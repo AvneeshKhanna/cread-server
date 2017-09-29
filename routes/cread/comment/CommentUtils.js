@@ -7,7 +7,7 @@ var utils = require('../utils/Utils');
 var uuidGen = require('uuid');
 
 function loadComments(connection, cmid, limit, page, loadAll) {
-    var query = 'SELECT users.firstname, users.lastname, users.uuid, Comment.commid, Comment.txt AS comment ' +
+    var query = 'SELECT users.firstname, users.lastname, users.uuid, Comment.edited, Comment.commid, Comment.txt AS comment ' +
         'FROM users ' +
         'JOIN Comment ' +
         'ON users.uuid = Comment.uuid ' +
@@ -52,6 +52,7 @@ function loadComments(connection, cmid, limit, page, loadAll) {
                     else {
                         rows.map(function (element) {
                             element.profilepicurl = utils.createProfilePicUrl(element.uuid);
+                            element.edited = (element.edited === 1);
                             return element;
                         });
 
@@ -104,7 +105,9 @@ function addComment(connection, cmid, comment, uuid) {
 
 function updateComment(connection, commid, uuid, comment) {
     return new Promise(function (resolve, reject) {
-        connection.query('UPDATE Comment SET txt = ? WHERE commid = ? AND uuid = ?', [comment, commid, uuid], function (err, rows) {
+        connection.query('UPDATE Comment SET txt = ?, edited = ? ' +
+            'WHERE commid = ? ' +
+            'AND uuid = ?', [comment, true, commid, uuid], function (err, rows) {
             if (err) {
                 reject(err);
             }
