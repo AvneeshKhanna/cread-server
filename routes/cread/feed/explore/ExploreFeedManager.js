@@ -80,10 +80,10 @@ function loadExploreFeed(connection, uuid) {
             'ON Campaign.cmid = HatsOff.cmid ' +
             'LEFT JOIN Share ' +
             'ON Campaign.cmid = Share.cmid ' +
-            'JOIN Entity ' +
-            'ON Entity.entityid = Campaign.entityid ' +
+            /*'JOIN Entity ' +
+            'ON Entity.entityid = Campaign.entityid ' +*/
             'LEFT JOIN Comment ' +
-            'ON Entity.entityid = Comment.entityid ' +
+            'ON Campaign.entityid = Comment.entityid ' +
             'WHERE Campaign.cmpstatus = ? ' +
             'AND Campaign.main_feed = ? ' +
             'GROUP BY Campaign.cmid', ['ACTIVE', false], function (err, rows) {
