@@ -39,7 +39,7 @@ function loadComments(connection, cmid, limit, page, loadAll) {
                 reject(err);
             }
             else {
-                var totalcount = data[0].totalcount;
+                var totalcount = data[0].totalcount; 
 
                 connection.query(query, [cmid, limit, offset], function (err, rows) {
                     if (err) {
