@@ -7,7 +7,7 @@ var utils = require('../utils/Utils');
 var uuidGen = require('uuid');
 
 function loadComments(connection, cmid, limit, page, loadAll) {
-    var query = 'SELECT users.firstname, users.lastname, users.uuid, Comment.commid, Comment.txt AS comment ' +
+    var query = 'SELECT users.firstname, users.lastname, users.uuid, Comment.edited, Comment.commid, Comment.txt AS comment ' +
         'FROM users ' +
         'JOIN Comment ' +
         'ON users.uuid = Comment.uuid ' +
@@ -20,11 +20,11 @@ function loadComments(connection, cmid, limit, page, loadAll) {
 
     var offset;
 
-    if(!loadAll){   //Case where only top comments are loaded
+    if (!loadAll) {   //Case where only top comments are loaded
         offset = 0;
         limit = 3;
     }
-    else{   //Case where all comments are loaded
+    else {   //Case where all comments are loaded
         offset = page * limit;
     }
 
@@ -35,10 +35,10 @@ function loadComments(connection, cmid, limit, page, loadAll) {
             'ON Campaign.entityid = Comment.entityid ' +
             'WHERE Campaign.cmid = ?', [cmid], function (err, data) {
 
-            if(err){
+            if (err) {
                 reject(err);
             }
-            else{
+            else {
                 var totalcount = data[0].totalcount;
 
                 connection.query(query, [cmid, limit, offset], function (err, rows) {
@@ -48,13 +48,14 @@ function loadComments(connection, cmid, limit, page, loadAll) {
                     else {
                         rows.map(function (element) {
                             element.profilepicurl = utils.createProfilePicUrl(element.uuid);
+                            element.edited = (element.edited === 1);
                             return element;
                         });
 
                         var result = {};
                         result.comments = rows;
 
-                        if(loadAll){
+                        if (loadAll) {
                             result.requestmore = totalcount > (offset + limit);
                         }
 
@@ -73,10 +74,10 @@ function addComment(connection, cmid, comment, uuid) {
             'JOIN Campaign ' +
             'ON Entity.entityid = Campaign.entityid ' +
             'WHERE Campaign.cmid = ?', [cmid], function (err, ent) {
-            if(err){
+            if (err) {
                 reject(err);
             }
-            else{
+            else {
 
                 var params = {
                     commid: uuidGen.v4(),
@@ -93,6 +94,21 @@ function addComment(connection, cmid, comment, uuid) {
                         resolve(params.commid);
                     }
                 });
+            }
+        });
+    });
+}
+
+function updateComment(connection, commid, uuid, comment) {
+    return new Promise(function (resolve, reject) {
+        connection.query('UPDATE Comment SET txt = ?, edited = ? ' +
+            'WHERE commid = ? ' +
+            'AND uuid = ?', [comment, true, commid, uuid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
             }
         });
     });
@@ -116,5 +132,6 @@ function deleteComment(connection, commid, uuid) {
 module.exports = {
     loadComments: loadComments,
     addComment: addComment,
+    updateComment: updateComment,
     deleteComment: deleteComment
 };
