@@ -11,8 +11,6 @@ function loadComments(connection, cmid, limit, page, loadAll) {
         'FROM users ' +
         'JOIN Comment ' +
         'ON users.uuid = Comment.uuid ' +
-        /*'JOIN Entity ' +
-        'ON Entity.entityid = Comment.entityid ' +*/
         'JOIN Campaign ' +
         'ON Comment.entityid = Campaign.entityid ' +
         'WHERE Campaign.cmid = ? ' +
@@ -33,8 +31,6 @@ function loadComments(connection, cmid, limit, page, loadAll) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT COUNT(*) AS totalcount ' +
             'FROM Comment ' +
-            /*'JOIN Entity ' +
-            'ON Comment.entityid = Entity.entityid ' +*/
             'JOIN Campaign ' +
             'ON Campaign.entityid = Comment.entityid ' +
             'WHERE Campaign.cmid = ?', [cmid], function (err, data) {
