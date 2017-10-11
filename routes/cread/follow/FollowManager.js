@@ -1,34 +1,31 @@
 /**
- * Created by avnee on 21-09-2017.
+ * Created by avnee on 11-10-2017.
  */
+
+/**
+ * Used to handle the basic functionalities for follow system on the app
+ * */
+
 'use-strict';
 
 var express = require('express');
 var router = express.Router();
 
 var config = require('../../Config');
-var AWS = config.AWS;
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
-var uuidGenerator = require('uuid');
-var moment = require('moment');
-
-var utils = require('../utils/Utils');
-var consts = require('../utils/Constants');
-
 router.post('/on-click', function (request, response) {
-
-    console.log("request is " + JSON.stringify(request.body, null, 3));
 
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
-    var entityid = request.body.entityid;
+    var follower = request.body.follower;
+    var followee = request.body.followee;
     var register = request.body.register;
 
     var connection;
-    
+
     _auth.authValid(uuid, authkey)
         .then(function () {
             return config.getNewConnection();
@@ -37,11 +34,10 @@ router.post('/on-click', function (request, response) {
                 tokenstatus: 'invalid'
             });
             response.end();
-            throw new BreakPromiseChainError();
         })
         .then(function (conn) {
             connection = conn;
-            return registerHatsOff(connection, register, uuid, entityid);
+            return registerFollow(connection, register, follower, followee);
         })
         .then(function () {
             response.send({
@@ -65,26 +61,25 @@ router.post('/on-click', function (request, response) {
                 }).end();
             }
         });
+
 });
 
-function registerHatsOff(connection, register, uuid, entityid) {
-
+function registerFollow(connection, register, follower, followee) {
     var sqlquery;
     var sqlparams;
 
     if(register){
-        sqlquery = 'INSERT INTO HatsOff SET ?';
+        sqlquery = 'INSERT INTO Follow SET ?';
         sqlparams = {
-            hoid: uuidGenerator.v4(),
-            uuid: uuid,
-            entityid: entityid
+            follower: follower,
+            followee: followee
         }
     }
     else{
-        sqlquery = 'DELETE FROM HatsOff WHERE uuid = ? AND entityid = ?';
+        sqlquery = 'DELETE FROM Follow WHERE follower = ? AND followee = ?';
         sqlparams = [
-            uuid,
-            entityid
+            follower,
+            followee
         ]
     }
 

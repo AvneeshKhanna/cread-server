@@ -6,14 +6,12 @@
 var utils = require('../utils/Utils');
 var uuidGen = require('uuid');
 
-function loadComments(connection, cmid, limit, page, loadAll) {
+function loadComments(connection, entityid, limit, page, loadAll) {
     var query = 'SELECT users.firstname, users.lastname, users.uuid, Comment.edited, Comment.commid, Comment.txt AS comment ' +
         'FROM users ' +
         'JOIN Comment ' +
         'ON users.uuid = Comment.uuid ' +
-        'JOIN Campaign ' +
-        'ON Comment.entityid = Campaign.entityid ' +
-        'WHERE Campaign.cmid = ? ' +
+        'WHERE Comment.entityid = ? ' +
         'ORDER BY Comment.regdate DESC ' +
         'LIMIT ? ' +
         'OFFSET ?';
@@ -31,9 +29,7 @@ function loadComments(connection, cmid, limit, page, loadAll) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT COUNT(*) AS totalcount ' +
             'FROM Comment ' +
-            'JOIN Campaign ' +
-            'ON Campaign.entityid = Comment.entityid ' +
-            'WHERE Campaign.cmid = ?', [cmid], function (err, data) {
+            'WHERE entityid = ?', [entityid], function (err, data) {
 
             if (err) {
                 reject(err);
@@ -41,7 +37,7 @@ function loadComments(connection, cmid, limit, page, loadAll) {
             else {
                 var totalcount = data[0].totalcount; 
 
-                connection.query(query, [cmid, limit, offset], function (err, rows) {
+                connection.query(query, [entityid, limit, offset], function (err, rows) {
                     if (err) {
                         reject(err);
                     }
@@ -67,33 +63,21 @@ function loadComments(connection, cmid, limit, page, loadAll) {
     });
 }
 
-function addComment(connection, cmid, comment, uuid) {
+function addComment(connection, entityid, comment, uuid) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT Entity.entityid ' +
-            'FROM Entity ' +
-            'JOIN Campaign ' +
-            'ON Entity.entityid = Campaign.entityid ' +
-            'WHERE Campaign.cmid = ?', [cmid], function (err, ent) {
+        var params = {
+            commid: uuidGen.v4(),
+            entityid: entityid,
+            txt: comment,
+            uuid: uuid
+        };
+
+        connection.query('INSERT INTO Comment SET ?', [params], function (err, rows) {
             if (err) {
                 reject(err);
             }
             else {
-
-                var params = {
-                    commid: uuidGen.v4(),
-                    entityid: ent[0].entityid,
-                    txt: comment,
-                    uuid: uuid
-                };
-
-                connection.query('INSERT INTO Comment SET ?', [params], function (err, rows) {
-                    if (err) {
-                        reject(err);
-                    }
-                    else {
-                        resolve(params.commid);
-                    }
-                });
+                resolve(params.commid);
             }
         });
     });

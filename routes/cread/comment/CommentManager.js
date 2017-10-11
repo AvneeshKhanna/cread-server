@@ -19,7 +19,7 @@ router.post('/load', function (request, response) {
 
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
-    var cmid = request.body.cmid;
+    var entityid = request.body.entityid;
     var page = request.body.page;
     var loadAll = request.body.loadAll; //Whether to load all comments or top comments [true | false]
 
@@ -40,7 +40,7 @@ router.post('/load', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return commentutils.loadComments(connection, cmid, limit, page, loadAll);
+            return commentutils.loadComments(connection, entityid, limit, page, loadAll);
         })
         .then(function (result) {
             response.send({
@@ -68,7 +68,7 @@ router.post('/add', function (request, response) {
 
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
-    var cmid = request.body.cmid;
+    var entityid = request.body.entityid;
     var comment = request.body.comment;
 
     var connection;
@@ -85,7 +85,7 @@ router.post('/add', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return commentutils.addComment(connection, cmid, comment, uuid);
+            return commentutils.addComment(connection, entityid, comment, uuid);
         })
         .then(function (commid) {
             response.send({
