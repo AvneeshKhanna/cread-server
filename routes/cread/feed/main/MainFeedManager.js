@@ -192,6 +192,7 @@ function loadFeed(connection, uuid, limit, page) {
             'LEFT JOIN Short ' +
             'ON Short.entityid = Entity.entityid ' +
             'LEFT JOIN Capture ' +
+            'ON Capture.entityid = Entity.entityid ' +
             'JOIN User ' +
             'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
             'JOIN Follow ' +
@@ -205,24 +206,60 @@ function loadFeed(connection, uuid, limit, page) {
 
                 var totalcount = data[0].totalcount;
 
-                connection.query('SELECT Entity.entityid, Entity.type, Short.shoid, Capture.capid ' +
+                connection.query('SELECT Entity.entityid, Entity.type, Short.shoid, Capture.capid, COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount ' +
                     'FROM Entity ' +
                     'LEFT JOIN Short ' +
                     'ON Short.entityid = Entity.entityid ' +
                     'LEFT JOIN Capture ' +
+                    'ON Capture.entityid = Entity.entityid ' +
                     'JOIN User ' +
                     'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
+                    'LEFT JOIN Comment ' +
+                    'ON Comment.entityid = Entity.entityid ' +
+                    'LEFT JOIN HatsOff ' +
+                    'ON HatsOff.entityid = Entity.entityid ' +
                     'JOIN Follow ' +
                     'ON Follow.followee = User.uuid ' +
                     'WHERE Follow.follower = ? ' +
-                    'LIMIT ? OFFSET ?', [uuid, limit, offset], function (err, rows) {
+                    'LIMIT ? OFFSET ? ' +
+                    'GROUP BY Entity.entityid', [uuid, limit, offset], function (err, rows) {
                     if (err) {
                         reject(err);
                     }
                     else {
-                        resolve({
-                            requestmore: totalcount > (offset + limit),
-                            rows: rows
+
+                        var feedEntities = rows.map(function (elem) {
+                            return elem.entityid;
+                        });
+
+                        connection.query('SELECT entityid, uuid ' +
+                            'FROM HatsOff ' +
+                            'WHERE uuid = ? ' +
+                            'AND entityid IN (?) ' +
+                            'GROUP BY entityid', [uuid, feedEntities], function (err, data) {
+
+                            if (err) {
+                                reject(err);
+                            }
+                            else {
+
+                                rows.map(function (element) {
+                                    var thisEntityIndex = data.map(function (el) {
+                                        return el.entityid;
+                                    }).indexOf(element.entityid);
+
+                                    element.hatsoffstatus = thisEntityIndex !== -1;
+                                    // element.hatsoffcount = (thisEntityIndex !== -1 ? data[thisEntityIndex].hatsoffcount : 0);
+
+                                    return element;
+                                });
+
+                                resolve({
+                                    requestmore: totalcount > (offset + limit),
+                                    rows: rows
+                                });
+                            }
+
                         });
                     }
                 });
