@@ -34,6 +34,7 @@ router.post('/on-click', function (request, response) {
                 tokenstatus: 'invalid'
             });
             response.end();
+            throw new BreakPromiseChainError();
         })
         .then(function (conn) {
             connection = conn;

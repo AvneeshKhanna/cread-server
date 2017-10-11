@@ -15,7 +15,7 @@ var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 var consts = require('../../utils/Constants');
 var campaignutils = require('../../campaign/CampaignUtils');
 
-router.post('/load/', function (request, response) {
+/*router.post('/load/', function (request, response) {
 
     var authkey = request.body.authkey;
     var uuid = request.body.uuid;
@@ -137,7 +137,100 @@ router.post('/load/', function (request, response) {
         }
     });
 
+});*/
+
+router.post('/load', function (request, response) {
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    
+    var connection;
+    
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return loadFeed(connection, uuid);
+        })
+        .then(function (result) {
+            response.send({
+                tokenstatus: 'valid',
+                data: result
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        })
 });
+
+function loadFeed(connection, uuid, limit, page) {
+
+    var offset = page * limit;
+
+    return new Promise(function (resolve, reject) {
+
+        connection.query('SELECT COUNT(*) AS totalcount ' +
+            'FROM Entity ' +
+            'LEFT JOIN Short ' +
+            'ON Short.entityid = Entity.entityid ' +
+            'LEFT JOIN Capture ' +
+            'JOIN User ' +
+            'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
+            'JOIN Follow ' +
+            'ON Follow.followee = User.uuid ' +
+            'WHERE Follow.follower = ? ', [uuid], function (err, data) {
+
+            if(err){
+                reject(err);
+            }
+            else{
+
+                var totalcount = data[0].totalcount;
+
+                connection.query('SELECT Entity.entityid, Entity.type, Short.shoid, Capture.capid ' +
+                    'FROM Entity ' +
+                    'LEFT JOIN Short ' +
+                    'ON Short.entityid = Entity.entityid ' +
+                    'LEFT JOIN Capture ' +
+                    'JOIN User ' +
+                    'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
+                    'JOIN Follow ' +
+                    'ON Follow.followee = User.uuid ' +
+                    'WHERE Follow.follower = ? ' +
+                    'LIMIT ? OFFSET ?', [uuid, limit, offset], function (err, rows) {
+                    if (err) {
+                        reject(err);
+                    }
+                    else {
+                        resolve({
+                            requestmore: totalcount > (offset + limit),
+                            rows: rows
+                        });
+                    }
+                });
+            }
+
+        });
+    });
+}
 
 router.post('/load/specific', function (request, response) {
 
