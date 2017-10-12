@@ -16,6 +16,7 @@ var uuidGenerator = require('uuid');
 var moment = require('moment');
 
 var utils = require('../utils/Utils');
+var hatsoffutils = require('./HatsOffUtils');
 var consts = require('../utils/Constants');
 
 router.post('/on-click', function (request, response) {
@@ -41,7 +42,7 @@ router.post('/on-click', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return registerHatsOff(connection, register, uuid, entityid);
+            return hatsoffutils.registerHatsOff(connection, register, uuid, entityid);
         })
         .then(function () {
             response.send({
@@ -67,7 +68,48 @@ router.post('/on-click', function (request, response) {
         });
 });
 
-function registerHatsOff(connection, register, uuid, entityid) {
+router.post('/load-hatsoffs', function (request, response) {
+
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var entityid = request.body.entityid;
+    var page = request.body.page;
+
+    var limit = 30;
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return hatsoffutils.loadHatsOffs(connection, entityid, limit, page);
+        })
+        .then(function (result) {
+            console.log("rows from loadHatsOffs is " + JSON.stringify(result.rows, null, 3));
+            response.send({
+                tokenstatus: 'valid',
+                data: result
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if (err instanceof BreakPromiseChainError) {
+                //Do nothing
+            }
+            else {
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+});
+
+/*function registerHatsOff(connection, register, uuid, entityid) {
 
     var sqlquery;
     var sqlparams;
@@ -98,6 +140,6 @@ function registerHatsOff(connection, register, uuid, entityid) {
             }
         });
     });
-}
+}*/
 
 module.exports = router;

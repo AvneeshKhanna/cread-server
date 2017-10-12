@@ -7,10 +7,10 @@ var utils = require('../utils/Utils');
 var uuidGen = require('uuid');
 
 function loadComments(connection, entityid, limit, page, loadAll) {
-    var query = 'SELECT users.firstname, users.lastname, users.uuid, Comment.edited, Comment.commid, Comment.txt AS comment ' +
-        'FROM users ' +
+    var query = 'SELECT User.firstname, User.lastname, User.uuid, Comment.edited, Comment.commid, Comment.txt AS comment ' +
+        'FROM User ' +
         'JOIN Comment ' +
-        'ON users.uuid = Comment.uuid ' +
+        'ON User.uuid = Comment.uuid ' +
         'WHERE Comment.entityid = ? ' +
         'ORDER BY Comment.regdate DESC ' +
         'LIMIT ? ' +
