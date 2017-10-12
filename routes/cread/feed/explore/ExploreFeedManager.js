@@ -172,7 +172,9 @@ function loadExploreFeed(connection, uuid) {
 router.post('/load', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
+    var page = request.body.page;
 
+    var limit = 15;
     var connection;
 
     _auth.authValid(uuid, authkey)
@@ -187,12 +189,104 @@ router.post('/load', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return
+            return loadFeed(connection, uuid, limit, page);
         })
-
+        .then(function (result) {
+            response.send({
+                tokenstatus: 'valid',
+                data: result
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
 });
 
-function loadFeed(c){}
+function loadFeed(connection, uuid, limit, page){
+    var offset = limit * page;
+
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT COUNT(*) AS totalcount ' +
+            'FROM Entity ' +
+            'LEFT JOIN Short ' +
+            'ON Short.entityid = Entity.entityid ' +
+            'LEFT JOIN Capture ' +
+            'ON Capture.entityid = Entity.entityid ' +
+            'JOIN User ' +
+            'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ', [null], function (err, data) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                var totalcount = data[0].totalcount;
+
+                connection.query('SELECT COUNT(*) AS totalcount ' +
+                    'FROM Entity ' +
+                    'LEFT JOIN Short ' +
+                    'ON Short.entityid = Entity.entityid ' +
+                    'LEFT JOIN Capture ' +
+                    'ON Capture.entityid = Entity.entityid ' +
+                    'JOIN User ' +
+                    'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
+                    'ORDER BY Entity.regdate DESC ' +
+                    'LIMIT ? ' +
+                    'OFFSET ?', [limit, offset], function (err, rows) {
+                    if(err){
+                        reject(err);
+                    }
+                    else{
+
+                        var feedEntities = rows.map(function (elem) {
+                            return elem.entityid;
+                        });
+
+                        connection.query('SELECT entityid, uuid ' +
+                            'FROM HatsOff ' +
+                            'WHERE uuid = ? ' +
+                            'AND entityid IN (?) ' +
+                            'GROUP BY entityid', [uuid, feedEntities], function(err, hdata){
+                            if(err){
+                                reject(err);
+                            }
+                            else{
+
+                                rows.map(function (element) {
+                                    var thisEntityIndex = hdata.map(function (el) {
+                                        return el.entityid;
+                                    }).indexOf(element.entityid);
+
+                                    element.hatsoffstatus = thisEntityIndex !== -1;
+                                    // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
+
+                                    return element;
+                                });
+
+                                resolve({
+                                    requestmore: totalcount > (offset + limit),
+                                    rows: rows
+                                });
+
+                            }
+                        });
+                    }
+                })
+
+            }
+        });
+    });
+
+}
 
 router.post('/campaign-shares', function (request, response) {
 
