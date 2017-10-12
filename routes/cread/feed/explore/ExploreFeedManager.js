@@ -224,14 +224,15 @@ function loadFeed(connection, uuid, limit, page){
             'LEFT JOIN Capture ' +
             'ON Capture.entityid = Entity.entityid ' +
             'JOIN User ' +
-            'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ', [null], function (err, data) {
+            'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ', null, function (err, data) {
             if (err) {
                 reject(err);
             }
             else {
                 var totalcount = data[0].totalcount;
 
-                connection.query('SELECT COUNT(*) AS totalcount ' +
+                connection.query('SELECT Entity.entityid, Entity.type, User.uuid, User.firstname, User.lastname, Capture.captureurl, Short.txt AS short ' +
+                    'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount ' +
                     'FROM Entity ' +
                     'LEFT JOIN Short ' +
                     'ON Short.entityid = Entity.entityid ' +
@@ -239,6 +240,11 @@ function loadFeed(connection, uuid, limit, page){
                     'ON Capture.entityid = Entity.entityid ' +
                     'JOIN User ' +
                     'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
+                    'LEFT JOIN HatsOff ' +
+                    'USING(entityid) ' +
+                    'LEFT JOIN Comment ' +
+                    'USING(entityid) ' +
+                    'GROUP BY Entity.entityid ' +
                     'ORDER BY Entity.regdate DESC ' +
                     'LIMIT ? ' +
                     'OFFSET ?', [limit, offset], function (err, rows) {
