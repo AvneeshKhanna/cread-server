@@ -17,7 +17,7 @@ var consts = require('../../utils/Constants');
 var campaignutils = require('../../campaign/CampaignUtils');
 var utils = require('../../utils/Utils');
 
-router.post('/load', function (request, response) {
+/*router.post('/load', function (request, response) {
 
     var authkey = request.body.authkey;
     var uuid = request.body.uuid;
@@ -167,7 +167,32 @@ function loadExploreFeed(connection, uuid) {
 
         });
     });
-}
+}*/
+
+router.post('/load', function (request, response) {
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return
+        })
+
+});
+
+function loadFeed(c){}
 
 router.post('/campaign-shares', function (request, response) {
 

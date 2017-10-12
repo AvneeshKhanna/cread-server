@@ -142,7 +142,9 @@ var campaignutils = require('../../campaign/CampaignUtils');
 router.post('/load', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
-    
+    var page = request.body.page;
+
+    var limit = 15;
     var connection;
     
     _auth.authValid(uuid, authkey)
@@ -157,7 +159,7 @@ router.post('/load', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return loadFeed(connection, uuid);
+            return loadFeed(connection, uuid, limit, page);
         })
         .then(function (result) {
             response.send({
@@ -222,7 +224,8 @@ function loadFeed(connection, uuid, limit, page) {
                     'ON Follow.followee = User.uuid ' +
                     'WHERE Follow.follower = ? ' +
                     'LIMIT ? OFFSET ? ' +
-                    'GROUP BY Entity.entityid', [uuid, limit, offset], function (err, rows) {
+                    'GROUP BY Entity.entityid ' +
+                    'ORDER BY Entity.regdate DESC', [uuid, limit, offset], function (err, rows) {
                     if (err) {
                         reject(err);
                     }
@@ -236,7 +239,7 @@ function loadFeed(connection, uuid, limit, page) {
                             'FROM HatsOff ' +
                             'WHERE uuid = ? ' +
                             'AND entityid IN (?) ' +
-                            'GROUP BY entityid', [uuid, feedEntities], function (err, data) {
+                            'GROUP BY entityid', [uuid, feedEntities], function (err, hdata) {
 
                             if (err) {
                                 reject(err);
@@ -244,12 +247,12 @@ function loadFeed(connection, uuid, limit, page) {
                             else {
 
                                 rows.map(function (element) {
-                                    var thisEntityIndex = data.map(function (el) {
+                                    var thisEntityIndex = hdata.map(function (el) {
                                         return el.entityid;
                                     }).indexOf(element.entityid);
 
                                     element.hatsoffstatus = thisEntityIndex !== -1;
-                                    // element.hatsoffcount = (thisEntityIndex !== -1 ? data[thisEntityIndex].hatsoffcount : 0);
+                                    // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
 
                                     return element;
                                 });

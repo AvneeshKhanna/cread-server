@@ -3,7 +3,7 @@
  */
 
 /**
- * Used to handle the basic functionalities for follow system on the app
+ * Used to handle the server endpoints for follow system
  * */
 
 'use-strict';
@@ -15,6 +15,8 @@ var config = require('../../Config');
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
+
+var followutils = require('./FollowUtils');
 
 router.post('/on-click', function (request, response) {
 
@@ -38,7 +40,7 @@ router.post('/on-click', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return registerFollow(connection, register, follower, followee);
+            return followutils.registerFollow(connection, register, follower, followee);
         })
         .then(function () {
             response.send({
@@ -65,35 +67,96 @@ router.post('/on-click', function (request, response) {
 
 });
 
-function registerFollow(connection, register, follower, followee) {
-    var sqlquery;
-    var sqlparams;
+router.post('/load-followers', function (request, response) {
 
-    if(register){
-        sqlquery = 'INSERT INTO Follow SET ?';
-        sqlparams = {
-            follower: follower,
-            followee: followee
-        }
-    }
-    else{
-        sqlquery = 'DELETE FROM Follow WHERE follower = ? AND followee = ?';
-        sqlparams = [
-            follower,
-            followee
-        ]
-    }
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var limit = request.body.limit;
+    var page = request.body.page;
 
-    return new Promise(function (resolve, reject) {
-        connection.query(sqlquery, sqlparams, function (err, rows) {
-            if (err) {
-                reject(err);
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return followutils.loadFollowers(connection, uuid, limit, page);
+        })
+        .then(function (result) {
+            response.send({
+                tokenstatus: 'valid',
+                data: result
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
             }
-            else {
-                resolve();
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
             }
         });
-    });
-}
+
+});
+
+router.post('/load-following', function (request, response) {
+
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var limit = request.body.limit;
+    var page = request.body.page;
+
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return followutils.loadFollowing(connection, uuid, limit, page);
+        })
+        .then(function (result) {
+            response.send({
+                tokenstatus: 'valid',
+                data: result
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
 
 module.exports = router;
