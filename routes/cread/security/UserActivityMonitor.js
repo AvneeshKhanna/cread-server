@@ -128,9 +128,9 @@ function checkForSuspicion(suspiciousData) {
         //Check if multiple UUIDs have been registered as action for a single IMEI
         if (checkForMultipleUUIDs(uuids)) {
             console.log("a few accounts deactivated");
-            connection.query('UPDATE users ' +
+            connection.query('UPDATE User ' +
                 'SET accountstatus = ?, disabletime = NOW() ' +
-                'WHERE UUID IN (?) ' +
+                'WHERE uuid IN (?) ' +
                 'AND accountstatus = ?', ["DISABLED", uuids, "ENABLED"], function (err, data) {
                 if (err) {
                     callback(err);

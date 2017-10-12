@@ -22,7 +22,7 @@ var docClient = new AWS.DynamoDB.DocumentClient();
 function sendNotification(data, cities, callback) {
 
     getTokens(cities, function (registrationTokens) {
-        if (registrationTokens.length == 0) {
+        if (registrationTokens.length === 0) {
             callback();
         }
         else {
@@ -53,7 +53,7 @@ function getTokens(cities, callback) {
         AttributesToGet: ['Fcm_token']
     };
 
-    if (cities != undefined) {
+    if (cities !== undefined) {
 
         params.ScanFilter = {
             City: {
@@ -102,11 +102,11 @@ function batchTokenHandler(tokens, batchsize, counter, sender, message, callback
     function recursive(tokens, batchsize, counter, sender, message, toRepeat) {
 
         if (toRepeat) {
-            var iterations = Math.floor(tokens.length / batchsize) + ((tokens.length % batchsize) != 0 ? 1 : 0);
+            var iterations = Math.floor(tokens.length / batchsize) + ((tokens.length % batchsize) !== 0 ? 1 : 0);
             console.log('No of tokens are ' + tokens.length);
             console.log('No of iterations are ' + JSON.stringify(iterations, null, 3));
 
-            if (counter == (iterations - 1)) { //Last iteration
+            if (counter === (iterations - 1)) { //Last iteration
                 var lastitemindex = tokens.length;
             }
             else {
@@ -122,7 +122,7 @@ function batchTokenHandler(tokens, batchsize, counter, sender, message, callback
                     callback(err);
                 }
                 else {
-                    if (counter == (iterations - 1)) {
+                    if (counter === (iterations - 1)) {
                         recursive(tokens, batchsize, counter, sender, message, false);
                     }
                     else {

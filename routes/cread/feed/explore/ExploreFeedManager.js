@@ -272,6 +272,7 @@ function loadFeed(connection, uuid, limit, page){
                                         return el.entityid;
                                     }).indexOf(element.entityid);
 
+                                    element.profilepicurl = utils.createProfilePicUrl(element.uuid);
                                     element.hatsoffstatus = thisEntityIndex !== -1;
                                     // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
 

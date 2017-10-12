@@ -13,6 +13,7 @@ var AWS = config.AWS;
 var _auth = require('../../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 var consts = require('../../utils/Constants');
+var utils = require('../../utils/Utils');
 var campaignutils = require('../../campaign/CampaignUtils');
 
 /*router.post('/load/', function (request, response) {
@@ -251,6 +252,7 @@ function loadFeed(connection, uuid, limit, page) {
                                         return el.entityid;
                                     }).indexOf(element.entityid);
 
+                                    element.profilepicurl = utils.createProfilePicUrl(element.uuid);
                                     element.hatsoffstatus = thisEntityIndex !== -1;
                                     // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
 
