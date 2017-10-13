@@ -243,7 +243,7 @@ router.post('/login', function (request, response, next) {
         if (err) {
             throw err;
         }
-        else if (result.length == 0) {
+        else if (result.length === 0) {
 
             localJson['authtoken'] = 'false';
             localJson['uuid'] = 'false';

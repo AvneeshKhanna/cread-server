@@ -22,6 +22,7 @@ var docClient = new AWS.DynamoDB.DocumentClient();
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var clientprofile_utils = require('../dsbrd/client-profile/ClientProfileUtils');
+var userprofileutils = require('./UserProfileUtils');
 
 router.post('/request/', function (request, response) {
 
@@ -468,6 +469,98 @@ function updateClientBio(connection, clientid, bio){
         });
     });
 }
+
+router.post('/load-timeline', function (request, response) {
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var page = request.body.page;
+
+    var limit = 15;
+
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return userprofileutils.loadTimeline(connection, uuid, limit, page);
+        })
+        .then(function (result) {
+            response.send({
+                tokenstatus: 'valid',
+                data: result
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
+
+/**
+ * Load basic profile info including followers and following count
+ * */
+router.post('/load-profile', function (request, response) {
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return userprofileutils.loadProfileInformation(connection, uuid);
+        })
+        .then(function (result) {
+            response.send({
+                tokenstatus: 'valid',
+                data: result
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
 
 /*router.post('/update-client-bio', function (request, response) {
 
