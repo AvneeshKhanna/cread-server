@@ -17,6 +17,7 @@ var uuidGen = require('uuid');
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
+var utils = require('../utils/Utils');
 
 //TODO: Add FCM Token part
 
@@ -41,7 +42,9 @@ router.post('/sign-in', function (request, response) {
                 result.status = "existing-user";
             }
             else{
-                result.status = "new-user";
+                result = {
+                    status: "new-user"
+                };
             }
 
             response.send({
@@ -80,33 +83,56 @@ function checkIfUserExists(connection, fbid){
 
 router.post('/sign-up', function (request, response) {
 
-    var userdata = request.body.userdata;
-    var phone = request.body.phone;
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
+    try{
+        var userdata = request.body.userdata;
+
+        utils.changePropertyName(userdata, "id", "fbid");
+        utils.changePropertyName(userdata, "first_name", "firstname");
+        utils.changePropertyName(userdata, "last_name", "lastname");
+        utils.changePropertyName(userdata, "link", "fbtimelineurl");
+        utils.changePropertyName(userdata, "picture", "profilepicurl");
+
+        var userdetails = userdata;
+
+        userdetails.age_yrs_min = userdata.age_range.min;
+        userdetails.age_yrs_max = userdata.age_range.max;
+
+        delete userdata.age_range;
+    }
+    catch(ex){
+        console.error(ex);
+    }
 
     var connection;
 
     config.getNewConnection()
         .then(function (conn) {
             connection = conn;
-            return checkIfPhoneExists(connection, phone);
+            return checkIfPhoneExists(connection, userdetails.phone);
         })
         .then(function (phoneExists) {
             if(phoneExists){
                 response.send({
-                    status: 'phone-exists'
+                    data: {
+                        status: 'phone-exists'
+                    }
                 });
                 response.end();
                 throw new BreakPromiseChainError();
             }
             else{
-                return registerUserData(connection, userdata);
+                return registerUserData(connection, userdetails);
             }
         })
         .then(function (result) {
 
             result.status = 'done';
 
-            response.send(result);
+            response.send({
+                data: result
+            });
             response.end();
 
             throw new BreakPromiseChainError();
@@ -143,18 +169,18 @@ function checkIfPhoneExists(connection, phone) {
     });
 }
 
-function registerUserData(connection, userdata) {
+function registerUserData(connection, userdetails) {
 
     var uuid = uuidGen.v4();
     var authkey = _auth.generateToken({
-        fbid: userdata.fbid
+        fbid: userdetails.fbid
     });
 
-    userdata.uuid = uuid;
-    userdata.authkey = authkey;
+    userdetails.uuid = uuid;
+    userdetails.authkey = authkey;
 
     return new Promise(function (resolve, reject) {
-        connection.query('INSERT INTO User SET ?', [userdata], function (err, rows) {
+        connection.query('INSERT INTO User SET ?', [userdetails], function (err, rows) {
             if (err) {
                 reject(err);
             }

@@ -38,7 +38,7 @@ catch (ex) {
  * */
 function enableTemporarilyActiveAccounts() {
     console.log("CronJob: running");
-    connection.query('UPDATE users ' +
+    connection.query('UPDATE User ' +
         'SET accountstatus = ?, disabletime = ? ' +
         'WHERE accountstatus = ? ' +
         'AND disabletime < DATE_SUB(NOW(), INTERVAL 1 DAY)', ["ENABLED", null, "TEMP-ENABLED"], function (err, data) {

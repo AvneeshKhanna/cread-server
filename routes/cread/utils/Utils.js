@@ -81,8 +81,16 @@ function createProfilePicUrl(uuid) {
     return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Profile/' + profilepicfilename;
 }
 
+function changePropertyName(object, from, to) {
+    if(object.hasOwnProperty(from)){
+        object[to] = object[from];
+        delete object[from];
+    }
+}
+
 module.exports = {
     updateQueryStringParameter: updateQueryStringParameter,
     sendAWSSMS: sendAWSSMS,
-    createProfilePicUrl: createProfilePicUrl
+    createProfilePicUrl: createProfilePicUrl,
+    changePropertyName: changePropertyName
 };
