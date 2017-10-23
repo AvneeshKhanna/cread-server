@@ -520,8 +520,12 @@ router.post('/load-timeline', function (request, response) {
  * Load basic profile info including followers and following count
  * */
 router.post('/load-profile', function (request, response) {
+
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
+    var requesteduuid = request.body.requesteduuid; //The "uuid" of the profile that is requested
 
     var connection;
 
@@ -537,7 +541,55 @@ router.post('/load-profile', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return userprofileutils.loadProfileInformation(connection, uuid);
+            return userprofileutils.loadProfileInformation(connection, requesteduuid);
+        })
+        .then(function (result) {
+            response.send({
+                tokenstatus: 'valid',
+                data: result
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
+
+router.post('/load-fb-friends', function (request, response) {
+
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var fbid = request.body.fbid;
+    var fbaccesstoken = request.body.fbaccesstoken;
+    var nexturl = request.body.nexturl;
+
+    var connection;
+
+    //TODO: Error handling for Facebook Graph API
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return userprofileutils.loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl);
         })
         .then(function (result) {
             response.send({
