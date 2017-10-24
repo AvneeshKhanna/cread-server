@@ -22,9 +22,17 @@ router.post('/on-click', function (request, response) {
 
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
-    var follower = request.body.follower;
-    var followee = request.body.followee;
+    var followees = request.body.followees; //Is of type array to support batch-following system
     var register = request.body.register;
+
+    if(!(followees instanceof Array)){
+        console.error('Parameter "followees" should be of the type Array');
+        response.status(500).send({
+            error: 'Some error occurred at the server'
+        });
+        response.end();
+        return;
+    }
 
     var connection;
 
@@ -40,7 +48,7 @@ router.post('/on-click', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return followutils.registerFollow(connection, register, follower, followee);
+            return followutils.registerFollow(connection, register, uuid, followees);
         })
         .then(function () {
             response.send({
@@ -71,7 +79,8 @@ router.post('/load-followers', function (request, response) {
 
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
-    var limit = request.body.limit;
+    var requesteduuid = request.body.requesteduuid;
+    var limit = 25;
     var page = request.body.page;
 
     var connection;
@@ -88,7 +97,7 @@ router.post('/load-followers', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return followutils.loadFollowers(connection, uuid, limit, page);
+            return followutils.loadFollowers(connection, requesteduuid, limit, page);
         })
         .then(function (result) {
             response.send({
@@ -117,7 +126,8 @@ router.post('/load-following', function (request, response) {
 
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
-    var limit = request.body.limit;
+    var requesteduuid = request.body.requesteduuid;
+    var limit = 25;
     var page = request.body.page;
 
     var connection;
@@ -134,7 +144,7 @@ router.post('/load-following', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return followutils.loadFollowing(connection, uuid, limit, page);
+            return followutils.loadFollowing(connection, requesteduuid, limit, page);
         })
         .then(function (result) {
             response.send({

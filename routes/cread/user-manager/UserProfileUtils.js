@@ -56,7 +56,7 @@ function loadTimeline(connection, uuid, limit, page) {
 
 function loadProfileInformation(connection, requesteduuid){
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT User.uuid, User.firstname, User.lastname, User.email, User.phone, Follow.followee, Follow.follower ' +
+        connection.query('SELECT User.uuid, User.firstname, User.lastname, User.bio, User.watermarkstatus, User.email, User.phone, Follow.followee, Follow.follower ' +
             'FROM User ' +
             'LEFT JOIN Follow ' +
             'ON (Follow.followee = User.uuid OR Follow.follower = User.uuid) ' +
@@ -107,10 +107,22 @@ function loadProfileInformation(connection, requesteduuid){
     });
 }
 
+function updateProfile(connection, uuid, details) {
+    return new Promise(function (resolve, reject) {
+        connection.query('UPDATE User SET ? WHERE uuid = ?', [details, uuid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
 function loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl) {
     return new Promise(function (resolve, reject) {
 
-        //TODO: Pagination for Graph API Query
         var graphurl = (nexturl) ? nexturl : 'https://graph.facebook.com/v2.10/'
             + fbid
             + '/'
@@ -119,11 +131,20 @@ function loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl) {
             + 'access_token='
             + fbaccesstoken;
 
-        requestclient(graphurl, function (error, response, body) {
+        requestclient(graphurl, function (error, res, body) {
+
+            console.log("body-response " + JSON.stringify(response, null, 3));
+            console.log("res " + JSON.stringify(res, null, 3));
+
             if(error){
                 reject(error);
             }
+            else if(JSON.parse(body).error){
+                reject(JSON.parse(body).error);
+            }
             else{
+                var response = JSON.parse(body);
+
                 var friendsids = response.data.map(function (element) {
                     return element.id;
                 });
@@ -177,5 +198,6 @@ function loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl) {
 module.exports = {
     loadTimeline: loadTimeline,
     loadProfileInformation: loadProfileInformation,
-    loadFacebookFriends: loadFacebookFriends
+    loadFacebookFriends: loadFacebookFriends,
+    updateProfile: updateProfile
 };

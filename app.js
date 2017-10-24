@@ -138,6 +138,8 @@ app.use('/user-campaigns', require('./routes/cread/track/campaigns/UserCampaignM
 app.use('/explore-feed', require('./routes/cread/feed/explore/ExploreFeedManager'));
 app.use('/share-campaign-explore', require('./routes/cread/share/ShareCampaignExplore'));
 app.use('/campaign-manage', require('./routes/cread/campaign/CampaignManager'));
+app.use('/follow', require('./routes/cread/follow/FollowManager'));
+app.use('/capture-upload', require('./routes/cread/capture/UploadCapture'));
 app.use('/hatsoff', require('./routes/cread/hats-off/HatsOffManager'));
 app.use('/comment', require('./routes/cread/comment/CommentManager'));
 

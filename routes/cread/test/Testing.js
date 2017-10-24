@@ -9,6 +9,7 @@ var router = express.Router();
 var moment = require('moment');
 var uuidGen = require('uuid');
 var async = require('async');
+var uuidgen = require('uuid');
 
 //--------------
 
@@ -224,24 +225,180 @@ router.post('/send-bulk-sms', function (request, response) {
 
 });
 
-router.post('/lock', function (request, response) {
+router.post('/populate-db', function (request, response) {
 
-    var shareid = request.body.shareid;
+    config.getNewConnection()
+        .then(function (connection) {
 
-    connection.query('UPDATE Share SET locked = ?, locked_at = NOW() WHERE shareid = ?', [true, shareid], function (err, rows) {
+            /*var users  = [
+                {
+                    firstname: "Avneesh",
+                    lastname: "Khanna"
+                },
+                {
+                    firstname: "Avneesh",
+                    lastname: "Khanna"
+                },
+                {
+                    firstname: "Avneesh",
+                    lastname: "Khanna"
+                },
+                {
+                    firstname: "Avneesh",
+                    lastname: "Khanna"
+                },
+                {
+                    firstname: "Avneesh",
+                    lastname: "Khanna"
+                },
+                {
+                    firstname: "Avneesh",
+                    lastname: "Khanna"
+                },
+                {
+                    firstname: "Avneesh",
+                    lastname: "Khanna"
+                },
+                {
+                    firstname: "Avneesh",
+                    lastname: "Khanna"
+                },
+                {
+                    firstname: "Avneesh",
+                    lastname: "Khanna"
+                },
+                {
+                    firstname: "Avneesh",
+                    lastname: "Khanna"
+                },
+                {
+                    firstname: "Avneesh",
+                    lastname: "Khanna"
+                },
+                {
+                    firstname: "Avneesh",
+                    lastname: "Khanna"
+                },
+                {
+                    firstname: "Avneesh",
+                    lastname: "Khanna"
+                },
+                {
+                    firstname: "Avneesh",
+                    lastname: "Khanna"
+                },
+                {
+                    firstname: "Avneesh",
+                    lastname: "Khanna"
+                },
+                {
+                    firstname: "Avneesh",
+                    lastname: "Khanna"
+                },
+                {
+                    firstname: "Avneesh",
+                    lastname: "Khanna"
+                },
+                {
+                    firstname: "Avneesh",
+                    lastname: "Khanna"
+                },
+                {
+                    firstname: "Avneesh",
+                    lastname: "Khanna"
+                },
+                {
+                    firstname: "Avneesh",
+                    lastname: "Khanna"
+                },
+                {
+                    firstname: "Avneesh",
+                    lastname: "Khanna"
+                },
+                {
+                    firstname: "Avneesh",
+                    lastname: "Khanna"
+                },
+                {
+                    firstname: "Avneesh",
+                    lastname: "Khanna"
+                },
 
-        if (err) {
-            console.error(err);
-            throw err;
-        }
-        else {
-            response.send('Locked');
-            response.end();
-        }
+            ];
 
-    })
+            async.eachSeries(users, function (user, callback) {
+
+                var params = {
+                    firstname: user.firstname,
+                    lastname: user.lastname,
+                    uuid: uuidgen.v4(),
+                    fbid: uuidgen.v4(),
+                    authkey: uuidgen.v4(),
+                    email: "avneesh.khanna@gmail.com",
+                    phone: "+919999015838",
+                    locale: "en_US",
+                    gender: "male",
+                    profilepicurl: "https://www.cread.in",
+                    age_yrs_min: 21,
+                    fbtimelineurl: "https://www.facebook.com/app_scoped_user_id/10210921694422791/"
+                };
+
+                connection.query('INSERT INTO User SET ?', [params], function (err, data) {
+                    if(err){
+                        callback(err);
+                    }
+                    else{
+                        console.log('A row inserted successfully!');
+                        callback();
+                    }
+                });
+            }, function (err) {
+                if(err){
+                    console.error(err);
+                }
+            });*/
+
+            connection.query('SELECT uuid FROM User', null, function (err, users) {
+                if(err){
+                    throw err;
+                }
+                else{
+
+                    var values = restructureData(users.map(function (el) {
+                        return el.uuid;
+                    }));
+
+                    connection.query('INSERT INTO Follow VALUES ?', [values], function (err, data) {
+                        if(err){
+                            throw err;
+                        }
+                        else{
+                            response.send('Done').end();
+                        }
+                    })
+
+                }
+            });
+
+        });
 
 });
+
+function restructureData(users) {
+
+    var master = [];
+
+    users.forEach(function (elem) {
+        master.push([
+            uuidgen.v4(),
+            "405354ca-b37c-4bc5-9b19-ae6d02c0c22b",
+            elem,
+            moment().format('YYYY-MM-DD HH:mm:ss')
+        ])
+    });
+
+    return master;
+}
 
 router.post('/emailer', function (request, response) {
 

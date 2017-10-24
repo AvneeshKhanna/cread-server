@@ -11,22 +11,19 @@
 var config = require('../../Config');
 var utils = require('../utils/Utils');
 
-function registerFollow(connection, register, follower, followee) {
+function registerFollow(connection, register, follower, followees) {
     var sqlquery;
     var sqlparams;
 
-    if(register){
-        sqlquery = 'INSERT INTO Follow SET ?';
-        sqlparams = {
-            follower: follower,
-            followee: followee
-        }
+    if (register) {
+        sqlquery = 'INSERT INTO Follow (follower, followee) VALUES ?';
+        sqlparams = structureDataForBatchFollowing(follower, followees);
     }
-    else{
-        sqlquery = 'DELETE FROM Follow WHERE follower = ? AND followee = ?';
+    else {
+        sqlquery = 'DELETE FROM Follow WHERE follower = ? AND followees IN (?)';    //This is done since followees is always an array, even with only one element
         sqlparams = [
             follower,
-            followee
+            followees
         ]
     }
 
@@ -42,14 +39,26 @@ function registerFollow(connection, register, follower, followee) {
     });
 }
 
-function loadFollowers(connection, uuid, limit, page) {
+function structureDataForBatchFollowing(follower, followees) {
+
+    var master = [];
+
+    followees.forEach(function (element) {
+        var subArr = [follower, element];
+        master.push(subArr);
+    });
+
+    return master;
+}
+
+function loadFollowers(connection, requesteduuid, limit, page) {
 
     var offset = page * limit;
 
     return new Promise(function (resolve, reject) {
         connection.query('SELECT COUNT(*) AS totalcount ' +
             'FROM Follow ' +
-            'WHERE followee = ?', [uuid], function (err, data) {
+            'WHERE followee = ?', [requesteduuid], function (err, data) {
             if (err) {
                 reject(err);
             }
@@ -61,13 +70,13 @@ function loadFollowers(connection, uuid, limit, page) {
                     'JOIN User ' +
                     'ON Follow.follower = User.uuid ' +
                     'WHERE Follow.followee = ? ' +
+                    'ORDER BY Follow.regdate DESC ' +
                     'LIMIT ? ' +
-                    'OFFSET ? ' +
-                    'ORDER BY Follow.regdate DESC', [uuid, limit, offset], function (err, rows) {
-                    if(err){
+                    'OFFSET ? ', [requesteduuid, limit, offset], function (err, rows) {
+                    if (err) {
                         reject(err);
                     }
-                    else{
+                    else {
                         rows.map(function (elem) {
                             elem.profilepicurl = utils.createProfilePicUrl(elem.uuid);
                             return elem;
@@ -84,14 +93,14 @@ function loadFollowers(connection, uuid, limit, page) {
     });
 }
 
-function loadFollowing(connection, uuid, limit, page) {
+function loadFollowing(connection, requesteduuid, limit, page) {
 
     var offset = page * limit;
 
     return new Promise(function (resolve, reject) {
         connection.query('SELECT COUNT(*) AS totalcount ' +
             'FROM Follow ' +
-            'WHERE follower = ?', [uuid], function (err, data) {
+            'WHERE follower = ?', [requesteduuid], function (err, data) {
             if (err) {
                 reject(err);
             }
@@ -103,13 +112,13 @@ function loadFollowing(connection, uuid, limit, page) {
                     'JOIN User ' +
                     'ON Follow.followee = User.uuid ' +
                     'WHERE Follow.follower = ? ' +
+                    'ORDER BY Follow.regdate DESC ' +
                     'LIMIT ? ' +
-                    'OFFSET ? ' +
-                    'ORDER BY Follow.regdate DESC', [uuid, limit, offset], function (err, rows) {
-                    if(err){
+                    'OFFSET ? ', [requesteduuid, limit, offset], function (err, rows) {
+                    if (err) {
                         reject(err);
                     }
-                    else{
+                    else {
                         rows.map(function (elem) {
                             elem.profilepicurl = utils.createProfilePicUrl(elem.uuid);
                             return elem;

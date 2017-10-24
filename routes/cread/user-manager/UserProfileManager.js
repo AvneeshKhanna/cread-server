@@ -574,6 +574,8 @@ router.post('/load-fb-friends', function (request, response) {
     var fbaccesstoken = request.body.fbaccesstoken;
     var nexturl = request.body.nexturl;
 
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
     var connection;
 
     //TODO: Error handling for Facebook Graph API
@@ -595,6 +597,52 @@ router.post('/load-fb-friends', function (request, response) {
             response.send({
                 tokenstatus: 'valid',
                 data: result
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
+
+router.post('/update-profile', function (request, response) {
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var userdata = request.body.userdata;
+
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return userprofileutils.updateProfile(connection, uuid, userdata);
+        })
+        .then(function () {
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    status: 'done'
+                }
             });
             response.end();
             throw new BreakPromiseChainError();

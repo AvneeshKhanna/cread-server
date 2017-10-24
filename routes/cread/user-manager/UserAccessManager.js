@@ -34,11 +34,6 @@ router.post('/sign-in', function (request, response) {
         })
         .then(function (result) {
             if(result){
-                if(result.authkey){
-                    result.authkey = _auth.generateToken({
-                        fbid: fbid
-                    });
-                }
                 result.status = "existing-user";
             }
             else{
