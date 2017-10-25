@@ -15,7 +15,14 @@ var AWS = config.AWS;
 
 var envconfig = require('config');
 var userstbl_ddb = envconfig.get('dynamoDB.users_table');
+var s3bucket = envconfig.get('s3.bucket');
 var uuidGenerator = require('uuid');
+
+var multer = require('multer');
+var upload = multer({dest: './images/uploads/profile_picture/'});
+var fs = require('fs');
+
+var jimp = require('jimp');
 
 var docClient = new AWS.DynamoDB.DocumentClient();
 
@@ -23,6 +30,9 @@ var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var clientprofile_utils = require('../dsbrd/client-profile/ClientProfileUtils');
 var userprofileutils = require('./UserProfileUtils');
+var utils = require('../utils/Utils');
+
+//TODO: Delete profile pictures after uploading
 
 router.post('/request/', function (request, response) {
 
@@ -218,7 +228,7 @@ router.post('/update-fb-username', function (request, response) {
             response.end();
         })
         .then(function (exists) {
-            if(exists){
+            if (exists) {
                 response.send({
                     tokenstatus: 'valid',
                     data: {
@@ -228,7 +238,7 @@ router.post('/update-fb-username', function (request, response) {
                 response.end();
                 throw new BreakPromiseChainError();
             }
-            else{
+            else {
                 //Proceed
                 return updateFbUsername(uuid, fbusername);
             }
@@ -245,10 +255,10 @@ router.post('/update-fb-username', function (request, response) {
 
         })
         .catch(function (err) {
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
@@ -258,17 +268,17 @@ router.post('/update-fb-username', function (request, response) {
 
 });
 
-function checkIfUsernameAlreadyExists(fbusername){
+function checkIfUsernameAlreadyExists(fbusername) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT UUID FROM users WHERE fbusername = ?', [fbusername], function (err, row) {
-            if(err){
+            if (err) {
                 reject(err);
             }
-            else{
-                if(row.length !== 0){
+            else {
+                if (row.length !== 0) {
                     resolve(true);
                 }
-                else{
+                else {
                     resolve(false);
                 }
             }
@@ -331,7 +341,7 @@ router.post('/check-for-client', function (request, response) {
         })
         .then(function (result) {
             if (result.isClient) {
-                if(result.biostatus){   //Case where client and bio both exist
+                if (result.biostatus) {   //Case where client and bio both exist
                     response.send({
                         tokenstatus: 'valid',
                         data: {
@@ -346,7 +356,7 @@ router.post('/check-for-client', function (request, response) {
                     return updateClientBio(connection, result.clientid, bio)
                 }
             }
-            else{
+            else {
                 return registerUserAsClient(uuid, userdetails, connection);
             }
         })
@@ -363,10 +373,10 @@ router.post('/check-for-client', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
@@ -406,15 +416,15 @@ function checkUserRegisteredAsClient(uuid, connection) {
     })
 }
 
-function registerUserAsClient(uuid, userdetails, connection){
+function registerUserAsClient(uuid, userdetails, connection) {
     return new Promise(function (resolve, reject) {
         connection.beginTransaction(function (err) {
-            if(err){
+            if (err) {
                 connection.rollback(function () {
                     reject(err);
                 });
             }
-            else{
+            else {
 
                 var params = {
                     clientid: uuidGenerator.v4(),
@@ -425,26 +435,26 @@ function registerUserAsClient(uuid, userdetails, connection){
                 };
 
                 connection.query('INSERT INTO Client SET ?', [params], function (err, row) {
-                    if(err){
+                    if (err) {
                         connection.rollback(function () {
                             reject(err);
                         });
                     }
-                    else{
+                    else {
                         connection.query('UPDATE users SET clientid = ? WHERE uuid = ?', [params.clientid, uuid], function (err, row) {
-                            if(err){
+                            if (err) {
                                 connection.rollback(function () {
                                     reject(err);
                                 });
                             }
-                            else{
+                            else {
                                 connection.commit(function (err) {
-                                    if(err){
+                                    if (err) {
                                         connection.rollback(function () {
                                             reject(err);
                                         });
                                     }
-                                    else{
+                                    else {
                                         resolve(params.clientid);
                                     }
                                 });
@@ -457,13 +467,13 @@ function registerUserAsClient(uuid, userdetails, connection){
     });
 }
 
-function updateClientBio(connection, clientid, bio){
+function updateClientBio(connection, clientid, bio) {
     return new Promise(function (resolve, reject) {
         connection.query('UPDATE Client SET bio = ? WHERE clientid = ?', [bio, clientid], function (err, row) {
-            if(err){
+            if (err) {
                 reject(err);
             }
-            else{
+            else {
                 resolve(clientid);
             }
         });
@@ -503,10 +513,10 @@ router.post('/load-timeline', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
@@ -553,13 +563,13 @@ router.post('/load-profile', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
-                    error: 'Some error occurred at the server'
+                    message: 'Some error occurred at the server'
                 }).end();
             }
         });
@@ -603,13 +613,13 @@ router.post('/load-fb-friends', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
-                    error: 'Some error occurred at the server'
+                    message: 'Some error occurred at the server'
                 }).end();
             }
         });
@@ -652,10 +662,10 @@ router.post('/update-profile', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
@@ -664,6 +674,132 @@ router.post('/update-profile', function (request, response) {
         });
 
 });
+
+router.post('/update-profile-picture', upload.single('display-pic'), function (request, response) {
+
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var display_pic = request.file;
+
+    console.log("request.file is " + JSON.stringify(request.file, null, 3));
+
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return renameFile(display_pic, uuid);
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (renamedpath) {
+            return createSmallProfilePic(renamedpath, uuid);
+        })
+        .then(function (displaypicsmallpath) {
+            return uploadProfilePicToS3(displaypicsmallpath, uuid, 'display-pic-small.jpg');
+        })
+        .then(function () {
+            return uploadProfilePicToS3("./images/uploads/profile_picture/" + uuid + ".jpg", uuid, 'display-pic.jpg');
+        })
+        .then(function () {
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    status: 'done',
+                    profilepicurl: utils.createProfilePicUrl(uuid)
+                }
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            // config.disconnect(connection);
+            if (err instanceof BreakPromiseChainError) {
+                //Do nothing
+            }
+            else {
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
+
+function renameFile(display_pic, uuid) {
+    console.log("renameFile() called");
+    return new Promise(function (resolve, reject) {
+        console.log('display_pic path is ' + display_pic.path);
+        fs.rename(display_pic.path, './images/uploads/profile_picture/' + uuid + '.jpg', function (err) {
+            if (err) {
+                console.log("fs.rename: onReject()");
+                reject(err);
+            }
+            else {
+                /*fs.open('./images/uploads/profile_picture/' + uuid + '.jpg', 'r+', function (err, renamed) {
+                    if(err){
+                        console.log("fs.readFile: onReject()");
+                        reject(err);
+                    }
+                    else{
+                        console.log('renamed file path ' + renamed.path);
+                        resolve('./images/uploads/profile_picture/' + uuid + '.jpg');
+                    }
+                });*/
+                resolve('./images/uploads/profile_picture/' + uuid + '.jpg');
+            }
+        });
+    });
+}
+
+function uploadProfilePicToS3(filepath, uuid, filename) {
+    console.log("uploadProfilePicToS3() called file.path " + filepath);
+    return new Promise(function (resolve, reject) {
+        var params = {
+            Body: fs.createReadStream(filepath),
+            Bucket: s3bucket,
+            Key: "Users/" + uuid + "/Profile/" + filename,
+            ACL: "public-read"
+        };
+
+        var s3 = new AWS.S3();
+        s3.putObject(params, function (err, data) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
+function createSmallProfilePic(renamedpath, uuid) {
+    console.log("createSmallProfilePic() called renamedpath " + renamedpath);
+    return new Promise(function (resolve, reject) {
+        jimp.read(renamedpath, function (err, resized) {
+            if (err) {
+                reject(err);
+            }
+            else{
+                resized.resize(128, 128)            // resize
+                    .quality(80)                    // set JPEG quality
+                    .write("./images/uploads/profile_picture/" + uuid + "-small.jpg", function (err) {
+                        if(err){
+                            reject(err);
+                        }
+                        else{
+                            resolve("./images/uploads/profile_picture/" + uuid + "-small.jpg");
+                        }
+                    });    // save
+            }
+        });
+    })
+}
 
 /*router.post('/update-client-bio', function (request, response) {
 

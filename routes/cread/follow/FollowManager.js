@@ -20,6 +20,8 @@ var followutils = require('./FollowUtils');
 
 router.post('/on-click', function (request, response) {
 
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var followees = request.body.followees; //Is of type array to support batch-following system

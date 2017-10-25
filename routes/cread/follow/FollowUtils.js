@@ -8,6 +8,8 @@
 
 'use-strict';
 
+var uuidgen = require('uuid');
+
 var config = require('../../Config');
 var utils = require('../utils/Utils');
 
@@ -16,11 +18,11 @@ function registerFollow(connection, register, follower, followees) {
     var sqlparams;
 
     if (register) {
-        sqlquery = 'INSERT INTO Follow (follower, followee) VALUES ?';
+        sqlquery = 'INSERT INTO Follow (followid, follower, followee) VALUES ?';
         sqlparams = structureDataForBatchFollowing(follower, followees);
     }
     else {
-        sqlquery = 'DELETE FROM Follow WHERE follower = ? AND followees IN (?)';    //This is done since followees is always an array, even with only one element
+        sqlquery = 'DELETE FROM Follow WHERE follower = ? AND followee IN (?)';    //This is done since followees is always an array, even with only one element
         sqlparams = [
             follower,
             followees
@@ -44,11 +46,15 @@ function structureDataForBatchFollowing(follower, followees) {
     var master = [];
 
     followees.forEach(function (element) {
-        var subArr = [follower, element];
+        var subArr = [
+            uuidgen.v4(),
+            follower,
+            element
+        ];
         master.push(subArr);
     });
 
-    return master;
+    return new Array(master);
 }
 
 function loadFollowers(connection, requesteduuid, limit, page) {

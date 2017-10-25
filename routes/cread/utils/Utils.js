@@ -10,6 +10,7 @@ var envconfig = require('config');
 var s3bucket = envconfig.get('s3.bucket');
 var s3bucketheader = 's3-ap-northeast-1.amazonaws.com';
 var profilepicfilename = 'display-pic.jpg';
+var profilepicfilename_small = 'display-pic-small.jpg';
 var urlprotocol = 'https://';
 
 /**
@@ -81,6 +82,13 @@ function createProfilePicUrl(uuid) {
     return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Profile/' + profilepicfilename;
 }
 
+/**
+ * Returns a url storing the small version of profile pic of an app user using uuid
+ * */
+function createSmallProfilePicUrl(uuid) {
+    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Profile/' + profilepicfilename_small;
+}
+
 function changePropertyName(object, from, to) {
     if(object.hasOwnProperty(from)){
         object[to] = object[from];
@@ -92,5 +100,6 @@ module.exports = {
     updateQueryStringParameter: updateQueryStringParameter,
     sendAWSSMS: sendAWSSMS,
     createProfilePicUrl: createProfilePicUrl,
+    createSmallProfilePicUrl: createSmallProfilePicUrl,
     changePropertyName: changePropertyName
 };

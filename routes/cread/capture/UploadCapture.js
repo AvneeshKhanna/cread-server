@@ -13,7 +13,7 @@ var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
 var multer  = require('multer');
-var upload = multer({ dest: './public/images/uploads/' });
+var upload = multer({ dest: './images/uploads/capture' });
 var fs = require('fs');
 var path = require('path');
 
@@ -22,7 +22,7 @@ router.post('/', upload.single('capture'), function (request, response) {
     var ext = request.body.ext;
     var capture = request.file;
 
-    fs.rename(capture.path, './public/images/uploads/capture.' + ext, function (err) {
+    fs.rename(capture.path, './images/uploads/capture/capture.' + ext, function (err) {
         if(err){
             throw err;
         }
