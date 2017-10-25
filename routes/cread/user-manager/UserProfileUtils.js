@@ -133,7 +133,7 @@ function loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl) {
 
         requestclient(graphurl, function (error, res, body) {
 
-            console.log("body-response " + JSON.stringify(response, null, 3));
+            console.log("body-response " + JSON.stringify(JSON.parse(body), null, 3));
             console.log("res " + JSON.stringify(res, null, 3));
 
             if(error){

@@ -617,6 +617,9 @@ router.post('/load-fb-friends', function (request, response) {
 });
 
 router.post('/update-profile', function (request, response) {
+
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var userdata = request.body.userdata;
