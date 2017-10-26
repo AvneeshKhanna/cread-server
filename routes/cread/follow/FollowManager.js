@@ -81,6 +81,7 @@ router.post('/on-click', function (request, response) {
 /**
  * To follow all Facebook friends at once who are on the app
  * */
+//TODO: Error handling for app message
 router.post('/fb-friends-all', function (request, response) {
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
@@ -107,9 +108,13 @@ router.post('/fb-friends-all', function (request, response) {
             return userprofileutils.loadAllFacebookFriends(connection, uuid, fbid, fbaccesstoken);
         })
         .then(function (friendsuuids) {
-            return followutils.registerFollow(connection, true, uuid, friendsuuids);
+            console.log("friendsuuids " + JSON.stringify(friendsuuids, null, 3));
+            if(friendsuuids.length !== 0){
+                return followutils.registerFollow(connection, true, uuid, friendsuuids);
+            }
         })
         .then(function () {
+            console.log('Sending response');
             response.send({
                 tokenstatus: 'valid',
                 data: {

@@ -134,7 +134,6 @@ function loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl) {
         requestclient(graphurl, function (error, res, body) {
 
             console.log("body-response " + JSON.stringify(JSON.parse(body), null, 3));
-            console.log("res " + JSON.stringify(res, null, 3));
 
             if(error){
                 reject(error);
@@ -170,11 +169,13 @@ function loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl) {
                         }
                         else {
 
-                            if(response.paging){
+                            console.log("rows from User LEFT JOIN Follow query is " + JSON.stringify(rows, null, 3));
+
+                            if(response.paging.next){
                                 result.nexturl = response.paging.next;
                             }
 
-                            result.requestmore = !!response.paging;
+                            result.requestmore = !!response.paging.next;
 
                             rows.map(function (elem) {
                                 elem.profilepicurl = utils.createProfilePicUrl(elem.uuid);
@@ -207,11 +208,17 @@ function loadAllFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl){
         function recursive(nexturl){
             loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl)
                 .then(function (result) {
+
+                    //To collate only those users who have not been followed
+                    friends = friends.concat(result.friends.filter(function (elem) {
+                        return !elem.followstatus;
+                    }));
+
                     if(result.requestmore){
-                        friends = friends.concat(result.friends);
                         recursive(result.nexturl);
                     }
                     else {
+                        console.log("result.requestmore is false");
                         resolve(friends.map(function (element) {
                             return element.uuid;
                         }));
