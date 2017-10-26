@@ -195,9 +195,41 @@ function loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl) {
     });
 }
 
+/**
+ * A recursive implementation of loadFacebookFriends() that returns uuids of all the Facebook friends of the user who
+ * have installed the app
+ * */
+function loadAllFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl){
+    return new Promise(function (resolve, reject) {
+
+        var friends = [];
+
+        function recursive(nexturl){
+            loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl)
+                .then(function (result) {
+                    if(result.requestmore){
+                        friends = friends.concat(result.friends);
+                        recursive(result.nexturl);
+                    }
+                    else {
+                        resolve(friends.map(function (element) {
+                            return element.uuid;
+                        }));
+                    }
+                })
+                .catch(function (err) {
+                    reject(err);
+                })
+        }
+
+        recursive(nexturl);
+    });
+}
+
 module.exports = {
     loadTimeline: loadTimeline,
     loadProfileInformation: loadProfileInformation,
     loadFacebookFriends: loadFacebookFriends,
+    loadAllFacebookFriends: loadAllFacebookFriends,
     updateProfile: updateProfile
 };

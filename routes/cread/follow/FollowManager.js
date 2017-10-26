@@ -17,6 +17,7 @@ var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
 var followutils = require('./FollowUtils');
+var userprofileutils = require('../user-manager/UserProfileUtils');
 
 router.post('/on-click', function (request, response) {
 
@@ -30,7 +31,7 @@ router.post('/on-click', function (request, response) {
     if(!(followees instanceof Array)){
         console.error('Parameter "followees" should be of the type Array');
         response.status(500).send({
-            error: 'Some error occurred at the server'
+            message: 'Parameter "followees" should be of the type Array'
         });
         response.end();
         return;
@@ -75,6 +76,61 @@ router.post('/on-click', function (request, response) {
             }
         });
 
+});
+
+/**
+ * To follow all Facebook friends at once who are on the app
+ * */
+router.post('/fb-friends-all', function (request, response) {
+
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var fbid = request.body.fbid;
+    var fbaccesstoken = request.body.fbaccesstoken;
+
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return new config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return userprofileutils.loadAllFacebookFriends(connection, uuid, fbid, fbaccesstoken);
+        })
+        .then(function (friendsuuids) {
+            return followutils.registerFollow(connection, true, uuid, friendsuuids);
+        })
+        .then(function () {
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    status: 'done'
+                }
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
 });
 
 router.post('/load-followers', function (request, response) {
