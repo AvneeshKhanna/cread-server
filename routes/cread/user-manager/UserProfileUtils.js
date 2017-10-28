@@ -6,6 +6,15 @@
 var utils = require('../utils/Utils');
 var requestclient = require('request');
 
+var envconfig = require('config');
+
+var fs = require('fs');
+var jimp = require('jimp');
+
+var config = require('../../Config');
+var AWS = config.AWS;
+var s3bucket = envconfig.get('s3.bucket');
+
 function loadTimeline(connection, uuid, limit, page) {
 
     var offset = limit * page;
@@ -233,10 +242,88 @@ function loadAllFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl){
     });
 }
 
+/**
+ * npm package multer uploads an image to the server with a randomly generated guid without an extension. Hence,
+ * the uploaded file needs to be renamed
+ * */
+function renameFile(filebasepath, file, guid) {
+    console.log("renameFile() called");
+    return new Promise(function (resolve, reject) {
+        console.log('file path is ' + file.path);
+        fs.rename(file.path, /*'./images/uploads/profile_picture/'*/filebasepath + guid + '.jpg', function (err) {
+            if (err) {
+                console.log("fs.rename: onReject()");
+                reject(err);
+            }
+            else {
+                /*fs.open('./images/uploads/profile_picture/' + guid + '.jpg', 'r+', function (err, renamed) {
+                    if(err){
+                        console.log("fs.readFile: onReject()");
+                        reject(err);
+                    }
+                    else{
+                        console.log('renamed file path ' + renamed.path);
+                        resolve('./images/uploads/profile_picture/' + guid + '.jpg');
+                    }
+                });*/
+                resolve(filebasepath + guid + '.jpg');
+            }
+        });
+    });
+}
+
+function createSmallImage(readingpath, writingbasepath, guid, height, width) {
+    console.log("createSmallImage() called readingpath " + readingpath);
+    return new Promise(function (resolve, reject) {
+        jimp.read(readingpath, function (err, resized) {
+            if (err) {
+                reject(err);
+            }
+            else{
+                resized.resize(height, width)            // resize
+                    .quality(80)                    // set JPEG quality
+                    .write(/*"./images/uploads/profile_picture/"*/writingbasepath + guid + "-small.jpg", function (err) {
+                        if(err){
+                            reject(err);
+                        }
+                        else{
+                            resolve(/*"./images/uploads/profile_picture/"*/writingbasepath + guid + "-small.jpg");
+                        }
+                    });    // save
+            }
+        });
+    });
+}
+
+function uploadImageToS3(filepath, uuid, type, filename /* ,filekey*/) {
+    console.log("uploadImageToS3() called file.path " + filepath);
+    return new Promise(function (resolve, reject) {
+        var params = {
+            Body: fs.createReadStream(filepath),
+            Bucket: s3bucket,
+            Key: "Users/" + uuid + "/" + type + "/" + filename,
+            ACL: "public-read"
+        };
+
+        var s3 = new AWS.S3();
+        s3.putObject(params, function (err, data) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
 module.exports = {
     loadTimeline: loadTimeline,
     loadProfileInformation: loadProfileInformation,
     loadFacebookFriends: loadFacebookFriends,
     loadAllFacebookFriends: loadAllFacebookFriends,
-    updateProfile: updateProfile
+    updateProfile: updateProfile,
+    renameFile: renameFile,
+    createSmallImage: createSmallImage,
+    uploadImageToS3: uploadImageToS3
 };

@@ -207,7 +207,7 @@ router.post('/load', function (request, response) {
             else{
                 console.error(err);
                 response.status(500).send({
-                    error: 'Some error occurred at the server'
+                    message: 'Some error occurred at the server'
                 }).end();
             }
         });
@@ -272,7 +272,7 @@ function loadFeed(connection, uuid, limit, page){
                                         return el.entityid;
                                     }).indexOf(element.entityid);
 
-                                    element.profilepicurl = utils.createProfilePicUrl(element.uuid);
+                                    element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
                                     element.hatsoffstatus = thisEntityIndex !== -1;
                                     // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
 
@@ -281,7 +281,7 @@ function loadFeed(connection, uuid, limit, page){
 
                                 resolve({
                                     requestmore: totalcount > (offset + limit),
-                                    rows: rows
+                                    items: rows
                                 });
 
                             }

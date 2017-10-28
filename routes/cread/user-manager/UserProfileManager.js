@@ -696,7 +696,7 @@ router.post('/update-profile-picture', upload.single('display-pic'), function (r
             throw new BreakPromiseChainError();
         })
         .then(function (renamedpath) {
-            return createSmallProfilePic(renamedpath, uuid);
+            return createSmallProfilePic(renamedpath, uuid, 128, 128);
         })
         .then(function (displaypicsmallpath) {
             return uploadProfilePicToS3(displaypicsmallpath, uuid, 'display-pic-small.jpg');
@@ -723,34 +723,38 @@ router.post('/update-profile-picture', upload.single('display-pic'), function (r
             else {
                 console.error(err);
                 response.status(500).send({
-                    error: 'Some error occurred at the server'
+                    message: 'Some error occurred at the server'
                 }).end();
             }
         });
 
 });
 
-function renameFile(display_pic, uuid) {
+/**
+ * npm package multer uploads an image to the server with a randomly generated guid without an extension. Hence,
+ * the uploaded file needs to be renamed
+ * */
+function renameFile(display_pic, guid) {
     console.log("renameFile() called");
     return new Promise(function (resolve, reject) {
         console.log('display_pic path is ' + display_pic.path);
-        fs.rename(display_pic.path, './images/uploads/profile_picture/' + uuid + '.jpg', function (err) {
+        fs.rename(display_pic.path, './images/uploads/profile_picture/' + guid + '.jpg', function (err) {
             if (err) {
                 console.log("fs.rename: onReject()");
                 reject(err);
             }
             else {
-                /*fs.open('./images/uploads/profile_picture/' + uuid + '.jpg', 'r+', function (err, renamed) {
+                /*fs.open('./images/uploads/profile_picture/' + guid + '.jpg', 'r+', function (err, renamed) {
                     if(err){
                         console.log("fs.readFile: onReject()");
                         reject(err);
                     }
                     else{
                         console.log('renamed file path ' + renamed.path);
-                        resolve('./images/uploads/profile_picture/' + uuid + '.jpg');
+                        resolve('./images/uploads/profile_picture/' + guid + '.jpg');
                     }
                 });*/
-                resolve('./images/uploads/profile_picture/' + uuid + '.jpg');
+                resolve('./images/uploads/profile_picture/' + guid + '.jpg');
             }
         });
     });
@@ -778,7 +782,7 @@ function uploadProfilePicToS3(filepath, uuid, filename) {
     });
 }
 
-function createSmallProfilePic(renamedpath, uuid) {
+function createSmallProfilePic(renamedpath, uuid, height, width) {
     console.log("createSmallProfilePic() called renamedpath " + renamedpath);
     return new Promise(function (resolve, reject) {
         jimp.read(renamedpath, function (err, resized) {
@@ -786,7 +790,7 @@ function createSmallProfilePic(renamedpath, uuid) {
                 reject(err);
             }
             else{
-                resized.resize(128, 128)            // resize
+                resized.resize(height, width)            // resize
                     .quality(80)                    // set JPEG quality
                     .write("./images/uploads/profile_picture/" + uuid + "-small.jpg", function (err) {
                         if(err){

@@ -18,12 +18,14 @@ var uuidGen = require('uuid');
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var utils = require('../utils/Utils');
+var useraccessutils = require('UserAccessUtils');
 
 //TODO: Add FCM Token part
 
 router.post('/sign-in', function (request, response) {
 
     var fbid = request.body.fbid;
+    var fcmtoken = request.body.fcmtoken;
 
     var connection;
 
@@ -31,6 +33,9 @@ router.post('/sign-in', function (request, response) {
         .then(function (conn) {
             connection = conn;
             return checkIfUserExists(connection, fbid);
+        })
+        .then(function (result) {
+            return useraccessutils.addUserFcmToken(uuid, fcmtoken, result);
         })
         .then(function (result) {
             if(result){
@@ -80,6 +85,8 @@ router.post('/sign-up', function (request, response) {
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
 
+    var fcmtoken = request.body.fcmtoken;
+
     try{
         var userdata = request.body.userdata;
 
@@ -122,6 +129,12 @@ router.post('/sign-up', function (request, response) {
             }
         })
         .then(function (result) {
+            return useraccessutils.addUserFcmToken(uuid, fcmtoken, result);
+        })
+        .then(function (result) {
+            return commitTransaction(connection, result);
+        })
+        .then(function (result) {
 
             result.status = 'done';
 
@@ -140,7 +153,7 @@ router.post('/sign-up', function (request, response) {
             else{
                 console.error(err);
                 response.status(500).send({
-                    error: 'Some error occurred at the server'
+                    message: 'Some error occurred at the server'
                 }).end();
             }
         });
@@ -175,18 +188,84 @@ function registerUserData(connection, userdetails) {
     userdetails.authkey = authkey;
 
     return new Promise(function (resolve, reject) {
-        connection.query('INSERT INTO User SET ?', [userdetails], function (err, rows) {
-            if (err) {
-                reject(err);
+        connection.beginTransaction(function (err) {
+            if(err){
+                connection.rollback(function () {
+                    reject(err);
+                });
             }
-            else {
-                resolve({
-                    uuid: uuid,
-                    authkey: authkey
+            else{
+                connection.query('INSERT INTO User SET ?', [userdetails], function (err, rows) {
+                    if (err) {
+                        connection.rollback(function () {
+                            reject(err);
+                        });
+                    }
+                    else {
+                        resolve({
+                            uuid: uuid,
+                            authkey: authkey
+                        });
+                    }
                 });
             }
         });
     });
 }
+
+function commitTransaction(connection, resultfromprev) {
+    return new Promise(function (resolve, reject) {
+        connection.beginTransaction(function (err) {
+            if (err) {
+                connection.rollback(function () {
+                    reject(err);
+                });
+            }
+            else {
+                connection.commit(function (err) {
+                    if(err){
+                        reject(err);
+                    }
+                    else{
+                        resolve(resultfromprev);
+                    }
+                });
+            }
+        });
+    });
+}
+
+router.post('/sign-out', function (request, response) {
+
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var fcmtoken = request.body.fcmtoken;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return useraccessutils.removeUserFcmToken(uuid, fcmtoken);
+        })
+        .then(function () {
+            response.send({
+                tokenstatus:'valid',
+                data: {
+                    status: 'done'
+                }
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+});
 
 module.exports = router;
