@@ -5,7 +5,8 @@
 
 function loadAllProducts(connection){
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT * FROM Product', [], function (err, rows) {
+        connection.query('SELECT Product.productid, Product.type, Product.imageurl as productimgurl ' +
+            'FROM Product', null, function (err, rows) {
             if (err) {
                 reject(err);
             }

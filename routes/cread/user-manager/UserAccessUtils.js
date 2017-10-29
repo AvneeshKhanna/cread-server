@@ -8,9 +8,9 @@ var config = require('../../Config');
 var envconfig = require('config');
 
 var AWS = config.AWS;
-var ddbClient = AWS.DynamoDB.DocumentClient();
+var ddbClient = new AWS.DynamoDB.DocumentClient();
 
-var userstbl_ddb = envconfig.get('userstbl_ddb');
+var userstbl_ddb = envconfig.get('dynamoDB.users_table');
 
 function addUserFcmToken(uuid, fcmtoken, resultfromprev) {
     return new Promise(function (resolve, reject) {

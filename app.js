@@ -144,6 +144,7 @@ app.use('/follow', require('./routes/cread/follow/FollowManager'));
 app.use('/capture-upload', require('./routes/cread/capture/UploadCapture'));
 app.use('/hatsoff', require('./routes/cread/hats-off/HatsOffManager'));
 app.use('/comment', require('./routes/cread/comment/CommentManager'));
+app.use('/products',require('./routes/cread/buy/ProductsManager'));
 
 //-dashboard-
 app.use('/campaign-details', require('./routes/cread/dsbrd/campaign-details/CampaignDetails'));

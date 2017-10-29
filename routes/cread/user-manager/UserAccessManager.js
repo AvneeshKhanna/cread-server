@@ -18,9 +18,7 @@ var uuidGen = require('uuid');
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var utils = require('../utils/Utils');
-var useraccessutils = require('UserAccessUtils');
-
-//TODO: Add FCM Token part
+var useraccessutils = require('./UserAccessUtils');
 
 router.post('/sign-in', function (request, response) {
 
@@ -35,7 +33,10 @@ router.post('/sign-in', function (request, response) {
             return checkIfUserExists(connection, fbid);
         })
         .then(function (result) {
-            return useraccessutils.addUserFcmToken(uuid, fcmtoken, result);
+            //return useraccessutils.addUserFcmToken(uuid, fcmtoken, result); TODO: Fix the when the user needs to add a record in DynamoDB
+            return new Promise(function (resolve, reject) {
+                resolve(result);
+            });
         })
         .then(function (result) {
             if(result){
@@ -244,6 +245,12 @@ router.post('/sign-out', function (request, response) {
     _auth.authValid(uuid, authkey)
         .then(function () {
             return useraccessutils.removeUserFcmToken(uuid, fcmtoken);
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
         })
         .then(function () {
             response.send({
