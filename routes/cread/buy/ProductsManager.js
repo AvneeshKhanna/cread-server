@@ -81,8 +81,8 @@ function structureProductDetails(products) {
                 ];
                 product.price = [
                     400,
-                    400,
-                    400
+                    500,
+                    600
                 ];
                 product.quantity = [
                     1,

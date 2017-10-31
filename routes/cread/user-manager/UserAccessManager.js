@@ -22,6 +22,8 @@ var useraccessutils = require('./UserAccessUtils');
 
 router.post('/sign-in', function (request, response) {
 
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
     var fbid = request.body.fbid;
     var fcmtoken = request.body.fcmtoken;
 
@@ -32,12 +34,9 @@ router.post('/sign-in', function (request, response) {
             connection = conn;
             return checkIfUserExists(connection, fbid);
         })
-        .then(function (result) {
-            //return useraccessutils.addUserFcmToken(uuid, fcmtoken, result); TODO: Fix the when the user needs to add a record in DynamoDB
-            return new Promise(function (resolve, reject) {
-                resolve(result);
-            });
-        })
+        /*.then(function (result) {
+            return useraccessutils.addUserFcmToken(uuid, fcmtoken, result); TODO: Fix the issue when the user needs to add a record in DynamoDB
+        })*/
         .then(function (result) {
             if(result){
                 result.status = "existing-user";
@@ -47,6 +46,8 @@ router.post('/sign-in', function (request, response) {
                     status: "new-user"
                 };
             }
+
+            console.log("result is " + JSON.stringify(result, null, 3));
 
             response.send({
                 data: result
@@ -129,9 +130,9 @@ router.post('/sign-up', function (request, response) {
                 return registerUserData(connection, userdetails);
             }
         })
-        .then(function (result) {
-            return useraccessutils.addUserFcmToken(uuid, fcmtoken, result);
-        })
+        /*.then(function (result) {
+            return useraccessutils.addUserFcmToken(uuid, fcmtoken, result); TODO: Add code for storing user details in DynamoDB
+        })*/
         .then(function (result) {
             return commitTransaction(connection, result);
         })
@@ -203,6 +204,9 @@ function registerUserData(connection, userdetails) {
                         });
                     }
                     else {
+
+                        //TODO: Add code to store data in DynamoDB
+
                         resolve({
                             uuid: uuid,
                             authkey: authkey

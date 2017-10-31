@@ -141,11 +141,14 @@ var campaignutils = require('../../campaign/CampaignUtils');
 });*/
 
 router.post('/load', function (request, response) {
+
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var page = request.body.page;
 
-    var limit = 15;
+    var limit = 5;
     var connection;
     
     _auth.authValid(uuid, authkey)
@@ -163,6 +166,7 @@ router.post('/load', function (request, response) {
             return loadFeed(connection, uuid, limit, page);
         })
         .then(function (result) {
+            console.log("result in response is " + JSON.stringify(result, null, 3));
             response.send({
                 tokenstatus: 'valid',
                 data: result
@@ -208,66 +212,105 @@ function loadFeed(connection, uuid, limit, page) {
             else{
 
                 var totalcount = data[0].totalcount;
+                console.log("totalcount is " + JSON.stringify(totalcount, null, 3));
 
-                connection.query('SELECT Entity.entityid, Entity.type, Short.shoid, Capture.capid, COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount ' +
-                    'FROM Entity ' +
-                    'LEFT JOIN Short ' +
-                    'ON Short.entityid = Entity.entityid ' +
-                    'LEFT JOIN Capture ' +
-                    'ON Capture.entityid = Entity.entityid ' +
-                    'JOIN User ' +
-                    'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
-                    'LEFT JOIN Comment ' +
-                    'ON Comment.entityid = Entity.entityid ' +
-                    'LEFT JOIN HatsOff ' +
-                    'ON HatsOff.entityid = Entity.entityid ' +
-                    'JOIN Follow ' +
-                    'ON Follow.followee = User.uuid ' +
-                    'WHERE Follow.follower = ? ' +
-                    'GROUP BY Entity.entityid ' +
-                    'ORDER BY Entity.regdate DESC ' +
-                    'LIMIT ? OFFSET ?', [uuid, limit, offset], function (err, rows) {
-                    if (err) {
-                        reject(err);
-                    }
-                    else {
+                if(totalcount > 0){
+                    connection.query('SELECT Entity.entityid, Entity.type, Short.uuid, Short.shoid, Capture.uuid, ' +
+                        'Capture.capid, COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
+                        'User.firstname, User.lastname ' +
+                        'FROM Entity ' +
+                        'LEFT JOIN Short ' +
+                        'ON Short.entityid = Entity.entityid ' +
+                        'LEFT JOIN Capture ' +
+                        'ON Capture.entityid = Entity.entityid ' +
+                        'JOIN User ' +
+                        'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
+                        'LEFT JOIN Comment ' +
+                        'ON Comment.entityid = Entity.entityid ' +
+                        'LEFT JOIN HatsOff ' +
+                        'ON HatsOff.entityid = Entity.entityid ' +
+                        'LEFT JOIN Follow ' +
+                        'ON Follow.followee = User.uuid ' +
+                        'WHERE Follow.follower = ? ' +
+                        'GROUP BY Entity.entityid ' +
+                        'ORDER BY Entity.regdate DESC ' +
+                        'LIMIT ? OFFSET ?', [uuid, limit, offset], function (err, rows) {
+                        if (err) {
+                            reject(err);
+                        }
+                        else {
 
-                        var feedEntities = rows.map(function (elem) {
-                            return elem.entityid;
-                        });
+                            console.log("rows from SELECT Entity.entityid ... query is " + JSON.stringify(rows, null, 3));
 
-                        connection.query('SELECT entityid, uuid ' +
-                            'FROM HatsOff ' +
-                            'WHERE uuid = ? ' +
-                            'AND entityid IN (?) ' +
-                            'GROUP BY entityid', [uuid, feedEntities], function (err, hdata) {
+                            var feedEntities = rows.map(function (elem) {
+                                return elem.entityid;
+                            });
 
-                            if (err) {
-                                reject(err);
-                            }
-                            else {
+                            connection.query('SELECT entityid, uuid ' +
+                                'FROM HatsOff ' +
+                                'WHERE uuid = ? ' +
+                                'AND entityid IN (?) ' +
+                                'GROUP BY entityid', [uuid, feedEntities], function (err, hdata) {
 
-                                rows.map(function (element) {
-                                    var thisEntityIndex = hdata.map(function (el) {
-                                        return el.entityid;
-                                    }).indexOf(element.entityid);
+                                if (err) {
+                                    reject(err);
+                                }
+                                else {
 
-                                    element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
-                                    element.hatsoffstatus = thisEntityIndex !== -1;
-                                    // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
+                                    rows.map(function (element) {
+                                        var thisEntityIndex = hdata.map(function (el) {
+                                            return el.entityid;
+                                        }).indexOf(element.entityid);
 
-                                    return element;
-                                });
+                                        element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
 
-                                resolve({
-                                    requestmore: totalcount > (offset + limit),
-                                    rows: rows
-                                });
-                            }
+                                        if(element.type === 'CAPTURE'){
+                                            element.captureurl = utils.createSmallCaptureUrl(element.uuid, element.capid);
+                                        }
+                                        else{
+                                            element.shorturl = utils.createSmallShortUrl(element.uuid, element.shoid);
+                                        }
 
-                        });
-                    }
-                });
+                                        element.hatsoffstatus = thisEntityIndex !== -1;
+                                        // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
+
+                                        element.creatorname = element.firstname + ' ' + element.lastname;
+
+                                        if(element.capid) {
+                                            delete element.capid;
+                                        }
+
+                                        if(element.shoid) {
+                                            delete element.shoid;
+                                        }
+
+                                        if(element.firstname) {
+                                            delete element.firstname;
+                                        }
+
+                                        if(element.lastname) {
+                                            delete element.lastname;
+                                        }
+
+                                        return element;
+                                    });
+
+                                    resolve({
+                                        requestmore: totalcount > (offset + limit),
+                                        feed: rows
+                                    });
+                                }
+
+                            });
+                        }
+                    });
+                }
+                else {  //Case of no data
+                    resolve({
+                        requestmore: totalcount > (offset + limit),
+                        feed: []
+                    });
+                }
             }
 
         });
