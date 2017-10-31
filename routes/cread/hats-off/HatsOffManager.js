@@ -68,14 +68,14 @@ router.post('/on-click', function (request, response) {
         });
 });
 
-router.post('/load-hatsoffs', function (request, response) {
+router.post('/load', function (request, response) {
 
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var entityid = request.body.entityid;
     var page = request.body.page;
 
-    var limit = 30;
+    var limit = 13; //TODO: Change to 20
     var connection;
 
     _auth.authValid(uuid, authkey)

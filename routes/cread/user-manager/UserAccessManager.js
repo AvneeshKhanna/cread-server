@@ -134,7 +134,7 @@ router.post('/sign-up', function (request, response) {
             return useraccessutils.addUserFcmToken(uuid, fcmtoken, result); TODO: Add code for storing user details in DynamoDB
         })*/
         .then(function (result) {
-            return commitTransaction(connection, result);
+            return utils.commitTransaction(connection, result);
         })
         .then(function (result) {
 
@@ -211,28 +211,6 @@ function registerUserData(connection, userdetails) {
                             uuid: uuid,
                             authkey: authkey
                         });
-                    }
-                });
-            }
-        });
-    });
-}
-
-function commitTransaction(connection, resultfromprev) {
-    return new Promise(function (resolve, reject) {
-        connection.beginTransaction(function (err) {
-            if (err) {
-                connection.rollback(function () {
-                    reject(err);
-                });
-            }
-            else {
-                connection.commit(function (err) {
-                    if(err){
-                        reject(err);
-                    }
-                    else{
-                        resolve(resultfromprev);
                     }
                 });
             }

@@ -17,6 +17,8 @@ var multer  = require('multer');
 var upload = multer({ dest: './images/uploads/capture/' });
 var fs = require('fs');
 
+var utils = require('../utils/Utils');
+
 var filebasepath = './images/uploads/capture/';
 
 router.post('/', upload.single('captured-image'), function (request, response) {
@@ -60,7 +62,7 @@ router.post('/', upload.single('captured-image'), function (request, response) {
             return userprofileutils.uploadImageToS3(filebasepath + captureid + '-small' + '.jpg', uuid, 'Capture', captureid + '-small' + '.jpg');
         })
         .then(function () {
-            return commitTransaction(connection);
+            return utils.commitTransaction(connection);
         })
         .then(function () {
             response.send({
@@ -146,21 +148,6 @@ function updateCaptureDB(connection, captureid, uuid, watermark){
                 });
             }
         });
-    });
-}
-
-function commitTransaction(connection) {
-    return new Promise(function (resolve, reject) {
-        connection.commit(function (err) {
-            if(err){
-                connection.rollback(function () {
-                    reject(err);
-                });
-            }
-            else{
-                resolve();
-            }
-        })
     });
 }
 

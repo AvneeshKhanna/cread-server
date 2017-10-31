@@ -21,11 +21,11 @@ router.post('/load', function (request, response) {
     var authkey = request.body.authkey;
     var entityid = request.body.entityid;
     var page = request.body.page;
-    var loadAll = request.body.loadAll; //Whether to load all comments or top comments [true | false]
+    var loadAll = request.body.loadall; //Whether to load all comments or top comments [true | false]
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
 
-    var limit = 20;
+    var limit = 12; //TODO: Change to 20
     var connection;
 
     _auth.authValid(uuid, authkey)
@@ -94,7 +94,9 @@ router.post('/add', function (request, response) {
                     status: 'done',
                     comment: {
                         commid: commid,
-                        profilepicurl: utils.createProfilePicUrl(uuid)
+                        profilepicurl: utils.createSmallShortUrl(uuid),
+                        firstname: "Avneesh",
+                        lastname: "Khanna"
                     }
                 }
             });

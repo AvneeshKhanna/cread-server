@@ -174,7 +174,7 @@ router.post('/load', function (request, response) {
     var authkey = request.body.authkey;
     var page = request.body.page;
 
-    var limit = 15;
+    var limit = 10; //TODO: Change to 15
     var connection;
 
     _auth.authValid(uuid, authkey)
@@ -192,6 +192,7 @@ router.post('/load', function (request, response) {
             return loadFeed(connection, uuid, limit, page);
         })
         .then(function (result) {
+            console.log("result is " + JSON.stringify(result, null, 3));
             response.send({
                 tokenstatus: 'valid',
                 data: result
@@ -232,7 +233,7 @@ function loadFeed(connection, uuid, limit, page){
                 var totalcount = data[0].totalcount;
 
                 if(totalcount > 0){
-                    connection.query('SELECT Entity.entityid, Entity.type, User.uuid, User.firstname, User.lastname, Capture.captureurl, Short.txt AS short ' +
+                    connection.query('SELECT Entity.entityid, Entity.type, User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid, Short.shoid, ' +
                         'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
                         'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
                         'FROM Entity ' +
@@ -243,9 +244,9 @@ function loadFeed(connection, uuid, limit, page){
                         'JOIN User ' +
                         'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
                         'LEFT JOIN HatsOff ' +
-                        'USING(entityid) ' +
+                        'ON HatsOff.entityid = Entity.entityid ' +
                         'LEFT JOIN Comment ' +
-                        'USING(entityid) ' +
+                        'ON Comment.entityid = Entity.entityid ' +
                         'LEFT JOIN Follow ' +
                         'ON User.uuid = Follow.followee ' +
                         'GROUP BY Entity.entityid ' +
@@ -307,7 +308,7 @@ function loadFeed(connection, uuid, limit, page){
 
                                     resolve({
                                         requestmore: totalcount > (offset + limit),
-                                        items: rows
+                                        feed: rows
                                     });
 
                                 }
@@ -318,7 +319,7 @@ function loadFeed(connection, uuid, limit, page){
                 else{
                     resolve({
                         requestmore: totalcount > (offset + limit),
-                        items: []
+                        feed: []
                     });
                 }
 

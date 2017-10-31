@@ -22,6 +22,7 @@ router.post('/load', function (request, response) {
     var entityid = request.body.entityid;
 
     var connection;
+    var products;
 
     _auth.authValid(uuid, authkey)
         .then(function () {
@@ -40,12 +41,18 @@ router.post('/load', function (request, response) {
         .then(function (products) {
             return structureProductDetails(products);
         })
-        .then(function (products) {
+        .then(function (prdcts) {
+            products = prdcts;
+            return retrieveLastPlacedDetails(connection, uuid);
+        })
+        .then(function (details) {
             console.log("products are " + JSON.stringify(products, null, 3));
             response.send({
                 tokenstatus: 'valid',
                 data: {
-                    products: products
+                    products: products,
+                    detailsexist: !!(details),
+                    details: details
                 }
             });
             response.end();
@@ -64,6 +71,23 @@ router.post('/load', function (request, response) {
             }
         });
 });
+
+function retrieveLastPlacedDetails(connection, uuid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT ship_addr_1, ship_addr_2, ship_city, ship_state, ship_pincode, billing_alt_contact, billing_name ' +
+            'FROM Orders ' +
+            'WHERE uuid = ? ' +
+            'ORDER BY regdate DESC ' +
+            'LIMIT 1', [uuid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(rows[0]);
+            }
+        });
+    });
+}
 
 function structureProductDetails(products) {
     return new Promise(function (resolve, reject) {

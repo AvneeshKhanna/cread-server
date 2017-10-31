@@ -112,6 +112,28 @@ function createShortUrl(uuid, shoid) {
     return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Short/' + shoid + '.jpg';
 }
 
+function commitTransaction(connection, resultfromprev) {
+    return new Promise(function (resolve, reject) {
+        connection.beginTransaction(function (err) {
+            if (err) {
+                connection.rollback(function () {
+                    reject(err);
+                });
+            }
+            else {
+                connection.commit(function (err) {
+                    if(err){
+                        reject(err);
+                    }
+                    else{
+                        resolve(resultfromprev);
+                    }
+                });
+            }
+        });
+    });
+}
+
 module.exports = {
     updateQueryStringParameter: updateQueryStringParameter,
     sendAWSSMS: sendAWSSMS,
@@ -121,5 +143,6 @@ module.exports = {
     createSmallCaptureUrl: createSmallCaptureUrl,
     createCaptureUrl: createCaptureUrl,
     createSmallShortUrl: createSmallShortUrl,
-    createShortUrl: createShortUrl
+    createShortUrl: createShortUrl,
+    commitTransaction: commitTransaction
 };

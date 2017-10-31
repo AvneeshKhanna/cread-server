@@ -7,6 +7,7 @@
  * */
 'use-strict';
 var uuidGenerator = require('uuid');
+var utils = require('../utils/Utils');
 
 function registerHatsOff(connection, register, uuid, entityid) {
 
