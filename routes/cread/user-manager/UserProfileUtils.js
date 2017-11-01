@@ -20,7 +20,6 @@ function loadTimeline(connection, uuid, limit, page) {
     var offset = limit * page;
 
     return new Promise(function (resolve, reject) {
-
         connection.query('SELECT COUNT(*) AS totalcount ' +
             'FROM Entity ' +
             'LEFT JOIN Capture ' +
@@ -28,34 +27,96 @@ function loadTimeline(connection, uuid, limit, page) {
             'LEFT JOIN Short ' +
             'USING(entityid) ' +
             'WHERE Capture.uuid = ? ' +
-            'OR Short.uuid = ? ', [], function(err, data){
+            'OR Short.uuid = ? ' +
+            'GROUP BY Entity.entityid', [uuid, uuid], function(err, data){
             if(err){
                 reject(err);
             }
             else{
                 var totalcount = data[0].totalcount;
 
-                connection.query('SELECT * ' +
-                    'FROM Entity ' +
-                    'LEFT JOIN Capture ' +
-                    'USING(entityid) ' +
-                    'LEFT JOIN Short ' +
-                    'USING(entityid) ' +
-                    'WHERE Capture.uuid = ? ' +
-                    'OR Short.uuid = ? ' +
-                    'ORDER BY Entity.regdate DESC', [uuid, uuid], function (err, rows) {
-                    if (err) {
-                        reject(err);
-                    }
-                    else {
+                if(totalcount > 0){
+                    connection.query('SELECT Entity.entityid, Entity.type, User.uuid, User.firstname, User.lastname, Short.uuid, Capture.uuid, Short.shoid, Capture.capid, ' +
+                        'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount ' +
+                        'FROM Entity ' +
+                        'LEFT JOIN Capture ' +
+                        'USING(entityid) ' +
+                        'LEFT JOIN Short ' +
+                        'USING(entityid) ' +
+                        'JOIN User ' +
+                        'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
+                        'LEFT JOIN HatsOff ' +
+                        'ON HatsOff.entityid = Entity.entityid ' +
+                        'LEFT JOIN Comment ' +
+                        'ON Comment.entityid = Entity.entityid ' +
+                        'WHERE Capture.uuid = ? ' +
+                        'OR Short.uuid = ? ' +
+                        'GROUP BY Entity.entityid ' +
+                        'ORDER BY Entity.regdate DESC ' +
+                        'LIMIT ? ' +
+                        'OFFSET ?', [uuid, uuid, limit, offset], function (err, rows) {
+                        if (err) {
+                            reject(err);
+                        }
+                        else {
 
-                        resolve({
-                            requestmore: totalcount > (offset + limit),
-                            items: rows
-                        });
-                    }
-                });
+                            var feedEntities = rows.map(function (elem) {
+                                return elem.entityid;
+                            });
 
+                            connection.query('SELECT entityid, uuid ' +
+                                'FROM HatsOff ' +
+                                'WHERE uuid = ? ' +
+                                'AND entityid IN (?) ' +
+                                'GROUP BY entityid', [uuid, feedEntities], function(err, hdata){
+
+                                if(err){
+                                    reject(err);
+                                }
+                                else{
+                                    rows.map(function (element) {
+
+                                        var thisEntityIndex = hdata.map(function (el) {
+                                            return el.entityid;
+                                        }).indexOf(element.entityid);
+
+                                        element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
+                                        element.creatorname = element.firstname + ' ' + element.lastname;
+                                        element.hatsoffstatus = thisEntityIndex !== -1;
+
+                                        if(element.type === 'CAPTURE'){
+                                            element.captureurl = utils.createSmallCaptureUrl(element.uuid, element.capid);
+                                        }
+                                        else{
+                                            element.shorturl = utils.createSmallShortUrl(element.uuid, element.shoid);
+                                        }
+
+                                        if(element.firstname){
+                                            delete element.firstname;
+                                        }
+
+                                        if(element.lastname){
+                                            delete element.lastname;
+                                        }
+
+                                        return element;
+                                    });
+
+                                    resolve({
+                                        requestmore: totalcount > (offset + limit),
+                                        items: rows
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+                else{
+                    resolve({
+                        requestmore: totalcount > (offset + limit),
+                        items: []
+                    });
+                }
             }
         });
 

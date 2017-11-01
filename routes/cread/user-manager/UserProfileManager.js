@@ -484,6 +484,9 @@ router.post('/load-timeline', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var page = request.body.page;
+    var requesteduuid = request.body.requesteduuid;
+
+    console.log("request for '/load-timeline' is " + JSON.stringify(request.body, null, 3));
 
     var limit = 15;
 
@@ -501,9 +504,10 @@ router.post('/load-timeline', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return userprofileutils.loadTimeline(connection, uuid, limit, page);
+            return userprofileutils.loadTimeline(connection, requesteduuid, limit, page);
         })
         .then(function (result) {
+            console.log("result is " + JSON.stringify(result, null, 3));
             response.send({
                 tokenstatus: 'valid',
                 data: result
