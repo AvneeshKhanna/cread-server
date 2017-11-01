@@ -142,6 +142,7 @@ app.use('/share-campaign-explore', require('./routes/cread/share/ShareCampaignEx
 app.use('/campaign-manage', require('./routes/cread/campaign/CampaignManager'));
 app.use('/follow', require('./routes/cread/follow/FollowManager'));
 app.use('/capture-upload', require('./routes/cread/capture/UploadCapture'));
+app.use('/capture-manage', require('./routes/cread/capture/CaptureManager'));
 app.use('/hatsoff', require('./routes/cread/hats-off/HatsOffManager'));
 app.use('/comment', require('./routes/cread/comment/CommentManager'));
 app.use('/products',require('./routes/cread/buy/ProductsManager'));
