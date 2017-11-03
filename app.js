@@ -138,6 +138,7 @@ app.use('/givers-manager', require('./routes/cread/givers/GiversManager'));
 app.use('/user-interests', require('./routes/cread/user-manager/interests/InterestsManager'));
 app.use('/user-campaigns', require('./routes/cread/track/campaigns/UserCampaignManager'));
 app.use('/explore-feed', require('./routes/cread/feed/explore/ExploreFeedManager'));
+app.use('/inspiration-feed', require('./routes/cread/feed/InspirationFeedManager'));
 app.use('/share-campaign-explore', require('./routes/cread/share/ShareCampaignExplore'));
 app.use('/campaign-manage', require('./routes/cread/campaign/CampaignManager'));
 app.use('/follow', require('./routes/cread/follow/FollowManager'));

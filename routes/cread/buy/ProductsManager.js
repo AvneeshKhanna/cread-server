@@ -46,13 +46,41 @@ router.post('/load', function (request, response) {
             return retrieveLastPlacedDetails(connection, uuid);
         })
         .then(function (details) {
+            try{
+                var billing_contact = details.billing_contact;
+                var detailsexist = false;
+
+                delete details.billing_contact;
+
+                if(!details.ship_addr_2){
+                    details.ship_addr_2 = "";
+                }
+
+                if(!details.billing_alt_contact){
+                    details.billing_alt_contact = "";
+                }
+
+                for(var key in details){
+                    if(details[key]){
+                        detailsexist = true;
+                    }
+                }
+            }
+            catch(err){
+                throw err;
+            }
+
             console.log("products are " + JSON.stringify(products, null, 3));
+            console.log("details are " + JSON.stringify(details, null, 3));
+
             response.send({
                 tokenstatus: 'valid',
                 data: {
                     products: products,
-                    detailsexist: !!(details),
-                    details: details
+                    detailsexist: detailsexist,
+                    details: details,
+                    billing_contact: billing_contact,
+                    deliverytime: 'Estimated delivery time is 7-8 days'
                 }
             });
             response.end();
@@ -74,10 +102,12 @@ router.post('/load', function (request, response) {
 
 function retrieveLastPlacedDetails(connection, uuid) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT ship_addr_1, ship_addr_2, ship_city, ship_state, ship_pincode, billing_alt_contact, billing_name ' +
-            'FROM Orders ' +
-            'WHERE uuid = ? ' +
-            'ORDER BY regdate DESC ' +
+        connection.query('SELECT User.phone as billing_contact, Orders.ship_addr_1, Orders.ship_addr_2, Orders.ship_city, Orders.ship_state, Orders.ship_pincode, Orders.billing_alt_contact, Orders.billing_name  ' +
+            'FROM User ' +
+            'LEFT JOIN Orders ' +
+            'USING(uuid) ' +
+            'WHERE User.uuid = ? ' +
+            'ORDER BY Orders.regdate DESC ' +
             'LIMIT 1', [uuid], function (err, rows) {
             if (err) {
                 reject(err);
@@ -115,6 +145,7 @@ function structureProductDetails(products) {
                     4,
                     5
                 ];
+                product.deliverycharge = 80;
                 product.entityimgurl = 'https://s3-ap-northeast-1.amazonaws.com/testamentbucketdev/quote.jpg';
             }
             else if(product.type === 'POSTER'){
@@ -140,6 +171,7 @@ function structureProductDetails(products) {
                     4,
                     5
                 ];
+                product.deliverycharge = 80;
                 product.entityimgurl = 'https://s3-ap-northeast-1.amazonaws.com/testamentbucketdev/quote.jpg';
             }
             else if(product.type === 'FRAME'){
@@ -165,6 +197,7 @@ function structureProductDetails(products) {
                     4,
                     5
                 ];
+                product.deliverycharge = 80;
                 product.entityimgurl = 'https://s3-ap-northeast-1.amazonaws.com/testamentbucketdev/quote.jpg';
             }
             else{   //COFFEE_MUG
@@ -190,6 +223,7 @@ function structureProductDetails(products) {
                     4,
                     5
                 ];
+                product.deliverycharge = 80;
                 product.entityimgurl = 'https://s3-ap-northeast-1.amazonaws.com/testamentbucketdev/quote.jpg';
             }
         });

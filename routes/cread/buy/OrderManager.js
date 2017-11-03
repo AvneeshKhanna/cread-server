@@ -13,31 +13,44 @@ var config = require('../../Config');
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var buyutils = require('./BuyUtils');
+var utils = require('../utils/Utils');
 
+//TODO: Add code for transaction email
 router.post('/place', function (request, response) {
+
+    console.log("request is " + JSON.stringify(request.body, null, 3));
 
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var entityid = request.body.entityid;
     var productid = request.body.productid;
     var shipmentdetails = request.body.shipmentdetails;
-    var price = request.body.price;
-    var qty = request.body.qty;
+    var price = request.body.price; //Price of one item
+    var qty = request.body.quantity;
     var billing_name = request.body.billing_name;
     var billing_alt_contact = request.body.billing_alt_contact;
+    var color = request.body.color;
+    var size = request.body.size;
+
+    var amount = buyutils.convertPaiseToINR(request.body.amount);    //Amount requested in paise
+    var paymentid = request.body.paymentid; //ID of the payment transacted through payment gateway portal
 
     var sqlparams = {
         orderid: uuidgen.v4(),
         uuid: uuid,
         entityid: entityid,
         productid: productid,
-        ship_adddr_1: shipmentdetails.ship_adddr_1,
-        ship_adddr_2: shipmentdetails.ship_adddr_2,
+        paymentid: paymentid,
+        amount: amount,
+        ship_addr_1: shipmentdetails.ship_addr_1,
+        ship_addr_2: shipmentdetails.ship_addr_2,
         ship_city: shipmentdetails.ship_city,
         ship_state: shipmentdetails.ship_state,
         ship_pincode: shipmentdetails.ship_pincode,
         billing_name: billing_name,
-        billing_alt_contact: billing_alt_contact
+        billing_alt_contact: billing_alt_contact,
+        color: color,
+        size: size
     };
 
     var connection;
@@ -45,10 +58,25 @@ router.post('/place', function (request, response) {
     _auth.authValid(uuid, authkey)
         .then(function () {
             return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
         })
         .then(function (conn) {
             connection = conn;
+            return utils.beginTransaction(connection);
+        })
+        .then(function () {
             return buyutils.saveOrderDetails(connection, sqlparams);
+        })
+        .then(function () {
+            return buyutils.captureRazorpayPayment(connection, paymentid, buyutils.convertINRtoPaise(amount));
+        })
+        .then(function () {
+            return utils.commitTransaction(connection);
         })
         .then(function () {
             response.send({
@@ -61,18 +89,19 @@ router.post('/place', function (request, response) {
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
-            config.disconnect(connection);
             if(err instanceof BreakPromiseChainError){
-                //Do nothing
+                config.disconnect(connection);
             }
             else{
-                console.error(err);
-                response.status(500).send({
-                    message: 'Some error occurred at the server'
-                }).end();
+                connection.rollback(function () {
+                    config.disconnect(connection);
+                    console.error(err);
+                    response.status(500).send({
+                        message: 'Some error occurred at the server'
+                    }).end();
+                });
             }
         });
-
 });
 
 /*

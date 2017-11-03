@@ -126,9 +126,25 @@ function commitTransaction(connection, resultfromprev) {
                         reject(err);
                     }
                     else{
+                        console.log('TRANSACTION committed successfully');
                         resolve(resultfromprev);
                     }
                 });
+            }
+        });
+    });
+}
+
+function beginTransaction(connection) {
+    return new Promise(function (resolve, reject) {
+        connection.beginTransaction(function (err) {
+            if (err) {
+                connection.rollback(function () {
+                    reject(err);
+                });
+            }
+            else {
+                resolve();
             }
         });
     });
@@ -144,5 +160,6 @@ module.exports = {
     createCaptureUrl: createCaptureUrl,
     createSmallShortUrl: createSmallShortUrl,
     createShortUrl: createShortUrl,
-    commitTransaction: commitTransaction
+    commitTransaction: commitTransaction,
+    beginTransaction: beginTransaction
 };
