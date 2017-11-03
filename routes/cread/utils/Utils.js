@@ -6,6 +6,8 @@ var config = require('../../Config');
 var AWS = config.AWS;
 
 var envconfig = require('config');
+var request_client = require('request');
+var fs = require('fs');
 
 var s3bucket = envconfig.get('s3.bucket');
 var s3bucketheader = 's3-ap-northeast-1.amazonaws.com';
@@ -150,6 +152,19 @@ function beginTransaction(connection) {
     });
 }
 
+function downloadFile(filebasepath, filename){
+    return new Promise(function (resolve, reject) {
+        request_client(uri)
+            .pipe(fs.createWriteStream(filebasepath + '/' + filename))
+            .on('close', function () {
+                resolve();
+            })
+            .on('error', function (err) {
+                reject();
+            });
+    });
+}
+
 module.exports = {
     updateQueryStringParameter: updateQueryStringParameter,
     sendAWSSMS: sendAWSSMS,
@@ -161,5 +176,6 @@ module.exports = {
     createSmallShortUrl: createSmallShortUrl,
     createShortUrl: createShortUrl,
     commitTransaction: commitTransaction,
-    beginTransaction: beginTransaction
+    beginTransaction: beginTransaction,
+    downloadFile: downloadFile
 };
