@@ -271,7 +271,6 @@ function loadFeed(connection, uuid, limit, page){
                                     reject(err);
                                 }
                                 else{
-
                                     rows.map(function (element) {
                                         var thisEntityIndex = hdata.map(function (el) {
                                             return el.entityid;
@@ -310,7 +309,6 @@ function loadFeed(connection, uuid, limit, page){
                                         requestmore: totalcount > (offset + limit),
                                         feed: rows
                                     });
-
                                 }
                             });
                         }

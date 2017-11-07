@@ -276,9 +276,9 @@ function loadFeed(connection, uuid, limit, page) {
 
                                         element.creatorname = element.firstname + ' ' + element.lastname;
 
-                                        if(element.capid) {
+                                        /*if(element.capid) {
                                             delete element.capid;
-                                        }
+                                        }*/
 
                                         if(element.shoid) {
                                             delete element.shoid;

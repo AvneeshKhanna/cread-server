@@ -34,9 +34,16 @@ router.post('/sign-in', function (request, response) {
             connection = conn;
             return checkIfUserExists(connection, fbid);
         })
-        /*.then(function (result) {
-            return useraccessutils.addUserFcmToken(uuid, fcmtoken, result); TODO: Fix the issue when the user needs to add a record in DynamoDB
-        })*/
+        .then(function (result) {
+            if(result){ //Case of existing user
+                return useraccessutils.addUserFcmToken(result.uuid, fcmtoken, result); //TODO: Fix the issue when the user needs to add a record in DynamoDB
+            }
+            else{   //Case of new user
+                return new Promise(function (resolve, reject) {
+                    resolve(result);
+                });
+            }
+        })
         .then(function (result) {
             if(result){
                 result.status = "existing-user";
@@ -127,12 +134,9 @@ router.post('/sign-up', function (request, response) {
                 throw new BreakPromiseChainError();
             }
             else{
-                return registerUserData(connection, userdetails);
+                return useraccessutils.registerUserData(connection, userdetails, fcmtoken);
             }
         })
-        /*.then(function (result) {
-            return useraccessutils.addUserFcmToken(uuid, fcmtoken, result); TODO: Add code for storing user details in DynamoDB
-        })*/
         .then(function (result) {
             return utils.commitTransaction(connection, result);
         })
@@ -179,64 +183,14 @@ function checkIfPhoneExists(connection, phone) {
     });
 }
 
-function registerUserData(connection, userdetails) {
-
-    var uuid = uuidGen.v4();
-    var authkey = _auth.generateToken({
-        fbid: userdetails.fbid
-    });
-
-    userdetails.uuid = uuid;
-    userdetails.authkey = authkey;
-
-    return new Promise(function (resolve, reject) {
-        connection.beginTransaction(function (err) {
-            if(err){
-                connection.rollback(function () {
-                    reject(err);
-                });
-            }
-            else{
-                connection.query('INSERT INTO User SET ?', [userdetails], function (err, rows) {
-                    if (err) {
-                        connection.rollback(function () {
-                            reject(err);
-                        });
-                    }
-                    else {
-
-                        //TODO: Add code to store data in DynamoDB
-
-                        resolve({
-                            uuid: uuid,
-                            authkey: authkey
-                        });
-                    }
-                });
-            }
-        });
-    });
-}
-
 router.post('/sign-out', function (request, response) {
 
     var uuid = request.body.uuid;
-    var authkey = request.body.authkey;
     var fcmtoken = request.body.fcmtoken;
 
-    _auth.authValid(uuid, authkey)
-        .then(function () {
-            return useraccessutils.removeUserFcmToken(uuid, fcmtoken);
-        }, function () {
-            response.send({
-                tokenstatus: 'invalid'
-            });
-            response.end();
-            throw new BreakPromiseChainError();
-        })
+    useraccessutils.removeUserFcmToken(uuid, fcmtoken)
         .then(function () {
             response.send({
-                tokenstatus:'valid',
                 data: {
                     status: 'done'
                 }

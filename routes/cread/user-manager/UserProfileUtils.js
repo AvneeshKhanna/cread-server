@@ -33,7 +33,7 @@ function loadTimeline(connection, uuid, limit, page) {
                 reject(err);
             }
             else{
-                var totalcount = data[0].totalcount;
+                var totalcount = (data[0]) ? data[0].totalcount : 0;
 
                 if(totalcount > 0){
                     connection.query('SELECT Entity.entityid, Entity.type, User.uuid, User.firstname, User.lastname, Short.uuid, Capture.uuid, Short.shoid, Capture.capid, ' +

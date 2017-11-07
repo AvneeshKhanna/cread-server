@@ -9,8 +9,83 @@ var envconfig = require('config');
 
 var AWS = config.AWS;
 var ddbClient = new AWS.DynamoDB.DocumentClient();
+var uuidGen = require('uuid');
+
+var _auth = require('../../auth-token-management/AuthTokenManager');
 
 var userstbl_ddb = envconfig.get('dynamoDB.users_table');
+
+function registerUserData(connection, userdetails, fcmtoken) {
+
+    var uuid = uuidGen.v4();
+    var authkey = _auth.generateToken({
+        fbid: userdetails.fbid
+    });
+
+    userdetails.uuid = uuid;
+    userdetails.authkey = authkey;
+
+    return new Promise(function (resolve, reject) {
+        connection.beginTransaction(function (err) {
+            if(err){
+                connection.rollback(function () {
+                    reject(err);
+                });
+            }
+            else{
+                connection.query('INSERT INTO User SET ?', [userdetails], function (err, rows) {
+                    if (err) {
+                        connection.rollback(function () {
+                            reject(err);
+                        });
+                    }
+                    else {
+
+                        addUserToDynamoDB({
+                            'UUID': uuid,
+                            'Fcm_token': [fcmtoken]
+                        }, function (err) {
+                            if(err){
+                                connection.rollback(function () {
+                                    reject(err);
+                                });
+                            }
+                            else{
+                                resolve({
+                                    uuid: uuid,
+                                    authkey: authkey
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    });
+}
+
+function addUserToDynamoDB(item, callback){
+    var params = {
+        TableName: userstbl_ddb,
+        Item: /*{
+                'UUID': uuid,
+                'ContactNumber': contactnumber,
+                'Email_Id': emailid,
+                'Name': name,
+                'City': city,
+                'Fcm_token': [fcmToken]
+            }*/item
+    };
+
+    ddbClient.put(params, function (err, data) {
+        if (err){
+            callback(err);
+        }
+        else{
+            callback();
+        }
+    });
+}
 
 function addUserFcmToken(uuid, fcmtoken, resultfromprev) {
     return new Promise(function (resolve, reject) {
@@ -112,5 +187,7 @@ function removeUserFcmToken(uuid, fcmtoken) {
 
 module.exports = {
     addUserFcmToken: addUserFcmToken,
-    removeUserFcmToken: removeUserFcmToken
+    removeUserFcmToken: removeUserFcmToken,
+    addUserToDynamoDB: addUserToDynamoDB,
+    registerUserData: registerUserData
 };
