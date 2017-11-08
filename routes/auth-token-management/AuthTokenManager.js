@@ -57,7 +57,7 @@ function validateToken(token) {
 
 var tokenValidation = function(uuid, auth_key, callback){
 
-    var authQuery = 'SELECT UUID FROM User WHERE uuid = ? AND authkey = ?';
+    var authQuery = 'SELECT UUID, firstname, lastname FROM User WHERE uuid = ? AND authkey = ?';
     _connection.query(authQuery, [uuid, auth_key], function(error, row){
         
         console.log('Row in authtokenValidation.tokenValidation is ' + JSON.stringify(row, null, 3));
@@ -67,8 +67,8 @@ var tokenValidation = function(uuid, auth_key, callback){
         }
         else{
             //checking happens
-            var rowLength = row.length;
-            callback(null, rowLength);
+            //var rowLength = row.length;
+            callback(null, row[0]);
         }
     });
 };
@@ -77,21 +77,17 @@ var tokenValidation = function(uuid, auth_key, callback){
  * Function to check user's authtoken is valid or not
  * */
 function authValid(uuid, authkey) {
-
     return new Promise(function (resolve, reject) {
-
-        tokenValidation(uuid, authkey, function (err, datasize) {
-
+        tokenValidation(uuid, authkey, function (err, details) {
             if(err){
                 throw err;
             }
-            else if(datasize === 0){
+            else if(!details){
                 reject();
             }
             else{
-                resolve(datasize);
+                resolve(details);
             }
-
         });
 
     });

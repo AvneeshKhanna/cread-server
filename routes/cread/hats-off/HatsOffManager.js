@@ -16,6 +16,7 @@ var uuidGenerator = require('uuid');
 var moment = require('moment');
 
 var utils = require('../utils/Utils');
+var notify = require('../../notification-system/notificationFramework');
 var hatsoffutils = require('./HatsOffUtils');
 var consts = require('../utils/Constants');
 
@@ -29,9 +30,11 @@ router.post('/on-click', function (request, response) {
     var register = request.body.register;
 
     var connection;
+    var requesterdetails;
     
     _auth.authValid(uuid, authkey)
-        .then(function () {
+        .then(function (details) {
+            requesterdetails = details;
             return config.getNewConnection();
         }, function () {
             response.send({
@@ -52,7 +55,24 @@ router.post('/on-click', function (request, response) {
                 }
             });
             response.end();
-            throw new BreakPromiseChainError();
+        })
+        .then(function () {
+            if(register){
+                return retrieveEntityUserDetails(connection, entityid);
+            }
+            else {
+                throw new BreakPromiseChainError();
+            }
+        })
+        .then(function (entityuuid) {
+            var notifData = {
+                message: requesterdetails.firstname + " " + requesterdetails.lastname + " has given your post a hats-off",
+                category: "hatsoff",
+                entityid: entityid,
+                persistable:"Yes",
+                actorimage: utils.createSmallProfilePicUrl(uuid)
+            };
+            return notify.notificationPromise(new Array(entityuuid), notifData);
         })
         .catch(function (err) {
             config.disconnect(connection);
@@ -67,6 +87,27 @@ router.post('/on-click', function (request, response) {
             }
         });
 });
+
+function retrieveEntityUserDetails(connection, entityid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT User.uuid ' +
+            'FROM Entity ' +
+            'LEFT JOIN Capture ' +
+            'ON Capture.entityid = Entity.entityid ' +
+            'LEFT JOIN Short ' +
+            'ON Short.entityid = Entity.entityid ' +
+            'JOIN User ' +
+            'ON (User.uuid = Short.uuid OR User.uuid = Capture.uuid)  ' +
+            'WHERE Entity.entityid = ?', [entityid], function(err, rows){
+            if(err){
+                reject(err);
+            }
+            else{
+                resolve(rows[0].uuid);
+            }
+        });
+    })
+}
 
 router.post('/load', function (request, response) {
 

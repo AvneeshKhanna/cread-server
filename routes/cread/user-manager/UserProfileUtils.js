@@ -36,7 +36,7 @@ function loadTimeline(connection, uuid, limit, page) {
                 var totalcount = (data[0]) ? data[0].totalcount : 0;
 
                 if(totalcount > 0){
-                    connection.query('SELECT Entity.entityid, Entity.type, User.uuid, User.firstname, User.lastname, Short.uuid, Capture.uuid, Short.shoid, Capture.capid, ' +
+                    connection.query('SELECT Entity.entityid, Entity.type, User.uuid, User.firstname, User.lastname, Short.uuid, Capture.uuid, Short.shoid, Capture.capid AS captureid, ' +
                         'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount ' +
                         'FROM Entity ' +
                         'LEFT JOIN Capture ' +
@@ -85,10 +85,10 @@ function loadTimeline(connection, uuid, limit, page) {
                                         element.hatsoffstatus = thisEntityIndex !== -1;
 
                                         if(element.type === 'CAPTURE'){
-                                            element.captureurl = utils.createSmallCaptureUrl(element.uuid, element.capid);
+                                            element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
                                         }
                                         else{
-                                            element.shorturl = utils.createSmallShortUrl(element.uuid, element.shoid);
+                                            element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
                                         }
 
                                         if(element.firstname){
@@ -376,6 +376,12 @@ function uploadImageToS3(filepath, uuid, type, filename /* ,filekey*/) {
             }
         });
     });
+}
+
+function copyFacebookProfilePic(fbpicurl) {
+    return new Promise(function (resolve, reject) {
+
+    })
 }
 
 module.exports = {

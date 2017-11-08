@@ -143,6 +143,7 @@ app.use('/share-campaign-explore', require('./routes/cread/share/ShareCampaignEx
 app.use('/campaign-manage', require('./routes/cread/campaign/CampaignManager'));
 app.use('/follow', require('./routes/cread/follow/FollowManager'));
 app.use('/capture-upload', require('./routes/cread/capture/UploadCapture'));
+app.use('/short-upload', require('./routes/cread/short/UploadShort'));
 app.use('/capture-manage', require('./routes/cread/capture/CaptureManager'));
 app.use('/hatsoff', require('./routes/cread/hats-off/HatsOffManager'));
 app.use('/comment', require('./routes/cread/comment/CommentManager'));
@@ -211,7 +212,8 @@ app.use(function (err, req, res, next) {
     });
 });
 
-top_givers_notification.start();
-monitorAccountActivity.start(); //To monitor user accounts activity TODO: toggle 
+//TODO: remove
+// top_givers_notification.start();
+// monitorAccountActivity.start(); //To monitor user accounts activity
 
 module.exports = app;

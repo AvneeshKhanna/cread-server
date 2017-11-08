@@ -14,6 +14,7 @@ var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var buyutils = require('./BuyUtils');
 var utils = require('../utils/Utils');
+var notify = require('../../notification-system/notificationFramework');
 
 //TODO: Add code for transaction email
 router.post('/place', function (request, response) {
@@ -23,6 +24,7 @@ router.post('/place', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var entityid = request.body.entityid;
+    var productname = request.body.productname;
     var productid = request.body.productid;
     var shipmentdetails = request.body.shipmentdetails;
     var price = request.body.price; //Price of one item
@@ -54,9 +56,11 @@ router.post('/place', function (request, response) {
     };
 
     var connection;
+    var requesterdetails;
 
     _auth.authValid(uuid, authkey)
-        .then(function () {
+        .then(function (details) {
+            requesterdetails = details;
             return config.getNewConnection();
         }, function () {
             response.send({
@@ -86,7 +90,19 @@ router.post('/place', function (request, response) {
                 }
             });
             response.end();
-            throw new BreakPromiseChainError();
+        })
+        .then(function () {
+            return retrieveEntityUserDetails(connection, entityid);
+        })
+        .then(function (entityuuid) {
+            var notifData = {
+                message: requesterdetails.firstname + " " + requesterdetails.lastname + " has purchased a " + productname + " created using your post",
+                category: "buy",
+                entityid: entityid,
+                persistable:"Yes",
+                actorimage: utils.createSmallProfilePicUrl(uuid)
+            };
+            return notify.notificationPromise(new Array(entityuuid), notifData);
         })
         .catch(function (err) {
             if(err instanceof BreakPromiseChainError){
@@ -103,6 +119,27 @@ router.post('/place', function (request, response) {
             }
         });
 });
+
+function retrieveEntityUserDetails(connection, entityid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT User.uuid ' +
+            'FROM Entity ' +
+            'LEFT JOIN Capture ' +
+            'ON Capture.entityid = Entity.entityid ' +
+            'LEFT JOIN Short ' +
+            'ON Short.entityid = Entity.entityid ' +
+            'JOIN User ' +
+            'ON (User.uuid = Short.uuid OR User.uuid = Capture.uuid)  ' +
+            'WHERE Entity.entityid = ?', [entityid], function(err, rows){
+            if(err){
+                reject(err);
+            }
+            else{
+                resolve(rows[0].uuid);
+            }
+        });
+    })
+}
 
 /*
 router.post('/populate-screen', function (request, response) {

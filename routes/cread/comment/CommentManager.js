@@ -12,6 +12,7 @@ var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var commentutils = require('./CommentUtils');
 var utils = require('../utils/Utils');
+var notify = require('../../notification-system/notificationFramework');
 
 var uuidGenerator = require('uuid');
 
@@ -72,9 +73,11 @@ router.post('/add', function (request, response) {
     var comment = request.body.comment;
 
     var connection;
+    var requesterdetails;
 
     _auth.authValid(uuid, authkey)
-        .then(function () {
+        .then(function (details) {
+            requesterdetails = details;
             return config.getNewConnection();
         }, function () {
             response.send({
@@ -95,13 +98,25 @@ router.post('/add', function (request, response) {
                     comment: {
                         commid: commid,
                         profilepicurl: utils.createSmallShortUrl(uuid),
-                        firstname: "Avneesh",
-                        lastname: "Khanna"
+                        firstname: requesterdetails.firstname,   //TODO: Make dynamic
+                        lastname: requesterdetails.lastname
                     }
                 }
             });
             response.end();
-            throw new BreakPromiseChainError();
+        })
+        .then(function () {
+            return retrieveEntityUserDetails(connection, entityid);
+        })
+        .then(function (entityuuid) {
+            var notifData = {
+                message: requesterdetails.firstname + " " + requesterdetails.lastname + " has commented on your post",
+                category: "comment",
+                entityid: entityid,
+                persistable:"Yes",
+                actorimage: utils.createSmallProfilePicUrl(uuid)
+            };
+            return notify.notificationPromise(new Array(entityuuid), notifData);
         })
         .catch(function (err) {
             config.disconnect(connection);
@@ -117,6 +132,27 @@ router.post('/add', function (request, response) {
         });
 
 });
+
+function retrieveEntityUserDetails(connection, entityid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT User.uuid ' +
+            'FROM Entity ' +
+            'LEFT JOIN Capture ' +
+            'ON Capture.entityid = Entity.entityid ' +
+            'LEFT JOIN Short ' +
+            'ON Short.entityid = Entity.entityid ' +
+            'JOIN User ' +
+            'ON (User.uuid = Short.uuid OR User.uuid = Capture.uuid)  ' +
+            'WHERE Entity.entityid = ?', [entityid], function(err, rows){
+            if(err){
+                reject(err);
+            }
+            else{
+                resolve(rows[0].uuid);
+            }
+        });
+    })
+}
 
 router.post('/update', function (request, response) {
     var uuid = request.body.uuid;

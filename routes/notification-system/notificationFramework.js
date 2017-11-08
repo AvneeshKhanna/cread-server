@@ -72,8 +72,13 @@ function usersMapping(usersuuid , serveruuids , serverFcmtokens){
 }
 
 function sendNotification(users, notificationData, callback){
-    
-    if(users.length == 0){
+
+    if(!(users instanceof Array)){
+        callback(new Error('Parameter "users" should be an array'));
+        return;
+    }
+
+    if(users.length === 0){
         callback();
     }
     else{
@@ -82,7 +87,7 @@ function sendNotification(users, notificationData, callback){
                 data : notificationData
             });
 
-            var sender = new gcm.Sender('AIzaSyDUbtCYGKI-kLl7oSVQoW_sZqo2VZBFeKQ');
+            var sender = new gcm.Sender(/*'AIzaSyBs55ZwzCdCaylPNkEeZgbrnR5GxnqjJwE'*/'AAAAWOwUO0Q:APA91bEI7_FLG9hRz2_nHRkBgSnQftSMrGzOzzKod1lPYNyX88jEqUIJRhE7SpxyVQ_a1ugWAZ0CbVgC3pTylZm9w8ZJib8P5B5MTXVh42_48RN_37-Cob0FtTV5-xxRzlSfGgYVobcc');
 
             sender.send(message, { registrationTokens : registrationTokens }, 3 , function (err, response) {
                 if(err){
@@ -96,5 +101,19 @@ function sendNotification(users, notificationData, callback){
     }
 }
 
+function notificationPromise(users, notificationData) {
+    return new Promise(function (resolve, reject) {
+        sendNotification(users, notificationData, function (err) {
+            if(err){
+                reject(err);
+            }
+            else{
+                resolve();
+            }
+        });
+    });
+}
+
 //module.exports = router;
 module.exports.notification = sendNotification;
+module.exports.notificationPromise = notificationPromise;

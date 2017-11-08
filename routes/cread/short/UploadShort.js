@@ -18,24 +18,43 @@ var upload = multer({ dest: './images/uploads/short/' });
 var fs = require('fs');
 
 var utils = require('../utils/Utils');
+var notify = require('../../notification-system/notificationFramework');
 
 var filebasepath = './images/uploads/short/';
 
 //TODO: Delete image after server response
-router.post('/upload', upload.single('short'), function (request, response) {
+router.post('/', upload.single('short-image'), function (request, response) {
+
+    console.log("request is " + JSON.stringify(request.body, null, 3));
 
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
-    var short_txt_coordinates = request.body.short_txt_coordinates;
     var short = request.file;
 
-
     var shoid = uuidgen.v4();
+    var entityid = uuidgen.v4();
+
+    var shortsqlparams = {
+        dx: request.body.dx,
+        dy: request.body.dy,
+        width: request.body.width,
+        height: request.body.height,
+        txt: request.body.text,
+        textsize: request.body.textsize,
+        textcolor: request.body.textcolor,
+        textgravity: request.body.textgravity,
+        capid: (request.body.captureid) ? request.body.captureid : null,
+        uuid: uuid,
+        entityid: entityid,
+        shoid: shoid
+    };
 
     var connection;
+    var requesterdetails;
 
     _auth.authValid(uuid, authkey)
-        .then(function () {
+        .then(function (details) {
+            requesterdetails = details;
             return config.getNewConnection();
         }, function () {
             response.send({
@@ -46,7 +65,7 @@ router.post('/upload', upload.single('short'), function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return uploadToRDS(connection, short_txt_coordinates, shoid);
+            return uploadToRDS(connection, shortsqlparams, entityid);
         })
         .then(function () {
             return userprofileutils.renameFile(filebasepath, short, shoid);
@@ -66,7 +85,24 @@ router.post('/upload', upload.single('short'), function (request, response) {
                 }
             });
             response.end();
-            throw new BreakPromiseChainError();
+        })
+        .then(function () {
+            if(shortsqlparams.capid){
+                return retreiveCaptureUserDetails(connection, shortsqlparams.capid);
+            }
+            else {
+                throw new BreakPromiseChainError();
+            }
+        })
+        .then(function (captureuseruuid) {
+            var notifData = {
+                message: requesterdetails.firstname + ' ' + requesterdetails.lastname + " wrote a short on your capture",
+                category: "collaborate",
+                persistable: "Yes",
+                entityid: entityid,
+                actorimage: utils.createSmallProfilePicUrl(uuid)
+            };
+            return notify.notificationPromise(new Array(captureuseruuid), notifData);
         })
         .catch(function (err) {
             config.disconnect(connection);
@@ -83,7 +119,20 @@ router.post('/upload', upload.single('short'), function (request, response) {
 
 });
 
-function uploadToRDS(connection, short_txt_coordinates, shoid) {
+function retreiveCaptureUserDetails(connection, captureid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT uuid FROM Capture WHERE capid = ?', [captureid], function (err, data) {
+            if(err){
+                reject(err);
+            }
+            else{
+                resolve(data[0].uuid);
+            }
+        })
+    })
+}
+
+function uploadToRDS(connection, shortsqlparams, entityid) {
     return new Promise(function (resolve, reject) {
         connection.beginTransaction(function (err) {
             if(err){
@@ -92,15 +141,29 @@ function uploadToRDS(connection, short_txt_coordinates, shoid) {
                 });
             }
             else{
-                connection.query('UPDATE Short SET ? ' +
-                    'WHERE shoid = ?', [short_txt_coordinates, shoid], function (err, rows) {
+
+                var entityparams = {
+                    entityid: entityid,
+                    type: 'SHORT'
+                };
+
+                connection.query('INSERT INTO Entity SET ?', [entityparams], function (err, edata) {
                     if (err) {
                         connection.rollback(function () {
                             reject(err);
                         });
                     }
                     else {
-                        resolve();
+                        connection.query('INSERT INTO Short SET ?', [shortsqlparams], function (err, rows) {
+                            if(err){
+                                connection.rollback(function () {
+                                    reject(err);
+                                });
+                            }
+                            else{
+                                resolve();
+                            }
+                        });
                     }
                 });
             }

@@ -15,9 +15,11 @@ var config = require('../../Config');
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
+var notify = require('../../notification-system/notificationFramework');
 
 var followutils = require('./FollowUtils');
 var userprofileutils = require('../user-manager/UserProfileUtils');
+var utils = require('../utils/Utils');
 
 router.post('/on-click', function (request, response) {
 
@@ -38,9 +40,11 @@ router.post('/on-click', function (request, response) {
     }
 
     var connection;
+    var requesterdetails;
 
     _auth.authValid(uuid, authkey)
-        .then(function () {
+        .then(function (details) {
+            requesterdetails = details;
             return config.getNewConnection();
         }, function () {
             response.send({
@@ -61,7 +65,18 @@ router.post('/on-click', function (request, response) {
                 }
             });
             response.end();
-            throw new BreakPromiseChainError();
+        })
+        .then(function () {
+            if(register){
+                var notifData = {
+                    message: requesterdetails.firstname + " " +  requesterdetails.lastname + " has started following you on Cread",
+                    actorid: uuid,
+                    actorimage: utils.createSmallProfilePicUrl(uuid),
+                    category: "follow",
+                    persistable: "Yes"
+                };
+                return notify.notificationPromise(followees, notifData);
+            }
         })
         .catch(function (err) {
             config.disconnect(connection);

@@ -233,7 +233,7 @@ function loadFeed(connection, uuid, limit, page){
                 var totalcount = data[0].totalcount;
 
                 if(totalcount > 0){
-                    connection.query('SELECT Entity.entityid, Entity.type, User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid, Short.shoid, ' +
+                    connection.query('SELECT Entity.entityid, Entity.type, User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, Short.shoid, ' +
                         'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
                         'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
                         'FROM Entity ' +
@@ -277,10 +277,10 @@ function loadFeed(connection, uuid, limit, page){
                                         }).indexOf(element.entityid);
 
                                         if(element.type === 'CAPTURE'){
-                                            element.captureurl = utils.createSmallCaptureUrl(element.uuid, element.capid);
+                                            element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
                                         }
                                         else{
-                                            element.shorturl = utils.createSmallShortUrl(element.uuid, element.shoid);
+                                            element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
                                         }
 
                                         element.creatorname = element.firstname + ' ' + element.lastname;

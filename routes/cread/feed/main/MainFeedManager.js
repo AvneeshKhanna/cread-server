@@ -215,9 +215,9 @@ function loadFeed(connection, uuid, limit, page) {
                 console.log("totalcount is " + JSON.stringify(totalcount, null, 3));
 
                 if(totalcount > 0){
-                    connection.query('SELECT Entity.entityid, Entity.type, Short.uuid, Short.shoid, Capture.uuid, ' +
-                        'Capture.capid, COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
-                        'User.firstname, User.lastname ' +
+                    connection.query('SELECT Entity.entityid, Entity.type, Short.shoid, ' +
+                        'Capture.capid AS captureid, COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
+                        'User.uuid, User.firstname, User.lastname ' +
                         'FROM Entity ' +
                         'LEFT JOIN Short ' +
                         'ON Short.entityid = Entity.entityid ' +
@@ -265,10 +265,10 @@ function loadFeed(connection, uuid, limit, page) {
                                         element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
 
                                         if(element.type === 'CAPTURE'){
-                                            element.captureurl = utils.createSmallCaptureUrl(element.uuid, element.capid);
+                                            element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
                                         }
                                         else{
-                                            element.shorturl = utils.createSmallShortUrl(element.uuid, element.shoid);
+                                            element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
                                         }
 
                                         element.hatsoffstatus = thisEntityIndex !== -1;
