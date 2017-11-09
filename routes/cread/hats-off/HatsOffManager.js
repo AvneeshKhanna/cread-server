@@ -65,14 +65,19 @@ router.post('/on-click', function (request, response) {
             }
         })
         .then(function (entityuuid) {
-            var notifData = {
-                message: requesterdetails.firstname + " " + requesterdetails.lastname + " has given your post a hats-off",
-                category: "hatsoff",
-                entityid: entityid,
-                persistable:"Yes",
-                actorimage: utils.createSmallProfilePicUrl(uuid)
-            };
-            return notify.notificationPromise(new Array(entityuuid), notifData);
+            if(entityuuid !== uuid){    //Send notification only when the two users involved are different
+                var notifData = {
+                    message: requesterdetails.firstname + " " + requesterdetails.lastname + " has given your post a hats-off",
+                    category: "hatsoff",
+                    entityid: entityid,
+                    persistable:"Yes",
+                    actorimage: utils.createSmallProfilePicUrl(uuid)
+                };
+                return notify.notificationPromise(new Array(entityuuid), notifData);
+            }
+        })
+        .then(function () {
+            throw new BreakPromiseChainError(); //To disconnect server connection
         })
         .catch(function (err) {
             config.disconnect(connection);

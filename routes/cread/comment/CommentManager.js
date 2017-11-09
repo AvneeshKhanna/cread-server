@@ -109,14 +109,19 @@ router.post('/add', function (request, response) {
             return retrieveEntityUserDetails(connection, entityid);
         })
         .then(function (entityuuid) {
-            var notifData = {
-                message: requesterdetails.firstname + " " + requesterdetails.lastname + " has commented on your post",
-                category: "comment",
-                entityid: entityid,
-                persistable:"Yes",
-                actorimage: utils.createSmallProfilePicUrl(uuid)
-            };
-            return notify.notificationPromise(new Array(entityuuid), notifData);
+            if(entityuuid !== uuid){    //Send notification only when the two users involved are different
+                var notifData = {
+                    message: requesterdetails.firstname + " " + requesterdetails.lastname + " has commented on your post",
+                    category: "comment",
+                    entityid: entityid,
+                    persistable:"Yes",
+                    actorimage: utils.createSmallProfilePicUrl(uuid)
+                };
+                return notify.notificationPromise(new Array(entityuuid), notifData);
+            }
+        })
+        .then(function () {
+            throw new BreakPromiseChainError(); //To disconnect server connection
         })
         .catch(function (err) {
             config.disconnect(connection);

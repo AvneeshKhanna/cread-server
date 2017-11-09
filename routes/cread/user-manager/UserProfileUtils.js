@@ -36,7 +36,7 @@ function loadTimeline(connection, uuid, limit, page) {
                 var totalcount = (data[0]) ? data[0].totalcount : 0;
 
                 if(totalcount > 0){
-                    connection.query('SELECT Entity.entityid, Entity.type, User.uuid, User.firstname, User.lastname, Short.uuid, Capture.uuid, Short.shoid, Capture.capid AS captureid, ' +
+                    connection.query('SELECT Entity.entityid, Entity.type, User.uuid, User.firstname, User.lastname, Short.shoid, Capture.capid AS captureid, ' +
                         'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount ' +
                         'FROM Entity ' +
                         'LEFT JOIN Capture ' +

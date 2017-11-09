@@ -78,6 +78,9 @@ router.post('/on-click', function (request, response) {
                 return notify.notificationPromise(followees, notifData);
             }
         })
+        .then(function () {
+            throw new BreakPromiseChainError(); //To disconnect server connection
+        })
         .catch(function (err) {
             config.disconnect(connection);
             if(err instanceof BreakPromiseChainError){

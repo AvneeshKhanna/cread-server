@@ -95,14 +95,19 @@ router.post('/', upload.single('short-image'), function (request, response) {
             }
         })
         .then(function (captureuseruuid) {
-            var notifData = {
-                message: requesterdetails.firstname + ' ' + requesterdetails.lastname + " wrote a short on your capture",
-                category: "collaborate",
-                persistable: "Yes",
-                entityid: entityid,
-                actorimage: utils.createSmallProfilePicUrl(uuid)
-            };
-            return notify.notificationPromise(new Array(captureuseruuid), notifData);
+            if(captureuseruuid !== uuid){   //Send notification only when the two users involved are different
+                var notifData = {
+                    message: requesterdetails.firstname + ' ' + requesterdetails.lastname + " wrote a short on your capture",
+                    category: "collaborate",
+                    persistable: "Yes",
+                    entityid: entityid,
+                    actorimage: utils.createSmallProfilePicUrl(uuid)
+                };
+                return notify.notificationPromise(new Array(captureuseruuid), notifData);
+            }
+        })
+        .then(function () {
+            throw new BreakPromiseChainError(); //To disconnect server connection
         })
         .catch(function (err) {
             config.disconnect(connection);
