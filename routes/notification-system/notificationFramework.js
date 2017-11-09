@@ -18,6 +18,8 @@ var docClient = new AWS.DynamoDB.DocumentClient();
 var envconfig = require('config');
 var userstbl_ddb = envconfig.get('dynamoDB.users_table');
 
+var config = require('../Config');
+
 /*router.post('/' , function(req,res){
     var testIds = new Array();
     testIds.push('43d865a5-f7b7-4c27-84b1-367203744226');
@@ -87,7 +89,7 @@ function sendNotification(users, notificationData, callback){
                 data : notificationData
             });
 
-            var sender = new gcm.Sender(/*'AIzaSyBs55ZwzCdCaylPNkEeZgbrnR5GxnqjJwE'*/'AAAAWOwUO0Q:APA91bEI7_FLG9hRz2_nHRkBgSnQftSMrGzOzzKod1lPYNyX88jEqUIJRhE7SpxyVQ_a1ugWAZ0CbVgC3pTylZm9w8ZJib8P5B5MTXVh42_48RN_37-Cob0FtTV5-xxRzlSfGgYVobcc');
+            var sender = new gcm.Sender(config['fcm-server-key']);
 
             sender.send(message, { registrationTokens : registrationTokens }, 3 , function (err, response) {
                 if(err){

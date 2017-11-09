@@ -83,5 +83,6 @@ module.exports = {
     'dynamodbCredentials': dynamodbCredentials,
     'AWS': AWS,
     'AWS-EU-WEST-1': AWS_EU_WEST_1,
-    'crypto-secret-key': "0da2d13d-3eaa-4ee8-a918-d0ca08d1e897"
+    'crypto-secret-key': "0da2d13d-3eaa-4ee8-a918-d0ca08d1e897",
+    'fcm-server-key': 'AAAAWOwUO0Q:APA91bEI7_FLG9hRz2_nHRkBgSnQftSMrGzOzzKod1lPYNyX88jEqUIJRhE7SpxyVQ_a1ugWAZ0CbVgC3pTylZm9w8ZJib8P5B5MTXVh42_48RN_37-Cob0FtTV5-xxRzlSfGgYVobcc'
 };

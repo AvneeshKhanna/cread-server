@@ -14,6 +14,7 @@ AWS.config.credentials = new AWS.CognitoIdentityCredentials({
 var envconfig = require('config');
 var userstbl_ddb = envconfig.get('dynamoDB.users_table');
 
+var config = require('../Config');
 var docClient = new AWS.DynamoDB.DocumentClient();
 
 /**
@@ -31,7 +32,7 @@ function sendNotification(data, cities, callback) {
                 data: data
             });
 
-            var sender = new gcm.Sender('AIzaSyDUbtCYGKI-kLl7oSVQoW_sZqo2VZBFeKQ');
+            var sender = new gcm.Sender(config['fcm-server-key']);
 
             const batchsize = 1000;  //FCM limits the no of users to 1,000 which can be sent a notification in one-go
 

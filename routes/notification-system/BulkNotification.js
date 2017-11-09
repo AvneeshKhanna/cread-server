@@ -16,24 +16,20 @@ router.post('/', function (request, response) {
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
 
-    var cmid = request.body.cmid;   //Can be NULL
-    var app_model = request.body.app_model; // "1.0" or "2.0"
-    var persist = request.body.persist;     //"Yes" or "No"
+    // var cmid = request.body.cmid;   //Can be NULL
+    // var app_model = request.body.app_model; // "1.0" or "2.0"
+    var persistable = request.body.persistable;     //"Yes" or "No"
     var category = request.body.category;
     var message = request.body.message;
 
     var cities = request.body.cities;
 
     var data = {
-        Category: category,
-        Message: message,
-        AppModel: app_model,
-        Persist: persist
+        category: category,
+        message: message,
+        // AppModel: app_model,
+        persistable: persistable
     };
-
-    if(cmid){
-        data.Cmid = cmid
-    }
 
     notifyUsers.sendNotification(data, cities, function (err) {
         if(err){
