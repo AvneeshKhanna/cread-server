@@ -3,19 +3,32 @@
  */
 'use-strict';
 
-function deleteEntity(connection, entityid) {
+var request_client = require('request');
+var utils = require('../utils/Utils');
+
+function downloadCapture(uuid, captureid, toFile){
     return new Promise(function (resolve, reject) {
-        connection.query('', [], function (err, rows) {
-            if (err) {
-                reject(err);
+        request_client.head(utils.createCaptureUrl(uuid, captureid), function(err, res, body){
+
+            console.log('content-type:', res.headers['content-type']);
+            console.log('content-length:', res.headers['content-length']);
+
+            //Image doesn't exists
+            if(res.headers['content-length'] === undefined){
+                reject(new Error('Image does not exists'));
             }
-            else {
-                resolve();
+            else{
+                request_client(utils.createCaptureUrl(uuid, captureid))
+                    .pipe(fs.createWriteStream(toFile))
+                    .on('close', function () {
+                        this.end();
+                        resolve();
+                    });
             }
         });
-    });
+    })
 }
 
 module.exports = {
-    deleteEntity: deleteEntity
+    downloadCapture: downloadCapture
 };

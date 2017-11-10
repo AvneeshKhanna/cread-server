@@ -92,7 +92,28 @@ function loadEntityData(connection, uuid, entityid) {
     });
 }
 
+function deactivateEntity(connection, entityid, uuid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('UPDATE Entity ' +
+            'LEFT JOIN Short ' +
+            'USING(entityid) ' +
+            'LEFT JOIN Capture ' +
+            'USING(entityid) ' +
+            'SET Entity.status = "DEACTIVE" ' +
+            'WHERE Entity.entityid = ? ' +
+            'AND (Capture.uuid = ? OR Short.uuid = ?)', [entityid, uuid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
 module.exports = {
     loadEntityData: loadEntityData,
-    retrieveShortDetails: retrieveShortDetails
+    retrieveShortDetails: retrieveShortDetails,
+    deactivateEntity: deactivateEntity
 };
