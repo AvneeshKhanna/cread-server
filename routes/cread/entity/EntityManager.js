@@ -17,6 +17,9 @@ var captureutils = require('../capture/CaptureUtils');
 
 var rootpath = './images/downloads/';
 
+var Canvas = require('canvas'),
+    Image = Canvas.Image;
+
 router.post('/load-specific', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
