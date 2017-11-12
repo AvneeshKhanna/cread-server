@@ -30,6 +30,7 @@ var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var clientprofile_utils = require('../dsbrd/client-profile/ClientProfileUtils');
 var userprofileutils = require('./UserProfileUtils');
+var useraccessutils = require('./UserAccessUtils');
 var utils = require('../utils/Utils');
 
 //TODO: Delete profile pictures after uploading
@@ -673,6 +674,71 @@ router.post('/update-profile', function (request, response) {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
+
+router.post('/update-phone', function (request, response) {
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var phone = request.body.phone;
+
+    var details = {
+        phone: phone
+    };
+
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return useraccessutils.checkIfPhoneExists(connection, phone);
+        })
+        .then(function (phoneExists) {
+            if(phoneExists){
+                response.send({
+                    tokenstatus: 'valid',
+                    data: {
+                        status: 'phone-exists'
+                    }
+                });
+                response.end();
+                throw new BreakPromiseChainError();
+            }
+            else{
+                return userprofileutils.updateProfile(connection, uuid, details);
+            }
+        })
+        .then(function () {
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    status: 'done'
+                }
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
                 }).end();
             }
         });

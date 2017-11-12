@@ -15,6 +15,24 @@ var _auth = require('../../auth-token-management/AuthTokenManager');
 
 var userstbl_ddb = envconfig.get('dynamoDB.users_table');
 
+function checkIfPhoneExists(connection, phone) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT phone FROM User WHERE phone = ?', [phone], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                if (rows[0]) {
+                    resolve(true);
+                }
+                else{
+                    resolve(false);
+                }
+            }
+        });
+    });
+}
+
 function registerUserData(connection, userdetails, fcmtoken) {
 
     var uuid = uuidGen.v4();
@@ -186,6 +204,7 @@ function removeUserFcmToken(uuid, fcmtoken) {
 }
 
 module.exports = {
+    checkIfPhoneExists: checkIfPhoneExists,
     addUserFcmToken: addUserFcmToken,
     removeUserFcmToken: removeUserFcmToken,
     addUserToDynamoDB: addUserToDynamoDB,

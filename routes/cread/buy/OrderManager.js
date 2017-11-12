@@ -52,7 +52,9 @@ router.post('/place', function (request, response) {
         billing_name: billing_name,
         billing_alt_contact: billing_alt_contact,
         color: color,
-        size: size
+        size: size,
+        price: price,
+        qty: qty
     };
 
     var connection;

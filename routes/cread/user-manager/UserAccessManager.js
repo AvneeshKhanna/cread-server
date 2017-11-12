@@ -79,7 +79,7 @@ router.post('/sign-in', function (request, response) {
 
 function checkIfUserExists(connection, fbid){
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT uuid, authkey FROM User WHERE fbid = ?', [fbid], function (err, rows) {
+        connection.query('SELECT firstname, lastname, uuid, authkey FROM User WHERE fbid = ?', [fbid], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -121,7 +121,7 @@ router.post('/sign-up', function (request, response) {
     config.getNewConnection()
         .then(function (conn) {
             connection = conn;
-            return checkIfPhoneExists(connection, userdetails.phone);
+            return useraccessutils.checkIfPhoneExists(connection, userdetails.phone);
         })
         .then(function (phoneExists) {
             if(phoneExists){
@@ -164,24 +164,6 @@ router.post('/sign-up', function (request, response) {
             }
         });
 });
-
-function checkIfPhoneExists(connection, phone) {
-    return new Promise(function (resolve, reject) {
-        connection.query('SELECT phone FROM User WHERE phone = ?', [phone], function (err, rows) {
-            if (err) {
-                reject(err);
-            }
-            else {
-                if (rows[0]) {
-                    resolve(true);
-                }
-                else{
-                    resolve(false);
-                }
-            }
-        });
-    });
-}
 
 router.post('/sign-out', function (request, response) {
 
