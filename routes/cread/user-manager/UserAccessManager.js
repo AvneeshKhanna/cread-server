@@ -32,7 +32,7 @@ router.post('/sign-in', function (request, response) {
     config.getNewConnection()
         .then(function (conn) {
             connection = conn;
-            return checkIfUserExists(connection, fbid);
+            return useraccessutils.checkIfUserExists(connection, fbid);
         })
         .then(function (result) {
             if(result){ //Case of existing user
@@ -76,19 +76,6 @@ router.post('/sign-in', function (request, response) {
         });
 
 });
-
-function checkIfUserExists(connection, fbid){
-    return new Promise(function (resolve, reject) {
-        connection.query('SELECT firstname, lastname, uuid, authkey FROM User WHERE fbid = ?', [fbid], function (err, rows) {
-            if (err) {
-                reject(err);
-            }
-            else {
-                resolve(rows[0]);
-            }
-        });
-    });
-}
 
 router.post('/sign-up', function (request, response) {
 
@@ -165,6 +152,12 @@ router.post('/sign-up', function (request, response) {
         });
 });
 
+function copyFacebookProfilePic(picture, uuid) {
+    return new Promise(function (resolve, reject) {
+        
+    })
+}
+
 router.post('/sign-out', function (request, response) {
 
     var uuid = request.body.uuid;
@@ -191,6 +184,27 @@ router.post('/sign-out', function (request, response) {
                 }).end();
             }
         });
+});
+
+router.post('/update-fcmtoken', function (request, response) {
+    var uuid = request.body.uuid;
+    var fcmtoken = request.body.fcmtoken;
+
+    useraccessutils.addUserFcmToken(uuid, fcmtoken)
+        .then(function () {
+            response.send({
+                data: {
+                    status: 'done'
+                }
+            });
+            response.end();
+        })
+        .catch(function (err) {
+            console.error(err);
+            response.status(500).send({
+                message: 'Some error occurred at the server'
+            }).end();
+        })
 });
 
 module.exports = router;

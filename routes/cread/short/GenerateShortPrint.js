@@ -13,30 +13,47 @@ var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var userprofileutils = require('../user-manager/UserProfileUtils');
 
 var uuidgen = require('uuid');
-var multer  = require('multer');
-var upload = multer({ dest: './images/uploads/short/' });
 var fs = require('fs');
 
 var utils = require('../utils/Utils');
 
-var filebasepath = './images/uploads/short/';
+var entityutils = require('../entity/EntityUtils');
+var captureutils = require('../capture/CaptureUtils');
 
-router.post('/generate', function (request, response) {
-    console.log("request body " + JSON.stringify(request.body, null, 3));
-    var uuid = request.body.uuid;
-    var authkey = request.body.authkey;
-    var file = request.file;
-    var captureid = request.body.captureid;
+var rootdownloadpath = './images/downloads/';
 
-    var guid = uuidgen.v4();
+/*var Canvas = require('canvas'),
+    Image = Canvas.Image;*/
+
+router.post('/generate-short-for-print', function (request, response) {
+
+    var entityid = request.body.entityid;
+
     var connection;
 
     config.getNewConnection()
         .then(function (conn) {
-           connection = conn;
-           return userprofileutils.renameFile(filebasepath, file, guid)
+            connection = conn;
+            return entityutils.retrieveShortDetails(connection, entityid);
         })
+        .then(function (short) {
+            return captureutils.downloadCapture(uuid, short.capid, rootdownloadpath + short.capid + '.jpg');
+        })
+        .then(function (dwnldcapturepath) {
 
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
 });
 
 module.exports = router;

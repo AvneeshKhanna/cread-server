@@ -6,6 +6,9 @@
 var request_client = require('request');
 var utils = require('../utils/Utils');
 
+/**
+ * Function to download the high resolution version of capture to the server
+ * */
 function downloadCapture(uuid, captureid, toFile){
     return new Promise(function (resolve, reject) {
         request_client.head(utils.createCaptureUrl(uuid, captureid), function(err, res, body){

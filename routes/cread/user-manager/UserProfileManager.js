@@ -609,6 +609,7 @@ router.post('/load-fb-friends', function (request, response) {
             return userprofileutils.loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl);
         })
         .then(function (result) {
+            console.log("result is " + JSON.stringify(result, null, 3));
             response.send({
                 tokenstatus: 'valid',
                 data: result

@@ -241,14 +241,11 @@ function loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl) {
 
                             console.log("rows from User LEFT JOIN Follow query is " + JSON.stringify(rows, null, 3));
 
-                            if(response.paging.next){
-                                result.nexturl = response.paging.next;
-                            }
-
+                            result.nexturl = (response.paging.next) ? response.paging.next : null;
                             result.requestmore = !!response.paging.next;
 
                             rows.map(function (elem) {
-                                elem.profilepicurl = utils.createProfilePicUrl(elem.uuid);
+                                elem.profilepicurl = utils.createSmallProfilePicUrl(elem.uuid);
                                 elem.followstatus = elem.binarycount > 0;
                                 return elem;
                             });

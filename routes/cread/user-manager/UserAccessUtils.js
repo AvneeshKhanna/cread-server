@@ -33,6 +33,19 @@ function checkIfPhoneExists(connection, phone) {
     });
 }
 
+function checkIfUserExists(connection, fbid){
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT firstname, lastname, uuid, authkey FROM User WHERE fbid = ?', [fbid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(rows[0]);
+            }
+        });
+    });
+}
+
 function registerUserData(connection, userdetails, fcmtoken) {
 
     var uuid = uuidGen.v4();
@@ -208,5 +221,6 @@ module.exports = {
     addUserFcmToken: addUserFcmToken,
     removeUserFcmToken: removeUserFcmToken,
     addUserToDynamoDB: addUserToDynamoDB,
-    registerUserData: registerUserData
+    registerUserData: registerUserData,
+    checkIfUserExists: checkIfUserExists
 };

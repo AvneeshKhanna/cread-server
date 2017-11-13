@@ -24,6 +24,7 @@ var dbConfig = envconfig.get('rdsDB.dbConfig');
 var AWS = require('aws-sdk');
 
 var transEmail = require('../dsbrd/wallet-management/TransactionEmailer');
+var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
 /*AWS.config.region = 'eu-west-1';
  AWS.config.credentials = new AWS.CognitoIdentityCredentials({
