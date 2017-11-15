@@ -13,7 +13,7 @@
     "async": "^2.5.0",
     "aws-sdk": "^2.5.2",
     "body-parser": "^1.15.2",
-    "canvas": "^1.6.7",
+    "canvas": "^2.0.0-alpha.6",
     "config": "^1.25.0",
     "cookie-parser": "~1.4.3",
     "cors": "^2.8.1",

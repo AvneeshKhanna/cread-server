@@ -787,7 +787,7 @@
 
                                                                 <h2 class="mc-toc-title"><span
                                                                             style="color:#33cc66"><span
-                                                                                style="font-size:26px">Transaction went through successfully!</span></span>
+                                                                                style="font-size:26px">Order Placed Successfully!</span></span>
                                                                 </h2>
 
                                                             </td>
@@ -829,20 +829,22 @@
                                                             <td valign="top" class="mcnTextContent"
                                                                 style="padding-top:0; padding-right:18px; padding-bottom:9px; padding-left:18px; color: #808080; font-family: Helvetica; font-size: 16px; line-height: 150%; text-align: left;">
 
-                                                                <p>Hi <%- clientname %>,<br>
+                                                                <p>Hi <%- name %>,<br>
                                                                     <br>
-                                                                    We're excited to share that
+                                                                    We've received your order for: <strong><%- product_name %> <%- product_details %> </strong>
+                                                                    amounting to
                                                                     <strong>INR <%- amount %> </strong>
-                                                                    have been transferred to your Cread wallet
-                                                                    successfully. You can now create more campaigns and
-                                                                    make people your partners to help you reach your
-                                                                    goal.<br>
                                                                     <br>
-                                                                    <strong>Transaction ID: <%- paymentid %><br>
+                                                                    Your order would be delivered withing 7 - 8 business days. If you have any queries, please reply
+                                                                    to this email addresss and our team would get in touch with you.<br>
+                                                                    <br>
+                                                                    <strong>Payment ID: <%- paymentid %><br>
                                                                         <br>
                                                                         Billed&nbsp;To</strong><br>
                                                                     <%- billingname %>&nbsp;<br>
-                                                                    +91 <%- billingcontact %></p>
+                                                                    <%- billingcontact %><br><br>
+                                                                        <strong>Shipping Address</strong><br>
+                                                                    <%- shippingaddress %></p>
 
                                                             </td>
                                                         </tr>

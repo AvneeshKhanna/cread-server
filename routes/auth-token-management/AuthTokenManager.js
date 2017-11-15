@@ -57,7 +57,7 @@ function validateToken(token) {
 
 var tokenValidation = function(uuid, auth_key, callback){
 
-    var authQuery = 'SELECT UUID, firstname, lastname FROM User WHERE uuid = ? AND authkey = ?';
+    var authQuery = 'SELECT UUID, firstname, lastname, phone, email FROM User WHERE uuid = ? AND authkey = ?';
     _connection.query(authQuery, [uuid, auth_key], function(error, row){
         
         console.log('Row in authtokenValidation.tokenValidation is ' + JSON.stringify(row, null, 3));

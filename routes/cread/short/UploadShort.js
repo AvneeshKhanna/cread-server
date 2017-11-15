@@ -53,7 +53,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
 
     var entityparams = {
         entityid: entityid,
-        merchantable: Number(request.body.merchantable)
+        merchantable: (Number(request.body.merchantable) ===1)
     };
 
     var connection;

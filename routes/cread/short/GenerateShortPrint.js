@@ -65,8 +65,8 @@ router.post('/', function (request, response) {
                     var img = new Image;
                     img.src = image;
 
-                    return canvasGenerate(scaleFactor * capture.size.width,
-                        scaleFactor * capture.size.height,
+                    return canvasGenerate(capture.size.width,
+                        capture.size.height,
                         img,
                         short.txt,
                         scaleFactor * short.dx,
@@ -119,15 +119,20 @@ function canvasGenerate(width, height, captureimg, shorttxt, x, y, fontSize, tex
 
             console.log("dx and dy are " + JSON.stringify(x + " " + y, null, 3));
 
-            var font = Font('./public/fonts/oswald/Oswald-Bold.ttf', {family: 'Oswald'});
+            var font = Font('./public/fonts/ubuntu/Ubuntu-Medium.ttf', {family: 'Ubuntu'});
+            // var font = Font('./public/fonts/barlow/Barlow-Medium.ttf', {family: 'Barlow'});
 
             var canvas = new Canvas.createCanvas(width, height),
                 ctx = canvas.getContext('2d');
 
-            ctx.fillStyle = '#' + textcolor.slice(2, textcolor.length);
+            var txtcolor = '#' + textcolor.slice(2, textcolor.length);
+
+            console.log("textcolor is " + JSON.stringify(txtcolor, null, 3));
+
+            ctx.fillStyle = txtcolor;
             ctx.drawImage(captureimg, 0, 0, width, height);
 
-            ctx.font = fontSize + 'px "Oswald"';
+            ctx.font = fontSize + 'px "Ubuntu"';/*Ubuntu  Barlow*/
             ctx.fillText(shorttxt, x, y);
 
             /*var font = opentype.loadSync('./public/fonts/helvetica-neue/HelveticaNeueMedium.ttf');
@@ -136,8 +141,12 @@ function canvasGenerate(width, height, captureimg, shorttxt, x, y, fontSize, tex
             var out = fs.createWriteStream(rootdownloadpath + 'gm.jpg')
                 , stream = canvas.jpegStream();
 
-            stream.pipe(out);
-            resolve();
+            stream
+                .pipe(out)
+                .on('close', function () {
+                    this.end();
+                    resolve();
+                });
         }
         catch (err){
             reject(err);

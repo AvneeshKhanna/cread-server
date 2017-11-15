@@ -114,8 +114,8 @@ app.use('/internalrefer', internalReferral);
 // app.use('/jobnotification', notification);
 app.use('/bulk-notification', notification);
 app.use('/notification-panel', require('./routes/cread/dsbrd/notification-manager/NotificationPanelDataLoader'));
-app.use('/dataAnalytics', pieCharts);
-app.use('/countGraph', countGraph);
+// app.use('/dataAnalytics', pieCharts);
+// app.use('/countGraph', countGraph);
 app.use('/latest-updates', activityLogView);
 app.use('/generate-pictorial', require('./routes/pictorial/generatePictorial'));
 

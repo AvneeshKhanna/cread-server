@@ -110,9 +110,12 @@ router.post('/fb-friends-all', function (request, response) {
     var fbaccesstoken = request.body.fbaccesstoken;
 
     var connection;
+    var friendsuuids;
+    var requesterdetails;
 
     _auth.authValid(uuid, authkey)
-        .then(function () {
+        .then(function (details) {
+            requesterdetails = details;
             return new config.getNewConnection();
         }, function () {
             response.send({
@@ -125,7 +128,8 @@ router.post('/fb-friends-all', function (request, response) {
             connection = conn;
             return userprofileutils.loadAllFacebookFriends(connection, uuid, fbid, fbaccesstoken);
         })
-        .then(function (friendsuuids) {
+        .then(function (fuuids) {
+            friendsuuids = fuuids;
             console.log("friendsuuids " + JSON.stringify(friendsuuids, null, 3));
             if(friendsuuids.length !== 0){
                 return followutils.registerFollow(connection, true, uuid, friendsuuids);
@@ -140,7 +144,21 @@ router.post('/fb-friends-all', function (request, response) {
                 }
             });
             response.end();
-            throw new BreakPromiseChainError();
+        })
+        .then(function () {
+            if(friendsuuids.length > 0){
+                var notifData = {
+                    message: requesterdetails.firstname + " " +  requesterdetails.lastname + " has started following you on Cread",
+                    actorid: uuid,
+                    actorimage: utils.createSmallProfilePicUrl(uuid),
+                    category: "follow",
+                    persistable: "Yes"
+                };
+                return notify.notificationPromise(friendsuuids, notifData);
+            }
+            else{
+                throw new BreakPromiseChainError();     //To disconnect server connection
+            }
         })
         .catch(function (err) {
             config.disconnect(connection);

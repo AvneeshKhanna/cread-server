@@ -129,14 +129,13 @@ function structureProductDetails(products) {
                     'large'
                 ];
                 product.colors = [
-                    '#000000',
-                    '#FFFFFF',
-                    '#A2A2A2'
+                    'black',
+                    'white'
                 ];
                 product.price = [
-                    400,
-                    500,
-                    600
+                    399,
+                    399,
+                    399
                 ];
                 product.quantity = [
                     1,
@@ -149,19 +148,13 @@ function structureProductDetails(products) {
             }
             else if(product.type === 'POSTER'){
                 product.sizes = [
-                    'small',
-                    'medium',
-                    'large'
+                    '11 x 11 inches'
                 ];
                 product.colors = [
-                    '#000000',
-                    '#FFFFFF',
-                    '#A2A2A2'
+                    'white'
                 ];
                 product.price = [
-                    400,
-                    400,
-                    400
+                    199
                 ];
                 product.quantity = [
                     1,
@@ -174,19 +167,13 @@ function structureProductDetails(products) {
             }
             else if(product.type === 'FRAME'){
                 product.sizes = [
-                    'small',
-                    'medium',
-                    'large'
+                    '11 x 11 inches'
                 ];
                 product.colors = [
-                    '#000000',
-                    '#FFFFFF',
-                    '#A2A2A2'
+                    'black'
                 ];
                 product.price = [
-                    400,
-                    400,
-                    400
+                    299
                 ];
                 product.quantity = [
                     1,
@@ -199,19 +186,13 @@ function structureProductDetails(products) {
             }
             else{   //COFFEE_MUG
                 product.sizes = [
-                    'small',
-                    'medium',
-                    'large'
+                    'medium'
                 ];
                 product.colors = [
-                    '#000000',
-                    '#FFFFFF',
-                    '#A2A2A2'
+                    'white'
                 ];
                 product.price = [
-                    400,
-                    400,
-                    400
+                    199
                 ];
                 product.quantity = [
                     1,

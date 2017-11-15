@@ -16,6 +16,8 @@ var buyutils = require('./BuyUtils');
 var utils = require('../utils/Utils');
 var notify = require('../../notification-system/notificationFramework');
 
+var emailer = require('../dsbrd/wallet-management/TransactionEmailer');
+
 //TODO: Add code for transaction email
 router.post('/place', function (request, response) {
 
@@ -79,7 +81,7 @@ router.post('/place', function (request, response) {
             return buyutils.saveOrderDetails(connection, sqlparams);
         })
         .then(function () {
-            return buyutils.captureRazorpayPayment(connection, paymentid, buyutils.convertINRtoPaise(amount));
+            //return buyutils.captureRazorpayPayment(connection, paymentid, buyutils.convertINRtoPaise(amount)); //TODO: Uncomment
         })
         .then(function () {
             return utils.commitTransaction(connection);
@@ -93,7 +95,53 @@ router.post('/place', function (request, response) {
             });
             response.end();
         })
-        .then(function () {
+        .then(function () { //Sending order confirmation email
+            if(requesterdetails.email){
+                return new Promise(function (resolve, reject) {
+
+                    var paymentdetails = {
+                        paymentid: paymentid,
+                        amount: amount
+                    };
+                    var customerdetails = {
+                        name: requesterdetails.firstname,
+                        email: requesterdetails.email,
+                        billingname: billing_name,
+                        billingcontact: requesterdetails.phone,
+                        shippingaddress: shipmentdetails.ship_addr_1
+                        + ", "
+                        + shipmentdetails.ship_addr_2
+                        + ", "
+                        + shipmentdetails.ship_city
+                        + ", "
+                        + shipmentdetails.ship_state
+                        + ", "
+                        + shipmentdetails.ship_pincode
+                    };
+                    var productdetails = {
+                        product_name: productname,
+                        product_details: '(x' + qty + '), '
+                        + color
+                        + ', '
+                        + size
+                    };
+
+                    emailer.sendOrderTransactionEmail('SUCCESS',
+                        customerdetails,
+                        "Order confirmed for a " + productname + ": Cread",
+                        paymentdetails,
+                        productdetails, function (err, data) {
+                            if(err){
+                                reject(err);
+                            }
+                            else{
+                                resolve();
+                            }
+                        });
+                });
+            }
+        })
+        .then(function () { //Sending notification
             return retrieveEntityUserDetails(connection, entityid);
         })
         .then(function (entityuuid) {
@@ -119,9 +167,11 @@ router.post('/place', function (request, response) {
                 connection.rollback(function () {
                     config.disconnect(connection);
                     console.error(err);
-                    response.status(500).send({
-                        message: 'Some error occurred at the server'
-                    }).end();
+                    if(!response.headerSent){
+                        response.status(500).send({
+                            message: 'Some error occurred at the server'
+                        }).end();
+                    }
                 });
             }
         });

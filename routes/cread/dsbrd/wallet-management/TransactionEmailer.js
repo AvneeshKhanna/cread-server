@@ -112,6 +112,95 @@ function sendTransactionEmail(type, clientdetails, subject, paymentdetails, bill
 
 }
 
+function sendOrderTransactionEmail(type, customerdetails, subject, paymentdetails, productdetails, callback) {
+
+    var filename;
+
+    switch (type) {
+        case "SUCCESS":
+            filename = "success.ejs";
+            break;/*
+        case "FAIL":
+            filename = "fail.ejs";
+            break;
+        case "REFUND":
+            filename = "refund.ejs";
+            break;*/
+        default:
+            callback(new Error("Invalid argument \"type\""));
+            return;
+    }
+
+    var renderdata = {
+        name: customerdetails.name,
+        paymentid: paymentdetails.paymentid,
+        billingname: customerdetails.billingname,
+        billingcontact: customerdetails.billingcontact,
+        amount: paymentdetails.amount,
+        product_name: productdetails.product_name,
+        product_details: productdetails.product_details,
+        shippingaddress: customerdetails.shippingaddress
+    };
+
+    ejs.renderFile(projectpath + "/views/email/order-place/" + filename, renderdata, function (err, strhtml) {
+        if (err) {
+            callback(err, null);
+        }
+        else {
+
+            var params = {
+                Destination: {
+                    ToAddresses: [
+                        customerdetails.email
+                    ]
+                },
+                Message: {
+                    Body: {
+                        Html: {
+                            Charset: "UTF-8",
+                            Data: strhtml
+                        }/*,
+                         Text: {
+                         Charset: "UTF-8",
+                         Data: "This is the message body in text format."
+                         }*/
+                    },
+                    Subject: {
+                        Charset: "UTF-8",
+                        Data: subject
+                    }
+                },
+                Source: "Cread Support. <help@cread.in>"
+            };
+
+            setAWSConfigForSES(AWS);
+            var ses = new AWS.SES();
+
+            ses.sendEmail(params, function (err, data) {
+
+                resetAWSConfig(AWS);
+
+                if (err) {
+                    callback(err, null);
+                    //throw err;
+                }
+                else {
+                    console.log("Ordering email response " + JSON.stringify(data, null, 3));
+                    callback(null, data);
+                }
+
+                /*
+                 data = {
+                 MessageId: "EXAMPLE78603177f-7a5433e7-8edb-42ae-af10-f0181f34d6ee-000000"
+                 }
+                 */
+            });
+
+        }
+    });
+
+}
+
 /**
  * Resets the region and identity-pool-id for AWS to EU_WEST_1
  * */
@@ -134,6 +223,7 @@ function resetAWSConfig(AWS) {
 
 module.exports = {
     sendTransactionEmail: sendTransactionEmail,
+    sendOrderTransactionEmail: sendOrderTransactionEmail,
     setAWSConfigForSES: setAWSConfigForSES,
     resetAWSConfig: resetAWSConfig
 };

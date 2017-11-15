@@ -6,12 +6,9 @@ var dynamo_marshal = require('dynamodb-marshaler');    //package to convert plai
 var gcm = require('node-gcm');
 
 var config = require('../Config');
-var AWS = config.AWS;
 
 var envconfig = require('config');
 var userstbl_ddb = envconfig.get('dynamoDB.users_table');
-
-var docClient = new AWS.DynamoDB.DocumentClient();
 
 /**
  * Function to call the AWS SNS API to send push notifications to users using FCM Tokens
@@ -63,6 +60,9 @@ function getTokens(cities, callback) {
     }
 
     console.log(JSON.stringify(params, null, 3));
+
+    var AWS = config.AWS;
+    var docClient = new AWS.DynamoDB.DocumentClient();
 
     docClient.scan(params, function (error, data) {
         if (error) {

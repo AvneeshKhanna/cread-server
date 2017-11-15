@@ -28,8 +28,8 @@ var profilepicwidth = 108;
 var canvaswidth = 800,
     canvasheight = 450;
 
-/*var Canvas = require('canvas'),
-    Image = Canvas.Image;*/
+var Canvas = require('canvas'),
+    Image = Canvas.Image;
 
 /*var oswald_light = new Font('Oswald-Light', '../../public/fonts/oswald/Oswald-Light.ttf');
 var oswald_extra_light = new Font('Oswald-ExtraLight', '../../public/fonts/oswald/Oswald-Light.ttf');*/

@@ -559,6 +559,7 @@ router.post('/load-profile', function (request, response) {
             return userprofileutils.loadProfileInformation(connection, requesteduuid);
         })
         .then(function (result) {
+            console.log("result is " + JSON.stringify(result, null, 3));
             response.send({
                 tokenstatus: 'valid',
                 data: result
@@ -639,6 +640,22 @@ router.post('/update-profile', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var userdata = request.body.userdata;
+
+    if(!userdata.bio){
+        delete userdata.bio;
+    }
+    if(!userdata.watermark){
+        delete userdata.watermark;
+    }
+    if(!userdata.firstname){
+        delete userdata.firstname;
+    }
+    if(!userdata.lastname){
+        delete userdata.lastname;
+    }
+    if(!userdata.email){
+        delete userdata.email;
+    }
 
     var connection;
 
