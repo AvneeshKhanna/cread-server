@@ -3,18 +3,14 @@
  * */
 
 var dynamo_marshal = require('dynamodb-marshaler');    //package to convert plain JS/JSON objects to DynamoDB JSON
-var AWS = require('aws-sdk');
 var gcm = require('node-gcm');
 
-AWS.config.region = 'ap-northeast-1';
-AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-    IdentityPoolId: 'ap-northeast-1:863bdfec-de0f-4e9f-8749-cf7fd96ea2ff'
-});
+var config = require('../Config');
+var AWS = config.AWS;
 
 var envconfig = require('config');
 var userstbl_ddb = envconfig.get('dynamoDB.users_table');
 
-var config = require('../Config');
 var docClient = new AWS.DynamoDB.DocumentClient();
 
 /**
@@ -54,6 +50,8 @@ function getTokens(cities, callback) {
         AttributesToGet: ['Fcm_token']
     };
 
+    params.ScanFilter = {};
+
     if (cities !== undefined) {
 
         params.ScanFilter = {
@@ -67,15 +65,18 @@ function getTokens(cities, callback) {
     console.log(JSON.stringify(params, null, 3));
 
     docClient.scan(params, function (error, data) {
-        if (error) throw error;
-
-        console.log('Data from DynamoDB scan is ' + JSON.stringify(data, null, 3));
-        var fcmTokens = pushTokens(data.Items);
-        /*var fcmTokens = data.Items.reduce(
-            function (a, b) {
-                return a.concat(b);
-            }, []);*/
-        callback(fcmTokens);
+        if (error) {
+            throw error;
+        }
+        else{
+            console.log('Data from DynamoDB scan is ' + JSON.stringify(data, null, 3));
+            var fcmTokens = pushTokens(data.Items);
+            /*var fcmTokens = data.Items.reduce(
+                function (a, b) {
+                    return a.concat(b);
+                }, []);*/
+            callback(fcmTokens);
+        }
     });
 }
 

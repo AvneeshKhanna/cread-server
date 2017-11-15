@@ -7,9 +7,11 @@ var utils = require('../utils/Utils');
 
 function retrieveShortDetails(connection, entityid) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT * ' +
+        connection.query('SELECT Short.shoid, Short.uuid AS shortuuid, Short.capid, Short.entityid, Short.txt, Short.textsize, Short.textcolor, Short.textgravity, Short.dx, Short.dy, Short.txt_width, Short.txt_height, Short.img_height, Short.img_width, Capture.uuid AS captureuuid ' +
             'FROM Short ' +
-            'WHERE entityid = ?', [entityid], function (err, rows) {
+            'JOIN Capture ' +
+            'ON Short.capid = Capture.capid ' +
+            'WHERE Short.entityid = ?', [entityid], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -20,9 +22,13 @@ function retrieveShortDetails(connection, entityid) {
     });
 }
 
+function retrieveCaptureDetails() {
+
+}
+
 function loadEntityData(connection, uuid, entityid) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT Entity.entityid, Entity.type, Short.shoid, ' +
+        connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Short.shoid, ' +
             'Capture.capid AS captureid, COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
             'User.uuid, User.firstname, User.lastname ' +
             'FROM Entity ' +
@@ -62,6 +68,7 @@ function loadEntityData(connection, uuid, entityid) {
                             }
 
                             element.creatorname = element.firstname + ' ' + element.lastname;
+                            element.merchantable = (element.merchantable !== 0);
 
                             /*if(element.capid) {
                                 delete element.capid;
@@ -100,8 +107,7 @@ function deactivateEntity(connection, entityid, uuid) {
             'LEFT JOIN Capture ' +
             'USING(entityid) ' +
             'SET Entity.status = "DEACTIVE" ' +
-            'WHERE Entity.entityid = ? ' +
-            'AND (Capture.uuid = ? OR Short.uuid = ?)', [entityid, uuid], function (err, rows) {
+            'WHERE Entity.entityid = ? ', [entityid], function (err, rows) {
             if (err) {
                 reject(err);
             }

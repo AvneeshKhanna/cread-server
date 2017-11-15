@@ -14,11 +14,13 @@ var config = require('../../Config');
 
 var envconfig = require('config');
 var uuidGen = require('uuid');
+var request_client = require('request');
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var utils = require('../utils/Utils');
 var useraccessutils = require('./UserAccessUtils');
+var userprofileutils = require('./UserProfileUtils');
 
 router.post('/sign-in', function (request, response) {
 
@@ -35,7 +37,7 @@ router.post('/sign-in', function (request, response) {
             return useraccessutils.checkIfUserExists(connection, fbid);
         })
         .then(function (result) {
-            if(result){ //Case of existing user
+            if(result && fcmtoken){ //Case of existing user and non-null fcmtoken
                 return useraccessutils.addUserFcmToken(result.uuid, fcmtoken, result); //TODO: Fix the issue when the user needs to add a record in DynamoDB
             }
             else{   //Case of new user
@@ -110,8 +112,8 @@ router.post('/sign-up', function (request, response) {
             connection = conn;
             return useraccessutils.checkIfPhoneExists(connection, userdetails.phone);
         })
-        .then(function (phoneExists) {
-            if(phoneExists){
+        .then(function (result) {
+            if(result){
                 response.send({
                     data: {
                         status: 'phone-exists'
@@ -135,8 +137,12 @@ router.post('/sign-up', function (request, response) {
                 data: result
             });
             response.end();
-
-            throw new BreakPromiseChainError();
+        })
+        .then(function () {
+            return userprofileutils.copyFacebookProfilePic(userdetails.profilepicurl);
+        })
+        .then(function () {
+            throw new BreakPromiseChainError(); //To disconnect server connection
         })
         .catch(function (err) {
             config.disconnect(connection);
@@ -154,7 +160,7 @@ router.post('/sign-up', function (request, response) {
 
 function copyFacebookProfilePic(picture, uuid) {
     return new Promise(function (resolve, reject) {
-        
+
     })
 }
 
@@ -189,6 +195,8 @@ router.post('/sign-out', function (request, response) {
 router.post('/update-fcmtoken', function (request, response) {
     var uuid = request.body.uuid;
     var fcmtoken = request.body.fcmtoken;
+
+    console.log("request is " + JSON.stringify(request.body, null, 3));
 
     useraccessutils.addUserFcmToken(uuid, fcmtoken)
         .then(function () {

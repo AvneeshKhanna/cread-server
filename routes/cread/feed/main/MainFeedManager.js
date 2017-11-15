@@ -204,7 +204,8 @@ function loadFeed(connection, uuid, limit, page) {
             'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
             'JOIN Follow ' +
             'ON Follow.followee = User.uuid ' +
-            'WHERE Follow.follower = ? ', [uuid], function (err, data) {
+            'WHERE Follow.follower = ? ' +
+            'AND Entity.status = "ACTIVE" ', [uuid], function (err, data) {
 
             if(err){
                 reject(err);
@@ -215,7 +216,7 @@ function loadFeed(connection, uuid, limit, page) {
                 console.log("totalcount is " + JSON.stringify(totalcount, null, 3));
 
                 if(totalcount > 0){
-                    connection.query('SELECT Entity.entityid, Entity.type, Short.shoid, ' +
+                    connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Short.shoid, ' +
                         'Capture.capid AS captureid, COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
                         'User.uuid, User.firstname, User.lastname ' +
                         'FROM Entity ' +
@@ -232,6 +233,7 @@ function loadFeed(connection, uuid, limit, page) {
                         'LEFT JOIN Follow ' +
                         'ON Follow.followee = User.uuid ' +
                         'WHERE Follow.follower = ? ' +
+                        'AND Entity.status = "ACTIVE" ' +
                         'GROUP BY Entity.entityid ' +
                         'ORDER BY Entity.regdate DESC ' +
                         'LIMIT ? OFFSET ?', [uuid, limit, offset], function (err, rows) {
@@ -239,8 +241,6 @@ function loadFeed(connection, uuid, limit, page) {
                             reject(err);
                         }
                         else {
-
-                            console.log("rows from SELECT Entity.entityid ... query is " + JSON.stringify(rows, null, 3));
 
                             var feedEntities = rows.map(function (elem) {
                                 return elem.entityid;
@@ -275,6 +275,7 @@ function loadFeed(connection, uuid, limit, page) {
                                         // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
 
                                         element.creatorname = element.firstname + ' ' + element.lastname;
+                                        element.merchantable = (element.merchantable !== 0);
 
                                         /*if(element.capid) {
                                             delete element.capid;

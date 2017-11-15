@@ -225,7 +225,8 @@ function loadFeed(connection, uuid, limit, page){
             'LEFT JOIN Capture ' +
             'ON Capture.entityid = Entity.entityid ' +
             'JOIN User ' +
-            'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ', null, function (err, data) {
+            'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
+            'WHERE Entity.status = "ACTIVE" ', null, function (err, data) {
             if (err) {
                 reject(err);
             }
@@ -233,7 +234,7 @@ function loadFeed(connection, uuid, limit, page){
                 var totalcount = data[0].totalcount;
 
                 if(totalcount > 0){
-                    connection.query('SELECT Entity.entityid, Entity.type, User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, Short.shoid, ' +
+                    connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, Short.shoid, ' +
                         'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
                         'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
                         'FROM Entity ' +
@@ -249,6 +250,7 @@ function loadFeed(connection, uuid, limit, page){
                         'ON Comment.entityid = Entity.entityid ' +
                         'LEFT JOIN Follow ' +
                         'ON User.uuid = Follow.followee ' +
+                        'WHERE Entity.status = "ACTIVE" ' +
                         'GROUP BY Entity.entityid ' +
                         'ORDER BY Entity.regdate DESC ' +
                         'LIMIT ? ' +
@@ -288,6 +290,7 @@ function loadFeed(connection, uuid, limit, page){
                                         element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
                                         element.hatsoffstatus = thisEntityIndex !== -1;
                                         element.followstatus = element.binarycount > 0;
+                                        element.merchantable = (element.merchantable !== 0);
 
                                         if(element.binarycount){
                                             delete element.binarycount;

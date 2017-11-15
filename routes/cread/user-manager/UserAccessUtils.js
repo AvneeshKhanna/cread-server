@@ -17,11 +17,12 @@ var userstbl_ddb = envconfig.get('dynamoDB.users_table');
 
 function checkIfPhoneExists(connection, phone) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT phone FROM User WHERE phone = ?', [phone], function (err, rows) {
+        connection.query('SELECT firstname, lastname, phone FROM User WHERE phone = ?', [phone], function (err, rows) {
             if (err) {
                 reject(err);
             }
             else {
+                resolve(rows[0]);
                 if (rows[0]) {
                     resolve(true);
                 }
@@ -70,7 +71,7 @@ function registerUserData(connection, userdetails, fcmtoken) {
                             reject(err);
                         });
                     }
-                    else {
+                    else if(fcmtoken){
 
                         addUserToDynamoDB({
                             'UUID': uuid,
@@ -87,6 +88,12 @@ function registerUserData(connection, userdetails, fcmtoken) {
                                     authkey: authkey
                                 });
                             }
+                        });
+                    }
+                    else{
+                        resolve({
+                            uuid: uuid,
+                            authkey: authkey
                         });
                     }
                 });

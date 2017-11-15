@@ -146,7 +146,6 @@ function structureProductDetails(products) {
                     5
                 ];
                 product.deliverycharge = 80;
-                product.entityimgurl = 'https://s3-ap-northeast-1.amazonaws.com/testamentbucketdev/quote.jpg';
             }
             else if(product.type === 'POSTER'){
                 product.sizes = [
@@ -172,7 +171,6 @@ function structureProductDetails(products) {
                     5
                 ];
                 product.deliverycharge = 80;
-                product.entityimgurl = 'https://s3-ap-northeast-1.amazonaws.com/testamentbucketdev/quote.jpg';
             }
             else if(product.type === 'FRAME'){
                 product.sizes = [
@@ -198,7 +196,6 @@ function structureProductDetails(products) {
                     5
                 ];
                 product.deliverycharge = 80;
-                product.entityimgurl = 'https://s3-ap-northeast-1.amazonaws.com/testamentbucketdev/quote.jpg';
             }
             else{   //COFFEE_MUG
                 product.sizes = [
@@ -224,12 +221,9 @@ function structureProductDetails(products) {
                     5
                 ];
                 product.deliverycharge = 80;
-                product.entityimgurl = 'https://s3-ap-northeast-1.amazonaws.com/testamentbucketdev/quote.jpg';
             }
         });
-
         resolve(products);
-
     });
 }
 

@@ -33,72 +33,72 @@ var config = require('../Config');
     });
 });*/
 
-function getfcmTokens(userIds , callback){
+function getfcmTokens(userIds, callback) {
     var serveruuids = new Array();
     var serverfcmTokens = new Array();
-    
+
     var table = userstbl_ddb;
-    
+
     var params = {
-        TableName : table,
-        AttributesToGet : ['Fcm_token' , 'UUID']
+        TableName: table,
+        AttributesToGet: ['Fcm_token', 'UUID']
     };
-    
-    docClient.scan(params, function(err, data) {
+
+    docClient.scan(params, function (err, data) {
         if (err) throw err;
-        
-        for(var y in data.Items){
+
+        for (var y in data.Items) {
             serveruuids.push(data.Items[y].UUID);
             serverfcmTokens.push(data.Items[y].Fcm_token);
         }
-        
-        var mappingResult = usersMapping(userIds , serveruuids , serverfcmTokens);
+
+        var mappingResult = usersMapping(userIds, serveruuids, serverfcmTokens);
         console.log(mappingResult);
         callback(mappingResult);
-    }); 
+    });
 }
 
-function usersMapping(usersuuid , serveruuids , serverFcmtokens){
+function usersMapping(usersuuid, serveruuids, serverFcmtokens) {
     var fcmTokens = new Array();
-    
-    for(var i=0 ; i<usersuuid.length ; i++){
-        if(serveruuids.indexOf(usersuuid[i]) !== -1){
+
+    for (var i = 0; i < usersuuid.length; i++) {
+        if (serveruuids.indexOf(usersuuid[i]) !== -1) {
             var fcmIndex = serveruuids.indexOf(usersuuid[i]);
-            for(var j=0 ; j<serverFcmtokens[fcmIndex].length ; j++){
+            for (var j = 0; j < serverFcmtokens[fcmIndex].length; j++) {
                 fcmTokens.push(serverFcmtokens[fcmIndex][j]);
             }
         }
     }
-    
+
     return fcmTokens;
 }
 
-function sendNotification(users, notificationData, callback){
+function sendNotification(users, notificationData, callback) {
 
-    if(!(users instanceof Array)){
+    if (!(users instanceof Array)) {
         callback(new Error('Parameter "users" should be an array'));
         return;
     }
 
-    if(users.length === 0){
+    if (users.length === 0) {
         callback();
     }
-    else{
-        getfcmTokens(users , function(registrationTokens){
-           var message = new gcm.Message({
-                data : notificationData
+    else {
+        getfcmTokens(users, function (registrationTokens) {
+            var message = new gcm.Message({
+                data: notificationData
             });
 
             var sender = new gcm.Sender(config['fcm-server-key']);
 
-            sender.send(message, { registrationTokens : registrationTokens }, 3 , function (err, response) {
-                if(err){
+            sender.send(message, {registrationTokens: registrationTokens}, 3, function (err, response) {
+                if (err) {
                     callback(err);
                 }
 
                 console.log(response);
                 callback();
-            }); 
+            });
         });
     }
 }
@@ -106,10 +106,10 @@ function sendNotification(users, notificationData, callback){
 function notificationPromise(users, notificationData) {
     return new Promise(function (resolve, reject) {
         sendNotification(users, notificationData, function (err) {
-            if(err){
+            if (err) {
                 reject(err);
             }
-            else{
+            else {
                 resolve();
             }
         });

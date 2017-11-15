@@ -14,7 +14,7 @@ var _connection = appconfig.createConnection;
 
 router.get('/', function(request, response){
     
-    _connection.query('SELECT DISTINCT users.UUID, users.firstname, users.lastname, jobs.JUUID, jobs.title, jobs.RefAmount, apply.Application_status, apply.Refcode, apply.reg_date AS timestamp FROM users INNER JOIN apply ON apply.userid = users.UUID INNER JOIN jobs ON apply.jobid=jobs.JUUID ORDER BY apply.reg_date DESC LIMIT 75', null, function(err, appliedRows){
+    _connection.query(''/*'SELECT DISTINCT users.UUID, users.firstname, users.lastname, jobs.JUUID, jobs.title, jobs.RefAmount, apply.Application_status, apply.Refcode, apply.reg_date AS timestamp FROM users INNER JOIN apply ON apply.userid = users.UUID INNER JOIN jobs ON apply.jobid=jobs.JUUID ORDER BY apply.reg_date DESC LIMIT 75'*/, null, function(err, appliedRows){
         
         if (err){
             throw err;
@@ -25,8 +25,10 @@ router.get('/', function(request, response){
         
         var counter = 0;
         console.log('applicationsData before is ' + JSON.stringify(applicationsData));
-        
-        mapAppliedData(appliedRows, applicationsData, counter, response);
+
+        response.send().end();
+
+        // mapAppliedData(appliedRows, applicationsData, counter, response);
         
     });
     

@@ -37,8 +37,10 @@ router.post('/', upload.single('short-image'), function (request, response) {
     var shortsqlparams = {
         dx: request.body.dx,
         dy: request.body.dy,
-        width: request.body.width,
-        height: request.body.height,
+        txt_width: request.body.txt_width,
+        txt_height: request.body.txt_height,
+        img_width: request.body.img_width,
+        img_height: request.body.img_height,
         txt: request.body.text,
         textsize: request.body.textsize,
         textcolor: request.body.textcolor,
@@ -47,6 +49,11 @@ router.post('/', upload.single('short-image'), function (request, response) {
         uuid: uuid,
         entityid: entityid,
         shoid: shoid
+    };
+
+    var entityparams = {
+        entityid: entityid,
+        merchantable: Number(request.body.merchantable)
     };
 
     var connection;
@@ -65,7 +72,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return uploadToRDS(connection, shortsqlparams, entityid);
+            return uploadToRDS(connection, shortsqlparams, entityparams);
         })
         .then(function () {
             return userprofileutils.renameFile(filebasepath, short, shoid);
@@ -137,7 +144,7 @@ function retreiveCaptureUserDetails(connection, captureid) {
     })
 }
 
-function uploadToRDS(connection, shortsqlparams, entityid) {
+function uploadToRDS(connection, shortsqlparams, entityparams) {
     return new Promise(function (resolve, reject) {
         connection.beginTransaction(function (err) {
             if(err){
@@ -147,10 +154,7 @@ function uploadToRDS(connection, shortsqlparams, entityid) {
             }
             else{
 
-                var entityparams = {
-                    entityid: entityid,
-                    type: 'SHORT'
-                };
+                entityparams.type = 'SHORT';
 
                 connection.query('INSERT INTO Entity SET ?', [entityparams], function (err, edata) {
                     if (err) {

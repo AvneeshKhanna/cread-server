@@ -10,6 +10,7 @@ var envconfig = require('config');
 
 var fs = require('fs');
 var jimp = require('jimp');
+var uuidgen = require('uuid');
 
 var config = require('../../Config');
 var AWS = config.AWS;
@@ -26,9 +27,11 @@ function loadTimeline(connection, uuid, limit, page) {
             'USING(entityid) ' +
             'LEFT JOIN Short ' +
             'USING(entityid) ' +
-            'WHERE Capture.uuid = ? ' +
-            'OR Short.uuid = ? ' +
-            'GROUP BY Entity.entityid', [uuid, uuid], function(err, data){
+            'JOIN User ' +
+            'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
+            'WHERE User.uuid = ? ' +
+            'AND Entity.status = "ACTIVE" ' +
+            'GROUP BY Entity.entityid', [uuid], function(err, data){
             if(err){
                 reject(err);
             }
@@ -36,7 +39,7 @@ function loadTimeline(connection, uuid, limit, page) {
                 var totalcount = (data[0]) ? data[0].totalcount : 0;
 
                 if(totalcount > 0){
-                    connection.query('SELECT Entity.entityid, Entity.type, User.uuid, User.firstname, User.lastname, Short.shoid, Capture.capid AS captureid, ' +
+                    connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, User.uuid, User.firstname, User.lastname, Short.shoid, Capture.capid AS captureid, ' +
                         'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount ' +
                         'FROM Entity ' +
                         'LEFT JOIN Capture ' +
@@ -49,12 +52,12 @@ function loadTimeline(connection, uuid, limit, page) {
                         'ON HatsOff.entityid = Entity.entityid ' +
                         'LEFT JOIN Comment ' +
                         'ON Comment.entityid = Entity.entityid ' +
-                        'WHERE Capture.uuid = ? ' +
-                        'OR Short.uuid = ? ' +
+                        'WHERE User.uuid = ? ' +
+                        'AND Entity.status = "ACTIVE" ' +
                         'GROUP BY Entity.entityid ' +
                         'ORDER BY Entity.regdate DESC ' +
                         'LIMIT ? ' +
-                        'OFFSET ?', [uuid, uuid, limit, offset], function (err, rows) {
+                        'OFFSET ?', [uuid, limit, offset], function (err, rows) {
                         if (err) {
                             reject(err);
                         }
@@ -83,6 +86,7 @@ function loadTimeline(connection, uuid, limit, page) {
                                         element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
                                         element.creatorname = element.firstname + ' ' + element.lastname;
                                         element.hatsoffstatus = thisEntityIndex !== -1;
+                                        element.merchantable = (element.merchantable !== 0);
 
                                         if(element.type === 'CAPTURE'){
                                             element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
@@ -220,7 +224,8 @@ function loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl) {
 
                 var result = {};
 
-                if(friendsids.length === 0){
+                if(friendsids.length === 0){    //Case of no data
+                    result.nexturl = null;
                     result.requestmore = false;
                     result.friends = response.data;
                     resolve(result);
@@ -375,10 +380,29 @@ function uploadImageToS3(filepath, uuid, type, filename /* ,filekey*/) {
     });
 }
 
+/**
+ * Method to copy Facebook's profile picture to S3
+ * */
 function copyFacebookProfilePic(fbpicurl) {
+    var uuid = uuidgen.v4();
+    var downloadpath;
     return new Promise(function (resolve, reject) {
-
-    })
+        utils.downloadFile('./images/downloads/profilepic', uuid + '.jpg', fbpicurl)
+            .then(function (downldpath) {
+                downloadpath = downldpath;
+                console.log("downldpath is " + JSON.stringify(downldpath, null, 3));
+                return uploadImageToS3(downloadpath, uuid, 'Profile', 'display-pic.jpg');
+            })
+            .then(function () {
+                return uploadImageToS3(downloadpath, uuid, 'Profile', 'display-pic-small.jpg');
+            })
+            .then(function () {
+                resolve();
+            })
+            .catch(function (err) {
+                reject(err);
+            });
+    });
 }
 
 module.exports = {
@@ -389,5 +413,6 @@ module.exports = {
     updateProfile: updateProfile,
     renameFile: renameFile,
     createSmallImage: createSmallImage,
-    uploadImageToS3: uploadImageToS3
+    uploadImageToS3: uploadImageToS3,
+    copyFacebookProfilePic: copyFacebookProfilePic
 };

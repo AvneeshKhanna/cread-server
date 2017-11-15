@@ -706,8 +706,8 @@ router.post('/update-phone', function (request, response) {
             connection = conn;
             return useraccessutils.checkIfPhoneExists(connection, phone);
         })
-        .then(function (phoneExists) {
-            if(phoneExists){
+        .then(function (result) {
+            if(result){
                 response.send({
                     tokenstatus: 'valid',
                     data: {

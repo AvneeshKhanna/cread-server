@@ -30,6 +30,7 @@ router.post('/', upload.single('captured-image'), function (request, response) {
     var authkey = request.body.authkey;
     var watermark = request.body.watermark;
     var capture = request.file;
+    var merchantable = true//Number(request.body.merchantable);
 
     var captureid = uuidgen.v4();
 
@@ -47,7 +48,7 @@ router.post('/', upload.single('captured-image'), function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return updateCaptureDB(connection, captureid, uuid, watermark);
+            return updateCaptureDB(connection, captureid, uuid, watermark, merchantable);
         })
         .then(function () {
             return userprofileutils.renameFile(filebasepath, capture, captureid);
@@ -88,7 +89,7 @@ router.post('/', upload.single('captured-image'), function (request, response) {
         });
 });
 
-function updateCaptureDB(connection, captureid, uuid, watermark){
+function updateCaptureDB(connection, captureid, uuid, watermark, merchantable){
     return new Promise(function (resolve, reject) {
 
         connection.beginTransaction(function (err) {
@@ -101,7 +102,8 @@ function updateCaptureDB(connection, captureid, uuid, watermark){
 
                 var entityparams = {
                     entityid: uuidgen.v4(),
-                    type: 'CAPTURE'
+                    type: 'CAPTURE',
+                    merchantable: merchantable
                 };
 
                 connection.query('INSERT INTO Entity SET ?', [entityparams], function (err, data) {

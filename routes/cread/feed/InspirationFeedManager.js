@@ -70,6 +70,7 @@ function loadInspirationFeed(connection, limit, page) {
             'FROM Entity ' +
             'JOIN Capture ' +
             'USING(entityid) ' +
+            'WHERE Entity.status = "ACTIVE" ' +
             'ORDER BY Entity.regdate DESC', [], function (err, data) {
             if (err) {
                 reject(err);
@@ -79,12 +80,13 @@ function loadInspirationFeed(connection, limit, page) {
                 var totalcount = data[0].totalcount;
 
                 if(totalcount > 0){
-                    connection.query('SELECT Entity.entityid, Capture.capid AS captureid, Capture.uuid, User.firstname, User.lastname ' +
+                    connection.query('SELECT Entity.entityid, Entity.merchantable, Capture.capid AS captureid, Capture.uuid, User.firstname, User.lastname ' +
                         'FROM Entity ' +
                         'JOIN Capture ' +
                         'USING(entityid) ' +
                         'JOIN User ' +
                         'ON User.uuid = Capture.uuid ' +
+                        'WHERE Entity.status = "ACTIVE" ' +
                         'ORDER BY Entity.regdate DESC ' +
                         'LIMIT ? ' +
                         'OFFSET ?', [limit, offset], function(err, rows){
@@ -97,6 +99,7 @@ function loadInspirationFeed(connection, limit, page) {
                                 element.creatorname = element.firstname + ' ' + element.lastname;
                                 element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
                                 element.captureurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
+                                element.merchantable = (element.merchantable !== 0);
 
                                 if(element.firstname){
                                     delete element.firstname;

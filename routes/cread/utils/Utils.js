@@ -152,15 +152,15 @@ function beginTransaction(connection) {
     });
 }
 
-function downloadFile(filebasepath, filename){
+function downloadFile(filebasepath, filename, downloadurl){
     return new Promise(function (resolve, reject) {
-        request_client(uri)
+        request_client(downloadurl)
             .pipe(fs.createWriteStream(filebasepath + '/' + filename))
             .on('close', function () {
-                resolve();
+                resolve(filebasepath + '/' + filename);
             })
             .on('error', function (err) {
-                reject();
+                reject(err);
             });
     });
 }
