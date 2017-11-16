@@ -12,7 +12,6 @@ var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var buyutils = require('./BuyUtils');
 
-//TODO: Add image url for entityid in response
 router.post('/load', function (request, response) {
 
     console.log("request is " + JSON.stringify(request.body, null, 3));

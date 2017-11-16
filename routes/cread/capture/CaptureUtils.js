@@ -9,8 +9,8 @@ var imagesize = require('image-size');
 
 var utils = require('../utils/Utils');
 
-var Canvas = require('canvas'),
-    Image = Canvas.Image;
+/*var Canvas = require('canvas'),
+    Image = Canvas.Image;*/
 
 var gm = require('gm');
 var rootpath = './images/uploads/capture/';
@@ -45,24 +45,55 @@ function downloadCapture(uuid, captureid, tofilepath){
 function addWatermarkToCapture(captureimg, watermark, captureid) {
     return new Promise(function (resolve, reject) {
 
-        gm(captureimg)
+        var img_gm = gm(captureimg);
+
+        img_gm
             .size(function (err, size) {
                 if(err){
                     reject(err);
                 }
                 else{
-                    fs.readFile(captureimg, function(err, image){
+
+                    console.log("size " + JSON.stringify(size, null, 3));
+
+                    /*var img = new Image;
+                    img.src = image;*/
+
+                    var toresize = size.width > 800;
+
+                    if(watermark){
+                        var textsize = 0.025 * size.height;
+                        var leftpadding = 0.015 * size.height;
+                        var btmoffset = 0.0075 * size.height;
+
+                        img_gm
+                            .fill('#ffffff')
+                            .quality(100)
+                            .font('./public/fonts/helvetica-neue/HelveticaNeueMedium.ttf')
+                            .fontSize(textsize)
+                            .drawText(leftpadding, (size.height - textsize) + btmoffset, watermark)
+                            .write(rootpath + captureid + '.jpg', function (err) {
+                                if (err){
+                                    reject(err);
+                                }
+                                else{
+                                    resolve(toresize);
+                                }
+                            });
+                    }
+                    else{
+                        resolve(toresize);
+                    }
+
+                    /*fs.readFile(captureimg, function(err, image){
                         if (err) {
                             reject(err);
                         }
                         else{
 
-                            console.log("size " + JSON.stringify(size, null, 3));
 
-                            var img = new Image;
-                            img.src = image;
 
-                            Canvas.registerFont('./public/fonts/helvetica-neue/HelveticaNeueMedium.ttf', {family: 'Helvetica'});
+                            /!*Canvas.registerFont('./public/fonts/helvetica-neue/HelveticaNeueMedium.ttf', {family: 'Helvetica'});
 
                             var canvas = new Canvas.createCanvas(size.width, size.height),
                                 ctx = canvas.getContext('2d');
@@ -91,10 +122,10 @@ function addWatermarkToCapture(captureimg, watermark, captureid) {
                                 .on('close', function () {
                                     this.end();
                                     resolve(rootpath + captureid + '.jpg');
-                                });
+                                });*!/
 
                         }
-                    });
+                    });*/
 
                     /*resolve({
                         imagepath: image,

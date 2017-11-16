@@ -18,7 +18,6 @@ var notify = require('../../notification-system/notificationFramework');
 
 var emailer = require('../dsbrd/wallet-management/TransactionEmailer');
 
-//TODO: Add code for transaction email
 router.post('/place', function (request, response) {
 
     console.log("request is " + JSON.stringify(request.body, null, 3));

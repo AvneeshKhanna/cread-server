@@ -174,7 +174,7 @@ router.post('/load', function (request, response) {
     var authkey = request.body.authkey;
     var page = request.body.page;
 
-    var limit = 10; //TODO: Change to 15
+    var limit = 15;
     var connection;
 
     _auth.authValid(uuid, authkey)

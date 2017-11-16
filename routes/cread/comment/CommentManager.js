@@ -26,7 +26,7 @@ router.post('/load', function (request, response) {
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
 
-    var limit = 12; //TODO: Change to 20
+    var limit = 20;
     var connection;
 
     _auth.authValid(uuid, authkey)
@@ -98,7 +98,7 @@ router.post('/add', function (request, response) {
                     comment: {
                         commid: commid,
                         profilepicurl: utils.createSmallShortUrl(uuid),
-                        firstname: requesterdetails.firstname,   //TODO: Make dynamic
+                        firstname: requesterdetails.firstname,
                         lastname: requesterdetails.lastname
                     }
                 }

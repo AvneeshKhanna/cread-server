@@ -23,11 +23,11 @@ var captureutils = require('../capture/CaptureUtils');
 
 var rootdownloadpath = './images/downloads/';
 
-var Canvas = require('canvas'),
+/*var Canvas = require('canvas'),
     Image = Canvas.Image,
-    Font = Canvas.registerFont;
+    Font = Canvas.registerFont;*/
 
-var scaleFactor = 1.2;  //TODO: Remove default value
+var scaleFactor;
 
 var gm = require('gm');
 
@@ -57,7 +57,7 @@ router.post('/', function (request, response) {
 
             console.log("scaleFactor: " + JSON.stringify(scaleFactor, null, 3));
 
-            fs.readFile(capture.imagepath, function(err, image){
+            /*fs.readFile(capture.imagepath, function(err, image){
                 if (err) {
                     throw err;
                 }
@@ -72,28 +72,31 @@ router.post('/', function (request, response) {
                         scaleFactor * short.dx,
                         scaleFactor * short.dy,
                         scaleFactor * short.textsize,
-                        short.textcolor/*,
-                        short.textgravity*/);
+                        short.textcolor/!*,
+                        short.textgravity*!/);
                 }
-            });
-            /*gm(capture.imagepath)
-                // .region(scaleFactor * short.width, scaleFactor * short.height, scaleFactor * short.dx, scaleFactor * short.dy)
-                .fill('#' + short.textcolor.slice(2, short.textcolor.length))
-                // .gravity(short.textgravity)
-                .quality(100)
-                // .fill('#' + short.textcolor.slice(2, short.textcolor.length))  //To remove the alpha channel values
-                .font('./public/fonts/helvetica-neue/HelveticaNeueMedium.ttf')
-                .fontSize(scaleFactor * short.textsize)
-                // .setDraw('color', 0, 0, 'reset')
-                .drawText(scaleFactor * (short.dx), scaleFactor * (short.dy), short.txt, short.textgravity)
-                .write(rootdownloadpath + 'gm.jpg', function (err) {
-                    if (err){
-                        throw err;
-                    }
-                    else{
-                        response.send('done').end();
-                    }
-                });*/
+            });*/
+            return new Promise(function (resolve, reject) {
+                gm(capture.imagepath)
+                    // .region(scaleFactor * short.width, scaleFactor * short.height, scaleFactor * short.dx, scaleFactor * short.dy)
+                    .fill('#' + short.textcolor.slice(2, short.textcolor.length))
+                    // .gravity(short.textgravity)
+                    .quality(100)
+                    // .fill('#' + short.textcolor.slice(2, short.textcolor.length))  //To remove the alpha channel values
+                    .font('./public/fonts/ubuntu/Ubuntu-Medium.ttf')
+                    .fontSize(scaleFactor * short.textsize)
+                    // .setDraw('color', 0, 0, 'reset')
+                    .drawText(scaleFactor * (short.dx), scaleFactor * (short.img_height - short.dy), short.txt, short.textgravity)
+                    .write(rootdownloadpath + 'gm.jpg', function (err) {
+                        if (err){
+                            reject(err);
+                        }
+                        else{
+                            response.send('done').end();
+                            reject(new BreakPromiseChainError());
+                        }
+                    });
+            })
         })
         .then(function () {
             response.send('done').end();

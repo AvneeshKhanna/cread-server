@@ -166,8 +166,10 @@ function loadProfileInformation(connection, requesteduuid){
                     'USING(entityid) ' +
                     'LEFT JOIN Short ' +
                     'USING(entityid) ' +
-                    'WHERE Capture.uuid = ? ' +
-                    'OR Short.uuid = ?', [requesteduuid, requesteduuid], function(err, data){
+                    'JOIN User ' +
+                    'ON (Capture.uuid = User.uuid OR Short.uuid = User.uuid) ' +
+                    'WHERE User.uuid = ? ' +
+                    'AND Entity.status = "ACTIVE"', [requesteduuid], function(err, data){
                     if(err){
                         reject(err);
                     }
@@ -358,13 +360,13 @@ function createSmallImage(readingpath, writingbasepath, guid, height, width) {
     });
 }
 
-function uploadImageToS3(filepath, uuid, type, filename /* ,filekey*/) {
-    console.log("uploadImageToS3() called file.path " + filepath);
+function uploadImageToS3(sourcefilepath, uuid, type, destfilename /* ,filekey*/) {
+    console.log("uploadImageToS3() called file.path " + sourcefilepath);
     return new Promise(function (resolve, reject) {
         var params = {
-            Body: fs.createReadStream(filepath),
+            Body: fs.createReadStream(sourcefilepath),
             Bucket: s3bucket,
-            Key: "Users/" + uuid + "/" + type + "/" + filename,
+            Key: "Users/" + uuid + "/" + type + "/" + destfilename,
             ACL: "public-read"
         };
 

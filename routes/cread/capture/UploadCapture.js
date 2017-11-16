@@ -36,6 +36,7 @@ router.post('/', upload.single('captured-image'), function (request, response) {
     var captureid = uuidgen.v4();
 
     var connection;
+    var toresize;
 
     _auth.authValid(uuid, authkey)
         .then(function () {
@@ -55,18 +56,26 @@ router.post('/', upload.single('captured-image'), function (request, response) {
             return userprofileutils.renameFile(filebasepath, capture, captureid);
         })
         .then(function(){
-            if(watermark){
-                return captureutils.addWatermarkToCapture(filebasepath + captureid + '.jpg', watermark, captureid);
-            }
+            return captureutils.addWatermarkToCapture(filebasepath + captureid + '.jpg', watermark, captureid);
         })
-        .then(function () {
-            return userprofileutils.createSmallImage(filebasepath + captureid + '.jpg', filebasepath, captureid, 750, 750);
+        .then(function (resize) {
+            toresize = resize;
+            if(toresize){
+                return userprofileutils.createSmallImage(filebasepath + captureid + '.jpg', filebasepath, captureid, 750, 750);
+            }
         })
         .then(function () {
             return userprofileutils.uploadImageToS3(filebasepath + captureid + '.jpg', uuid, 'Capture', captureid + '.jpg');
         })
         .then(function () {
-            return userprofileutils.uploadImageToS3(filebasepath + captureid + '-small' + '.jpg', uuid, 'Capture', captureid + '-small' + '.jpg');
+            var filename;
+            if(toresize){
+                filename = captureid + '-small' + '.jpg';
+            }
+            else{
+                filename = captureid + '.jpg';
+            }
+            return userprofileutils.uploadImageToS3(filebasepath + filename, uuid, 'Capture', captureid + '-small' + '.jpg');
         })
         .then(function () {
             return utils.commitTransaction(connection);

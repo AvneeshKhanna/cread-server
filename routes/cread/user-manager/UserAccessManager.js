@@ -38,7 +38,7 @@ router.post('/sign-in', function (request, response) {
         })
         .then(function (result) {
             if(result && fcmtoken){ //Case of existing user and non-null fcmtoken
-                return useraccessutils.addUserFcmToken(result.uuid, fcmtoken, result); //TODO: Fix the issue when the user needs to add a record in DynamoDB
+                return useraccessutils.addUserFcmToken(result.uuid, fcmtoken, result);
             }
             else{   //Case of new user
                 return new Promise(function (resolve, reject) {

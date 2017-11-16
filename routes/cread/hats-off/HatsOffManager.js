@@ -121,7 +121,7 @@ router.post('/load', function (request, response) {
     var entityid = request.body.entityid;
     var page = request.body.page;
 
-    var limit = 13; //TODO: Change to 20
+    var limit = 20;
     var connection;
 
     _auth.authValid(uuid, authkey)

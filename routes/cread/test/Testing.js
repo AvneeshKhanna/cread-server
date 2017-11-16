@@ -11,6 +11,8 @@ var uuidGen = require('uuid');
 var async = require('async');
 var uuidgen = require('uuid');
 
+var gm = require('gm');
+
 //--------------
 
 var config = require('../../Config');
@@ -543,6 +545,29 @@ router.post('/sql-trans-commit', function (req, res) {
             });
 
         });
+
+});
+
+router.post('/gm-test', function (request, response) {
+
+    try{
+        gm('./images/downloads/gm.jpg')
+            .font('./public/fonts/ubuntu/Ubuntu-Medium.ttf')
+            .drawText(50, 50, 'This is a test')
+            .write('./images/downloads/gm1.jpg', function (err) {
+                if (err){
+                    console.error(err);
+                    response.send(err).end();
+                }
+                else{
+                    response.send('done').end();
+                }
+            });
+    }
+    catch(err){
+        console.error(err);
+        response.send(err).end();
+    }
 
 });
 
