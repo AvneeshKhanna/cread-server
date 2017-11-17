@@ -389,8 +389,7 @@ function uploadImageToS3(sourcefilepath, uuid, type, destfilename /* ,filekey*/)
 /**
  * Method to copy Facebook's profile picture to S3
  * */
-function copyFacebookProfilePic(fbpicurl) {
-    var uuid = uuidgen.v4();
+function copyFacebookProfilePic(fbpicurl, uuid) {
     var downloadpath;
     return new Promise(function (resolve, reject) {
         utils.downloadFile('./images/downloads/profilepic', uuid + '.jpg', fbpicurl)

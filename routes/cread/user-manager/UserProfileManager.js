@@ -650,9 +650,9 @@ router.post('/update-profile', function (request, response) {
     if(!userdata.firstname){
         delete userdata.firstname;
     }
-    if(!userdata.lastname){
+    /*if(!userdata.lastname){
         delete userdata.lastname;
-    }
+    }*/
     if(!userdata.email){
         delete userdata.email;
     }

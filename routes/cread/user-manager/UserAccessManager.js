@@ -132,14 +132,17 @@ router.post('/sign-up', function (request, response) {
         .then(function (result) {
 
             result.status = 'done';
-
             response.send({
                 data: result
             });
             response.end();
+
+            return new Promise(function (resolve, reject) {
+                resolve(result);
+            });
         })
-        .then(function () {
-            return userprofileutils.copyFacebookProfilePic(userdetails.profilepicurl);
+        .then(function (result) {
+            return userprofileutils.copyFacebookProfilePic(userdetails.profilepicurl, result.uuid);
         })
         .then(function () {
             throw new BreakPromiseChainError(); //To disconnect server connection
@@ -157,12 +160,6 @@ router.post('/sign-up', function (request, response) {
             }
         });
 });
-
-function copyFacebookProfilePic(picture, uuid) {
-    return new Promise(function (resolve, reject) {
-
-    })
-}
 
 router.post('/sign-out', function (request, response) {
 
