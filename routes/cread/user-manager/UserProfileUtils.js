@@ -149,14 +149,6 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid){
                     return (elem.follower === requesteduuid);
                 });
 
-                console.log("followers are " + JSON.stringify(followers.map(function (e) {
-                    return e.follower;
-                }), null, 3));
-
-                console.log("following are " + JSON.stringify(following.map(function (e) {
-                    return e.followee;
-                }), null, 3));
-
                 var followercount = followers.length;
                 var followingcount = following.length;
 

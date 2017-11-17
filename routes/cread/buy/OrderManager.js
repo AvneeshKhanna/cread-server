@@ -80,7 +80,7 @@ router.post('/place', function (request, response) {
             return buyutils.saveOrderDetails(connection, sqlparams);
         })
         .then(function () {
-            //return buyutils.captureRazorpayPayment(connection, paymentid, buyutils.convertINRtoPaise(amount)); //TODO: Uncomment
+            return buyutils.captureRazorpayPayment(connection, paymentid, buyutils.convertINRtoPaise(amount));
         })
         .then(function () {
             return utils.commitTransaction(connection);
