@@ -505,7 +505,7 @@ router.post('/load-timeline', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return userprofileutils.loadTimeline(connection, requesteduuid, limit, page);
+            return userprofileutils.loadTimeline(connection, requesteduuid, uuid, limit, page);
         })
         .then(function (result) {
             console.log("result is " + JSON.stringify(result, null, 3));
@@ -556,7 +556,7 @@ router.post('/load-profile', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return userprofileutils.loadProfileInformation(connection, requesteduuid);
+            return userprofileutils.loadProfileInformation(connection, requesteduuid, uuid);
         })
         .then(function (result) {
             console.log("result is " + JSON.stringify(result, null, 3));

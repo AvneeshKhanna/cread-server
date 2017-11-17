@@ -16,7 +16,7 @@ var config = require('../../Config');
 var AWS = config.AWS;
 var s3bucket = envconfig.get('s3.bucket');
 
-function loadTimeline(connection, uuid, limit, page) {
+function loadTimeline(connection, requesteduuid, requesteruuid, limit, page) {
 
     var offset = limit * page;
 
@@ -31,7 +31,7 @@ function loadTimeline(connection, uuid, limit, page) {
             'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
             'WHERE User.uuid = ? ' +
             'AND Entity.status = "ACTIVE" ' +
-            'GROUP BY Entity.entityid', [uuid], function(err, data){
+            'GROUP BY Entity.entityid', [requesteduuid], function(err, data){
             if(err){
                 reject(err);
             }
@@ -57,7 +57,7 @@ function loadTimeline(connection, uuid, limit, page) {
                         'GROUP BY Entity.entityid ' +
                         'ORDER BY Entity.regdate DESC ' +
                         'LIMIT ? ' +
-                        'OFFSET ?', [uuid, limit, offset], function (err, rows) {
+                        'OFFSET ?', [requesteduuid, limit, offset], function (err, rows) {
                         if (err) {
                             reject(err);
                         }
@@ -71,7 +71,7 @@ function loadTimeline(connection, uuid, limit, page) {
                                 'FROM HatsOff ' +
                                 'WHERE uuid = ? ' +
                                 'AND entityid IN (?) ' +
-                                'GROUP BY entityid', [uuid, feedEntities], function(err, hdata){
+                                'GROUP BY entityid', [requesteruuid, feedEntities], function(err, hdata){
 
                                 if(err){
                                     reject(err);
@@ -128,7 +128,7 @@ function loadTimeline(connection, uuid, limit, page) {
     });
 }
 
-function loadProfileInformation(connection, requesteduuid){
+function loadProfileInformation(connection, requesteduuid, requesteruuid){
     return new Promise(function (resolve, reject) {
         connection.query('SELECT User.uuid, User.firstname, User.lastname, User.bio, User.watermarkstatus, User.email, User.phone, Follow.followee, Follow.follower ' +
             'FROM User ' +
@@ -139,22 +139,34 @@ function loadProfileInformation(connection, requesteduuid){
                 reject(err)
             }
             else {
-                var followercount = rows.filter(function (elem) {
+                //People who follow the requesteduuid
+                var followers = rows.filter(function (elem) {
                     return (elem.followee === requesteduuid);
-                }).length;
+                });
 
+                //People who the requesteduuid follows
                 var following = rows.filter(function (elem) {
                     return (elem.follower === requesteduuid);
                 });
 
+                console.log("followers are " + JSON.stringify(followers.map(function (e) {
+                    return e.follower;
+                }), null, 3));
+
+                console.log("following are " + JSON.stringify(following.map(function (e) {
+                    return e.followee;
+                }), null, 3));
+
+                var followercount = followers.length;
                 var followingcount = following.length;
 
                 var userdata = rows[0];
 
                 userdata.profilepicurl = utils.createProfilePicUrl(userdata.uuid);
 
-                userdata.followstatus = (following.filter(function (elem) {
-                    return (elem.uuid === requesteduuid)
+                //Follow status of the requester w.r.t. the requested
+                userdata.followstatus = (followers.filter(function (elem) {
+                    return (elem.follower === requesteruuid)
                 }).length !== 0);
 
                 userdata.followercount = followercount;
