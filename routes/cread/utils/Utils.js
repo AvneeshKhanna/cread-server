@@ -116,22 +116,13 @@ function createShortUrl(uuid, shoid) {
 
 function commitTransaction(connection, resultfromprev) {
     return new Promise(function (resolve, reject) {
-        connection.beginTransaction(function (err) {
-            if (err) {
-                connection.rollback(function () {
-                    reject(err);
-                });
+        connection.commit(function (err) {
+            if(err){
+                reject(err);
             }
-            else {
-                connection.commit(function (err) {
-                    if(err){
-                        reject(err);
-                    }
-                    else{
-                        console.log('TRANSACTION committed successfully');
-                        resolve(resultfromprev);
-                    }
-                });
+            else{
+                console.log('TRANSACTION committed successfully');
+                resolve(resultfromprev);
             }
         });
     });

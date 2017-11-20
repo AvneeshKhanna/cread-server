@@ -8,6 +8,9 @@ var path = require('path');
 
 var projectpath = path.join(__dirname, '../../../../');
 
+var envconfig = require('config');
+var envtype = envconfig.get('type');
+
 var config = require('../../../Config');
 var AWS = config.AWS;
 /*
@@ -172,6 +175,12 @@ function sendOrderTransactionEmail(type, customerdetails, subject, paymentdetail
                 },
                 Source: "Cread Support. <help@cread.in>"
             };
+
+            if(envtype === 'PRODUCTION'){
+                params.Destination.BccAddresses = [
+                    'admin@thetestament.com'
+                ]
+            }
 
             setAWSConfigForSES(AWS);
             var ses = new AWS.SES();
