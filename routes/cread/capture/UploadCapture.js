@@ -22,6 +22,7 @@ var captureutils = require('./CaptureUtils');
 
 var filebasepath = './images/uploads/capture/';
 
+//TODO: Add code to upload short as well
 router.post('/', upload.single('captured-image'), function (request, response) {
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
@@ -29,6 +30,7 @@ router.post('/', upload.single('captured-image'), function (request, response) {
 
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
+    var shoid = request.body.shoid;
     var watermark = request.body.watermark;
     var capture = request.file;
     var merchantable = Number(request.body.merchantable);
@@ -104,7 +106,7 @@ router.post('/', upload.single('captured-image'), function (request, response) {
         });
 });
 
-function updateCaptureDB(connection, captureid, uuid, watermark, merchantable){
+function updateCaptureDB(connection, captureid, uuid, watermark, merchantable, shoid){
     return new Promise(function (resolve, reject) {
 
         connection.beginTransaction(function (err) {
@@ -136,6 +138,10 @@ function updateCaptureDB(connection, captureid, uuid, watermark, merchantable){
                             entityid: entityparams.entityid,
                             uuid: uuid
                         };
+
+                        if(shoid){
+                            captureparams.shoid = shoid;
+                        }
 
                         connection.query('INSERT INTO Capture SET ?', [captureparams], function (err, rows) {
                             if (err) {

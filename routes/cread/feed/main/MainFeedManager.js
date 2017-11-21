@@ -150,7 +150,7 @@ router.post('/load', function (request, response) {
 
     var limit = 10;
     var connection;
-    
+
     _auth.authValid(uuid, authkey)
         .then(function () {
             return config.getNewConnection();
@@ -217,7 +217,8 @@ function loadFeed(connection, uuid, limit, page) {
 
                 if(totalcount > 0){
                     connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Short.shoid, ' +
-                        'Capture.capid AS captureid, COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
+                        'Capture.capid AS captureid, ' + 'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
+                        'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
                         'User.uuid, User.firstname, User.lastname ' +
                         'FROM Entity ' +
                         'LEFT JOIN Short ' +
@@ -236,7 +237,7 @@ function loadFeed(connection, uuid, limit, page) {
                         'AND Entity.status = "ACTIVE" ' +
                         'GROUP BY Entity.entityid ' +
                         'ORDER BY Entity.regdate DESC ' +
-                        'LIMIT ? OFFSET ?', [uuid, limit, offset], function (err, rows) {
+                        'LIMIT ? OFFSET ?', [uuid, uuid, limit, offset], function (err, rows) {
                         if (err) {
                             reject(err);
                         }
@@ -246,7 +247,59 @@ function loadFeed(connection, uuid, limit, page) {
                                 return elem.entityid;
                             });
 
-                            connection.query('SELECT entityid, uuid ' +
+                            rows.map(function (element) {
+                                /*var thisEntityIndex = hdata.map(function (el) {
+                                    return el.entityid;
+                                }).indexOf(element.entityid);*/
+
+                                element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
+
+                                if(element.type === 'CAPTURE'){
+                                    element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
+                                }
+                                else{
+                                    element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
+                                }
+
+                                element.hatsoffstatus = element.hbinarycount === 1;
+                                // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
+
+                                element.creatorname = element.firstname + ' ' + element.lastname;
+                                element.merchantable = (element.merchantable !== 0);
+
+                                /*if(element.capid) {
+                                    delete element.capid;
+                                }*/
+
+                                if(element.shoid) {
+                                    delete element.shoid;
+                                }
+
+                                if(element.firstname) {
+                                    delete element.firstname;
+                                }
+
+                                if(element.lastname) {
+                                    delete element.lastname;
+                                }
+
+                                if(element.hasOwnProperty('hbinarycount')) {
+                                    delete element.hbinarycount;
+                                }
+
+                                if(element.hasOwnProperty('binarycount')) {
+                                    delete element.binarycount;
+                                }
+
+                                return element;
+                            });
+
+                            resolve({
+                                requestmore: totalcount > (offset + limit),
+                                feed: rows
+                            });
+
+                            /*connection.query('SELECT entityid, uuid ' +
                                 'FROM HatsOff ' +
                                 'WHERE uuid = ? ' +
                                 'AND entityid IN (?) ' +
@@ -277,9 +330,9 @@ function loadFeed(connection, uuid, limit, page) {
                                         element.creatorname = element.firstname + ' ' + element.lastname;
                                         element.merchantable = (element.merchantable !== 0);
 
-                                        /*if(element.capid) {
+                                        /!*if(element.capid) {
                                             delete element.capid;
-                                        }*/
+                                        }*!/
 
                                         if(element.shoid) {
                                             delete element.shoid;
@@ -302,7 +355,7 @@ function loadFeed(connection, uuid, limit, page) {
                                     });
                                 }
 
-                            });
+                            });*/
                         }
                     });
                 }

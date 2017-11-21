@@ -9,6 +9,8 @@ var router = express.Router();
 var config = require('../../../Config');
 var AWS = config.AWS;
 
+var moment = require('moment');
+
 var envconfig = require('config');
 
 var _auth = require('../../../auth-token-management/AuthTokenManager');
@@ -173,8 +175,9 @@ router.post('/load', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var page = request.body.page;
+    var lastindexkey = request.body.lastindexkey;
 
-    var limit = 15;
+    var limit = 5;  //TODO: Change to 15
     var connection;
 
     _auth.authValid(uuid, authkey)
@@ -189,7 +192,13 @@ router.post('/load', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return loadFeed(connection, uuid, limit, page);
+            if(page === 0 || page){
+                console.log("loadFeedLegacy called");
+                return loadFeedLegacy(connection, uuid, limit, page);
+            }
+            else{
+                return loadFeed(connection, uuid, limit, lastindexkey);
+            }
         })
         .then(function (result) {
             console.log("result is " + JSON.stringify(result, null, 3));
@@ -202,10 +211,10 @@ router.post('/load', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     message: 'Some error occurred at the server'
@@ -214,7 +223,10 @@ router.post('/load', function (request, response) {
         });
 });
 
-function loadFeed(connection, uuid, limit, page){
+/**
+ * Legacy code where OFFSET based pagination is active
+ * */
+function loadFeedLegacy(connection, uuid, limit, page) {
     var offset = limit * page;
 
     return new Promise(function (resolve, reject) {
@@ -236,7 +248,8 @@ function loadFeed(connection, uuid, limit, page){
                 if(totalcount > 0){
                     connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, Short.shoid, ' +
                         'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
-                        'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
+                        'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount, ' +
+                        'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount ' +
                         'FROM Entity ' +
                         'LEFT JOIN Short ' +
                         'ON Short.entityid = Entity.entityid ' +
@@ -254,17 +267,61 @@ function loadFeed(connection, uuid, limit, page){
                         'GROUP BY Entity.entityid ' +
                         'ORDER BY Entity.regdate DESC ' +
                         'LIMIT ? ' +
-                        'OFFSET ?', [uuid, limit, offset], function (err, rows) {
+                        'OFFSET ?', [uuid, uuid, limit, offset], function (err, rows) {
                         if(err){
                             reject(err);
                         }
                         else{
 
-                            var feedEntities = rows.map(function (elem) {
+                            /*var feedEntities = rows.map(function (elem) {
                                 return elem.entityid;
+                            });*/
+
+                            rows.map(function (element) {
+                                /*var thisEntityIndex = hdata.map(function (el) {
+                                    return el.entityid;
+                                }).indexOf(element.entityid);*/
+
+                                if(element.type === 'CAPTURE'){
+                                    element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
+                                }
+                                else{
+                                    element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
+                                }
+
+                                element.creatorname = element.firstname + ' ' + element.lastname;
+
+                                element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
+                                element.hatsoffstatus = element.hbinarycount > 0;
+                                element.followstatus = element.binarycount > 0;
+                                element.merchantable = (element.merchantable !== 0);
+
+                                if(element.hasOwnProperty('binarycount')){
+                                    delete element.binarycount;
+                                }
+
+                                if(element.hasOwnProperty('hbinarycount')){
+                                    delete element.hbinarycount;
+                                }
+
+                                if(element.firstname) {
+                                    delete element.firstname;
+                                }
+
+                                if(element.lastname) {
+                                    delete element.lastname;
+                                }
+                                // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
+
+                                return element;
                             });
 
-                            connection.query('SELECT entityid, uuid ' +
+                            resolve({
+                                requestmore: totalcount > (offset + limit),
+                                feed: rows
+                            });
+
+                            /*connection.query('SELECT entityid, uuid ' +
                                 'FROM HatsOff ' +
                                 'WHERE uuid = ? ' +
                                 'AND entityid IN (?) ' +
@@ -273,47 +330,8 @@ function loadFeed(connection, uuid, limit, page){
                                     reject(err);
                                 }
                                 else{
-                                    rows.map(function (element) {
-                                        var thisEntityIndex = hdata.map(function (el) {
-                                            return el.entityid;
-                                        }).indexOf(element.entityid);
-
-                                        if(element.type === 'CAPTURE'){
-                                            element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
-                                        }
-                                        else{
-                                            element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
-                                        }
-
-                                        element.creatorname = element.firstname + ' ' + element.lastname;
-
-                                        element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
-                                        element.hatsoffstatus = thisEntityIndex !== -1;
-                                        element.followstatus = element.binarycount > 0;
-                                        element.merchantable = (element.merchantable !== 0);
-
-                                        if(element.binarycount){
-                                            delete element.binarycount;
-                                        }
-
-                                        if(element.firstname) {
-                                            delete element.firstname;
-                                        }
-
-                                        if(element.lastname) {
-                                            delete element.lastname;
-                                        }
-                                        // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
-
-                                        return element;
-                                    });
-
-                                    resolve({
-                                        requestmore: totalcount > (offset + limit),
-                                        feed: rows
-                                    });
                                 }
-                            });
+                            });*/
                         }
                     });
                 }
@@ -326,6 +344,178 @@ function loadFeed(connection, uuid, limit, page){
 
             }
         });
+    });
+}
+
+function loadFeed(connection, uuid, limit, lastindexkey) {
+    return new Promise(function (resolve, reject) {
+
+        lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD hh:mm:ss');  //true ? value : current_timestamp
+
+        connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, Short.shoid, ' +
+            'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
+            'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
+            'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
+            'FROM Entity ' +
+            'LEFT JOIN Short ' +
+            'ON Short.entityid = Entity.entityid ' +
+            'LEFT JOIN Capture ' +
+            'ON Capture.entityid = Entity.entityid ' +
+            'JOIN User ' +
+            'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
+            'LEFT JOIN HatsOff ' +
+            'ON HatsOff.entityid = Entity.entityid ' +
+            'LEFT JOIN Comment ' +
+            'ON Comment.entityid = Entity.entityid ' +
+            'LEFT JOIN Follow ' +
+            'ON User.uuid = Follow.followee ' +
+            'WHERE Entity.status = "ACTIVE" ' +
+            'AND Entity.regdate < ? ' +
+            'GROUP BY Entity.entityid ' +
+            'ORDER BY Entity.regdate DESC ' +
+            'LIMIT ? '/* +
+            'OFFSET ?'*/, [uuid, uuid, lastindexkey, limit/*, offset*/], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+
+                if (rows.length > 0) {
+                    var feedEntities = rows.map(function (elem) {
+                        return elem.entityid;
+                    });
+
+                    rows.map(function (element) {
+                        /*var thisEntityIndex = hdata.map(function (el) {
+                            return el.entityid;
+                        }).indexOf(element.entityid);*/
+
+                        if (element.type === 'CAPTURE') {
+                            element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
+                        }
+                        else {
+                            element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
+                        }
+
+                        element.creatorname = element.firstname + ' ' + element.lastname;
+
+                        element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
+                        element.hatsoffstatus = element.hbinarycount === 1;
+                        element.followstatus = element.binarycount > 0;
+                        element.merchantable = (element.merchantable !== 0);
+
+                        if (element.hasOwnProperty('binarycount')) {
+                            delete element.binarycount;
+                        }
+
+                        if (element.hasOwnProperty('hbinarycount')) {
+                            delete element.hbinarycount;
+                        }
+
+                        if (element.firstname) {
+                            delete element.firstname;
+                        }
+
+                        if (element.lastname) {
+                            delete element.lastname;
+                        }
+
+                        return element;
+                    });
+
+                    resolve({
+                        requestmore: rows.length >= limit,//totalcount > (offset + limit),
+                        lastindexkey: moment(rows[rows.length - 1].regdate).format('YYYY-MM-DD hh:mm:ss'),
+                        feed: rows
+                    });
+                }
+                else {
+                    resolve({
+                        requestmore: rows.length >= limit,//totalcount > (offset + limit),
+                        feed: []
+                    });
+                }
+
+                /*connection.query('SELECT entityid, uuid ' +
+                    'FROM HatsOff ' +
+                    'WHERE uuid = ? ' +
+                    'AND entityid IN (?) ' +
+                    'GROUP BY entityid', [uuid, feedEntities], function(err, hdata){
+                    if(err){
+                        reject(err);
+                    }
+                    else{
+                        rows.map(function (element) {
+                            var thisEntityIndex = hdata.map(function (el) {
+                                return el.entityid;
+                            }).indexOf(element.entityid);
+
+                            if(element.type === 'CAPTURE'){
+                                element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
+                            }
+                            else{
+                                element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
+                            }
+
+                            element.creatorname = element.firstname + ' ' + element.lastname;
+
+                            element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
+                            element.hatsoffstatus = thisEntityIndex !== -1;
+                            element.followstatus = element.binarycount > 0;
+                            element.merchantable = (element.merchantable !== 0);
+
+                            if(element.binarycount){
+                                delete element.binarycount;
+                            }
+
+                            if(element.firstname) {
+                                delete element.firstname;
+                            }
+
+                            if(element.lastname) {
+                                delete element.lastname;
+                            }
+                            // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
+
+                            return element;
+                        });
+
+                        resolve({
+                            requestmore: totalcount > (offset + limit),
+                            feed: rows
+                        });
+                    }
+                });*/
+            }
+        });
+
+        /*connection.query('SELECT COUNT(*) AS totalcount ' +
+            'FROM Entity ' +
+            'LEFT JOIN Short ' +
+            'ON Short.entityid = Entity.entityid ' +
+            'LEFT JOIN Capture ' +
+            'ON Capture.entityid = Entity.entityid ' +
+            'JOIN User ' +
+            'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
+            'WHERE Entity.status = "ACTIVE" ', null, function (err, data) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                var totalcount = data[0].totalcount;
+
+                if(totalcount > 0){
+
+                }
+                else{
+                    resolve({
+                        requestmore: totalcount > (offset + limit),
+                        feed: []
+                    });
+                }
+
+            }
+        });*/
     });
 
 }
@@ -370,10 +560,10 @@ router.post('/campaign-shares', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
@@ -418,10 +608,10 @@ router.post('/top-campaign-shares', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
@@ -463,10 +653,10 @@ router.post('/campaign-hatsoffs', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
