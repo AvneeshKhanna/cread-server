@@ -143,6 +143,7 @@ app.use('/share-campaign-explore', require('./routes/cread/share/ShareCampaignEx
 app.use('/campaign-manage', require('./routes/cread/campaign/CampaignManager'));
 app.use('/follow', require('./routes/cread/follow/FollowManager'));
 app.use('/capture-upload', require('./routes/cread/capture/UploadCapture'));
+app.use('/manage-short', require('./routes/cread/short/ShortManager'));
 app.use('/short-upload', require('./routes/cread/short/UploadShort'));
 app.use('/short-generate-for-print', require('./routes/cread/short/GenerateShortPrint'));
 app.use('/capture-manage', require('./routes/cread/capture/CaptureManager'));

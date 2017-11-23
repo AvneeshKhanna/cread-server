@@ -12,6 +12,7 @@ var AWS = config.AWS;
 var moment = require('moment');
 
 var envconfig = require('config');
+var feedutils = require('../FeedUtils');
 
 var _auth = require('../../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
@@ -177,7 +178,7 @@ router.post('/load', function (request, response) {
     var page = request.body.page;
     var lastindexkey = request.body.lastindexkey;
 
-    var limit = 5;  //TODO: Change to 15
+    var limit = 10;  //TODO: Change to 15
     var connection;
 
     _auth.authValid(uuid, authkey)
@@ -350,9 +351,9 @@ function loadFeedLegacy(connection, uuid, limit, page) {
 function loadFeed(connection, uuid, limit, lastindexkey) {
     return new Promise(function (resolve, reject) {
 
-        lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD hh:mm:ss');  //true ? value : current_timestamp
+        lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
-        connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, Short.shoid, ' +
+        connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
             'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
@@ -423,13 +424,165 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                         return element;
                     });
 
-                    resolve({
-                        requestmore: rows.length >= limit,//totalcount > (offset + limit),
-                        lastindexkey: moment(rows[rows.length - 1].regdate).format('YYYY-MM-DD hh:mm:ss'),
-                        feed: rows
+                    //--Retrieve Collaboration Data--
+
+                    feedutils.getCollaborationData(connection, rows, feedEntities)
+                        .then(function (rows) {
+                            resolve({
+                                requestmore: rows.length >= limit,//totalcount > (offset + limit),
+                                lastindexkey: moment(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
+                                feed: rows
+                            });
+                        })
+                        .catch(function (err) {
+                            reject(err);
+                        });
+
+                    /*var shcaptureids = rows.filter(function (element) {
+                        return !!(element.shcaptureid);
+                    }).map(function (element) {
+                        return element.shcaptureid;
                     });
+
+                    console.log("shcaptureids are " + JSON.stringify(shcaptureids, null, 3));
+
+                    var cpshortids = rows.filter(function (element) {
+                        return !!(element.cpshortid);
+                    }).map(function (element) {
+                        return element.cpshortid;
+                    });
+
+                    console.log("cpshortids are " + JSON.stringify(cpshortids, null, 3));
+
+                    var collabdataquery;
+                    var collabsqlparams;
+                    var retrievecollabdata = true;
+
+                    if(cpshortids.length !== 0 && shcaptureids.length !== 0){
+                        collabdataquery = 'SELECT Entity.entityid, Short.shoid, Capture.capid, UserS.firstname AS sfirstname, ' +
+                            'UserS.lastname AS slastname, UserS.uuid AS suuid, UserC.firstname AS cfirstname, ' +
+                            'UserC.lastname AS clastname, UserC.uuid  AS cuuid ' +
+                            'FROM Entity ' +
+                            'LEFT JOIN Short ' +
+                            'ON Entity.entityid = Short.entityid ' +
+                            'LEFT JOIN Capture ' +
+                            'ON Entity.entityid = Capture.entityid ' +
+                            'LEFT JOIN User AS UserS ' +
+                            'ON Capture.uuid = UserS.uuid ' +
+                            'LEFT JOIN User AS UserC ' +
+                            'ON Short.uuid = UserC.uuid ' +
+                            'WHERE Entity.entityid IN (?) ' +
+                            'AND Capture.capid IN (?) ' +
+                            'OR Short.shoid IN (?)';
+                        collabsqlparams = [
+                            feedEntities,
+                            shcaptureids,
+                            cpshortids
+                        ];
+                    }
+                    else if(cpshortids.length === 0 && shcaptureids.length !== 0){
+                        collabdataquery = 'SELECT Entity.entityid, Short.shoid, Capture.capid, UserS.firstname AS sfirstname, ' +
+                            'UserS.lastname AS slastname, UserS.uuid AS suuid ' + //', UserC.firstname AS cfirstname, ' +
+                            // 'UserC.lastname AS clastname, UserC.uuid  AS cuuid ' +
+                            'FROM Entity ' +
+                            // 'LEFT JOIN Short ' +
+                            // 'ON Entity.entityid = Short.entityid ' +
+                            'LEFT JOIN Capture ' +
+                            'ON Entity.entityid = Capture.entityid ' +
+                            'LEFT JOIN User AS UserS ' +
+                            'ON Capture.uuid = UserS.uuid ' +
+                            /!*'LEFT JOIN User AS UserC ' +
+                            'ON Short.uuid = UserC.uuid ' +*!/
+                            'WHERE Entity.entityid IN (?) ' +
+                            'AND Capture.capid IN (?) '/!* +
+                            'OR Capture.shoid IN (?)'*!/;
+
+                        collabsqlparams = [
+                            feedEntities,
+                            shcaptureids/!*,
+                            cpshortids*!/
+                        ];
+                    }
+                    else if(cpshortids.length !== 0 && shcaptureids.length === 0){
+                        collabdataquery = 'SELECT Entity.entityid, Short.shoid, Capture.capid, UserC.firstname AS cfirstname, ' +
+                            'UserC.lastname AS clastname, UserC.uuid  AS cuuid ' +
+                            'FROM Entity ' +
+                            'LEFT JOIN Short ' +
+                            'ON Entity.entityid = Short.entityid ' +
+                            'LEFT JOIN User AS UserC ' +
+                            'ON Short.uuid = UserC.uuid ' +
+                            'WHERE Entity.entityid IN (?) ' +
+                            'AND Short.shoid IN (?)';
+                        collabsqlparams = [
+                            cpshortids
+                        ];
+                    }
+                    else{
+                        retrievecollabdata = false;
+                    }
+
+                    if(retrievecollabdata){
+                        //Retrieve collaboration data
+                        connection.query(collabdataquery, collabsqlparams, function(err, collab_rows){
+                            if(err){
+                                reject(err);
+                            }
+                            else{
+
+                                console.log("collab_rows are " + JSON.stringify(collab_rows, null, 3));
+
+                                collab_rows.forEach(function (collab) {
+
+                                    var row_element;
+
+                                    if(collab.shoid){   //Case where rows[i] is of type CAPTURE & collab_rows[i] is of type SHORT
+                                        row_element = rows[rows.map(function (e) {
+                                            if(!e.cpshortid){
+                                                e.cpshortid = null;
+                                            }
+                                            return e.cpshortid;
+                                        }).indexOf(collab.shoid)];
+
+                                        row_element.cpshort = {
+                                            firstname: collab.cfirstname,
+                                            lastname: collab.clastname,
+                                            uuid: collab.cuuid
+                                        }
+                                    }
+                                    else{   //Case where rows[i] is of type SHORT & collab_rows[i] is of type CAPTURE
+                                        row_element = rows[rows.map(function (e) {
+                                            if(!e.shcaptureid){
+                                                e.shcaptureid = null;
+                                            }
+                                            return e.shcaptureid;
+                                        }).indexOf(collab.capid)];
+
+                                        row_element.shcapture = {
+                                            firstname: collab.sfirstname,
+                                            lastname: collab.slastname,
+                                            uuid: collab.suuid
+                                        }
+                                    }
+                                });
+
+                                resolve({
+                                    requestmore: rows.length >= limit,//totalcount > (offset + limit),
+                                    lastindexkey: moment(rows[rows.length - 1].regdate).format('YYYY-MM-DD hh:mm:ss'),
+                                    feed: rows
+                                });
+                            }
+                        });
+                    }
+                    else{
+                        resolve({
+                            requestmore: rows.length >= limit,//totalcount > (offset + limit),
+                            lastindexkey: moment(rows[rows.length - 1].regdate).format('YYYY-MM-DD hh:mm:ss'),
+                            feed: rows
+                        });
+                    }*/
+
                 }
-                else {
+                else {  //Case of no data
                     resolve({
                         requestmore: rows.length >= limit,//totalcount > (offset + limit),
                         feed: []

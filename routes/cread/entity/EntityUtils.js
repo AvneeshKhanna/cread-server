@@ -26,10 +26,12 @@ function retrieveCaptureDetails() {
 
 }
 
-function loadEntityData(connection, uuid, entityid) {
+function loadEntityData(connection, requesteruuid, entityid) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Short.shoid, ' +
-            'Capture.capid AS captureid, COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
+        connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Short.shoid, Capture.capid AS captureid, ' +
+            'Capture.shoid AS cpshortid, Short.capid AS shcaptureid, ' +
+            'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
+            'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
             'User.uuid, User.firstname, User.lastname ' +
             'FROM Entity ' +
             'LEFT JOIN Short ' +
@@ -42,57 +44,50 @@ function loadEntityData(connection, uuid, entityid) {
             'ON Comment.entityid = Entity.entityid ' +
             'LEFT JOIN HatsOff ' +
             'ON HatsOff.entityid = Entity.entityid ' +
-            'WHERE Entity.entityid = ?', [entityid], function (err, row) {
+            'WHERE Entity.entityid = ?', [requesteruuid, entityid], function (err, row) {
             if (err) {
                 reject(err);
             }
             else {
-                connection.query('SELECT (CASE WHEN(hoid IS NOT NULL) THEN true ELSE false END) AS hatsoffstatus  ' +
-                    'FROM HatsOff ' +
-                    'WHERE uuid = ? ' +
-                    'AND entityid = ?', [uuid, entityid], function(err, hdata){
-                    if(err){
-                        reject(err);
+                row.map(function (element) {
+                    element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
+
+                    if(element.type === 'CAPTURE'){
+                        element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
                     }
                     else{
-                        row[0].hatsoffstatus = hdata[0] ? !!hdata[0].hatsoffstatus : false;
-
-                        row.map(function (element) {
-                            element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
-
-                            if(element.type === 'CAPTURE'){
-                                element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
-                            }
-                            else{
-                                element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
-                            }
-
-                            element.creatorname = element.firstname + ' ' + element.lastname;
-                            element.merchantable = (element.merchantable !== 0);
-
-                            /*if(element.capid) {
-                                delete element.capid;
-                            }*/
-
-                            if(element.shoid) {
-                                delete element.shoid;
-                            }
-
-                            if(element.firstname) {
-                                delete element.firstname;
-                            }
-
-                            if(element.lastname) {
-                                delete element.lastname;
-                            }
-
-                            return element;
-                        });
-
-                        resolve({
-                            entity: row[0]
-                        });
+                        element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
                     }
+
+                    element.creatorname = element.firstname + ' ' + element.lastname;
+                    element.hatsoffstatus = element.hbinarycount === 1;
+                    element.merchantable = (element.merchantable !== 0);
+
+                    /*if(element.capid) {
+                        delete element.capid;
+                    }*/
+
+                    if(element.shoid) {
+                        delete element.shoid;
+                    }
+
+                    if(element.firstname) {
+                        delete element.firstname;
+                    }
+
+                    if(element.lastname) {
+                        delete element.lastname;
+                    }
+
+                    if (element.hasOwnProperty('hbinarycount')) {
+                        delete element.hbinarycount;
+                    }
+
+                    return element;
+                });
+
+                resolve({
+                    entity: row[0]
                 });
             }
         });

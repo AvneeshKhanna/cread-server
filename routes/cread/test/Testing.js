@@ -571,18 +571,18 @@ router.post('/gm-test', function (request, response) {
 
 });
 
-router.post('/pagination', function (request, response) {
-
-    connection.query('SELECT * FROM users LIMIT ?', [4], function(err, rows, fields){
-        if(err){
-            throw err;
-        }
-        else{
-            response.send(fields);
-            response.end();
-        }
-    });
-
+router.post('/union-test', function (request, response) {
+    config.getNewConnection()
+        .then(function (connection) {
+            connection.query('SELECT capid FROM Capture UNION ALL SELECT shoid FROM Short', null, function (err, data) {
+                if(err){
+                    response.send(err).end();
+                }
+                else{
+                    response.send(data).end();
+                }
+            });
+        });
 });
 
 router.post('/upload-interests', function (request, response) {

@@ -10,6 +10,9 @@ var config = require('../../../Config');
 var connection = config.createConnection;
 var AWS = config.AWS;
 
+var moment = require('moment');
+var feedutils = require('../FeedUtils');
+
 var _auth = require('../../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 var consts = require('../../utils/Constants');
@@ -147,6 +150,7 @@ router.post('/load', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var page = request.body.page;
+    var lastindexkey = request.body.lastindexkey;
 
     var limit = 10;
     var connection;
@@ -163,7 +167,12 @@ router.post('/load', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return loadFeed(connection, uuid, limit, page);
+            if(page === 0 || page){
+                return loadFeedLegacy(connection, uuid, limit, page);
+            }
+            else{
+                return loadFeed(connection, uuid, limit, lastindexkey);
+            }
         })
         .then(function (result) {
             console.log("result in response is " + JSON.stringify(result, null, 3));
@@ -188,7 +197,180 @@ router.post('/load', function (request, response) {
         })
 });
 
-function loadFeed(connection, uuid, limit, page) {
+function loadFeed(connection, uuid, limit, lastindexkey) {
+    return new Promise(function (resolve, reject) {
+
+        lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
+
+        connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
+            'Capture.capid AS captureid, ' + 'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
+            'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
+            'User.uuid, User.firstname, User.lastname ' +
+            'FROM Entity ' +
+            'LEFT JOIN Short ' +
+            'ON Short.entityid = Entity.entityid ' +
+            'LEFT JOIN Capture ' +
+            'ON Capture.entityid = Entity.entityid ' +
+            'JOIN User ' +
+            'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
+            'LEFT JOIN Comment ' +
+            'ON Comment.entityid = Entity.entityid ' +
+            'LEFT JOIN HatsOff ' +
+            'ON HatsOff.entityid = Entity.entityid ' +
+            'LEFT JOIN Follow ' +
+            'ON Follow.followee = User.uuid ' +
+            'WHERE Follow.follower = ? ' +
+            'AND Entity.status = "ACTIVE" ' +
+            'AND Entity.regdate < ? ' +
+            'GROUP BY Entity.entityid ' +
+            'ORDER BY Entity.regdate DESC ' +
+            'LIMIT ? '/* +
+            'OFFSET ?'*/, [uuid, uuid, lastindexkey, limit/*, offset*/], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+
+                if(rows.length > 0){
+                    var feedEntities = rows.map(function (elem) {
+                        return elem.entityid;
+                    });
+
+                    rows.map(function (element) {
+                        /*var thisEntityIndex = hdata.map(function (el) {
+                            return el.entityid;
+                        }).indexOf(element.entityid);*/
+
+                        element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
+
+                        if(element.type === 'CAPTURE'){
+                            element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
+                        }
+                        else{
+                            element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
+                        }
+
+                        element.hatsoffstatus = element.hbinarycount === 1;
+                        // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
+
+                        element.creatorname = element.firstname + ' ' + element.lastname;
+                        element.merchantable = (element.merchantable !== 0);
+
+                        /*if(element.capid) {
+                            delete element.capid;
+                        }*/
+
+                        if(element.shoid) {
+                            delete element.shoid;
+                        }
+
+                        if(element.firstname) {
+                            delete element.firstname;
+                        }
+
+                        if(element.lastname) {
+                            delete element.lastname;
+                        }
+
+                        if(element.hasOwnProperty('hbinarycount')) {
+                            delete element.hbinarycount;
+                        }
+
+                        if(element.hasOwnProperty('binarycount')) {
+                            delete element.binarycount;
+                        }
+
+                        return element;
+                    });
+
+                    feedutils.getCollaborationData(connection, rows, feedEntities)
+                        .then(function (rows) {
+                            resolve({
+                                requestmore: rows.length >= limit,//totalcount > (offset + limit),
+                                lastindexkey: moment(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
+                                feed: rows
+                            });
+                        })
+                        .catch(function (err) {
+                            reject(err);
+                        });
+
+                    /*resolve({
+                        requestmore: rows.length >= limit,//totalcount > (offset + limit),
+                        lastindexkey: moment(rows[rows.length - 1].regdate).format('YYYY-MM-DD hh:mm:ss'),
+                        feed: rows
+                    });*/
+                }
+                else {  //Case of no data
+                    resolve({
+                        requestmore: rows.length >= limit,//totalcount > (offset + limit),
+                        feed: []
+                    });
+                }
+
+                /*connection.query('SELECT entityid, uuid ' +
+                    'FROM HatsOff ' +
+                    'WHERE uuid = ? ' +
+                    'AND entityid IN (?) ' +
+                    'GROUP BY entityid', [uuid, feedEntities], function (err, hdata) {
+
+                    if (err) {
+                        reject(err);
+                    }
+                    else {
+
+                        rows.map(function (element) {
+                            var thisEntityIndex = hdata.map(function (el) {
+                                return el.entityid;
+                            }).indexOf(element.entityid);
+
+                            element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
+
+                            if(element.type === 'CAPTURE'){
+                                element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
+                            }
+                            else{
+                                element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
+                            }
+
+                            element.hatsoffstatus = thisEntityIndex !== -1;
+                            // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
+
+                            element.creatorname = element.firstname + ' ' + element.lastname;
+                            element.merchantable = (element.merchantable !== 0);
+
+                            /!*if(element.capid) {
+                                delete element.capid;
+                            }*!/
+
+                            if(element.shoid) {
+                                delete element.shoid;
+                            }
+
+                            if(element.firstname) {
+                                delete element.firstname;
+                            }
+
+                            if(element.lastname) {
+                                delete element.lastname;
+                            }
+
+                            return element;
+                        });
+
+                        resolve({
+                            requestmore: totalcount > (offset + limit),
+                            feed: rows
+                        });
+                    }
+
+                });*/
+            }
+        });
+    });
+}
+
+function loadFeedLegacy(connection, uuid, limit, page) {
 
     var offset = page * limit;
 

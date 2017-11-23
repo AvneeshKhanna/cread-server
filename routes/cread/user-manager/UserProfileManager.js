@@ -485,6 +485,7 @@ router.post('/load-timeline', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var page = request.body.page;
+    var lastindexkey = request.body.lastindexkey;
     var requesteduuid = request.body.requesteduuid;
 
     console.log("request for '/load-timeline' is " + JSON.stringify(request.body, null, 3));
@@ -505,7 +506,12 @@ router.post('/load-timeline', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return userprofileutils.loadTimeline(connection, requesteduuid, uuid, limit, page);
+            if(page === 0 || page){
+                return userprofileutils.loadTimelineLegacy(connection, requesteduuid, uuid, limit, page);
+            }
+            else{
+                return userprofileutils.loadTimeline(connection, requesteduuid, uuid, limit, lastindexkey);
+            }
         })
         .then(function (result) {
             console.log("result is " + JSON.stringify(result, null, 3));

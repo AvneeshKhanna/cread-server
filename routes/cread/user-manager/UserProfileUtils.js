@@ -11,12 +11,15 @@ var envconfig = require('config');
 var fs = require('fs');
 var jimp = require('jimp');
 var uuidgen = require('uuid');
+var moment = require('moment');
 
 var config = require('../../Config');
 var AWS = config.AWS;
 var s3bucket = envconfig.get('s3.bucket');
 
-function loadTimeline(connection, requesteduuid, requesteruuid, limit, page) {
+var feedutils = require('../feed/FeedUtils');
+
+function loadTimelineLegacy(connection, requesteduuid, requesteruuid, limit, page) {
 
     var offset = limit * page;
 
@@ -125,6 +128,101 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, page) {
         });
 
 
+    });
+}
+
+function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindexkey) {
+
+    lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
+
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, User.uuid, ' +
+            'User.firstname, User.lastname, Short.shoid, Short.capid AS shcapture, Capture.shoid AS cpshort, ' +
+            'Capture.capid AS captureid, ' +
+            'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
+            'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount ' +
+            'FROM Entity ' +
+            'LEFT JOIN Capture ' +
+            'USING(entityid) ' +
+            'LEFT JOIN Short ' +
+            'USING(entityid) ' +
+            'JOIN User ' +
+            'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
+            'LEFT JOIN HatsOff ' +
+            'ON HatsOff.entityid = Entity.entityid ' +
+            'LEFT JOIN Comment ' +
+            'ON Comment.entityid = Entity.entityid ' +
+            'WHERE User.uuid = ? ' +
+            'AND Entity.status = "ACTIVE" ' +
+            'AND Entity.regdate < ? ' +
+            'GROUP BY Entity.entityid ' +
+            'ORDER BY Entity.regdate DESC ' +
+            'LIMIT ? '/* +
+            'OFFSET ?'*/, [requesteruuid, requesteduuid, lastindexkey, limit/*, offset*/], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+
+                var feedEntities = rows.map(function (elem) {
+                    return elem.entityid;
+                });
+
+                if(rows.length > 0){
+                    rows.map(function (element) {
+
+                        /*var thisEntityIndex = hdata.map(function (el) {
+                            return el.entityid;
+                        }).indexOf(element.entityid);*/
+
+                        element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
+                        element.creatorname = element.firstname + ' ' + element.lastname;
+                        element.hatsoffstatus = element.hbinarycount === 1;
+                        element.merchantable = (element.merchantable !== 0);
+
+                        if(element.type === 'CAPTURE'){
+                            element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
+                        }
+                        else{
+                            element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
+                        }
+
+                        if(element.firstname){
+                            delete element.firstname;
+                        }
+
+                        if(element.lastname){
+                            delete element.lastname;
+                        }
+
+                        if(element.hasOwnProperty('hbinarycount')) {
+                            delete element.hbinarycount;
+                        }
+
+                        return element;
+                    });
+
+                    feedutils.getCollaborationData(connection, rows, feedEntities)
+                        .then(function (rows) {
+                            resolve({
+                                requestmore: rows.length >= limit,//totalcount > (offset + limit),
+                                lastindexkey: moment(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
+                                items: rows
+                            });
+                        })
+                        .catch(function (err) {
+                            reject(err);
+                        });
+
+                }
+                else{   //Case of no data
+                    resolve({
+                        requestmore: rows.length >= limit,
+                        items: []
+                    });
+                }
+            }
+        });
     });
 }
 
@@ -411,6 +509,7 @@ function copyFacebookProfilePic(fbpicurl, uuid) {
 }
 
 module.exports = {
+    loadTimelineLegacy: loadTimelineLegacy,
     loadTimeline: loadTimeline,
     loadProfileInformation: loadProfileInformation,
     loadFacebookFriends: loadFacebookFriends,
