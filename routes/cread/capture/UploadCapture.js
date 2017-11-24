@@ -114,7 +114,8 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var watermark = request.body.watermark;
-    var capture = request.file;
+    var capture_img_high = request.files['capture-img-high'][0];
+    var capture_img_low = request.files['capture-img-low'][0];
     var merchantable = Number(request.body.merchantable);
 
     var dx = request.body.dx;
@@ -171,10 +172,10 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
             return updateCaptureDB(connection, captureid, uuid, watermark, merchantable, shoid, captureparamas)
         })
         .then(function () {
-            return profilepicutils.uploadImageToS3(filebasepath + captureid + '-high.jpg', uuid, 'Capture', captureid + '.jpg');    //TODO: Insert high res file & name
+            return profilepicutils.uploadImageToS3(filebasepath + capture_img_high.filename, uuid, 'Capture', captureid + '.jpg');    //TODO: Insert high res file & name
         })
         .then(function () {
-            return profilepicutils.uploadImageToS3(filebasepath + captureid + '-low.jpg', uuid, 'Capture', captureid + '-small.jpg');   //TODO: Insert low res file & name
+            return profilepicutils.uploadImageToS3(filebasepath + capture_img_low.filename, uuid, 'Capture', captureid + '-small.jpg');   //TODO: Insert low res file & name
         })
         .then(function () {
             return utils.commitTransaction(connection);
@@ -229,11 +230,9 @@ function updateCaptureDB(connection, captureid, uuid, watermark, merchantable, s
                     }
                     else {
 
-                        captureparams = {
-                            capid: captureid,
-                            entityid: entityparams.entityid,
-                            uuid: uuid
-                        };
+                        captureparams.capid = captureid;
+                        captureparams.entityid = entityparams.entityid;
+                        captureparams.uuid = uuid;
 
                         if (shoid) {
                             captureparams.shoid = shoid;

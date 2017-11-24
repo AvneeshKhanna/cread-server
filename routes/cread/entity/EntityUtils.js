@@ -5,6 +5,8 @@
 
 var utils = require('../utils/Utils');
 
+var moment = require('moment');
+
 function retrieveShortDetails(connection, entityid) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT Short.shoid, Short.uuid AS shortuuid, Short.capid, Short.entityid, Short.txt, Short.textsize, Short.textcolor, Short.textgravity, Short.dx, Short.dy, Short.txt_width, Short.txt_height, Short.img_height, Short.img_width, Capture.uuid AS captureuuid ' +
@@ -24,6 +26,92 @@ function retrieveShortDetails(connection, entityid) {
 
 function retrieveCaptureDetails() {
 
+}
+
+function loadCollabDetails(connection, entityid, entitytype, limit, lastindexkey) {
+
+    lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
+
+    var query;
+
+    if(entitytype === 'SHORT'){
+        query = 'SELECT User.firstname, User.lastname, User.uuid, Capture.capid, Capture.entityid, Capture.regdate ' +
+            'FROM Short ' +
+            'JOIN Capture ' +
+            'USING (shoid) ' +
+            'JOIN User ' +
+            'ON Capture.uuid = User.uuid ' +
+            'WHERE Short.entityid = ? ' +
+            'AND Capture.regdate < ? ' +
+            'ORDER BY Capture.regdate DESC ' +
+            'LIMIT ?'
+    }
+    else {
+        query = 'SELECT User.firstname, User.lastname, User.uuid, Short.shoid, Short.entityid, Short.regdate ' +
+            'FROM Capture ' +
+            'JOIN Short ' +
+            'USING (capid) ' +
+            'JOIN User ' +
+            'ON Short.uuid = User.uuid ' +
+            'WHERE Capture.entityid = ? ' +
+            'AND Short.regdate < ? ' +
+            'ORDER BY Short.regdate DESC ' +
+            'LIMIT ?'
+    }
+
+    return new Promise(function (resolve, reject) {
+        connection.query(query, [entityid, lastindexkey, limit], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+
+                rows.map(function (element) {
+                    element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
+                    element.name = element.firstname + ' ' + element.lastname;
+
+                    if(entitytype === 'SHORT'){
+                        element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.capid);
+                    }
+                    else{
+                        element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
+                    }
+
+                    /*if(element.capid){
+                        delete element.capid;
+                    }
+
+                    if(element.shoid){
+                        delete element.shoid;
+                    }*/
+
+                    if(element.firstname){
+                        delete element.firstname;
+                    }
+
+                    if(element.lastname){
+                        delete element.lastname;
+                    }
+
+                });
+
+                if(rows.length > 0){
+                    resolve({
+                        requestmore: rows.length >= limit,
+                        lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
+                        items: rows
+                    });
+                }
+                else{
+                    resolve({
+                        requestmore: rows.length >= limit,
+                        lastindexkey: null,
+                        items: rows
+                    });
+                }
+            }
+        });
+    });
 }
 
 function loadEntityData(connection, requesteruuid, entityid) {
@@ -116,5 +204,6 @@ function deactivateEntity(connection, entityid, uuid) {
 module.exports = {
     loadEntityData: loadEntityData,
     retrieveShortDetails: retrieveShortDetails,
+    loadCollabDetails: loadCollabDetails,
     deactivateEntity: deactivateEntity
 };

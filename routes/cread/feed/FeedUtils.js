@@ -136,27 +136,60 @@ function getCollaborationData(connection, rows) {
             });
         }
         else {
+            //Collaboration data not retrieved
+            console.log('collaboration data not retrieved');
             resolve(rows);
         }
     });
 }
 
-function getCollaborationCounts(connection){
+function getCollaborationCounts(connection, rows, feedEntities){
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT * ' +
+        connection.query('SELECT Entity.entityid, COUNT(DISTINCT SCap.capid) AS shortcollabcount, ' +
+            'COUNT(DISTINCT CShort.shoid) AS capturecollabcount ' +
             'FROM Entity ' +
+            'LEFT JOIN Short ' +
             'ON Entity.entityid = Short.entityid ' +
-            '', [], function (err, data) {
+            'LEFT JOIN Capture ' +
+            'ON Entity.entityid = Capture.entityid ' +
+            'LEFT JOIN Capture AS SCap ' +
+            'ON Short.shoid = SCap.shoid ' +
+            'LEFT JOIN Short AS CShort ' +
+            'ON Capture.capid = CShort.capid ' +
+            'WHERE Entity.entityid IN (?) ' +
+            'GROUP BY Entity.entityid', [feedEntities], function (err, items) {
             if(err){
                 reject(err);
             }
             else{
-                resolve();
+
+                if(items.length > 0){
+                    items.forEach(function (item) {
+
+                        var row_element = rows[rows.map(function (el) {
+                            return el.entityid;
+                        }).indexOf(item.entityid)];
+
+                        if(row_element.type === 'SHORT'){
+                            row_element.collabcount = item.shortcollabcount;
+                        }
+                        else{
+                            row_element.collabcount = item.capturecollabcount;
+                        }
+
+                    });
+
+                    resolve(rows);
+                }
+                else{
+                    resolve(rows);
+                }
             }
         });
     });
 }
 
 module.exports = {
-    getCollaborationData: getCollaborationData
+    getCollaborationData: getCollaborationData,
+    getCollaborationCounts: getCollaborationCounts
 };

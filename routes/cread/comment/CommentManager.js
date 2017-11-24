@@ -22,6 +22,7 @@ router.post('/load', function (request, response) {
     var authkey = request.body.authkey;
     var entityid = request.body.entityid;
     var page = request.body.page;
+    var lastindexkey = request.body.lastindexkey;
     var loadAll = request.body.loadall; //Whether to load all comments or top comments [true | false]
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
@@ -41,7 +42,12 @@ router.post('/load', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return commentutils.loadComments(connection, entityid, limit, page, loadAll);
+            if(page === 0 || page){
+                return commentutils.loadCommentsLegacy(connection, entityid, limit, page, loadAll);
+            }
+            else{
+                return commentutils.loadComments(connection, entityid, limit, lastindexkey, loadAll);
+            }
         })
         .then(function (result) {
             response.send({

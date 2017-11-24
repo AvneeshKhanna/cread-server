@@ -5,8 +5,9 @@
 
 var utils = require('../utils/Utils');
 var uuidGen = require('uuid');
+var moment = require('moment');
 
-function loadComments(connection, entityid, limit, page, loadAll) {
+function loadCommentsLegacy(connection, entityid, limit, page, loadAll) {
     var query = 'SELECT User.firstname, User.lastname, User.uuid, Comment.edited, Comment.commid, Comment.txt AS comment ' +
         'FROM User ' +
         'JOIN Comment ' +
@@ -63,6 +64,58 @@ function loadComments(connection, entityid, limit, page, loadAll) {
     });
 }
 
+function loadComments(connection, entityid, limit, lastindexkey, loadAll) {
+
+    if (!loadAll) {   //Case where only top comments are loaded
+        lastindexkey = moment().format('YYYY-MM-DD HH:mm:ss');
+        limit = 3;
+    }
+    else {   //Case where all comments are loaded
+        lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
+    }
+
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT User.firstname, User.lastname, User.uuid, Comment.edited, Comment.commid, ' +
+            'Comment.txt AS comment, Comment.regdate ' +
+            'FROM User ' +
+            'JOIN Comment ' +
+            'ON User.uuid = Comment.uuid ' +
+            'WHERE Comment.entityid = ? ' +
+            'AND Comment.regdate < ? ' +
+            'ORDER BY Comment.regdate ' +
+            'LIMIT ? '/* +
+            'OFFSET ?'*/, [entityid, lastindexkey, limit/*, offset*/], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+
+                rows.map(function (element) {
+                    element.profilepicurl = utils.createProfilePicUrl(element.uuid);
+                    element.edited = (element.edited === 1);
+                    return element;
+                });
+
+                var result = {};
+                result.comments = rows;
+
+                if (loadAll) {
+                    if(rows.length > 0){
+                        result.requestmore = rows.length >= limit;
+                        result.lastindexkey = moment(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss');
+                    }
+                    else{
+                        result.requestmore = rows.length >= limit;
+                        result.lastindexkey = null
+                    }
+                }
+
+                resolve(result);
+            }
+        });
+    });
+}
+
 function addComment(connection, entityid, comment, uuid) {
     return new Promise(function (resolve, reject) {
         var params = {
@@ -114,6 +167,7 @@ function deleteComment(connection, commid, uuid) {
 }
 
 module.exports = {
+    loadCommentsLegacy: loadCommentsLegacy,
     loadComments: loadComments,
     addComment: addComment,
     updateComment: updateComment,

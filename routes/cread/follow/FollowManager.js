@@ -181,6 +181,7 @@ router.post('/load-followers', function (request, response) {
     var requesteduuid = request.body.requesteduuid;
     var limit = 25;
     var page = request.body.page;
+    var lastindexkey = request.body.lastindexkey;
 
     var connection;
 
@@ -196,7 +197,12 @@ router.post('/load-followers', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return followutils.loadFollowers(connection, requesteduuid, limit, page);
+            if(page === 0 || page){
+                return followutils.loadFollowersLegacy(connection, requesteduuid, limit, page);
+            }
+            else{
+                return followutils.loadFollowers(connection, requesteduuid, limit, lastindexkey);
+            }
         })
         .then(function (result) {
             response.send({
@@ -228,6 +234,7 @@ router.post('/load-following', function (request, response) {
     var requesteduuid = request.body.requesteduuid;
     var limit = 25;
     var page = request.body.page;
+    var lastindexkey = request.body.lastindexkey;
 
     var connection;
 
@@ -243,7 +250,12 @@ router.post('/load-following', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return followutils.loadFollowing(connection, requesteduuid, limit, page);
+            if(page === 0 || page){
+                return followutils.loadFollowingLegacy(connection, requesteduuid, limit, page);
+            }
+            else{
+                return followutils.loadFollowing(connection, requesteduuid, limit, lastindexkey);
+            }
         })
         .then(function (result) {
             response.send({

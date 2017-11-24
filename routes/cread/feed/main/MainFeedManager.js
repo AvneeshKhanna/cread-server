@@ -152,7 +152,7 @@ router.post('/load', function (request, response) {
     var page = request.body.page;
     var lastindexkey = request.body.lastindexkey;
 
-    var limit = 10;
+    var limit = 3; //TODO: Change to 10
     var connection;
 
     _auth.authValid(uuid, authkey)
@@ -202,7 +202,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
 
         lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
-        connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
+        connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
             'Capture.capid AS captureid, ' + 'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'User.uuid, User.firstname, User.lastname ' +
@@ -286,14 +286,17 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                     feedutils.getCollaborationData(connection, rows)
                         .then(function (rows) {
 
-                            rows.map(function (e) {
+                            /*rows.map(function (e) {
                                 e.collabcount = 0;
                                 return e;
-                            });
+                            });*/
 
+                            return feedutils.getCollaborationCounts(connection, rows, feedEntities);
+                        })
+                        .then(function (rows) {
                             resolve({
                                 requestmore: rows.length >= limit,//totalcount > (offset + limit),
-                                lastindexkey: moment(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
+                                lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
                                 feed: rows
                             });
                         })
@@ -310,6 +313,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                 else {  //Case of no data
                     resolve({
                         requestmore: rows.length >= limit,//totalcount > (offset + limit),
+                        lastindexkey: null,
                         feed: []
                     });
                 }

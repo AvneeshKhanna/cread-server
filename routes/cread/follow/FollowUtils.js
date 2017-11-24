@@ -9,6 +9,7 @@
 'use-strict';
 
 var uuidgen = require('uuid');
+var moment = require('moment');
 
 var config = require('../../Config');
 var utils = require('../utils/Utils');
@@ -57,7 +58,7 @@ function structureDataForBatchFollowing(follower, followees) {
     return new Array(master);
 }
 
-function loadFollowers(connection, requesteduuid, limit, page) {
+function loadFollowersLegacy(connection, requesteduuid, limit, page) {
 
     var offset = page * limit;
 
@@ -99,7 +100,49 @@ function loadFollowers(connection, requesteduuid, limit, page) {
     });
 }
 
-function loadFollowing(connection, requesteduuid, limit, page) {
+function loadFollowers(connection, requesteduuid, limit, lastindexkey) {
+
+    lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
+
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT Follow.regdate, User.firstname, User.lastname, User.uuid ' +
+            'FROM Follow ' +
+            'JOIN User ' +
+            'ON Follow.follower = User.uuid ' +
+            'WHERE Follow.followee = ? ' +
+            'AND Follow.regdate < ? ' +
+            'ORDER BY Follow.regdate DESC ' +
+            'LIMIT ? '/* +
+                    'OFFSET ? '*/, [requesteduuid, lastindexkey, limit/*, offset*/], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                rows.map(function (elem) {
+                    elem.profilepicurl = utils.createProfilePicUrl(elem.uuid);
+                    return elem;
+                });
+
+                if(rows.length > 0){
+                    resolve({
+                        requestmore: rows.length >= limit,
+                        lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
+                        users: rows
+                    });
+                }
+                else{
+                    resolve({
+                        requestmore: rows.length >= limit,
+                        lastindexkey: null,
+                        users: rows
+                    });
+                }
+            }
+        });
+    });
+}
+
+function loadFollowingLegacy(connection, requesteduuid, limit, page) {
 
     var offset = page * limit;
 
@@ -141,8 +184,51 @@ function loadFollowing(connection, requesteduuid, limit, page) {
     });
 }
 
+function loadFollowing(connection, requesteduuid, limit, page) {
+
+    var offset = page * limit;
+
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT User.firstname, User.lastname, User.uuid ' +
+            'FROM Follow ' +
+            'JOIN User ' +
+            'ON Follow.followee = User.uuid ' +
+            'WHERE Follow.follower = ? ' +
+            'ORDER BY Follow.regdate DESC ' +
+            'LIMIT ? ' +
+            'OFFSET ? ', [requesteduuid, limit, offset], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                rows.map(function (elem) {
+                    elem.profilepicurl = utils.createProfilePicUrl(elem.uuid);
+                    return elem;
+                });
+
+                if(rows.length > 0){
+                    resolve({
+                        requestmore: rows.length >= limit,
+                        lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
+                        users: rows
+                    });
+                }
+                else{
+                    resolve({
+                        requestmore: rows.length >= limit,
+                        lastindexkey: null,
+                        users: rows
+                    });
+                }
+            }
+        });
+    });
+}
+
 module.exports = {
     registerFollow: registerFollow,
+    loadFollowersLegacy: loadFollowersLegacy,
     loadFollowers: loadFollowers,
+    loadFollowingLegacy: loadFollowingLegacy,
     loadFollowing: loadFollowing
 };

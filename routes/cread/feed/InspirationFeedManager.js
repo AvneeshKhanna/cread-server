@@ -8,6 +8,7 @@ var router = express.Router();
 
 var config = require('../../Config');
 var AWS = config.AWS;
+var moment = require('moment')
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
@@ -19,6 +20,7 @@ router.post('/load', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var page = request.body.page;
+    var lastindexkey = request.body.lastindexkey;
 
     var limit = 15;
 
@@ -36,7 +38,12 @@ router.post('/load', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return loadInspirationFeed(connection, limit, page);
+            if(page === 0 || page){
+                return loadInspirationFeedLegacy(connection, limit, page);
+            }
+            else{
+                return loadInspirationFeed(connection, limit, lastindexkey);
+            }
         })
         .then(function (result) {
             console.log("result is " + JSON.stringify(result, null, 3));
@@ -61,7 +68,7 @@ router.post('/load', function (request, response) {
         });
 });
 
-function loadInspirationFeed(connection, limit, page) {
+function loadInspirationFeedLegacy(connection, limit, page) {
 
     var offset = limit * page;
 
@@ -122,6 +129,62 @@ function loadInspirationFeed(connection, limit, page) {
                 else{
                     resolve({
                         requestmore: totalcount > (limit + offset),
+                        items: []
+                    });
+                }
+            }
+        });
+    });
+}
+
+function loadInspirationFeed(connection, limit, lastindexkey) {
+
+    lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
+
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT Entity.entityid, Entity.regdate, Entity.merchantable, Capture.capid AS captureid, Capture.uuid, User.firstname, User.lastname ' +
+            'FROM Entity ' +
+            'JOIN Capture ' +
+            'USING(entityid) ' +
+            'JOIN User ' +
+            'ON User.uuid = Capture.uuid ' +
+            'WHERE Entity.status = "ACTIVE" ' +
+            'AND Entity.regdate < ? ' +
+            'ORDER BY Entity.regdate DESC ' +
+            'LIMIT ? '/* +
+            'OFFSET ?'*/, [lastindexkey, limit/*, offset*/], function(err, rows){
+            if(err){
+                reject(err);
+            }
+            else{
+                if(rows.length > 0){
+                    rows.map(function (element) {
+                        element.creatorname = element.firstname + ' ' + element.lastname;
+                        element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
+                        element.captureurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
+                        element.merchantable = (element.merchantable !== 0);
+
+                        if(element.firstname){
+                            delete element.firstname;
+                        }
+
+                        if(element.lastname){
+                            delete element.lastname;
+                        }
+
+                        return element;
+                    });
+
+                    resolve({
+                        requestmore: rows.length >= limit,
+                        lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
+                        items: rows
+                    });
+                }
+                else{
+                    resolve({
+                        requestmore: rows.length >= limit,
+                        lastindexkey: null,
                         items: []
                     });
                 }

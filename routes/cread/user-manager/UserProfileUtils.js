@@ -133,11 +133,11 @@ function loadTimelineLegacy(connection, requesteduuid, requesteruuid, limit, pag
 
 function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindexkey) {
 
-    lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
+    lastindexkey = (lastindexkey) ? lastindexkey : moment.format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, User.uuid, ' +
-            'User.firstname, User.lastname, Short.shoid, Short.capid AS shcapture, Capture.shoid AS cpshort, ' +
+        connection.query('SELECT Entity.entityid, Entity.regdate, Entity.merchantable, Entity.type, User.uuid, ' +
+            'User.firstname, User.lastname, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
             'Capture.capid AS captureid, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount ' +
@@ -205,14 +205,18 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
                     feedutils.getCollaborationData(connection, rows)
                         .then(function (rows) {
 
-                            rows.map(function (e) {
+                            /*rows.map(function (e) {
                                 e.collabcount = 0;
                                 return e;
-                            });
+                            });*/
 
+                            return feedutils.getCollaborationCounts(connection, rows, feedEntities);
+                        })
+                        .then(function (rows) {
+                            console.log("rows after getCollabCounts is " + JSON.stringify(rows, null, 3));
                             resolve({
                                 requestmore: rows.length >= limit,//totalcount > (offset + limit),
-                                lastindexkey: moment(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
+                                lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
                                 items: rows
                             });
                         })
@@ -224,6 +228,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
                 else{   //Case of no data
                     resolve({
                         requestmore: rows.length >= limit,
+                        lastindexkey: null,
                         items: []
                     });
                 }

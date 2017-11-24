@@ -120,6 +120,7 @@ router.post('/load', function (request, response) {
     var authkey = request.body.authkey;
     var entityid = request.body.entityid;
     var page = request.body.page;
+    var lastindexkey = request.body.lastindexkey;
 
     var limit = 20;
     var connection;
@@ -130,10 +131,15 @@ router.post('/load', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return hatsoffutils.loadHatsOffs(connection, entityid, limit, page);
+            if(page === 0 || page){
+                return hatsoffutils.loadHatsOffsLegacy(connection, entityid, limit, page);
+            }
+            else{
+                return hatsoffutils.loadHatsOffs(connection, entityid, limit, lastindexkey);
+            }
         })
         .then(function (result) {
-            console.log("rows from loadHatsOffs is " + JSON.stringify(result.rows, null, 3));
+            console.log("rows from loadHatsOffsLegacy is " + JSON.stringify(result.rows, null, 3));
             response.send({
                 tokenstatus: 'valid',
                 data: result

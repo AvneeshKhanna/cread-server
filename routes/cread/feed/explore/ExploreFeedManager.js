@@ -431,14 +431,17 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                     feedutils.getCollaborationData(connection, rows)
                         .then(function (rows) {
 
-                            rows.map(function (e) {
+                            /*rows.map(function (e) {
                                 e.collabcount = 0;
                                 return e;
-                            });
+                            });*/
 
+                            return feedutils.getCollaborationCounts(connection, rows, feedEntities);
+                        })
+                        .then(function (rows) {
                             resolve({
                                 requestmore: rows.length >= limit,//totalcount > (offset + limit),
-                                lastindexkey: moment(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
+                                lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
                                 feed: rows
                             });
                         })
@@ -593,6 +596,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                 else {  //Case of no data
                     resolve({
                         requestmore: rows.length >= limit,//totalcount > (offset + limit),
+                        lastindexkey: null,
                         feed: []
                     });
                 }
