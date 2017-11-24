@@ -202,8 +202,14 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
                         return element;
                     });
 
-                    feedutils.getCollaborationData(connection, rows, feedEntities)
+                    feedutils.getCollaborationData(connection, rows)
                         .then(function (rows) {
+
+                            rows.map(function (e) {
+                                e.collabcount = 0;
+                                return e;
+                            });
+
                             resolve({
                                 requestmore: rows.length >= limit,//totalcount > (offset + limit),
                                 lastindexkey: moment(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),

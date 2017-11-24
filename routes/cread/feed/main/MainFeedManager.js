@@ -260,9 +260,9 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                             delete element.capid;
                         }*/
 
-                        if(element.shoid) {
+                        /*if(element.shoid) {
                             delete element.shoid;
-                        }
+                        }*/
 
                         if(element.firstname) {
                             delete element.firstname;
@@ -283,8 +283,14 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                         return element;
                     });
 
-                    feedutils.getCollaborationData(connection, rows, feedEntities)
+                    feedutils.getCollaborationData(connection, rows)
                         .then(function (rows) {
+
+                            rows.map(function (e) {
+                                e.collabcount = 0;
+                                return e;
+                            });
+
                             resolve({
                                 requestmore: rows.length >= limit,//totalcount > (offset + limit),
                                 lastindexkey: moment(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
@@ -453,9 +459,9 @@ function loadFeedLegacy(connection, uuid, limit, page) {
                                     delete element.capid;
                                 }*/
 
-                                if(element.shoid) {
+                                /*if(element.shoid) {
                                     delete element.shoid;
-                                }
+                                }*/
 
                                 if(element.firstname) {
                                     delete element.firstname;

@@ -11,6 +11,7 @@ var config = require('../../Config');
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
+var utils = require('../utils/Utils');
 var shortutils = require('./ShortUtils');
 
 router.post('/load-specific', function (request, response) {
@@ -35,9 +36,15 @@ router.post('/load-specific', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return shortutils.retrieveShortDetails(connection, shoid);
+            var select = [
+                'textcolor',
+                'textsize',
+                'txt'
+            ];
+            return shortutils.retrieveShortDetails(connection, shoid, select);
         })
         .then(function (result) {
+            utils.changePropertyName(result, 'txt', 'text');
             console.log("result is " + JSON.stringify(result, null, 3));
             response.send({
                 tokenstatus: 'valid',

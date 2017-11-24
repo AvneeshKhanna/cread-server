@@ -3,8 +3,12 @@
  */
 'use-strict';
 
-function getCollaborationData(connection, rows, feedEntities) {
+/**
+ * Function to retrieve the users' details whose content has been collaborated on
+ * */
+function getCollaborationData(connection, rows) {
     return new Promise(function (resolve, reject) {
+
         var shcaptureids = rows.filter(function (element) {
             return !!(element.shcaptureid);
         }).map(function (element) {
@@ -38,17 +42,16 @@ function getCollaborationData(connection, rows, feedEntities) {
                 'ON Capture.uuid = UserS.uuid ' +
                 'LEFT JOIN User AS UserC ' +
                 'ON Short.uuid = UserC.uuid ' +
-                'WHERE Entity.entityid IN (?) ' +
-                'AND Capture.capid IN (?) ' +
+                'WHERE Capture.capid IN (?) ' +
                 'OR Short.shoid IN (?)';
             collabsqlparams = [
-                feedEntities,
-                shcaptureids,
+                /*feedEntities,
+                */shcaptureids,
                 cpshortids
             ];
         }
         else if (cpshortids.length === 0 && shcaptureids.length !== 0) {
-            collabdataquery = 'SELECT Entity.entityid, Short.shoid, Capture.capid, UserS.firstname AS sfirstname, ' +
+            collabdataquery = 'SELECT Entity.entityid, Capture.shoid, Capture.capid, UserS.firstname AS sfirstname, ' +
                 'UserS.lastname AS slastname, UserS.uuid AS suuid ' + //', UserC.firstname AS cfirstname, ' +
                 // 'UserC.lastname AS clastname, UserC.uuid  AS cuuid ' +
                 'FROM Entity ' +
@@ -60,29 +63,27 @@ function getCollaborationData(connection, rows, feedEntities) {
                 'ON Capture.uuid = UserS.uuid ' +
                 /*'LEFT JOIN User AS UserC ' +
                 'ON Short.uuid = UserC.uuid ' +*/
-                'WHERE Entity.entityid IN (?) ' +
-                'AND Capture.capid IN (?) '/* +
+                'WHERE Capture.capid IN (?) '/* +
                 'OR Capture.shoid IN (?)'*/;
 
             collabsqlparams = [
-                feedEntities,
-                shcaptureids/*,
+                /*feedEntities,
+                */shcaptureids/*,
                 cpshortids*/
             ];
         }
         else if (cpshortids.length !== 0 && shcaptureids.length === 0) {
-            collabdataquery = 'SELECT Entity.entityid, Short.shoid, Capture.capid, UserC.firstname AS cfirstname, ' +
+            collabdataquery = 'SELECT Entity.entityid, Short.shoid, Short.capid, UserC.firstname AS cfirstname, ' +
                 'UserC.lastname AS clastname, UserC.uuid  AS cuuid ' +
                 'FROM Entity ' +
                 'LEFT JOIN Short ' +
                 'ON Entity.entityid = Short.entityid ' +
                 'LEFT JOIN User AS UserC ' +
                 'ON Short.uuid = UserC.uuid ' +
-                'WHERE Entity.entityid IN (?) ' +
-                'AND Short.shoid IN (?)';
+                'WHERE Short.shoid IN (?)';
             collabsqlparams = [
-                feedEntities,
-                cpshortids
+                /*feedEntities,
+                */cpshortids
             ];
         }
         else {
@@ -98,7 +99,6 @@ function getCollaborationData(connection, rows, feedEntities) {
                 else {
 
                     console.log("collab_rows are " + JSON.stringify(collab_rows, null, 3));
-
                     collab_rows.forEach(function (collab) {
 
                         var row_element;
@@ -112,8 +112,7 @@ function getCollaborationData(connection, rows, feedEntities) {
                             }).indexOf(collab.shoid)];
 
                             row_element.cpshort = {
-                                firstname: collab.cfirstname,
-                                lastname: collab.clastname,
+                                name: collab.cfirstname  + ' ' + collab.clastname,
                                 uuid: collab.cuuid
                             }
                         }
@@ -126,8 +125,7 @@ function getCollaborationData(connection, rows, feedEntities) {
                             }).indexOf(collab.capid)];
 
                             row_element.shcapture = {
-                                firstname: collab.sfirstname,
-                                lastname: collab.slastname,
+                                name: collab.sfirstname + ' ' + collab.slastname,
                                 uuid: collab.suuid
                             }
                         }
@@ -140,6 +138,22 @@ function getCollaborationData(connection, rows, feedEntities) {
         else {
             resolve(rows);
         }
+    });
+}
+
+function getCollaborationCounts(connection){
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT * ' +
+            'FROM Entity ' +
+            'ON Entity.entityid = Short.entityid ' +
+            '', [], function (err, data) {
+            if(err){
+                reject(err);
+            }
+            else{
+                resolve();
+            }
+        });
     });
 }
 

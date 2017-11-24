@@ -353,7 +353,9 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
 
         lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
-        connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
+        connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, User.uuid, ' +
+            'User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, ' +
+            'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
             'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
@@ -426,8 +428,14 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
 
                     //--Retrieve Collaboration Data--
 
-                    feedutils.getCollaborationData(connection, rows, feedEntities)
+                    feedutils.getCollaborationData(connection, rows)
                         .then(function (rows) {
+
+                            rows.map(function (e) {
+                                e.collabcount = 0;
+                                return e;
+                            });
+
                             resolve({
                                 requestmore: rows.length >= limit,//totalcount > (offset + limit),
                                 lastindexkey: moment(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),

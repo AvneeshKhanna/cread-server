@@ -3,9 +3,9 @@
  */
 'use-strict';
 
-function retrieveShortDetails(connection, shoid) {
+function retrieveShortDetails(connection, shoid, select) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT dx, dy, textcolor, textsize, txt AS text ' +
+        connection.query('SELECT ' + select.join(', ') + ' ' +
             'FROM Short ' +
             'WHERE shoid = ?', [shoid], function (err, rows) {
             if (err) {
