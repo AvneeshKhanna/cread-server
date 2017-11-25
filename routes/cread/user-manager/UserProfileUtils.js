@@ -33,8 +33,7 @@ function loadTimelineLegacy(connection, requesteduuid, requesteruuid, limit, pag
             'JOIN User ' +
             'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
             'WHERE User.uuid = ? ' +
-            'AND Entity.status = "ACTIVE" ' +
-            'GROUP BY Entity.entityid', [requesteduuid], function(err, data){
+            'AND Entity.status = "ACTIVE" ', [requesteduuid], function(err, data){
             if(err){
                 reject(err);
             }
@@ -133,7 +132,7 @@ function loadTimelineLegacy(connection, requesteduuid, requesteruuid, limit, pag
 
 function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindexkey) {
 
-    lastindexkey = (lastindexkey) ? lastindexkey : moment.format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
+    lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
     return new Promise(function (resolve, reject) {
         connection.query('SELECT Entity.entityid, Entity.regdate, Entity.merchantable, Entity.type, User.uuid, ' +

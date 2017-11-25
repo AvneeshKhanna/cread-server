@@ -6,6 +6,7 @@
 var utils = require('../utils/Utils');
 
 var moment = require('moment');
+var feedutils = require('../feed/FeedUtils');
 
 function retrieveShortDetails(connection, entityid) {
     return new Promise(function (resolve, reject) {
@@ -116,7 +117,7 @@ function loadCollabDetails(connection, entityid, entitytype, limit, lastindexkey
 
 function loadEntityData(connection, requesteruuid, entityid) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Short.shoid, Capture.capid AS captureid, ' +
+        connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, Short.shoid, Capture.capid AS captureid, ' +
             'Capture.shoid AS cpshortid, Short.capid AS shcaptureid, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
@@ -155,9 +156,9 @@ function loadEntityData(connection, requesteruuid, entityid) {
                         delete element.capid;
                     }*/
 
-                    if(element.shoid) {
+                    /*if(element.shoid) {
                         delete element.shoid;
-                    }
+                    }*/
 
                     if(element.firstname) {
                         delete element.firstname;
@@ -174,9 +175,28 @@ function loadEntityData(connection, requesteruuid, entityid) {
                     return element;
                 });
 
-                resolve({
+                feedutils.getCollaborationData(connection, row)
+                    .then(function (row) {
+
+                        /*rows.map(function (e) {
+                            e.collabcount = 0;
+                            return e;
+                        });*/
+
+                        return feedutils.getCollaborationCounts(connection, row, [entityid]);
+                    })
+                    .then(function (row) {
+                        resolve({
+                            entity: row[0]
+                        });
+                    })
+                    .catch(function (err) {
+                        reject(err);
+                    });
+
+                /*resolve({
                     entity: row[0]
-                });
+                });*/
             }
         });
     });

@@ -184,9 +184,9 @@ function loadFollowingLegacy(connection, requesteduuid, limit, page) {
     });
 }
 
-function loadFollowing(connection, requesteduuid, limit, page) {
+function loadFollowing(connection, requesteduuid, limit, lastindexkey) {
 
-    var offset = page * limit;
+    lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
     return new Promise(function (resolve, reject) {
         connection.query('SELECT User.firstname, User.lastname, User.uuid ' +
@@ -194,9 +194,10 @@ function loadFollowing(connection, requesteduuid, limit, page) {
             'JOIN User ' +
             'ON Follow.followee = User.uuid ' +
             'WHERE Follow.follower = ? ' +
+            'AND Follow.regdate < ? ' +
             'ORDER BY Follow.regdate DESC ' +
-            'LIMIT ? ' +
-            'OFFSET ? ', [requesteduuid, limit, offset], function (err, rows) {
+            'LIMIT ? '/* +
+            'OFFSET ? '*/, [requesteduuid, lastindexkey, limit/*, offset*/], function (err, rows) {
             if (err) {
                 reject(err);
             }

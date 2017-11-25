@@ -216,7 +216,7 @@ app.use(function (err, req, res, next) {
     });
 });
 
-//TODO: remove
+
 // top_givers_notification.start();
 // monitorAccountActivity.start(); //To monitor user accounts activity
 

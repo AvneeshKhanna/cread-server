@@ -23,7 +23,6 @@ var captureutils = require('./CaptureUtils');
 
 var filebasepath = './images/uploads/capture/';
 
-//TODO: Add code to upload short as well
 router.post('/', upload.single('captured-image'), function (request, response) {
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
@@ -172,10 +171,10 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
             return updateCaptureDB(connection, captureid, uuid, watermark, merchantable, shoid, captureparamas)
         })
         .then(function () {
-            return profilepicutils.uploadImageToS3(filebasepath + capture_img_high.filename, uuid, 'Capture', captureid + '.jpg');    //TODO: Insert high res file & name
+            return profilepicutils.uploadImageToS3(filebasepath + capture_img_high.filename, uuid, 'Capture', captureid + '.jpg');
         })
         .then(function () {
-            return profilepicutils.uploadImageToS3(filebasepath + capture_img_low.filename, uuid, 'Capture', captureid + '-small.jpg');   //TODO: Insert low res file & name
+            return profilepicutils.uploadImageToS3(filebasepath + capture_img_low.filename, uuid, 'Capture', captureid + '-small.jpg');
         })
         .then(function () {
             return utils.commitTransaction(connection);
@@ -266,6 +265,21 @@ function updateCaptureDB(connection, captureid, uuid, watermark, merchantable, s
 
                     }
                 });
+            }
+        });
+    });
+}
+
+function updateShortDB(connection, shoid, captureid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('UPDATE Short SET capid = ? WHERE shoid = ?', [captureid, shoid], function (err, rows) {
+            if (err) {
+                connection.rollback(function () {
+                    reject(err);
+                });
+            }
+            else {
+                resolve();
             }
         });
     });

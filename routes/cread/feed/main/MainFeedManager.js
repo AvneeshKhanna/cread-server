@@ -152,7 +152,7 @@ router.post('/load', function (request, response) {
     var page = request.body.page;
     var lastindexkey = request.body.lastindexkey;
 
-    var limit = 3; //TODO: Change to 10
+    var limit = 10; //TODO: Change to 10
     var connection;
 
     _auth.authValid(uuid, authkey)
@@ -282,6 +282,8 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
 
                         return element;
                     });
+
+                    console.log("original rows were " + JSON.stringify(rows, null, 3));
 
                     feedutils.getCollaborationData(connection, rows)
                         .then(function (rows) {
