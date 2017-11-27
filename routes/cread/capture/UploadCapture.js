@@ -20,6 +20,8 @@ var fs = require('fs');
 var utils = require('../utils/Utils');
 var profilepicutils = require('../user-manager/UserProfileUtils');
 var captureutils = require('./CaptureUtils');
+var notify = require('../../notification-system/notificationFramework');
+var shortutils = require('../short/ShortUtils');
 
 var filebasepath = './images/uploads/capture/';
 
@@ -35,6 +37,7 @@ router.post('/', upload.single('captured-image'), function (request, response) {
     var merchantable = Number(request.body.merchantable);
 
     var captureid = uuidgen.v4();
+    var entityid = uuidgen.v4();
 
     var connection;
     var toresize;
@@ -51,7 +54,7 @@ router.post('/', upload.single('captured-image'), function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return updateCaptureDB(connection, captureid, uuid, watermark, merchantable, undefined, {});
+            return updateCaptureDB(connection, captureid, uuid, watermark, merchantable, entityid, undefined, {});
         })
         .then(function () {
             return userprofileutils.renameFile(filebasepath, capture, captureid);
@@ -129,15 +132,18 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
     var shoid = request.body.shoid;
 
     var captureid = uuidgen.v4();
+    var entityid = uuidgen.v4();
 
     var connection;
+    var requesterdetails;
     var toresize;
 
     var filebasepath = './images/uploads/capture/';
     var filename_high =
 
     _auth.authValid(uuid, authkey)
-        .then(function () {
+        .then(function (details){
+            requesterdetails = details;
             return config.getNewConnection();
         }, function () {
             response.send({
@@ -168,7 +174,7 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
                 textsize: textsize,
                 textgravity: textgravity
             };
-            return updateCaptureDB(connection, captureid, uuid, watermark, merchantable, shoid, captureparamas)
+            return updateCaptureDB(connection, captureid, uuid, watermark, merchantable, entityid, shoid, captureparamas)
         })
         .then(function () {
             return profilepicutils.uploadImageToS3(filebasepath + capture_img_high.filename, uuid, 'Capture', captureid + '.jpg');
@@ -186,7 +192,22 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
                     status: 'done'
                 }
             }).end();
-            throw new BreakPromiseChainError();
+        })
+        .then(function () { //Send notification to user
+            var select = [
+                'uuid'
+            ];
+            return shortutils.retrieveShortDetails(connection, shoid, select);
+        })
+        .then(function (shortdetails) {
+            var notifData = {
+                message: requesterdetails.firstname + ' ' + requesterdetails.lastname + " uploaded a capture on your short",
+                category: "collaborate",
+                persistable: "Yes",
+                entityid: entityid,
+                actorimage: utils.createSmallProfilePicUrl(uuid)
+            };
+            return notify.notificationPromise(new Array(shortdetails.uuid), notifData)
         })
         .catch(function (err) {
             config.disconnect(connection);
@@ -203,7 +224,7 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
 
 });
 
-function updateCaptureDB(connection, captureid, uuid, watermark, merchantable, shoid, captureparams) {
+function updateCaptureDB(connection, captureid, uuid, watermark, merchantable, entityid, shoid, captureparams) {
     return new Promise(function (resolve, reject) {
         connection.beginTransaction(function (err) {
             if (err) {
@@ -214,7 +235,7 @@ function updateCaptureDB(connection, captureid, uuid, watermark, merchantable, s
             else {
 
                 var entityparams = {
-                    entityid: uuidgen.v4(),
+                    entityid: entityid,
                     type: 'CAPTURE',
                     merchantable: (merchantable === 1)
                 };
