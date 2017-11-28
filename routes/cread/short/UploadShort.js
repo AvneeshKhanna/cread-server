@@ -104,7 +104,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
         .then(function (captureuseruuid) {
             if(captureuseruuid !== uuid){   //Send notification only when the two users involved are different
                 var notifData = {
-                    message: requesterdetails.firstname + ' ' + requesterdetails.lastname + " wrote a short on your capture",
+                    message: requesterdetails.firstname + ' ' + requesterdetails.lastname + " wrote on your graphic art",
                     category: "collaborate",
                     persistable: "Yes",
                     entityid: entityid,

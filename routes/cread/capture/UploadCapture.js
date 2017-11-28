@@ -200,14 +200,19 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
             return shortutils.retrieveShortDetails(connection, shoid, select);
         })
         .then(function (shortdetails) {
-            var notifData = {
-                message: requesterdetails.firstname + ' ' + requesterdetails.lastname + " uploaded a capture on your short",
-                category: "collaborate",
-                persistable: "Yes",
-                entityid: entityid,
-                actorimage: utils.createSmallProfilePicUrl(uuid)
-            };
-            return notify.notificationPromise(new Array(shortdetails.uuid), notifData)
+            if(shortdetails.uuid !== uuid){
+                var notifData = {
+                    message: requesterdetails.firstname + ' ' + requesterdetails.lastname + " uploaded a graphic art to your writing",
+                    category: "collaborate",
+                    persistable: "Yes",
+                    entityid: entityid,
+                    actorimage: utils.createSmallProfilePicUrl(uuid)
+                };
+                return notify.notificationPromise(new Array(shortdetails.uuid), notifData)
+            }
+        })
+        .then(function () {
+            throw new BreakPromiseChainError(); //To disconnect server connection
         })
         .catch(function (err) {
             config.disconnect(connection);
