@@ -139,7 +139,8 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
             'User.firstname, User.lastname, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
             'Capture.capid AS captureid, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
-            'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount ' +
+            'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
+            'COUNT(DISTINCT Comment.commid) AS commentcount ' +
             'FROM Entity ' +
             'LEFT JOIN Capture ' +
             'USING(entityid) ' +

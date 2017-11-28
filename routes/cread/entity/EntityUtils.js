@@ -120,7 +120,8 @@ function loadEntityData(connection, requesteruuid, entityid) {
         connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, Short.shoid, Capture.capid AS captureid, ' +
             'Capture.shoid AS cpshortid, Short.capid AS shcaptureid, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
-            'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
+            'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
+            'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
             'User.uuid, User.firstname, User.lastname ' +
             'FROM Entity ' +
             'LEFT JOIN Short ' +

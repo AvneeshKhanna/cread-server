@@ -107,6 +107,7 @@ function loadHatsOffs(connection, entityid, limit, lastindexkey) {
             'ON HatsOff.uuid = User.uuid ' +
             'WHERE HatsOff.entityid = ? ' +
             'AND HatsOff.regdate < ? ' +
+            'GROUP BY HatsOff.entityid, HatsOff.uuid ' +
             'ORDER BY HatsOff.regdate DESC ' +
             'LIMIT ? '/* +
              'OFFSET ?'*/, [entityid, lastindexkey, limit/*, offset*/], function (err, rows) {
