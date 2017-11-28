@@ -9,6 +9,7 @@
 var uuidGenerator = require('uuid');
 var utils = require('../utils/Utils');
 
+
 var moment = require('moment');
 
 function registerHatsOff(connection, register, uuid, entityid) {
