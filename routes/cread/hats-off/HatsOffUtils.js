@@ -6,9 +6,9 @@
  * Handles functionalities regarding hats-off system
  * */
 'use-strict';
+
 var uuidGenerator = require('uuid');
 var utils = require('../utils/Utils');
-
 
 var moment = require('moment');
 
