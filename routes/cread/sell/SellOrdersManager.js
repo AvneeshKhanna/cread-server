@@ -6,7 +6,7 @@
 var express = require('express');
 var router = express.Router();
 
-var config = require('../../../Config');
+var config = require('../../Config');
 
 var envconfig = require('config');
 var userstbl_ddb = envconfig.get('dynamoDB.users_table');
@@ -16,9 +16,9 @@ var uuidGenerator = require('uuid');
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
-var userprofileutils = require('../UserProfileUtils');
-var useraccessutils = require('../UserAccessUtils');
-var utils = require('../../utils/Utils');
+var userprofileutils = require('../user-manager/UserProfileUtils');
+var useraccessutils = require('../user-manager/UserAccessUtils');
+var utils = require('../utils/Utils');
 var sellordersutils = require('./SellOrdersUtils');
 
 router.post('/load-balance', function (request, response) {
@@ -40,6 +40,17 @@ router.post('/load-balance', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
+            return sellordersutils.loadTotalRoyalty(connection, uuid);
+        })
+        .then(function (total_royalty) {
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    total_royalty: total_royalty
+                }
+            });
+            response.end();
+            throw new BreakPromiseChainError();
         })
         .catch(function (err) {
             config.disconnect(connection);
@@ -61,6 +72,7 @@ router.post('/load', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var lastindexkey = request.body.lastindexkey;
+    var toloadtotal = request.body.toloadtotal;
 
     var limit = 15;
 
@@ -78,7 +90,7 @@ router.post('/load', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return sellordersutils.loadSellOrders(connection, uuid, limit, lastindexkey);
+            return sellordersutils.loadSellOrders(connection, uuid, limit, toloadtotal, lastindexkey);
         })
         .then(function (result) {
             response.send({

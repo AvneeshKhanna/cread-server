@@ -12,12 +12,16 @@ var config = require('../../Config');
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
+
 var buyutils = require('./BuyUtils');
 var utils = require('../utils/Utils');
-var notify = require('../../notification-system/notificationFramework');
 
+var consts = require('../utils/Constants');
+
+var notify = require('../../notification-system/notificationFramework');
 var emailer = require('../dsbrd/wallet-management/TransactionEmailer');
 
+//TODO: Modify notification system for royalty and for involving both the users who developed the artwork
 router.post('/place', function (request, response) {
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
@@ -36,6 +40,7 @@ router.post('/place', function (request, response) {
     var size = request.body.size;
 
     var amount = buyutils.convertPaiseToINR(request.body.amount);    //Amount requested in paise
+    var royalty_percentage = consts.royalty_percentage;
     var paymentid = request.body.paymentid; //ID of the payment transacted through payment gateway portal
 
     var sqlparams = {
@@ -45,6 +50,7 @@ router.post('/place', function (request, response) {
         productid: productid,
         paymentid: paymentid,
         amount: amount,
+        royalty_percentage: royalty_percentage,
         ship_addr_1: shipmentdetails.ship_addr_1,
         ship_addr_2: shipmentdetails.ship_addr_2,
         ship_city: shipmentdetails.ship_city,
