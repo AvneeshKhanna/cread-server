@@ -69,12 +69,14 @@ router.post('/load-balance', function (request, response) {
 
 router.post('/load', function (request, response) {
 
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var lastindexkey = request.body.lastindexkey;
     var toloadtotal = request.body.toloadtotal;
 
-    var limit = 15;
+    var limit = 2; //TODO: Change to 15
 
     var connection;
 
@@ -93,6 +95,7 @@ router.post('/load', function (request, response) {
             return sellordersutils.loadSellOrders(connection, uuid, limit, toloadtotal, lastindexkey);
         })
         .then(function (result) {
+            console.log("result is " + JSON.stringify(result, null, 3));
             response.send({
                 tokenstatus: 'valid',
                 data: result

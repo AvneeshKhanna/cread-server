@@ -8,7 +8,7 @@ var utils = require('../utils/Utils');
 
 function loadTotalRoyalty(connection, uuid) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT SUM(Orders.price * Orders.qty * Orders.price * (Orders.royalty_percentage/100)) AS total_royalty ' +
+        connection.query('SELECT SUM(Orders.price * Orders.qty * (Orders.royalty_percentage * 0.01)) AS total_royalty ' +
             'FROM Orders ' +
             'JOIN Entity ' +
             'ON Orders.entityid = Entity.entityid ' +
@@ -16,12 +16,13 @@ function loadTotalRoyalty(connection, uuid) {
             'ON Orders.entityid = Short.entityid ' +
             'LEFT JOIN Capture ' +
             'ON Orders.entityid = Capture.entityid ' +
-            'WHERE (Capture.uuid = ? OR Short.uuid = ?) ', [uuid, uuid], function(err, royalty){
+            'WHERE Capture.uuid = ? ' +
+            'OR Short.uuid = ?', [uuid, uuid], function(err, royalty){
             if(err){
                 reject(err);
             }
             else{
-                resolve(royalty[0].total_royalty);
+                resolve(royalty[0].total_royalty.toFixed(2));
             }
         });
     })
@@ -34,7 +35,7 @@ function loadSellOrders(connection, uuid, limit, toloadtotal, lastindexkey) {
 
     return new Promise(function (resolve, reject) {
         connection.query('SELECT Product.type AS producttype, Entity.entityid, Entity.type, Orders.regdate, Orders.price, ' +
-            'Orders.qty, Orders.royalty_percentage, User.firstname, User.lastname, User.uuid, Short.shoid, Capture.capid ' +
+            'Orders.qty, Orders.royalty_percentage, User.firstname AS name, User.uuid, Short.shoid, Capture.capid ' +
             'FROM Orders ' +
             'JOIN Entity ' +
             'ON Orders.entityid = Entity.entityid ' +
@@ -65,16 +66,9 @@ function loadSellOrders(connection, uuid, limit, toloadtotal, lastindexkey) {
                             element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.capid);
                         }
 
-                        element.name = element.firstname + ' ' +  element.lastname;
                         element.royalty_amount = ((element.royalty_percentage/100) * (element.price * element.qty)).toFixed(2);
 
-                        if(element.firstname) {
-                            delete element.firstname;
-                        }
-
-                        if(element.lastname) {
-                            delete element.lastname;
-                        }
+                        element.redeemstatus = rows.indexOf(element) % 2 === 0; //TODO: Calculate
 
                         if(element.hasOwnProperty('shoid')) {
                             delete element.shoid;
@@ -92,18 +86,18 @@ function loadSellOrders(connection, uuid, limit, toloadtotal, lastindexkey) {
                             delete element.royalty_percentage;
                         }
 
-
-
                         return element;
                     });
 
 
-                    if(toloadtotal === true){
+                    if(toloadtotal){
+                        console.log("loadTotalRoyalty() called");
                         loadTotalRoyalty(connection, uuid)
                             .then(function (total_royalty) {
                                 resolve({
                                     items: rows,
                                     total_royalty: total_royalty,
+                                    redeem_amount: 0,  //TODO: Calculate
                                     lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
                                     requestmore: rows.length >= limit
                                 });
@@ -115,16 +109,18 @@ function loadSellOrders(connection, uuid, limit, toloadtotal, lastindexkey) {
                     else{
                         resolve({
                             items: rows,
-                            total_royalty: null,
+                            total_royalty: -1,
+                            redeem_amount: -1,  //TODO: Calculate
                             lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
                             requestmore: rows.length >= limit
                         });
                     }
                 }
-                else{
+                else{   //Case of no orders
                     resolve({
                         items: rows,
-                        total_royalty: null,
+                        total_royalty: -1,
+                        redeem_amount: -1,  //TODO: Calculate
                         lastindexkey: null,
                         requestmore: rows.length >= limit
                     });
