@@ -12,12 +12,16 @@ var config = require('../../Config');
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
+
 var buyutils = require('./BuyUtils');
 var utils = require('../utils/Utils');
-var notify = require('../../notification-system/notificationFramework');
 
+var consts = require('../utils/Constants');
+
+var notify = require('../../notification-system/notificationFramework');
 var emailer = require('../dsbrd/wallet-management/TransactionEmailer');
 
+//TODO: Modify notification system for royalty and for involving both the users who developed the artwork
 router.post('/place', function (request, response) {
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
@@ -36,7 +40,11 @@ router.post('/place', function (request, response) {
     var size = request.body.size;
 
     var amount = buyutils.convertPaiseToINR(request.body.amount);    //Amount requested in paise
+    var royalty_percentage = consts.royalty_percentage;
     var paymentid = request.body.paymentid; //ID of the payment transacted through payment gateway portal
+
+    var shortuuid = request.body.shortuuid;
+    var captureuuid = request.body.captureuuid;
 
     var sqlparams = {
         orderid: uuidgen.v4(),
@@ -45,6 +53,9 @@ router.post('/place', function (request, response) {
         productid: productid,
         paymentid: paymentid,
         amount: amount,
+        shortuuid: shortuuid,
+        captureuuid: captureuuid,
+        royalty_percentage: royalty_percentage,
         ship_addr_1: shipmentdetails.ship_addr_1,
         ship_addr_2: shipmentdetails.ship_addr_2,
         ship_city: shipmentdetails.ship_city,
@@ -140,11 +151,20 @@ router.post('/place', function (request, response) {
                 });
             }
         })
-        .then(function () { //Sending notification
+        /*.then(function () { //Sending notification
             return retrieveEntityUserDetails(connection, entityid);
-        })
-        .then(function (entityuuid) {
-            if(entityuuid !== uuid){    //Send notification only when the two users involved are different
+        })*/
+        .then(function () {   //Sending notification
+
+            //Filtering based on whether the post-creator uuids are not null and the same as buyer
+            var userarray = [
+                shortuuid,
+                captureuuid
+            ].filter(function (t) {
+                return (!!t && t !== uuid);
+            });
+
+            if(userarray.length > 0){    //Send notification only when the two users involved are different
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " has purchased a " + productname + " created using your post",
                     category: "buy",
@@ -152,7 +172,7 @@ router.post('/place', function (request, response) {
                     persistable:"Yes",
                     actorimage: utils.createSmallProfilePicUrl(uuid)
                 };
-                return notify.notificationPromise(new Array(entityuuid), notifData);
+                return notify.notificationPromise(userarray, notifData);
             }
         })
         .then(function () {
@@ -176,7 +196,7 @@ router.post('/place', function (request, response) {
         });
 });
 
-function retrieveEntityUserDetails(connection, entityid) {
+/*function retrieveEntityUserDetails(connection, entityid) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT User.uuid ' +
             'FROM Entity ' +
@@ -195,7 +215,7 @@ function retrieveEntityUserDetails(connection, entityid) {
             }
         });
     })
-}
+}*/
 
 /*
 router.post('/populate-screen', function (request, response) {

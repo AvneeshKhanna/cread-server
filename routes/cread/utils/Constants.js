@@ -12,6 +12,8 @@ const required_verified_checks = 3;
 const required_unverified_checks = 5;
 const restrict_find_frequency = 25; //Measured in 'clicks per minute'
 
+const royalty_percentage = 10;
+
 const markup = 33; //in percentage TODO: Update markup
 const minCashInAmt = (config_type === 'PRODUCTION') ? 30 : 2;    //TODO: Can change the amount based on team discussion
 
@@ -48,5 +50,6 @@ module.exports = {
     share_time_interval: share_time_interval,
     restrict_find_frequency: restrict_find_frequency,
     required_unverified_checks: required_unverified_checks,
-    required_verified_checks: required_verified_checks
+    required_verified_checks: required_verified_checks,
+    royalty_percentage: royalty_percentage
 };

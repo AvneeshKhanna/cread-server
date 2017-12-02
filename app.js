@@ -153,6 +153,7 @@ app.use('/comment', require('./routes/cread/comment/CommentManager'));
 app.use('/products',require('./routes/cread/buy/ProductsManager'));
 app.use('/order', require('./routes/cread/buy/OrderManager'));
 app.use('/buying-track', require('./routes/cread/buy/track/BuyTrackManager'));
+app.use('/sell', require('./routes/cread/sell/SellOrdersManager'));
 
 //-dashboard-
 app.use('/campaign-details', require('./routes/cread/dsbrd/campaign-details/CampaignDetails'));
