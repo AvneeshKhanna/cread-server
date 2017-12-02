@@ -43,6 +43,9 @@ router.post('/place', function (request, response) {
     var royalty_percentage = consts.royalty_percentage;
     var paymentid = request.body.paymentid; //ID of the payment transacted through payment gateway portal
 
+    var shortuuid = request.body.shortuuid;
+    var captureuuid = request.body.captureuuid;
+
     var sqlparams = {
         orderid: uuidgen.v4(),
         uuid: uuid,
@@ -50,6 +53,8 @@ router.post('/place', function (request, response) {
         productid: productid,
         paymentid: paymentid,
         amount: amount,
+        shortuuid: shortuuid,
+        captureuuid: captureuuid,
         royalty_percentage: royalty_percentage,
         ship_addr_1: shipmentdetails.ship_addr_1,
         ship_addr_2: shipmentdetails.ship_addr_2,
@@ -146,11 +151,20 @@ router.post('/place', function (request, response) {
                 });
             }
         })
-        .then(function () { //Sending notification
+        /*.then(function () { //Sending notification
             return retrieveEntityUserDetails(connection, entityid);
-        })
-        .then(function (entityuuid) {
-            if(entityuuid !== uuid){    //Send notification only when the two users involved are different
+        })*/
+        .then(function () {   //Sending notification
+
+            //Filtering based on whether the post-creator uuids are not null and the same as buyer
+            var userarray = [
+                shortuuid,
+                captureuuid
+            ].filter(function (t) {
+                return (!!t && t !== uuid);
+            });
+
+            if(userarray.length > 0){    //Send notification only when the two users involved are different
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " has purchased a " + productname + " created using your post",
                     category: "buy",
@@ -158,7 +172,7 @@ router.post('/place', function (request, response) {
                     persistable:"Yes",
                     actorimage: utils.createSmallProfilePicUrl(uuid)
                 };
-                return notify.notificationPromise(new Array(entityuuid), notifData);
+                return notify.notificationPromise(userarray, notifData);
             }
         })
         .then(function () {
@@ -182,7 +196,7 @@ router.post('/place', function (request, response) {
         });
 });
 
-function retrieveEntityUserDetails(connection, entityid) {
+/*function retrieveEntityUserDetails(connection, entityid) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT User.uuid ' +
             'FROM Entity ' +
@@ -201,7 +215,7 @@ function retrieveEntityUserDetails(connection, entityid) {
             }
         });
     })
-}
+}*/
 
 /*
 router.post('/populate-screen', function (request, response) {

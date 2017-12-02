@@ -31,6 +31,7 @@ var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 var utils = require('../../utils/Utils');
 
 var paytmchecksum = require('../../paytmutils/checksum');
+var redeemutils = require('./RedeemUtils');
 
 router.post('/', function (request, response) {
 
@@ -38,21 +39,28 @@ router.post('/', function (request, response) {
     var authkey = request.body.authkey;
     var amount = request.body.amount;
     var userpaytmcontact = request.body.userpaytmcontact;
+    var entityids = request.body.entityids;
 
     //TODO: Toggle comment
     //This has been done due to insufficient Paytm wallet balance but server records being updated nonetheless
-    response.status(500).send({
+    /*response.status(500).send({
         error: 'Some error occurred at the server'
     });
     response.end();
-    return;
+    return;*/
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
 
     var orderId = uuidGen.v4();
+    var userdetails;
+    var toInformViaContact;
+    var commitTransaction;
 
     _auth.authValid(uuid, authkey)
-        .then(config.getNewConnection, function () {
+        .then(function (details) {
+            userdetails = details;
+            return config.getNewConnection();
+        }, function () {
             response.send({
                 tokenstatus: 'invalid'
             });
@@ -61,9 +69,12 @@ router.post('/', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return generatePaytmChecksumHash(paytmMerchantKey, userpaytmcontact, amount, orderId, null);
-            //return generatePaytmChecksumHash(paytmMerchantKey, userpaytmcontact, amount, orderId, "VERIFY");
-        })/*
+            return utils.beginTransaction(connection);
+        })
+        .then(function () {
+            return redeemutils.updateRDS(connection, uuid, orderId, amount, entityids);
+        })
+        /*
         .then(function (checksumhash) {
             return checkIfUserPaytmAccExists(amount, userpaytmcontact, orderId, checksumhash);
         })
@@ -83,10 +94,17 @@ router.post('/', function (request, response) {
                 throw new BreakPromiseChainError();
             }
         })*/
+        .then(function () {
+            return redeemutils.generatePaytmChecksumHash(paytmMerchantKey, userpaytmcontact, amount, orderId, null);
+        })
         .then(function (checksumhash) {
-            return transactToPaytm(uuid, amount, userpaytmcontact, orderId, checksumhash);
+            return redeemutils.transactToPaytm(/*uuid, */amount, userpaytmcontact, orderId, checksumhash);
         })
         .then(function (status) {
+
+            toInformViaContact = status === 'success';
+            commitTransaction = status === 'success';
+
             response.send({
                 tokenstatus: 'valid',
                 data: {
@@ -94,17 +112,22 @@ router.post('/', function (request, response) {
                 }
             });
             response.end();
-
-            if(status === 'success'){
-                return informUserViaRegisteredContact(uuid, amount, userpaytmcontact);
+        })
+        .then(function () {
+            if(commitTransaction){
+                return utils.commitTransaction(connection);
+            }
+            else{
+                return utils.rollbackTransaction(connection);
+            }
+        })
+        .then(function () {
+            if (toInformViaContact) {
+                return redeemutils.informUserViaRegisteredContact(userdetails.firstname, userdetails.phone, amount, userpaytmcontact);
             }
             else {
                 throw new BreakPromiseChainError();
             }
-        })
-        .then(function () {
-            //SMS sent successfully. Disconnect connection
-            config.disconnect(connection);
         })
         .catch(function (err) {
 
@@ -115,7 +138,7 @@ router.post('/', function (request, response) {
             }
             else {
                 console.error(err);
-                if(!response.headersSent){  //Because a case can arrive where informUserViaRegisteredContact() throws an error
+                if (!response.headersSent) {  //Because a case can arrive where informUserViaRegisteredContact() throws an error
                     response.status(500).send({
                         error: 'Some error occurred at the server'
                     });
@@ -130,13 +153,13 @@ router.post('/', function (request, response) {
 /**
  * Sends a confirmation SMS to the user that the amount has been successfully transacted to Paytm
  * */
-function informUserViaRegisteredContact(uuid, amount, userpaytmcontact){
+function informUserViaRegisteredContact(uuid, amount, userpaytmcontact) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT firstname, phoneNo FROM users WHERE uuid = ?', [uuid], function (err, row) {
-            if(err){
+            if (err) {
                 reject(err);
             }
-            else{
+            else {
 
                 var msg = 'Hi ' +
                     row[0].firstname +
@@ -146,10 +169,10 @@ function informUserViaRegisteredContact(uuid, amount, userpaytmcontact){
                     userpaytmcontact;
 
                 utils.sendAWSSMS(msg, row[0].phoneNo, function (err, data) {
-                    if(err){
+                    if (err) {
                         reject(err);
                     }
-                    else{
+                    else {
                         resolve();
                     }
                 });
@@ -187,6 +210,7 @@ function getPaytmParams(userpaytmcontact, amount, orderId, requestType) {
 /**
  * Function to check if user's paytm
  * */
+
 /*
 function checkIfUserPaytmAccExists(amount, userpaytmcontact, orderId, checksumhash) {
     console.log("checkIfUserPaytmAccExists called");
@@ -360,7 +384,7 @@ function transactToPaytm(uuid, amount, userpaytmcontact, orderId, checksumhash) 
                                                         if (resbody.statusCode === 'GE_1032') {    //Case of invalid mobile number
                                                             resolve('invalid-contact');
                                                         }
-                                                        else if(resbody.statusCode === 'STUC_1002'){ //Payee record not found, please verify emailId/ssoId.
+                                                        else if (resbody.statusCode === 'STUC_1002') { //Payee record not found, please verify emailId/ssoId.
                                                             resolve("invalid-user");
                                                         }
                                                         else {

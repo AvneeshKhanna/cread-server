@@ -35,9 +35,7 @@ function updateQueryStringParameter(uri, key, value) {
 function sendAWSSMS(message, phonenumber, callback){
 
     if(phonenumber.length !== 10){
-        var err = new Error('Phone number must be exactly 10-digits in length');
-        callback(err, null);
-        return;
+        phonenumber = phonenumber.slice(3, phonenumber.length);
     }
 
     var sns = new AWS.SNS();
@@ -128,6 +126,15 @@ function commitTransaction(connection, resultfromprev) {
     });
 }
 
+function rollbackTransaction(connection, resultfromprev) {
+    console.log('TRANSACTION rollbacked');
+    return new Promise(function (resolve, reject) {
+        connection.rollback(function () {
+            resolve();
+        });
+    });
+}
+
 function beginTransaction(connection) {
     return new Promise(function (resolve, reject) {
         connection.beginTransaction(function (err) {
@@ -168,5 +175,6 @@ module.exports = {
     createShortUrl: createShortUrl,
     commitTransaction: commitTransaction,
     beginTransaction: beginTransaction,
+    rollbackTransaction: rollbackTransaction,
     downloadFile: downloadFile
 };

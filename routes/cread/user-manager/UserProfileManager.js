@@ -490,7 +490,7 @@ router.post('/load-timeline', function (request, response) {
 
     console.log("request for '/load-timeline' is " + JSON.stringify(request.body, null, 3));
 
-    var limit = 10;  //TODO: Change to 10
+    var limit = 8;  //TODO: Change to 10
 
     var connection;
 
