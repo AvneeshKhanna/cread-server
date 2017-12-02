@@ -14,6 +14,7 @@ var rzrinstance = new Razorpay({
     key_secret: razorpay_creds.key_secret
 });
 
+
 function loadAllProducts(connection){
     return new Promise(function (resolve, reject) {
         connection.query('SELECT Product.productid, Product.type, Product.imageurl as productimgurl ' +
