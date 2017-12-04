@@ -23,7 +23,7 @@ var captureutils = require('./CaptureUtils');
 var notify = require('../../notification-system/notificationFramework');
 var shortutils = require('../short/ShortUtils');
 
-var filebasepath = './images/uploads/capture/';
+var filebasepath = './images/uploads/capture/'; 
 
 router.post('/', upload.single('captured-image'), function (request, response) {
 
