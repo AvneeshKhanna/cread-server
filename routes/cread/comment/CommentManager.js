@@ -129,7 +129,7 @@ router.post('/add', function (request, response) {
             }
         })
         .then(function () {
-            if(othercommenters.length > 0){ //Send a notification to other commenters on this thread
+            if(othercommenters && othercommenters.length > 0){ //Send a notification to other commenters on this thread
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " also commented on a post you commented on",
                     category: "other-comment",
