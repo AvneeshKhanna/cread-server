@@ -131,6 +131,11 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
     var textgravity = request.body.textgravity;
     var shoid = request.body.shoid;
 
+    var bold = (request.body.bold === "1"),
+        italic = (request.body.italic === "1"),
+        bgcolor = request.body.bgcolor,
+        font = request.body.font;
+
     var captureid = uuidgen.v4();
     var entityid = uuidgen.v4();
 
@@ -171,6 +176,10 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
                 img_width: img_width,
                 img_height: img_height,
                 text: text,
+                bold: bold,
+                italic: italic,
+                bgcolor: bgcolor,
+                font: font,
                 textsize: textsize,
                 textgravity: textgravity
             };
