@@ -42,10 +42,6 @@ router.post('/', upload.single('short-image'), function (request, response) {
         img_width: request.body.img_width,
         img_height: request.body.img_height,
         txt: request.body.text,
-        bold: (request.body.bold === "1"),
-        italic: (request.body.italic === "1"),
-        bgcolor: (request.body.bgcolor) ? request.body.bgcolor : 'NA' , //for backward compatibilty
-        font: (request.body.font) ? request.body.font : 'NA',   //for backward compatibilty
         textsize: request.body.textsize,
         bold: (request.body.bold === "1"),
         italic: (request.body.italic === "1"),
