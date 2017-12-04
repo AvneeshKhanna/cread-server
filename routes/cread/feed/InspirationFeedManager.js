@@ -8,7 +8,7 @@ var router = express.Router();
 
 var config = require('../../Config');
 var AWS = config.AWS;
-var moment = require('moment')
+var moment = require('moment');
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
@@ -78,6 +78,7 @@ function loadInspirationFeedLegacy(connection, limit, page) {
             'JOIN Capture ' +
             'USING(entityid) ' +
             'WHERE Entity.status = "ACTIVE" ' +
+            'AND Capture.shoid IS NULL ' +
             'ORDER BY Entity.regdate DESC', [], function (err, data) {
             if (err) {
                 reject(err);
@@ -94,6 +95,7 @@ function loadInspirationFeedLegacy(connection, limit, page) {
                         'JOIN User ' +
                         'ON User.uuid = Capture.uuid ' +
                         'WHERE Entity.status = "ACTIVE" ' +
+                        'AND Capture.shoid IS NULL ' +
                         'ORDER BY Entity.regdate DESC ' +
                         'LIMIT ? ' +
                         'OFFSET ?', [limit, offset], function(err, rows){
@@ -149,6 +151,7 @@ function loadInspirationFeed(connection, limit, lastindexkey) {
             'JOIN User ' +
             'ON User.uuid = Capture.uuid ' +
             'WHERE Entity.status = "ACTIVE" ' +
+            'AND Capture.shoid IS NULL ' +
             'AND Entity.regdate < ? ' +
             'ORDER BY Entity.regdate DESC ' +
             'LIMIT ? '/* +
