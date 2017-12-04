@@ -40,9 +40,12 @@ function loadCollabDetails(connection, entityid, entitytype, limit, lastindexkey
             'FROM Short ' +
             'JOIN Capture ' +
             'USING (shoid) ' +
+            'JOIN Entity ' +
+            'ON Entity.entityid = Capture.entityid ' +
             'JOIN User ' +
             'ON Capture.uuid = User.uuid ' +
-            'WHERE Short.entityid = ? ' +
+            'WHERE Entity.status = "ACTIVE" ' +
+            'AND Short.entityid = ? ' +
             'AND Capture.regdate < ? ' +
             'ORDER BY Capture.regdate DESC ' +
             'LIMIT ?'
@@ -52,9 +55,12 @@ function loadCollabDetails(connection, entityid, entitytype, limit, lastindexkey
             'FROM Capture ' +
             'JOIN Short ' +
             'USING (capid) ' +
+            'JOIN Entity ' +
+            'ON Entity.entityid = Short.entityid ' +
             'JOIN User ' +
             'ON Short.uuid = User.uuid ' +
-            'WHERE Capture.entityid = ? ' +
+            'WHERE Entity.status = "ACTIVE" ' +
+            'AND Capture.entityid = ? ' +
             'AND Short.regdate < ? ' +
             'ORDER BY Short.regdate DESC ' +
             'LIMIT ?'
