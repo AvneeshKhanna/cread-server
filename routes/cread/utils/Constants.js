@@ -15,7 +15,7 @@ const restrict_find_frequency = 25; //Measured in 'clicks per minute'
 const royalty_percentage = 10;
 
 const markup = 33; //in percentage TODO: Update markup
-const minCashInAmt = (config_type === 'PRODUCTION') ? 30 : 2;    //TODO: Can change the amount based on team discussion
+const minCashInAmt = (config_type === 'PRODUCTION') ? 10 : 2;    //TODO: Can change the amount based on team discussion
 
 const share_time_interval = {
     same_share : {
