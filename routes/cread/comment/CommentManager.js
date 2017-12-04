@@ -78,6 +78,8 @@ router.post('/add', function (request, response) {
     var entityid = request.body.entityid;
     var comment = request.body.comment;
 
+    var othercommenters = request.body.othercommenters; //An array of uuids of other commenters on this thread
+
     var connection;
     var requesterdetails;
 
@@ -120,10 +122,22 @@ router.post('/add', function (request, response) {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " has commented on your post",
                     category: "comment",
                     entityid: entityid,
-                    persistable:"Yes",
+                    persistable: "Yes",
                     actorimage: utils.createSmallProfilePicUrl(uuid)
                 };
                 return notify.notificationPromise(new Array(entityuuid), notifData);
+            }
+        })
+        .then(function () {
+            if(othercommenters && othercommenters.length > 0){ //Send a notification to other commenters on this thread
+                var notifData = {
+                    message: requesterdetails.firstname + " " + requesterdetails.lastname + " also commented on a post you commented on",
+                    category: "other-comment",
+                    entityid: entityid,
+                    persistable: "Yes",
+                    actorimage: utils.createSmallProfilePicUrl(uuid)
+                };
+                return notify.notificationPromise(othercommenters, notifData);
             }
         })
         .then(function () {
