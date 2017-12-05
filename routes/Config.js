@@ -3,6 +3,7 @@ var AWS = require('aws-sdk');
 var AWS_EU_WEST_1 = require('aws-sdk');
 var config = require('config');
 var dbConfig = config.get('rdsDB.dbConfig');
+var envtype = config.get('type');
 
 AWS.config.region = 'ap-northeast-1';
 AWS.config.credentials = new AWS.CognitoIdentityCredentials({
@@ -80,6 +81,7 @@ module.exports = {
     'connectionPool': connectionPool,
     'disconnect': disconnect,
     'connectDb': dbConnect,
+    'envtype': envtype,
     'dynamodbCredentials': dynamodbCredentials,
     'AWS': AWS,
     'AWS-EU-WEST-1': AWS_EU_WEST_1,

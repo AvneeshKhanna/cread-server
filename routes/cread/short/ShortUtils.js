@@ -12,6 +12,13 @@ function retrieveShortDetails(connection, shoid, select) {
                 reject(err);
             }
             else {
+
+                rows.map(function (element) {
+                    if(!element.font){
+                        element.font = 'NA';
+                    }
+                });
+
                 resolve(rows[0]);
             }
         });

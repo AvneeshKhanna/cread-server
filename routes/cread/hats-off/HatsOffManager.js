@@ -122,7 +122,7 @@ router.post('/load', function (request, response) {
     var page = request.body.page;
     var lastindexkey = request.body.lastindexkey;
 
-    var limit = 20;
+    var limit = (config.envtype === 'PRODUCTION') ? 20 : 10;
     var connection;
 
     _auth.authValid(uuid, authkey)
@@ -139,7 +139,6 @@ router.post('/load', function (request, response) {
             }
         })
         .then(function (result) {
-            console.log("rows from loadHatsOffsLegacy is " + JSON.stringify(result.rows, null, 3));
             response.send({
                 tokenstatus: 'valid',
                 data: result

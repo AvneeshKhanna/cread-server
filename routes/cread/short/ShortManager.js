@@ -39,12 +39,14 @@ router.post('/load-specific', function (request, response) {
             var select = [
                 'textcolor',
                 'textsize',
-                'txt'
+                'txt AS text',
+                'bold',
+                'italic',
+                'font'
             ];
             return shortutils.retrieveShortDetails(connection, shoid, select);
         })
         .then(function (result) {
-            utils.changePropertyName(result, 'txt', 'text');
             console.log("result is " + JSON.stringify(result, null, 3));
             response.send({
                 tokenstatus: 'valid',

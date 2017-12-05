@@ -82,7 +82,7 @@ function loadComments(connection, entityid, limit, lastindexkey, loadAll) {
             'ON User.uuid = Comment.uuid ' +
             'WHERE Comment.entityid = ? ' +
             'AND Comment.regdate < ? ' +
-            'ORDER BY Comment.regdate ' +
+            'ORDER BY Comment.regdate DESC ' +
             'LIMIT ? '/* +
             'OFFSET ?'*/, [entityid, lastindexkey, limit/*, offset*/], function (err, rows) {
             if (err) {
@@ -96,13 +96,23 @@ function loadComments(connection, entityid, limit, lastindexkey, loadAll) {
                     return element;
                 });
 
+                //Sort comments in chronoligcal order
+                /*rows.sort(function (a, b) {
+                    if(a < b){
+                        return -1;
+                    }
+                    else{
+                        return 1;
+                    }
+                });*/
+
                 var result = {};
                 result.comments = rows;
 
                 if (loadAll) {
                     if(rows.length > 0){
                         result.requestmore = rows.length >= limit;
-                        result.lastindexkey = moment(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss');
+                        result.lastindexkey = moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss');
                     }
                     else{
                         result.requestmore = rows.length >= limit;

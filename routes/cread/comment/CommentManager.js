@@ -27,7 +27,7 @@ router.post('/load', function (request, response) {
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
 
-    var limit = 20;
+    var limit = (config.envtype === 'PRODUCTION') ? 20 : 3;
     var connection;
 
     _auth.authValid(uuid, authkey)
@@ -50,6 +50,7 @@ router.post('/load', function (request, response) {
             }
         })
         .then(function (result) {
+            console.log("result is " + JSON.stringify(result, null, 3));
             response.send({
                 tokenstatus: 'valid',
                 data: result
