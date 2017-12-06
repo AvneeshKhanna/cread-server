@@ -209,6 +209,49 @@ function loadEntityData(connection, requesteruuid, entityid) {
     });
 }
 
+/**
+ * Retrieves the creator and collaborator's (if exists) uuids from entityid
+ * */
+function getEntityUsrDetailsForNotif(connection, entityid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT Entity.type, Creator.uuid AS creatoruuid, ' +
+            'CollabC.uuid AS collabcuuid, CollabS.uuid AS collabsuuid ' +
+            'FROM Entity ' +
+            'LEFT JOIN Capture ' +
+            'ON Capture.entityid = Entity.entityid ' +
+            'LEFT JOIN Short ' +
+            'ON Short.entityid = Entity.entityid ' +
+            'JOIN User AS Creator ' +
+            'ON (Creator.uuid = Short.uuid OR Creator.uuid = Capture.uuid)  ' +
+            'LEFT JOIN Capture AS CollabC ' +
+            'ON Short.capid = CollabC.capid ' +
+            'LEFT JOIN Short AS CollabS ' +
+            'ON Capture.shoid = CollabS.shoid ' +
+            'WHERE Entity.entityid = ?', [entityid], function(err, rows){
+            if(err){
+                reject(err);
+            }
+            else{
+
+                rows.map(function (el) {
+                    if(el.type === 'SHORT'){
+                        if(el.collabcuuid){
+                            el.collabuuid = el.collabcuuid;
+                        }
+                    }
+                    else if(el.type === 'CAPTURE'){
+                        if(el.collabsuuid){
+                            el.collabuuid = el.collabsuuid;
+                        }
+                    }
+                });
+
+                resolve(rows[0]);
+            }
+        });
+    })
+}
+
 function deactivateEntity(connection, entityid, uuid) {
     return new Promise(function (resolve, reject) {
         connection.query('UPDATE Entity ' +
@@ -232,5 +275,6 @@ module.exports = {
     loadEntityData: loadEntityData,
     retrieveShortDetails: retrieveShortDetails,
     loadCollabDetails: loadCollabDetails,
+    getEntityUsrDetailsForNotif: getEntityUsrDetailsForNotif,
     deactivateEntity: deactivateEntity
 };

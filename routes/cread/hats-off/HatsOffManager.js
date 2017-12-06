@@ -18,6 +18,7 @@ var moment = require('moment');
 var utils = require('../utils/Utils');
 var notify = require('../../notification-system/notificationFramework');
 var hatsoffutils = require('./HatsOffUtils');
+var entityutils = require('../entity/EntityUtils');
 var consts = require('../utils/Constants');
 
 router.post('/on-click', function (request, response) {
@@ -59,7 +60,7 @@ router.post('/on-click', function (request, response) {
         })
         .then(function () {
             if(register){
-                return getEntityUsrDetailsForNotif(connection, entityid);
+                return entityutils.getEntityUsrDetailsForNotif(connection, entityid);
             }
             else {
                 throw new BreakPromiseChainError();
@@ -107,7 +108,7 @@ router.post('/on-click', function (request, response) {
         });
 });
 
-function getEntityUsrDetailsForNotif(connection, entityid) {
+/*function getEntityUsrDetailsForNotif(connection, entityid) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT Entity.type, Creator.uuid AS creatoruuid, ' +
             'CollabC.uuid AS collabcuuid, CollabS.uuid AS collabsuuid ' +
@@ -145,7 +146,7 @@ function getEntityUsrDetailsForNotif(connection, entityid) {
             }
         });
     })
-}
+}*/
 
 router.post('/load', function (request, response) {
 

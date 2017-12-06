@@ -12,6 +12,7 @@ var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var commentutils = require('./CommentUtils');
 var utils = require('../utils/Utils');
+var entityutils = require('../entity/EntityUtils');
 var notify = require('../../notification-system/notificationFramework');
 
 var uuidGenerator = require('uuid');
@@ -83,6 +84,9 @@ router.post('/add', function (request, response) {
 
     var connection;
     var requesterdetails;
+    var notifuuids;
+
+    console.log("request is " + JSON.stringify(request.body, null, 3));
 
     _auth.authValid(uuid, authkey)
         .then(function (details) {
@@ -106,7 +110,7 @@ router.post('/add', function (request, response) {
                     status: 'done',
                     comment: {
                         commid: commid,
-                        profilepicurl: utils.createSmallShortUrl(uuid),
+                        profilepicurl: utils.createSmallProfilePicUrl(uuid),
                         firstname: requesterdetails.firstname,
                         lastname: requesterdetails.lastname
                     }
@@ -115,10 +119,11 @@ router.post('/add', function (request, response) {
             response.end();
         })
         .then(function () {
-            return retrieveEntityUserDetails(connection, entityid);
+            return entityutils.getEntityUsrDetailsForNotif(connection, entityid);
         })
-        .then(function (entityuuid) {
-            if(entityuuid !== uuid){    //Send notification only when the two users involved are different
+        .then(function (result) {   //Send a notification to the creator of this post
+            notifuuids = result;
+            if(notifuuids.creatoruuid !== uuid){    //Send notification only when the two users involved are different
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " has commented on your post",
                     category: "comment",
@@ -126,14 +131,26 @@ router.post('/add', function (request, response) {
                     persistable: "Yes",
                     actorimage: utils.createSmallProfilePicUrl(uuid)
                 };
-                return notify.notificationPromise(new Array(entityuuid), notifData);
+                return notify.notificationPromise(new Array(notifuuids.creatoruuid), notifData);
+            }
+        })
+        .then(function () { //Send a notification to the collaborator of this post
+            if(notifuuids.collabuuid && notifuuids.collabuuid !== uuid){    //Send notification only when the two users involved are different
+                var notifData = {
+                    message: requesterdetails.firstname + " " + requesterdetails.lastname + " has commented on a post inspired by yours",
+                    category: "comment",    //TODO: Change category to: other-comment
+                    entityid: entityid,
+                    persistable: "Yes",
+                    actorimage: utils.createSmallProfilePicUrl(uuid)
+                };
+                return notify.notificationPromise(new Array(notifuuids.collabuuid), notifData);
             }
         })
         .then(function () {
             if(othercommenters && othercommenters.length > 0){ //Send a notification to other commenters on this thread
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " also commented on a post you commented on",
-                    category: "other-comment",
+                    category: "comment",
                     entityid: entityid,
                     persistable: "Yes",
                     actorimage: utils.createSmallProfilePicUrl(uuid)
