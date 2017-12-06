@@ -31,6 +31,7 @@ router.post('/on-click', function (request, response) {
 
     var connection;
     var requesterdetails;
+    var notifuuids;
     
     _auth.authValid(uuid, authkey)
         .then(function (details) {
@@ -58,22 +59,35 @@ router.post('/on-click', function (request, response) {
         })
         .then(function () {
             if(register){
-                return retrieveEntityUserDetails(connection, entityid);
+                return getEntityUsrDetailsForNotif(connection, entityid);
             }
             else {
                 throw new BreakPromiseChainError();
             }
         })
-        .then(function (entityuuid) {
-            if(entityuuid !== uuid){    //Send notification only when the two users involved are different
+        .then(function (result) {   //Send a notification to creator
+            notifuuids = result;
+            if(notifuuids.creatoruuid !== uuid){    //Send notification only when the two users involved are different
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " has given your post a hats-off",
                     category: "hatsoff",
                     entityid: entityid,
-                    persistable:"Yes",
+                    persistable: "Yes",
                     actorimage: utils.createSmallProfilePicUrl(uuid)
                 };
-                return notify.notificationPromise(new Array(entityuuid), notifData);
+                return notify.notificationPromise(new Array(notifuuids.creatoruuid), notifData);
+            }
+        })
+        .then(function () { //Send a notification to collaborator
+            if(notifuuids.collabuuid && notifuuids.collabuuid !== uuid){    //Send notification only when the two users involved are different
+                var notifData = {
+                    message: requesterdetails.firstname + " " + requesterdetails.lastname + " has given a hats-off to a post which was inspired by yours",
+                    category: "hatsoff",
+                    entityid: entityid,
+                    persistable: "Yes",
+                    actorimage: utils.createSmallProfilePicUrl(uuid)
+                };
+                return notify.notificationPromise(new Array(notifuuids.collabuuid), notifData);
             }
         })
         .then(function () {
@@ -93,22 +107,41 @@ router.post('/on-click', function (request, response) {
         });
 });
 
-function retrieveEntityUserDetails(connection, entityid) {
+function getEntityUsrDetailsForNotif(connection, entityid) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT User.uuid ' +
+        connection.query('SELECT Entity.type, Creator.uuid AS creatoruuid, ' +
+            'CollabC.uuid AS collabcuuid, CollabS.uuid AS collabsuuid ' +
             'FROM Entity ' +
             'LEFT JOIN Capture ' +
             'ON Capture.entityid = Entity.entityid ' +
             'LEFT JOIN Short ' +
             'ON Short.entityid = Entity.entityid ' +
-            'JOIN User ' +
-            'ON (User.uuid = Short.uuid OR User.uuid = Capture.uuid)  ' +
+            'JOIN User AS Creator ' +
+            'ON (Creator.uuid = Short.uuid OR Creator.uuid = Capture.uuid)  ' +
+            'LEFT JOIN Capture AS CollabC ' +
+            'ON Short.capid = CollabC.capid ' +
+            'LEFT JOIN Short AS CollabS ' +
+            'ON Capture.shoid = CollabS.shoid ' +
             'WHERE Entity.entityid = ?', [entityid], function(err, rows){
             if(err){
                 reject(err);
             }
             else{
-                resolve(rows[0].uuid);
+
+                rows.map(function (el) {
+                    if(el.type === 'SHORT'){
+                        if(el.collabcuuid){
+                            el.collabuuid = el.collabcuuid;
+                        }
+                    }
+                    else if(el.type === 'CAPTURE'){
+                        if(el.collabsuuid){
+                            el.collabuuid = el.collabsuuid;
+                        }
+                    }
+                });
+
+                resolve(rows[0]);
             }
         });
     })

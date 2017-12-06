@@ -96,15 +96,15 @@ function loadComments(connection, entityid, limit, lastindexkey, loadAll) {
                     return element;
                 });
 
-                //Sort comments in chronoligcal order
-                /*rows.sort(function (a, b) {
-                    if(a < b){
+                //Sort comments in chronological order
+                rows.sort(function (a, b) {
+                    if(a.regdate < b.regdate){
                         return -1;
                     }
                     else{
                         return 1;
                     }
-                });*/
+                });
 
                 var result = {};
                 result.comments = rows;
@@ -112,7 +112,7 @@ function loadComments(connection, entityid, limit, lastindexkey, loadAll) {
                 if (loadAll) {
                     if(rows.length > 0){
                         result.requestmore = rows.length >= limit;
-                        result.lastindexkey = moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss');
+                        result.lastindexkey = moment.utc(rows[0/*rows.length - 1*/].regdate).format('YYYY-MM-DD HH:mm:ss');
                     }
                     else{
                         result.requestmore = rows.length >= limit;

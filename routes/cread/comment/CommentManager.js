@@ -27,7 +27,7 @@ router.post('/load', function (request, response) {
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
 
-    var limit = (config.envtype === 'PRODUCTION') ? 20 : 3;
+    var limit = (config.envtype === 'PRODUCTION') ? 20 : 12;
     var connection;
 
     _auth.authValid(uuid, authkey)
