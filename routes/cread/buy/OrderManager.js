@@ -15,6 +15,7 @@ var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
 var buyutils = require('./BuyUtils');
 var utils = require('../utils/Utils');
+var entityutils = require('../entity/EntityUtils');
 
 var consts = require('../utils/Constants');
 
@@ -71,6 +72,7 @@ router.post('/place', function (request, response) {
 
     var connection;
     var requesterdetails;
+    var notifuuids;
 
     _auth.authValid(uuid, authkey)
         .then(function (details) {
@@ -154,7 +156,37 @@ router.post('/place', function (request, response) {
         /*.then(function () { //Sending notification
             return retrieveEntityUserDetails(connection, entityid);
         })*/
-        .then(function () {   //Sending notification
+        .then(function () {
+            return entityutils.getEntityUsrDetailsForNotif(connection, entityid);
+        })
+        .then(function (result) {   //Send a notification to the creator of this post
+            notifuuids = result;
+            if(notifuuids.creatoruuid !== uuid){    //Send notification only when the two users involved are different
+                var notifData = {
+                    message: requesterdetails.firstname + " " + requesterdetails.lastname + " has purchased a " + productname + " created using your post",
+                    category: "buy",
+                    entityid: entityid,
+                    persistable: "Yes",
+                    other_collaborator : false,
+                    actorimage: utils.createSmallProfilePicUrl(uuid)
+                };
+                return notify.notificationPromise(new Array(notifuuids.creatoruuid), notifData);
+            }
+        })
+        .then(function () { //Send a notification to the collaborator of this post
+            if(notifuuids.collabuuid && notifuuids.collabuuid !== uuid){    //Send notification only when the two users involved are different
+                var notifData = {
+                    message: requesterdetails.firstname + " " + requesterdetails.lastname + " has purchased a " + productname + " created using a post inspired by yours",
+                    category: "buy",
+                    entityid: entityid,
+                    persistable: "Yes",
+                    other_collaborator : true,
+                    actorimage: utils.createSmallProfilePicUrl(uuid)
+                };
+                return notify.notificationPromise(new Array(notifuuids.collabuuid), notifData);
+            }
+        })
+        /*.then(function () {   //Sending notification
 
             //Filtering based on whether the post-creator uuids are not null and the same as buyer
             var userarray = [
@@ -174,7 +206,7 @@ router.post('/place', function (request, response) {
                 };
                 return notify.notificationPromise(userarray, notifData);
             }
-        })
+        })*/
         .then(function () {
             throw new BreakPromiseChainError(); //To disconnect server connection
         })

@@ -28,7 +28,7 @@ var filebasepath = './images/uploads/capture/';
 router.post('/', upload.single('captured-image'), function (request, response) {
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
-    //console.log("request is " + JSON.stringify(request.file, null, 3));
+    console.log("request is " + JSON.stringify(request.file, null, 3));
 
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;

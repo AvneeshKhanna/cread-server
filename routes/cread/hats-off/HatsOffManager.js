@@ -74,6 +74,7 @@ router.post('/on-click', function (request, response) {
                     category: "hatsoff",
                     entityid: entityid,
                     persistable: "Yes",
+                    other_collaborator : false,
                     actorimage: utils.createSmallProfilePicUrl(uuid)
                 };
                 return notify.notificationPromise(new Array(notifuuids.creatoruuid), notifData);
@@ -86,6 +87,7 @@ router.post('/on-click', function (request, response) {
                     category: "hatsoff",
                     entityid: entityid,
                     persistable: "Yes",
+                    other_collaborator : true,
                     actorimage: utils.createSmallProfilePicUrl(uuid)
                 };
                 return notify.notificationPromise(new Array(notifuuids.collabuuid), notifData);

@@ -129,6 +129,7 @@ router.post('/add', function (request, response) {
                     category: "comment",
                     entityid: entityid,
                     persistable: "Yes",
+                    other_collaborator : false,
                     actorimage: utils.createSmallProfilePicUrl(uuid)
                 };
                 return notify.notificationPromise(new Array(notifuuids.creatoruuid), notifData);
@@ -141,6 +142,7 @@ router.post('/add', function (request, response) {
                     category: "comment",    //TODO: Change category to: other-comment
                     entityid: entityid,
                     persistable: "Yes",
+                    other_collaborator : true,
                     actorimage: utils.createSmallProfilePicUrl(uuid)
                 };
                 return notify.notificationPromise(new Array(notifuuids.collabuuid), notifData);
@@ -150,7 +152,7 @@ router.post('/add', function (request, response) {
             if(othercommenters && othercommenters.length > 0){ //Send a notification to other commenters on this thread
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " also commented on a post you commented on",
-                    category: "comment",
+                    category: "other-comment",
                     entityid: entityid,
                     persistable: "Yes",
                     actorimage: utils.createSmallProfilePicUrl(uuid)
