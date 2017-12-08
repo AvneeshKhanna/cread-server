@@ -58,7 +58,7 @@ router.get('/', function (request, response) {
          metaTags.meta_tag_og_url = article.description; //description*/
     };
 
-    response.render(('refer.ejs'), keys);//render refer.ejs with meta tags; render function always looks in 'views' folder
+    response.render(('refer.ejs'), keys);   //render refer.ejs with meta tags; render function always looks in 'views' folder
     response.end();
 
 });

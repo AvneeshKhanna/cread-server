@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<head>
+
+    <title>Join Cread!</title>
+
+    <meta charset="utf-8">
+
+    <!--Open Graph tags for LinkedIn and Facebook-->
+    <meta property="og:title" content="<%- meta_tag_og_title %>">
+    <meta property="og:image" content="<%- meta_tag_og_image %>">
+    <meta property="og:url" content= "http://www.cread.in">
+    <!--<meta property="og:description" content="">
+    <meta property="og:type" content=""/>
+    <meta property="og:site_name" content="">-->
+
+    <!-- To ensure proper rendering and touch zooming, the following <meta> tags are used -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+
+    <!-- Latest compiled JavaScript -->
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <!--Loading the AWS SDK for JavaScript-->
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.4.13.min.js"></script>
+
+    <!--Loading UAParser.js for User-Agent detection-->
+    <script src="/javascripts/ua-parser-js/dist/ua-parser.min.js"></script>
+
+    <script src="/javascripts/load-image/load-image.all.min.js"></script>
+
+    <script type="text/javascript">
+
+        /*var name, job, company;
+        var rooturl = "http://marketrecruitserver-env.ap-northeast-1.elasticbeanstalk.com";
+
+        var refcode = "";
+
+        function getUrlParams(){
+
+            name = urlParam('name');
+            job = urlParam('job');
+            company = urlParam('company');
+            refcode = urlParam('refcode');
+
+            console.log(name);
+            console.log(job);
+            console.log(company);
+            console.log(refcode);
+            console.log(urlParam('piclink'));
+
+            detectUser();
+        }
+
+        function detectUser(){
+            var parser = new UAParser();
+            // by default it takes ua string from current browser's window.navigator.userAgent
+            console.log(JSON.stringify(parser.getResult(), null, 3));
+
+            setContent();
+        }
+
+        function redirectToPlayStore(){
+
+            var psUrl = "https://play.google.com/store/apps/details?id=in.thetestament.marketrecruit&pcampaignid=fdl_long&url=" + window.location.href;
+            window.location.replace(psUrl);
+        }
+
+        //function to extract a given parameter value from the url
+        function urlParam(sParam) {
+            var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+                sURLVariables = sPageURL.split('&'),
+                sParameterName,
+                i;
+
+            for (i = 0; i < sURLVariables.length; i++) {
+                sParameterName = sURLVariables[i].split('=');
+
+                if (sParameterName[0] === sParam) {
+                    return sParameterName[1] === undefined ? true : sParameterName[1];
+                }
+            }
+        }
+
+        function setContent(){
+
+            $('#user-name').text("");
+            $('#designation').text("");
+            $('#user-first-name').text("");
+            $('#job-name').text("");
+            $('#company-name').text("");
+            $('#salary').text("Rs. ");
+
+            loadImage(
+                " ",
+                function (img) {
+                    if(img.type === "error") {
+                        //code for default image
+                        $('#profile-img').attr('src', '/images/user_profle_placeholder.jpg');
+                    } else {
+                        console.log('else block called');
+                        $('#profile-img').attr('src', "");
+                    }
+                }
+            );
+        }
+
+        function sendSMSLink() {
+
+            if($('#contact-number').val().length < 10){
+                console.log('if block for 10-digit validation called');
+                $('#sms-btn-container').popover();
+                return;
+            }
+
+            $('#send-sms-btn').prop('disabled', true);
+            $('#sms-alert-success').hide();
+            $('#sms-alert-error').hide();
+
+            var params = {
+                contact: $('#contact-number').val(),
+                referral_link: window.location.href
+            }
+
+            $.post(rooturl + "/referrer-details-web/sms-link", params, function (data, status) {
+
+                console.log('data is ' + JSON.stringify(data, null, 3));
+                console.log('status is ' + status);
+
+                $('#send-sms-btn').prop('disabled', false);
+
+                if(status == 'success'){
+                    $('#sms-alert-success').show();
+                }
+                else{
+                    $('#sms-alert-error').show();
+                }
+
+            })
+
+        }
+
+        $(document).ready(function(){
+            $('[data-toggle="popover"]').popover();
+
+            //show sms-modal on page loading
+            $('#text-link-modal').modal('show');
+        });*/
+
+    </script>
+
+    <style>
+
+        body{
+            background-color: #F0F0F0;
+        }
+
+        .root-div{
+            margin: 0 auto;
+            padding: 0;
+            max-width: 50em;
+            height: 100%;
+            background-color: white;
+        }
+
+        #content-div{
+            padding: 2em;
+        }
+
+        .profile-img{
+            border-radius: 50%;
+            width: 5em;
+            align: left;
+            margin-right: 5px;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .profile-img-heading{
+            line-height: 80%;
+        }
+
+        #profile-img-content{
+            vertical-align: middle;
+            display: inline-block;
+        }
+
+        .header-image{
+            max-width: 100%;
+        }
+
+        #text-link-icon{
+            height: 1.25em;
+            margin: 0.5em;
+            vertical-align: middle;
+        }
+
+        .modal-phone-img{
+            height: 100px;
+        }
+
+        #google-play-badge-img{
+            align: center;
+            width: 15em;
+        }
+
+        /* Popover Header */
+        .popover-title {
+            background-color: #ff4d4d;
+            color: #FFFFFF;
+        }
+
+        /* Popover Body */
+        .popover-content {
+            font-size: 0.8em;
+        }
+    </style>
+
+</head>
+<body>Welcome</body>
+</html>

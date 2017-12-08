@@ -74,6 +74,15 @@ var dynamodbCredentials = function () {
     });
 };
 
+function getServerBaseUrl(){
+    if(envtype === 'PRODUCTION'){
+        return 'http://cread-server-main.ap-northeast-1.elasticbeanstalk.com';
+    }
+    else{
+        return 'http://833f05af.ngrok.io';
+    }
+}
+
 module.exports = {
     'secretKey': '12345-67890-09876-54321',
     'createConnection': connection,
@@ -85,6 +94,9 @@ module.exports = {
     'dynamodbCredentials': dynamodbCredentials,
     'AWS': AWS,
     'AWS-EU-WEST-1': AWS_EU_WEST_1,
+    'server_url': getServerBaseUrl(),
     'crypto-secret-key': "0da2d13d-3eaa-4ee8-a918-d0ca08d1e897",
+    'firebase_web_api_key': 'AIzaSyAylJMEEhFauggwGb2j0gvGMh22K5oVrxY',
+    'firebase_dynamiclink_domain': 'https://n7sgf.app.goo.gl',
     'fcm-server-key': 'AAAAWOwUO0Q:APA91bEI7_FLG9hRz2_nHRkBgSnQftSMrGzOzzKod1lPYNyX88jEqUIJRhE7SpxyVQ_a1ugWAZ0CbVgC3pTylZm9w8ZJib8P5B5MTXVh42_48RN_37-Cob0FtTV5-xxRzlSfGgYVobcc'
 };

@@ -154,6 +154,7 @@ app.use('/products',require('./routes/cread/buy/ProductsManager'));
 app.use('/order', require('./routes/cread/buy/OrderManager'));
 app.use('/buying-track', require('./routes/cread/buy/track/BuyTrackManager'));
 app.use('/sell', require('./routes/cread/sell/SellOrdersManager'));
+app.use('/entity-share-link', require('./routes/cread/entity/share/EntityShareManager'));
 
 //-dashboard-
 app.use('/campaign-details', require('./routes/cread/dsbrd/campaign-details/CampaignDetails'));

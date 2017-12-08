@@ -9,6 +9,7 @@ var router = express.Router();
 var uuidgen = require('uuid');
 
 var config = require('../../Config');
+var envtype = config.envtype;
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
@@ -224,6 +225,42 @@ router.post('/place', function (request, response) {
                         }).end();
                     }
                 });
+            }
+        });
+});
+
+/**
+ * To load all the orders received on Cread app for operational purposes
+ * */
+router.post('/load-for-print', function (request, response) {
+    var lastindexkey = request.body.lastindexkey;
+
+    var limit = (envtype === 'PRODUCTION') ? 10 : 2;
+    var connection;
+
+    config.getNewConnection()
+        .then(function (conn) {
+            connection = conn;
+            return buyutils.loadOrdersForPrint(connection, limit, lastindexkey);
+        })
+        .then(function (result) {
+            console.log("result is " + JSON.stringify(result, null, 3));
+            response.send({
+                data: result
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
             }
         });
 });

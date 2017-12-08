@@ -25,6 +25,102 @@ function retrieveShortDetails(connection, entityid) {
     });
 }
 
+function getEntityDetailsForPrint(connection, entityids) {
+    return new Promise(function (resolve, reject) {
+
+        var sqloptions = {
+            sql: 'SELECT * ' +
+            'FROM Entity AS E ' +
+            'LEFT JOIN Short AS S ' +
+            'ON E.entityid = S.entityid ' +
+            'LEFT JOIN Capture AS C ' +
+            'ON E.entityid = C.entityid ' +
+            'LEFT JOIN Capture AS CS ' +
+            'ON S.capid = CS.capid ' +
+            'WHERE E.entityid IN (?) ' +
+            'GROUP BY E.entityid',
+            nestTables: true    //To segregate same column names under multiple tables
+        };
+
+        /*if(type === 'SHORT'){
+            query = 'SELECT * FROM Short WHERE entityid IN (?)';
+        }
+        else if(type === 'CAPTURE'){
+            query = 'SELECT * FROM Capture WHERE entityid IN (?)';
+        }*/
+
+        connection.query(sqloptions, [entityids], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+
+                console.log("rows from query {nestTables:true} is " + JSON.stringify(rows, null, 3));
+
+                rows.map(function (element) {
+
+                    var E = element.E;
+                    var S = element.S;
+                    var C = element.C;
+                    var CS = element.CS;
+
+                    if(E.type === 'SHORT'){
+
+                        for (var key in S) {
+                            element[key] = S[key];
+                        }
+
+                        if(S.capid){
+                            element.entityurl = utils.createSmallShortUrl(S.uuid, S.shoid);
+                            element.highresurl = utils.createCaptureUrl(CS.uuid, CS.capid);
+                        }
+                        else{
+                            element.entityurl = null;
+                            element.highresurl = null;
+                        }
+
+                    }
+                    else if(E.type === 'CAPTURE'){
+
+                        for (var key in C) {
+                            element[key] = C[key];
+                        }
+
+                        element.entityurl = utils.createSmallCaptureUrl(C.uuid, C.capid);
+                        element.highresurl = utils.createCaptureUrl(C.uuid, C.capid);
+                    }
+
+                    if(element.textgravity === 'East'){
+                        element.textgravity = 'Right';
+                    }
+                    else if(element.textgravity === 'West'){
+                        element.textgravity = 'Left';
+                    }
+
+                    if(element.hasOwnProperty('E')){
+                        delete element.E;
+                    }
+
+                    if(element.hasOwnProperty('S')){
+                        delete element.S;
+                    }
+
+                    if(element.hasOwnProperty('C')){
+                        delete element.C;
+                    }
+
+                    if(element.hasOwnProperty('CS')){
+                        delete element.CS;
+                    }
+
+                });
+
+                resolve(rows);
+            }
+        });
+    });
+}
+
 function retrieveCaptureDetails() {
 
 }
@@ -275,6 +371,7 @@ module.exports = {
     loadEntityData: loadEntityData,
     retrieveShortDetails: retrieveShortDetails,
     loadCollabDetails: loadCollabDetails,
+    getEntityDetailsForPrint: getEntityDetailsForPrint,
     getEntityUsrDetailsForNotif: getEntityUsrDetailsForNotif,
     deactivateEntity: deactivateEntity
 };

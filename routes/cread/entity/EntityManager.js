@@ -108,22 +108,33 @@ router.post('/delete', function (request, response) {
         });
 });
 
-router.post('/generate-short-for-print', function (request, response) {
+/**
+ * Generate a high resolution version of the image for print using entityid
+ * */
+/*router.post('/load-image-for-print', function (request, response) {
     var entityid = request.body.entityid;
+    var type = request.body.type;
 
     var connection;
 
     config.getNewConnection()
         .then(function (conn) {
             connection = conn;
-            return entityutils.retrieveShortDetails(connection, entityid);
+            return entityutils.getEntityDetailsForPrint(connection, entityid, type);
         })
-        .then(function (short) {
+        .then(function (result) {
+            response.send({
+                data: result
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        /!*.then(function (short) {
             return captureutils.downloadCapture(uuid, short.capid, rootpath + short.capid + '.jpg');
         })
         .then(function (capturepath) {
 
-        })
+        })*!/
         .catch(function (err) {
             config.disconnect(connection);
             if(err instanceof BreakPromiseChainError){
@@ -136,7 +147,7 @@ router.post('/generate-short-for-print', function (request, response) {
                 }).end();
             }
         });
-});
+});*/
 
 router.post('/load-collab-details', function (request, response) {
 
