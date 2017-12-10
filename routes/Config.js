@@ -79,7 +79,7 @@ function getServerBaseUrl(){
         return 'http://cread-server-main.ap-northeast-1.elasticbeanstalk.com';
     }
     else{
-        return 'http://833f05af.ngrok.io';
+        return 'http://cread-dev-remote.herokuapp.com';
     }
 }
 

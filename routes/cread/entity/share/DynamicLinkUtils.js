@@ -22,7 +22,7 @@ function generateLongDynamicLink(deeplink){
         '&apn=' +
         'com.thetestament.cread' +    //package name
         '&amv=' +
-        '49'; //App minimum version code TODO: Change
+        '7'; //App minimum version code TODO: Change
 }
 
 /**
