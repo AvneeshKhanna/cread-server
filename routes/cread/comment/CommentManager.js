@@ -139,7 +139,7 @@ router.post('/add', function (request, response) {
             if(notifuuids.collabuuid && notifuuids.collabuuid !== uuid){    //Send notification only when the two users involved are different
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " has commented on a post inspired by yours",
-                    category: "comment",    //TODO: Change category to: other-comment
+                    category: "comment",
                     entityid: entityid,
                     persistable: "Yes",
                     other_collaborator : true,

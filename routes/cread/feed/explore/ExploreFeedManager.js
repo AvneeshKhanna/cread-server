@@ -178,7 +178,7 @@ router.post('/load', function (request, response) {
     var page = request.body.page;
     var lastindexkey = request.body.lastindexkey;
 
-    var limit = 10;  //TODO: Change to 10
+    var limit = (config.envtype === 'PRODUCTION') ? 10 : 8;
     var connection;
 
     _auth.authValid(uuid, authkey)

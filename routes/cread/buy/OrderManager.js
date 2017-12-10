@@ -23,7 +23,6 @@ var consts = require('../utils/Constants');
 var notify = require('../../notification-system/notificationFramework');
 var emailer = require('../dsbrd/wallet-management/TransactionEmailer');
 
-//TODO: Modify notification system for royalty and for involving both the users who developed the artwork
 router.post('/place', function (request, response) {
 
     console.log("request is " + JSON.stringify(request.body, null, 3));

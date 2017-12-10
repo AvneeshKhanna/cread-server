@@ -159,7 +159,7 @@ router.post('/load-collab-details', function (request, response) {
     var entitytype = request.body.entitytype;
     var lastindexkey = request.body.lastindexkey;
 
-    var limit = 4;  //TODO: Change to 4
+    var limit = (config.envtype === 'PRODUCTION' ? 4 : 2);
     var connection;
 
     _auth.authValid(uuid, authkey)

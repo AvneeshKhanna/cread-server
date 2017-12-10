@@ -107,7 +107,7 @@ function loadSellOrders(connection, uuid, limit, toloadtotal, lastindexkey) {
                     });
 
 
-                    if(toloadtotal){
+                    if(toloadtotal){    //This flag is true only for the first time
                         console.log("loadTotalRoyalty() called");
                         loadTotalRoyalty(connection, uuid)
                             .then(function (result) {
@@ -128,7 +128,7 @@ function loadSellOrders(connection, uuid, limit, toloadtotal, lastindexkey) {
                         resolve({
                             items: rows,
                             total_royalty: -1,
-                            redeem_amount: -1,  //TODO: Calculate
+                            redeem_amount: -1,
                             minimum_wallet_balance: consts.min_cash_in_amt,
                             lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
                             requestmore: rows.length >= limit
@@ -139,7 +139,7 @@ function loadSellOrders(connection, uuid, limit, toloadtotal, lastindexkey) {
                     resolve({
                         items: rows,
                         total_royalty: -1,
-                        redeem_amount: -1,  //TODO: Calculate
+                        redeem_amount: -1,
                         minimum_wallet_balance: consts.min_cash_in_amt,
                         lastindexkey: null,
                         requestmore: rows.length >= limit
