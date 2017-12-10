@@ -66,13 +66,14 @@
             console.log(JSON.stringify(parser.getResult(), null, 3));
 
             setContent();
-        }
+        }*/
 
         function redirectToPlayStore(){
-
-            var psUrl = "https://play.google.com/store/apps/details?id=in.thetestament.marketrecruit&pcampaignid=fdl_long&url=" + window.location.href;
+            var psUrl = "https://play.google.com/store/apps/details?id=com.thetestament.cread&pcampaignid=fdl_long&url=" + window.location.href;
             window.location.replace(psUrl);
         }
+
+        /*
 
         //function to extract a given parameter value from the url
         function urlParam(sParam) {
@@ -225,5 +226,5 @@
     </style>
 
 </head>
-<body>Welcome</body>
+<body onload="redirectToPlayStore()"></body>
 </html>
