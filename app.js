@@ -9,7 +9,7 @@ var bodyParser = require('body-parser');
 var mysql = require('mysql');
 var cors = require('cors');
 
-var top_givers_notification = require('./routes/notification-system/NotificationScheduler');
+var notifscheduler = require('./routes/notification-system/NotificationScheduler');
 var monitorAccountActivity = require('./routes/cread/security/UserActivityMonitor').accountActivity;
 
 var routes = require('./routes/index');
@@ -218,6 +218,7 @@ app.use(function (err, req, res, next) {
     });
 });
 
+//notifscheduler.top_post_notification.start(); TODO: Uncomment
 
 // top_givers_notification.start();
 // monitorAccountActivity.start(); //To monitor user accounts activity
