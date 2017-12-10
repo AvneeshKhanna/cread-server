@@ -11,15 +11,21 @@ var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 var _auth = require('../../../auth-token-management/AuthTokenManager');
 var dylinkutils = require('./DynamicLinkUtils');
 var projectpath = path.join(__dirname, '../../../../views/');
+var config = require('../../../Config');
 
+/**
+ * To generate link preview whenever a GET request is sent to the Firebase dynamic link
+ * */
 router.get('/', function (request, response) {
 
     var entityid = request.query.entityid;
     var entityurl = request.query.entityurl;
+    var creatorname = request.query.creatorname;
 
     var render_params = {
-        meta_tag_og_title: "I created an art work on Cread",
-        meta_tag_og_image: entityurl
+        meta_tag_og_title: "Experience and buy " + creatorname + "'s art on Cread",
+        meta_tag_og_image: entityurl,
+        meta_tag_og_url: config.server_url
     };
 
     response.render((projectpath + 'share-link/share_entity.ejs'), render_params);
@@ -32,6 +38,7 @@ router.post('/generate-dynamic-link', function (request, response) {
     var authkey = request.body.authkey;
     var entityid = request.body.entityid;
     var entityurl = request.body.entityurl;
+    var creatorname = request.body.creatorname;
 
     if(!entityid || !entityurl){
         response.status(500).send({
@@ -40,7 +47,7 @@ router.post('/generate-dynamic-link', function (request, response) {
         return;
     }
 
-    var deeplink = dylinkutils.generateShareEntityDeepLink(entityid, entityurl);
+    var deeplink = dylinkutils.generateShareEntityDeepLink(entityid, entityurl, creatorname);
     var longDynamicLink = dylinkutils.generateLongDynamicLink(deeplink);
 
     _auth.authValid(uuid, authkey)

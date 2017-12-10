@@ -7,10 +7,12 @@ var request_client = require('request');
 var config = require('../../../Config');
 var serverbaseurl = config.server_url;
 
-function generateShareEntityDeepLink(entityid, entityurl){
+function generateShareEntityDeepLink(entityid, entityurl, creatorname){
     return serverbaseurl + '/entity-share-link?' +
         'entityid=' +
         entityid +
+        '&creatorname=' +
+        creatorname +
         '&entityurl=' +
         encodeURIComponent(entityurl);
 }
