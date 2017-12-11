@@ -78,10 +78,12 @@ function loadOrdersForPrint(connection, limit, lastindexkey) {
                         .then(function (items) {
 
                             items.forEach(function (item) {
-                                var index = feedEntityids.indexOf(item.entityid);
-                                for (var key in item) {
-                                    rows[index][key] = item[key];
-                                }
+                                var indexes = utils.getAllIndexes(feedEntityids, item.entityid); //feedEntityids.indexOf(item.entityid);
+                                indexes.forEach(function (index) {
+                                    for (var key in item) {
+                                        rows[index][key] = item[key];
+                                    }
+                                })
                             });
 
                             resolve({

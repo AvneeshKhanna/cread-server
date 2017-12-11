@@ -234,7 +234,7 @@ router.post('/place', function (request, response) {
 router.post('/load-for-print', function (request, response) {
     var lastindexkey = request.body.lastindexkey;
 
-    var limit = (envtype === 'PRODUCTION') ? 10 : 2;
+    var limit = (envtype === 'PRODUCTION') ? 10 : 4;
     var connection;
 
     config.getNewConnection()

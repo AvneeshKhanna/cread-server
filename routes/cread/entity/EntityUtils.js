@@ -28,6 +28,11 @@ function retrieveShortDetails(connection, entityid) {
 function getEntityDetailsForPrint(connection, entityids) {
     return new Promise(function (resolve, reject) {
 
+        /*'E.type, E.entityid, S.uuid, S.shoid, S.capid, S.bold, S.italic, S.dx, S.dy, S.bgcolor, S.font, ' +
+        'S.txt AS text, S.textsize, S.textcolor, S.textgravity, S.img_width, S.img_height, S.txt_width, S.txt_height, ' +
+        'C.bold, C.italic, C.dx, C.dy, C.bgcolor, C.font, C.text, C.textsize, C.textcolor, C.textgravity, C.img_width, ' +
+        'C.img_height, C.txt_width, C.txt_height, C.uuid, C.capid, C.shoid, CS.uuid, CS.capid';*/
+
         var sqloptions = {
             sql: 'SELECT * ' +
             'FROM Entity AS E ' +
@@ -66,21 +71,29 @@ function getEntityDetailsForPrint(connection, entityids) {
 
                     if(E.type === 'SHORT'){
 
+                        if(S.hasOwnProperty('regdate')){
+                            delete S.regdate;
+                        }
+
                         for (var key in S) {
                             element[key] = S[key];
                         }
 
+                        element.entityurl = utils.createSmallShortUrl(S.uuid, S.shoid);
+
                         if(S.capid){
-                            element.entityurl = utils.createSmallShortUrl(S.uuid, S.shoid);
                             element.highresurl = utils.createCaptureUrl(CS.uuid, CS.capid);
                         }
                         else{
-                            element.entityurl = null;
                             element.highresurl = null;
                         }
 
                     }
                     else if(E.type === 'CAPTURE'){
+
+                        if(C.hasOwnProperty('regdate')){
+                            delete C.regdate;
+                        }
 
                         for (var key in C) {
                             element[key] = C[key];
@@ -123,10 +136,6 @@ function getEntityDetailsForPrint(connection, entityids) {
             }
         });
     });
-}
-
-function retrieveCaptureDetails() {
-
 }
 
 function loadCollabDetails(connection, entityid, entitytype, limit, lastindexkey) {

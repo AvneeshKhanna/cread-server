@@ -30,6 +30,21 @@ function updateQueryStringParameter(uri, key, value) {
 }
 
 /**
+ * A function to return all the indexes of a value within an array
+ * */
+function getAllIndexes(arr, val){
+
+    var indexes = [];
+    var pos = -1;
+
+    while((pos = arr.indexOf(val, pos + 1)) !== -1){
+        indexes.push(pos);
+    }
+
+    return indexes;
+}
+
+/**
 * Sends an AWS Transactional SMS to the given phonenumber
 * */
 function sendAWSSMS(message, phonenumber, callback){
@@ -176,5 +191,6 @@ module.exports = {
     commitTransaction: commitTransaction,
     beginTransaction: beginTransaction,
     rollbackTransaction: rollbackTransaction,
-    downloadFile: downloadFile
+    downloadFile: downloadFile,
+    getAllIndexes: getAllIndexes
 };
