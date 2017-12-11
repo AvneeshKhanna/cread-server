@@ -97,6 +97,10 @@ function getEntityDetailsForPrint(connection, entityids) {
                         element.textgravity = 'Left';
                     }
 
+                    if(element.hasOwnProperty('txt')){
+                        utils.changePropertyName(element, 'txt', 'text');
+                    }
+
                     if(element.hasOwnProperty('E')){
                         delete element.E;
                     }
