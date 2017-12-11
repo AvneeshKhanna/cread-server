@@ -15,6 +15,7 @@ var router = express.Router();
 var config = require('../../Config');
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
+var utils = require('./Utils');
 
 var async = require('async');
 var uuidGen = require('uuid');
@@ -125,6 +126,55 @@ function addEntityData(connection) {
                         console.error(err);
                     }
                 });
+            }
+        });
+    });
+}
+
+router.post('/load-capture-urls', function (request, response) {
+
+    var connection;
+
+    config.getNewConnection()
+        .then(function (conn) {
+            connection = conn;
+            return loadCaptureUrls(connection);
+        })
+        .then(function (data) {
+            response.send(data.map(function (e) {
+                return e.captureurl;
+            }));
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
+
+function loadCaptureUrls(connection) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT capid, uuid FROM Capture WHERE shoid IS NOT NULL ORDER BY capid', [], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                rows.map(function (element) {
+                    element.captureurl = utils.createSmallCaptureUrl(element.uuid, element.capid);
+                    return element;
+                });
+
+                resolve(rows);
             }
         });
     });
