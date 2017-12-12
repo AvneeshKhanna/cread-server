@@ -23,7 +23,8 @@ function loadOrdersForPrint(connection, limit, lastindexkey) {
     lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT Entity.entityid, Entity.type, Short.shoid, Capture.capid, UserS.uuid AS suuid, UserC.uuid AS cuuid, Orders.regdate ' +
+        connection.query('SELECT Entity.entityid, Entity.type, Short.shoid, Capture.capid, UserS.uuid AS suuid, ' +
+            'UserC.uuid AS cuuid, Orders.orderid, Orders.regdate ' +
             'FROM Orders ' +
             'JOIN Entity ' +
             'USING(entityid) ' +
