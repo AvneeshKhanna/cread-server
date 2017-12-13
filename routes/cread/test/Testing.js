@@ -95,22 +95,6 @@ var interestTableData = {
     ]
 };
 
-router.post('/update-checkrate', function (request, response) {
-    config.getNewConnection()
-        .then(function (connection) {
-            connection.query('UPDATE Checks SET checkrate = (CASE WHEN (responses = "verified") THEN 2.5 ELSE 1 END)', [], function (err, data) {
-                config.disconnect(connection);
-                if(err){
-                    console.error(err);
-                    response.status(500).send(err).end();
-                }
-                else{
-                    response.send(data).end();
-                }
-            });
-        });
-});
-
 router.post('/send-bulk-sms', function (request, response) {
 
     var users = [
@@ -428,125 +412,51 @@ router.post('/emailer', function (request, response) {
 
 });
 
-router.post('/sql-trans-deadlock', function (request, response) {
-    var name = request.body.name;
-    var time = request.body.time;
-    var phone = request.body.phone;
-    var isErr = request.body.isErr;
-
-    console.log("request is " + JSON.stringify(request.body, null, 3));
-
-    config.getNewConnection()
-        .then(function (connection) {
-
-            connection.query('SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ', null, function (err, data) {
-                if(err){
-                    throw err;
-                }
-                else{
-                    connection.beginTransaction(function (err) {
-                        if (err) {
-                            connection.rollback(function () {
-                                connection.release();
-                                console.error(err);
-                            });
-                        }
-                        else {
-                            connection.query('SELECT UUID FROM users WHERE phoneNo <> ? FOR UPDATE', [phone], function (err, row) {
-
-                                console.log('SELECT FOR UPDATE query executed ' + name +  ' with row ' + JSON.stringify(row, null, 3));
-
-                                if (err) {
-                                    connection.rollback(function () {
-                                        connection.release();
-                                        console.error(err);
-                                    });
-                                }
-                                else {
-                                    setTimeout(function () {
-                                        connection.query('UPDATE users SET firstname = ? WHERE uuid = ?', [name, row[0].UUID], function (err, data) {
-
-                                            console.log('UPDATE query executed ' + name);
-
-                                            if(err){
-                                                connection.rollback(function () {
-                                                    connection.release();
-                                                    console.error(err);
-                                                });
-                                            }
-                                            else{
-                                                connection.commit(function (err) {
-                                                    if(err){
-                                                        connection.rollback(function () {
-                                                            connection.release();
-                                                            console.error(err);
-                                                        });
-                                                    }
-                                                    else {
-                                                        connection.release();
-                                                        console.log("Sending response for " + name);
-                                                        response.send(data).end();
-                                                    }
-                                                });
-                                            }
-                                        });
-                                    }, time);
-                                }
-                            });
-                        }
-                    });
-                }
-            });
-
-        });
-
-});
-
-router.post('/sql-trans-commit', function (req, res) {
-    var time = req.body.time;
-    var phoneNo = req.body.phoneNo;
+router.post('/search', function (request, response) {
+    
+    var keyword = request.body.keyword;
+    var connection;
 
     config.getNewConnection()
         .then(function (conn) {
             connection = conn;
-
-            connection.beginTransaction(function (err) {
-                if (err) {
-                    connection.rollback(function () {
-                        connection.release();
-                        console.error(err);
-                    });
-                }
-                else {
-                    connection.query('UPDATE users SET firstname = ? WHERE phoneNo = ?', [phoneNo + ' changed', phoneNo], function (err, data) {
-                        if (err) {
-                            connection.rollback(function () {
-                                connection.release();
-                                console.error(err);
-                            });
-                        }
-                        else {
-                            connection.commit(function (err) {
-                                if (err) {
-                                    connection.rollback(function () {
-                                        connection.release();
-                                        console.error(err);
-                                    });
-                                }
-                                else {
-                                    connection.release();
-                                    console.log('/sql-trans-commit: COMMITTED');
-                                    res.send('completed').end();
-                                }
-                            });
-                        }
-                    });
-                }
-            });
-
+            return performSearchUsers(connection, keyword);
+        })
+        .then(function (result) {
+            response.send(result).end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
         });
-
+    
 });
+
+function performSearchUsers(connection, keyword) {
+    console.log(keyword.split(" ").join("* ") + "*");
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT firstname, lastname ' +
+            'FROM users ' +
+            'WHERE MATCH(firstname) ' +
+            'AGAINST(? IN BOOLEAN MODE)', [keyword.split(" ").join("* ") + "*"], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(rows);
+            }
+        });
+    });
+}
 
 router.post('/gm-test', function (request, response) {
 
@@ -569,20 +479,6 @@ router.post('/gm-test', function (request, response) {
         response.send(err).end();
     }
 
-});
-
-router.post('/union-test', function (request, response) {
-    config.getNewConnection()
-        .then(function (connection) {
-            connection.query('SELECT capid FROM Capture UNION ALL SELECT shoid FROM Short', null, function (err, data) {
-                if(err){
-                    response.send(err).end();
-                }
-                else{
-                    response.send(data).end();
-                }
-            });
-        });
 });
 
 router.post('/upload-interests', function (request, response) {

@@ -288,6 +288,12 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid){
                     }
                     else{
                         userdata.postcount = data[0].postcount;
+
+                        //TODO: Calculate
+                        userdata.commentscount = 0;
+                        userdata.hatsoffscount = 10;
+                        userdata.collaborationscount = 7;
+
                         resolve(userdata);
                     }
                 });
