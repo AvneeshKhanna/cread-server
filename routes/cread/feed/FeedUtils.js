@@ -113,7 +113,8 @@ function getCollaborationData(connection, rows) {
 
                             row_element.cpshort = {
                                 name: collab.cfirstname  + ' ' + collab.clastname,
-                                uuid: collab.cuuid
+                                uuid: collab.cuuid,
+                                entityid: collab.entityid
                             }
                         }
                         else {   //Case where rows[i] is of type SHORT & collab_rows[i] is of type CAPTURE
@@ -126,7 +127,8 @@ function getCollaborationData(connection, rows) {
 
                             row_element.shcapture = {
                                 name: collab.sfirstname + ' ' + collab.slastname,
-                                uuid: collab.suuid
+                                uuid: collab.suuid,
+                                entityid: collab.entityid
                             }
                         }
                     });
