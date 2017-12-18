@@ -18,6 +18,7 @@ var upload = multer({ dest: './images/uploads/short/' });
 var fs = require('fs');
 
 var utils = require('../utils/Utils');
+var hashtagutils = require('../hashtag/HashTagUtils');
 var notify = require('../../notification-system/notificationFramework');
 
 var filebasepath = './images/uploads/short/';
@@ -57,8 +58,15 @@ router.post('/', upload.single('short-image'), function (request, response) {
 
     var entityparams = {
         entityid: entityid,
-        merchantable: (Number(request.body.merchantable) ===1)
+        merchantable: (Number(request.body.merchantable) ===1),
+        caption: request.body.caption
     };
+
+    var uniquehashtags;
+
+    if(request.body.caption){
+        uniquehashtags = hashtagutils.extractUniqueHashtags(caption);
+    }
 
     var connection;
     var requesterdetails;
@@ -76,7 +84,15 @@ router.post('/', upload.single('short-image'), function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
+            return utils.beginTransaction(connection);
+        })
+        .then(function () {
             return uploadToRDS(connection, shortsqlparams, entityparams);
+        })
+        .then(function () {
+            if(uniquehashtags && uniquehashtags.length > 0){
+                return hashtagutils.addHashtagsToDb(connection, uniquehashtags, entityid);
+            }
         })
         .then(function () {
             return userprofileutils.renameFile(filebasepath, short, shoid);
@@ -96,6 +112,14 @@ router.post('/', upload.single('short-image'), function (request, response) {
                 }
             });
             response.end();
+        }, function (err) {
+            if(err instanceof BreakPromiseChainError){
+                throw new BreakPromiseChainError();
+            }
+            else{
+                utils.rollbackTransaction(connection);
+                throw new BreakPromiseChainError();
+            }
         })
         .then(function () {
             if(shortsqlparams.capid){
@@ -150,7 +174,7 @@ function retreiveCaptureUserDetails(connection, captureid) {
 
 function uploadToRDS(connection, shortsqlparams, entityparams) {
     return new Promise(function (resolve, reject) {
-        connection.beginTransaction(function (err) {
+        /*connection.beginTransaction(function (err) {
             if(err){
                 connection.rollback(function () {
                     reject(err);
@@ -158,29 +182,34 @@ function uploadToRDS(connection, shortsqlparams, entityparams) {
             }
             else{
 
-                entityparams.type = 'SHORT';
 
-                connection.query('INSERT INTO Entity SET ?', [entityparams], function (err, edata) {
-                    if (err) {
-                        connection.rollback(function () {
+            }
+        });*/
+
+        entityparams.type = 'SHORT';
+
+        connection.query('INSERT INTO Entity SET ?', [entityparams], function (err, edata) {
+            if (err) {
+                /*connection.rollback(function () {
+                    reject(err);
+                });*/
+                reject(err);
+            }
+            else {
+                connection.query('INSERT INTO Short SET ?', [shortsqlparams], function (err, rows) {
+                    if(err){
+                        /*connection.rollback(function () {
                             reject(err);
-                        });
+                        });*/
+                        reject(err);
                     }
-                    else {
-                        connection.query('INSERT INTO Short SET ?', [shortsqlparams], function (err, rows) {
-                            if(err){
-                                connection.rollback(function () {
-                                    reject(err);
-                                });
-                            }
-                            else{
-                                resolve();
-                            }
-                        });
+                    else{
+                        resolve();
                     }
                 });
             }
         });
+
     });
 }
 

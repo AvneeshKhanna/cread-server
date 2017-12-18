@@ -179,10 +179,10 @@ router.post('/load-followers', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var requesteduuid = request.body.requesteduuid;
-    var limit = 25;
     var page = request.body.page;
     var lastindexkey = request.body.lastindexkey;
 
+    var limit = 25;
     var connection;
 
     _auth.authValid(uuid, authkey)

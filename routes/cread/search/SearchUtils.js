@@ -4,6 +4,7 @@
 'use-strict';
 
 var utils = require('../utils/Utils');
+var hashutils = require("../hashtag/HashTagUtils");
 
 function getUsernamesSearchResult(connection, keyword) {
 
@@ -23,11 +24,11 @@ function getUsernamesSearchResult(connection, keyword) {
                     element.name = element.firstname + " " + element.lastname;
                     element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
 
-                    if(element.hasOwnProperty('firstname')){
+                    if (element.hasOwnProperty('firstname')) {
                         delete element.firstname;
                     }
 
-                    if(element.hasOwnProperty('lastname')){
+                    if (element.hasOwnProperty('lastname')) {
                         delete element.lastname;
                     }
                 });
@@ -40,34 +41,57 @@ function getUsernamesSearchResult(connection, keyword) {
 
 function getHashtagSearchResult(connection, query) {
 
-    while(query.indexOf('#') !== -1){
+    //Removing hash symbols
+    while (query.indexOf('#') !== -1) {
         query = query.replace('#', '');
     }
 
-    while(query.indexOf(' ') !== -1){
+    //Removing spaces
+    while (query.indexOf(' ') !== -1) {
         query = query.replace(' ', '');
     }
 
-    query = query + "*";
+    //Appending hash symbol in front again
+    query = "#" + query;
 
     return new Promise(function (resolve, reject) {
         connection.query('SELECT caption ' +
-            'FROM Caption ' +
+            'FROM Entity ' +
             'WHERE MATCH(caption) ' +
-            'AGAINST(? IN BOOLEAN MODE) ', [query], function (err, rows) {
+            'AGAINST(? IN BOOLEAN MODE) ', [query + "*"], function (err, searchrows) {
             if (err) {
                 reject(err);
             }
             else {
 
-                rows.map(function (element) {
-                    if(!scaption){
-                        element.hashtag = scaption
+                var alltags = [];
+
+                searchrows.map(function (element) {
+                    if (element.caption) {
+                        alltags = alltags.concat(hashutils.extractMatchingUniqueHashtags(element.caption, query.replace('#', '')));
                     }
-                    else if(!ccaption){}
                 });
 
-                resolve(rows);
+                console.log('alltags are ' + JSON.stringify(alltags, null, 3));
+
+                var alluniquetags = [];
+
+                new Set(alltags).forEach(function (tag) {
+                    alluniquetags.push(tag);
+                });
+
+                if (alluniquetags.length > 0) {
+                    hashutils.getHashtagCounts(connection, alluniquetags)
+                        .then(function (rows) {
+                            resolve(rows);
+                        })
+                        .catch(function (err) {
+                            reject(err);
+                        });
+                }
+                else {
+                    resolve([]);
+                }
             }
         });
     });
