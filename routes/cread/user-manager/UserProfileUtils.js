@@ -273,27 +273,30 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid){
                 userdata.followercount = followercount;
                 userdata.followingcount = followingcount;
 
-                connection.query('SELECT COUNT(entityid) AS postcount ' +
-                    'FROM Entity ' +
-                    'LEFT JOIN Capture ' +
+                connection.query('SELECT COUNT(DISTINCT E.entityid) AS postcount, ' +
+                    'COUNT(DISTINCT CASE WHEN(E.type = "SHORT" AND S.capid IS NOT NULL) THEN S.capid ' +
+                    'WHEN(E.type = "CAPTURE" AND C.shoid IS NOT NULL) THEN C.shoid END) AS collaborationscount, ' +
+                    'COUNT(DISTINCT Cmt.commid) AS commentscount, ' +
+                    'COUNT(DISTINCT H.entityid, H.uuid) AS hatsoffscount ' +
+                    'FROM Entity E ' +
+                    'LEFT JOIN Capture C ' +
                     'USING(entityid) ' +
-                    'LEFT JOIN Short ' +
+                    'LEFT JOIN Short S ' +
                     'USING(entityid) ' +
-                    'JOIN User ' +
-                    'ON (Capture.uuid = User.uuid OR Short.uuid = User.uuid) ' +
-                    'WHERE User.uuid = ? ' +
-                    'AND Entity.status = "ACTIVE"', [requesteduuid], function(err, data){
+                    'LEFT JOIN HatsOff H ' +
+                    'USING(entityid) ' +
+                    'LEFT JOIN Comment AS Cmt ' +
+                    'USING(entityid) ' +
+                    'WHERE (S.uuid = ? OR C.uuid = ?) ' +
+                    'AND E.status = "ACTIVE"', [requesteduuid, requesteduuid], function(err, data){
                     if(err){
                         reject(err);
                     }
                     else{
-                        userdata.postcount = data[0].postcount;
-
-                        //TODO: Calculate
-                        userdata.commentscount = 0;
-                        userdata.hatsoffscount = 10;
-                        userdata.collaborationscount = 7;
-
+                        userdata.postcount = data[0].postcount; //Total posts uploaded by this user
+                        userdata.commentscount = data[0].commentscount; //Total comments received by this user's posts
+                        userdata.hatsoffscount = data[0].hatsoffscount; //Total hatsoffs received by this user's posts
+                        userdata.collaborationscount = data[0].collaborationscount; //Total posts created by others using this user's posts
                         resolve(userdata);
                     }
                 });
