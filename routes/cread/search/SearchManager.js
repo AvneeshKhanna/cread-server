@@ -13,24 +13,47 @@ var searchutils = require('./SearchUtils');
 
 router.get('/load', function (request, response) {
 
+    console.log("request headers are " + JSON.stringify(request.headers, null, 3));
+
     var keyword = decodeURIComponent(request.query.keyword).trim();
     var searchtype = request.query.searchtype ? request.query.searchtype : 'USER';  //Could be of the type 'USER' | 'HASHTAG'
+    var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : null;
+
+    var specialcharregex = /[^@>()+\-*"~<]+/;   //Remove all special characters which can cause a bug in FULL TEXT SEARCH
+
+    keyword = specialcharregex.exec(keyword) ? specialcharregex.exec(keyword).join("") : "";    // not-null ? array.join("") : ""
+
+    console.log('keyword is ' + JSON.stringify(keyword, null, 3));
+
     var connection;
 
     config.getNewConnection()
         .then(function (conn) {
             connection = conn;
-            if(searchtype === 'USER'){
-                return searchutils.getUsernamesSearchResult(connection, keyword);
+            if(keyword.length > 0){
+                if(searchtype === 'USER'){
+                    return searchutils.getUsernamesSearchResult(connection, keyword);
+                }
+                else if(searchtype === 'HASHTAG'){
+                    return searchutils.getHashtagSearchResult(connection, keyword);
+                }
             }
-            else if(searchtype === 'HASHTAG'){
-                return searchutils.getHashtagSearchResult(connection, keyword);
+            else{
+                response.send({
+                    data: {
+                        searchtype: searchtype,
+                        items: []
+                    }
+                });
+                response.end();
+                throw new BreakPromiseChainError();
             }
         })
         .then(function (rows) {
             console.log("rows " + JSON.stringify(rows, null, 3));
             response.send({
                 data: {
+                    searchtype: searchtype,
                     items: rows
                 }
             });

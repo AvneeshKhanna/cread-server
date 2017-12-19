@@ -58,7 +58,7 @@ function getHashtagSearchResult(connection, query) {
         connection.query('SELECT caption ' +
             'FROM Entity ' +
             'WHERE MATCH(caption) ' +
-            'AGAINST(? IN BOOLEAN MODE) ', [query + "*"], function (err, searchrows) {
+            'AGAINST(? IN BOOLEAN MODE) ', [connection.escape(query + "*")], function (err, searchrows) {
             if (err) {
                 reject(err);
             }

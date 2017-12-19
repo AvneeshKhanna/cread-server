@@ -13,8 +13,8 @@ var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var userprofileutils = require('../user-manager/UserProfileUtils');
 
 var uuidgen = require('uuid');
-var multer  = require('multer');
-var upload = multer({ dest: './images/uploads/short/' });
+var multer = require('multer');
+var upload = multer({dest: './images/uploads/short/'});
 var fs = require('fs');
 
 var utils = require('../utils/Utils');
@@ -31,6 +31,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var short = request.file;
+    var caption = request.body.caption;
 
     var shoid = uuidgen.v4();
     var entityid = uuidgen.v4();
@@ -46,7 +47,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
         textsize: request.body.textsize,
         bold: (request.body.bold === "1"),
         italic: (request.body.italic === "1"),
-        bgcolor: (request.body.bgcolor) ? request.body.bgcolor : 'NA' , //for backward compatibilty
+        bgcolor: (request.body.bgcolor) ? request.body.bgcolor : 'NA', //for backward compatibilty
         font: (request.body.font) ? request.body.font : 'NA',   //for backward compatibilty
         textcolor: request.body.textcolor,
         textgravity: request.body.textgravity,
@@ -58,14 +59,20 @@ router.post('/', upload.single('short-image'), function (request, response) {
 
     var entityparams = {
         entityid: entityid,
-        merchantable: (Number(request.body.merchantable) ===1),
-        caption: request.body.caption
+        merchantable: (Number(request.body.merchantable) === 1),
+        caption: caption
     };
 
-    var uniquehashtags;
+    try {
+        var uniquehashtags;
 
-    if(request.body.caption){
-        uniquehashtags = hashtagutils.extractUniqueHashtags(caption);
+        if (caption) {
+            uniquehashtags = hashtagutils.extractUniqueHashtags(caption);
+        }
+    }
+    catch (ex) {
+        console.error(ex);
+        throw ex;
     }
 
     var connection;
@@ -90,7 +97,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
             return uploadToRDS(connection, shortsqlparams, entityparams);
         })
         .then(function () {
-            if(uniquehashtags && uniquehashtags.length > 0){
+            if (uniquehashtags && uniquehashtags.length > 0) {
                 return hashtagutils.addHashtagsToDb(connection, uniquehashtags, entityid);
             }
         })
@@ -113,16 +120,15 @@ router.post('/', upload.single('short-image'), function (request, response) {
             });
             response.end();
         }, function (err) {
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 throw new BreakPromiseChainError();
             }
-            else{
-                utils.rollbackTransaction(connection);
-                throw new BreakPromiseChainError();
+            else {
+                return utils.rollbackTransaction(connection, undefined, err);
             }
         })
         .then(function () {
-            if(shortsqlparams.capid){
+            if (shortsqlparams.capid) {
                 return retreiveCaptureUserDetails(connection, shortsqlparams.capid);
             }
             else {
@@ -130,7 +136,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
             }
         })
         .then(function (captureuseruuid) {
-            if(captureuseruuid !== uuid){   //Send notification only when the two users involved are different
+            if (captureuseruuid !== uuid) {   //Send notification only when the two users involved are different
                 var notifData = {
                     message: requesterdetails.firstname + ' ' + requesterdetails.lastname + " wrote on your graphic art",
                     category: "collaborate",
@@ -146,10 +152,10 @@ router.post('/', upload.single('short-image'), function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     message: 'Some error occurred at the server'
@@ -162,10 +168,10 @@ router.post('/', upload.single('short-image'), function (request, response) {
 function retreiveCaptureUserDetails(connection, captureid) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT uuid FROM Capture WHERE capid = ?', [captureid], function (err, data) {
-            if(err){
+            if (err) {
                 reject(err);
             }
-            else{
+            else {
                 resolve(data[0].uuid);
             }
         })
@@ -197,13 +203,13 @@ function uploadToRDS(connection, shortsqlparams, entityparams) {
             }
             else {
                 connection.query('INSERT INTO Short SET ?', [shortsqlparams], function (err, rows) {
-                    if(err){
+                    if (err) {
                         /*connection.rollback(function () {
                             reject(err);
                         });*/
                         reject(err);
                     }
-                    else{
+                    else {
                         resolve();
                     }
                 });

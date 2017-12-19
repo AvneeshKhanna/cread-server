@@ -15,6 +15,8 @@ var profilepicfilename = 'display-pic.jpg';
 var profilepicfilename_small = 'display-pic-small.jpg';
 var urlprotocol = 'https://';
 
+var BreakPromiseChainError = require('./BreakPromiseChainError');
+
 /**
  * Function to add/update the given key value as query parameter to the uri
  * */
@@ -141,11 +143,11 @@ function commitTransaction(connection, resultfromprev) {
     });
 }
 
-function rollbackTransaction(connection, resultfromprev) {
+function rollbackTransaction(connection, resultfromprev, err) {
     console.log('TRANSACTION rollbacked');
     return new Promise(function (resolve, reject) {
         connection.rollback(function () {
-            resolve();
+            reject(err);
         });
     });
 }

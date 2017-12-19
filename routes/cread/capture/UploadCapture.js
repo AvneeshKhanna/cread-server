@@ -22,6 +22,7 @@ var profilepicutils = require('../user-manager/UserProfileUtils');
 var captureutils = require('./CaptureUtils');
 var notify = require('../../notification-system/notificationFramework');
 var shortutils = require('../short/ShortUtils');
+var hashtagutils = require('../hashtag/HashTagUtils');
 
 var filebasepath = './images/uploads/capture/'; 
 
@@ -35,6 +36,13 @@ router.post('/', upload.single('captured-image'), function (request, response) {
     var watermark = request.body.watermark;
     var capture = request.file;
     var merchantable = Number(request.body.merchantable);
+    var caption = request.body.caption;
+
+    var uniquehashtags;
+
+    if(request.body.caption){
+        uniquehashtags = hashtagutils.extractUniqueHashtags(caption);
+    }
 
     var captureid = uuidgen.v4();
     var entityid = uuidgen.v4();
@@ -54,7 +62,12 @@ router.post('/', upload.single('captured-image'), function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return updateCaptureDB(connection, captureid, uuid, watermark, merchantable, entityid, undefined, {});
+            return updateCaptureDB(connection, captureid, uuid, watermark, merchantable, caption, entityid, undefined, {});
+        })
+        .then(function () {
+            if(uniquehashtags && uniquehashtags.length > 0){
+                return hashtagutils.addHashtagsToDb(connection, uniquehashtags, entityid);
+            }
         })
         .then(function () {
             return userprofileutils.renameFile(filebasepath, capture, captureid);
@@ -93,6 +106,13 @@ router.post('/', upload.single('captured-image'), function (request, response) {
             });
             response.end();
             throw new BreakPromiseChainError();
+        }, function (err) {
+            if(!(err instanceof BreakPromiseChainError)) {
+                return utils.rollbackTransaction(connection, undefined, err);
+            }
+        })
+        .then(function () {
+            throw new BreakPromiseChainError();
         })
         .catch(function (err) {
             config.disconnect(connection);
@@ -119,6 +139,13 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
     var capture_img_high = request.files['capture-img-high'][0];
     var capture_img_low = request.files['capture-img-low'][0];
     var merchantable = Number(request.body.merchantable);
+    var caption = request.body.caption;
+
+    var uniquehashtags;
+
+    if(request.body.caption){
+        uniquehashtags = hashtagutils.extractUniqueHashtags(caption);
+    }
 
     var dx = request.body.dx;
     var dy = request.body.dy;
@@ -185,7 +212,12 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
                 textsize: textsize,
                 textgravity: textgravity
             };
-            return updateCaptureDB(connection, captureid, uuid, watermark, merchantable, entityid, shoid, captureparamas)
+            return updateCaptureDB(connection, captureid, uuid, watermark, merchantable, caption, entityid, shoid, captureparamas)
+        })
+        .then(function () {
+            if(uniquehashtags && uniquehashtags.length > 0){
+                return hashtagutils.addHashtagsToDb(connection, uniquehashtags, entityid);
+            }
         })
         .then(function () {
             return profilepicutils.uploadImageToS3(filebasepath + capture_img_high.filename, uuid, 'Capture', captureid + '.jpg');
@@ -195,6 +227,13 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
         })
         .then(function () {
             return utils.commitTransaction(connection);
+        }, function (err) {
+            if(err instanceof BreakPromiseChainError){
+                throw new BreakPromiseChainError();
+            }
+            else {
+                return utils.rollbackTransaction(connection, undefined, err);
+            }
         })
         .then(function () {
             response.send({
@@ -240,29 +279,32 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
 
 });
 
-function updateCaptureDB(connection, captureid, uuid, watermark, merchantable, entityid, shoid, captureparams) {
+function updateCaptureDB(connection, captureid, uuid, watermark, merchantable, caption, entityid, shoid, captureparams) {
     return new Promise(function (resolve, reject) {
         connection.beginTransaction(function (err) {
             if (err) {
-                connection.rollback(function () {
+                /*connection.rollback(function () {
                     reject(err);
-                });
+                });*/
+                reject(err);
             }
             else {
 
                 var entityparams = {
                     entityid: entityid,
                     type: 'CAPTURE',
-                    merchantable: (merchantable === 1)
+                    merchantable: (merchantable === 1),
+                    caption: caption
                 };
 
                 console.log("entityparams" + JSON.stringify(entityparams, null, 3));
 
                 connection.query('INSERT INTO Entity SET ?', [entityparams], function (err, data) {
                     if (err) {
-                        connection.rollback(function () {
+                        /*connection.rollback(function () {
                             reject(err);
-                        });
+                        });*/
+                        reject(err);
                     }
                     else {
 
@@ -276,18 +318,20 @@ function updateCaptureDB(connection, captureid, uuid, watermark, merchantable, e
 
                         connection.query('INSERT INTO Capture SET ?', [captureparams], function (err, rows) {
                             if (err) {
-                                connection.rollback(function () {
+                                /*connection.rollback(function () {
                                     reject(err);
-                                });
+                                });*/
+                                reject(err);
                             }
                             else {
 
                                 if (watermark) {
                                     connection.query('UPDATE User SET watermark = ? WHERE uuid = ?', [watermark, uuid], function (err, rows) {
                                         if (err) {
-                                            connection.rollback(function () {
+                                            /*connection.rollback(function () {
                                                 reject(err);
-                                            });
+                                            });*/
+                                            reject(err);
                                         }
                                         else {
                                             resolve();

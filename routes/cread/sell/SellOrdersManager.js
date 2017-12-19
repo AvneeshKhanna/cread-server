@@ -76,7 +76,7 @@ router.post('/load', function (request, response) {
     var lastindexkey = request.body.lastindexkey;
     var toloadtotal = request.body.toloadtotal;
 
-    var limit = (config.envtype === 'PRODUCTION') ? 15 : 8;
+    var limit = (config.envtype === 'PRODUCTION') ? 15 : 2;
 
     var connection;
 
