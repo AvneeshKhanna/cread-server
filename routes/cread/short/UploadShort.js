@@ -31,7 +31,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var short = request.file;
-    var caption = request.body.caption;
+    var caption = request.body.caption ? request.body.caption : null;
 
     var shoid = uuidgen.v4();
     var entityid = uuidgen.v4();
