@@ -6,6 +6,61 @@
 var utils = require('../utils/Utils');
 var hashutils = require("../hashtag/HashTagUtils");
 
+//TODO: Upgrade MySQL version to support Error: ER_INNODB_NO_FT_TEMP_TABLE: Cannot create FULLTEXT index on temporary InnoDB table
+/*function getUsernamesSearchResult(connection, keyword, limit, lastindexkey) {
+
+    lastindexkey = lastindexkey ? Number(lastindexkey) : 0;
+
+    keyword = keyword.split(" ").join("* ") + "*";
+
+    return new Promise(function (resolve, reject) {
+        connection.query('CREATE TEMPORARY TABLE UserSearchTemp ' +
+            '(_id BIGINT NOT NULL AUTO_INCREMENT, PRIMARY KEY(_id)) AS ' +
+            'SELECT uuid, firstname, lastname FROM User;' +
+            'ALTER TABLE UserSearchTemp ADD FULLTEXT INDEX(`firstname`, `lastname`);' +
+            'SELECT _id, uuid, firstname, lastname ' +
+            'FROM UserSearchTemp ' +
+            'WHERE MATCH(firstname, lastname) ' +
+            'AGAINST(? IN BOOLEAN MODE) ' +
+            'AND _id > ? ' +
+            'LIMIT ?', [keyword, lastindexkey, limit], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+
+                if(rows.length > 0){
+                    rows.map(function (element) {
+                        element.name = element.firstname + " " + element.lastname;
+                        element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
+
+                        if (element.hasOwnProperty('firstname')) {
+                            delete element.firstname;
+                        }
+
+                        if (element.hasOwnProperty('lastname')) {
+                            delete element.lastname;
+                        }
+                    });
+
+                    resolve({
+                        requestmore: rows.length >= limit,
+                        lastindexkey: String(rows[rows.length - 1]._id),
+                        feed: rows
+                    });
+                }
+                else{
+                    resolve({
+                        requestmore: rows.length >= limit,
+                        lastindexkey: null,
+                        feed: rows
+                    });
+                }
+            }
+        });
+    });
+}*/
+
 function getUsernamesSearchResult(connection, keyword) {
 
     keyword = keyword.split(" ").join("* ") + "*";

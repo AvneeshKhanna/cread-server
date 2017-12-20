@@ -118,7 +118,7 @@ router.post('/', function (request, response) {
                 return utils.commitTransaction(connection);
             }
             else{
-                return utils.rollbackTransaction(connection);
+                return utils.rollbackTransaction(connection, undefined, new Error('Transaction could not go through due to an error'));
             }
         })
         .then(function () {

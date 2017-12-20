@@ -8,7 +8,7 @@ var feedutils = require('../feed/FeedUtils');
 var utils = require('../utils/Utils');
 
 function extractMatchingUniqueHashtags(caption, matchword) {
-    var regex = new RegExp("\\#" + matchword + "*(\\w+|\\s+)", "i");   //Match pattern containing specific hashtags
+    var regex = new RegExp("\\#" + matchword + "(\\w+|\\s+)", "i");   //Match pattern containing specific hashtags
     var tagSet = new Set();
     var match;
 
@@ -101,9 +101,6 @@ function getHashtagCounts(connection, uniquetags) {
 function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
     return new Promise(function (resolve, reject) {
 
-        hashtag = hashtag.replace('#', '');
-        console.log("hashtag after filtering " + JSON.stringify(hashtag, null, 3));
-
         lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
         connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, User.uuid, ' +
@@ -114,8 +111,8 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
             'FROM Entity ' +
-            'JOIN HashTagDistribution AS HTD ' +
-            'ON HTD.entityid = Entity.entityid ' +
+            // 'JOIN HashTagDistribution AS HTD ' +
+            // 'ON HTD.entityid = Entity.entityid ' +
             'LEFT JOIN Short ' +
             'ON Short.entityid = Entity.entityid ' +
             'LEFT JOIN Capture ' +
@@ -130,7 +127,7 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
             'ON User.uuid = Follow.followee ' +
             'WHERE Entity.status = "ACTIVE" ' +
             'AND Entity.regdate < ? ' +
-            'AND MATCH(HTD.hashtag) ' +
+            'AND MATCH(Entity.caption) ' +
             'AGAINST (? IN BOOLEAN MODE) ' +
             'GROUP BY Entity.entityid ' +
             'ORDER BY Entity.regdate DESC ' +
