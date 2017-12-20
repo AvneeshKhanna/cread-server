@@ -152,7 +152,7 @@ router.post('/', function (request, response) {
 
 /**
  * Sends a confirmation SMS to the user that the amount has been successfully transacted to Paytm
- * */ 
+ * */
 function informUserViaRegisteredContact(uuid, amount, userpaytmcontact) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT firstname, phoneNo FROM users WHERE uuid = ?', [uuid], function (err, row) {
