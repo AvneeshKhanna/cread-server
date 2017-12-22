@@ -12,6 +12,9 @@ var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var hashtagutils = require('./HashTagUtils');
 
+var consts = require('../utils/Constants');
+var cache_time = consts.cache_time;
+
 router.get('/feed', function (request, response) {
 
     console.log("request headers " + JSON.stringify(request.headers, null, 3));
@@ -40,11 +43,19 @@ router.get('/feed', function (request, response) {
         })
         .then(function (result) {
             console.log("result is " + JSON.stringify(result, null, 3));
-            response.send({
-                tokenstatus: 'valid',
-                data: result
-            });
-            response.end();
+            response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
+
+            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+                response.status(304).send().end();
+            }
+            else {
+                response.status(200).send({
+                    tokenstatus: 'valid',
+                    data: result
+                });
+                response.end();
+            }
+
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {

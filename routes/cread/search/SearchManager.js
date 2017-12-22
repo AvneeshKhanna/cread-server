@@ -10,6 +10,8 @@ var config = require('../../Config');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
 var searchutils = require('./SearchUtils');
+var consts = require('../utils/Constants');
+var cache_time = consts.cache_time;
 
 router.get('/load', function (request, response) {
 
@@ -53,15 +55,20 @@ router.get('/load', function (request, response) {
             }
         })
         .then(function (result) {
-
-            result.searchtype = searchtype;
-
             console.log("result is " + JSON.stringify(result, null, 3));
 
-            response.send({
-                data: result
-            });
-            response.end();
+            result.searchtype = searchtype;
+            response.set('Cache-Control', 'public, max-age=' + cache_time.small);
+
+            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+                response.status(304).send().end();
+            }
+            else {
+                response.status(200).send({
+                    data: result
+                });
+                response.end();
+            }
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {

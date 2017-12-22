@@ -28,6 +28,14 @@ const share_time_interval = {
     }
 };
 
+const cache_time = {
+    small: 60,
+    medium: 120,
+    high: 300,
+    xhigh: 900,
+    xxhigh: 3600
+};
+
 function getMarkup(markup) {
     if (markup > 100) {
         throw new Error('Markup value cannot be greater than 100');
@@ -51,5 +59,6 @@ module.exports = {
     restrict_find_frequency: restrict_find_frequency,
     required_unverified_checks: required_unverified_checks,
     required_verified_checks: required_verified_checks,
-    royalty_percentage: royalty_percentage
+    royalty_percentage: royalty_percentage,
+    cache_time: cache_time
 };
