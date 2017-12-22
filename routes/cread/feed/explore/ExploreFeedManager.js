@@ -353,8 +353,8 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
 
         lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
-        connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, User.uuid, ' +
-            'User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, ' +
+        connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, Entity.for_explore, ' +
+            'User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, ' +
             'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
             'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
             'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
@@ -385,6 +385,11 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
             else {
 
                 if (rows.length > 0) {
+
+                    rows = rows.filter(function (el) {
+                        return (el.for_explore === 1);
+                    });
+
                     var feedEntities = rows.map(function (elem) {
                         return elem.entityid;
                     });
@@ -422,6 +427,10 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
 
                         if (element.lastname) {
                             delete element.lastname;
+                        }
+
+                        if(element.hasOwnProperty('for_explore')){
+                            delete element.for_explore;
                         }
 
                         return element;
