@@ -274,19 +274,23 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid){
                 userdata.followingcount = followingcount;
 
                 connection.query('SELECT COUNT(DISTINCT E.entityid) AS postcount, ' +
-                    'COUNT(DISTINCT CASE WHEN(E.type = "SHORT" AND S.capid IS NOT NULL) THEN S.capid ' +
-                    'WHEN(E.type = "CAPTURE" AND C.shoid IS NOT NULL) THEN C.shoid END) AS collaborationscount, ' +
+                    'COUNT(DISTINCT CASE WHEN(E.type = "SHORT") THEN SC.capid ' +
+                    'WHEN(E.type = "CAPTURE") THEN CS.shoid END) AS collaborationscount, ' +
                     'COUNT(DISTINCT Cmt.commid) AS commentscount, ' +
                     'COUNT(DISTINCT H.entityid, H.uuid) AS hatsoffscount ' +
                     'FROM Entity E ' +
                     'LEFT JOIN Capture C ' +
-                    'USING(entityid) ' +
+                    'ON E.entityid = C.entityid ' +
+                    'LEFT JOIN Short CS ' +
+                    'ON C.capid = CS.capid ' +
                     'LEFT JOIN Short S ' +
-                    'USING(entityid) ' +
+                    'ON E.entityid = S.entityid ' +
+                    'LEFT JOIN Capture SC ' +
+                    'ON S.shoid = SC.shoid ' +
                     'LEFT JOIN HatsOff H ' +
-                    'USING(entityid) ' +
+                    'ON E.entityid = H.entityid  ' +
                     'LEFT JOIN Comment AS Cmt ' +
-                    'USING(entityid) ' +
+                    'ON E.entityid = Cmt.entityid ' +
                     'WHERE (S.uuid = ? OR C.uuid = ?) ' +
                     'AND E.status = "ACTIVE"', [requesteduuid, requesteduuid], function(err, data){
                     if(err){
