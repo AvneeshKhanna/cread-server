@@ -29,11 +29,11 @@ const share_time_interval = {
 };
 
 const cache_time = {
-    small: 60,
-    medium: 120,
-    high: 300,
-    xhigh: 900,
-    xxhigh: 3600
+    small: config_type === 'DEVELOPMENT' ? 20 : 60,
+    medium: config_type === 'DEVELOPMENT' ? 20 : 120,
+    high: config_type === 'DEVELOPMENT' ? 20 : 300,
+    xhigh: config_type === 'DEVELOPMENT' ? 20 : 900,
+    xxhigh: config_type === 'DEVELOPMENT' ? 20 : 3600
 };
 
 function getMarkup(markup) {

@@ -19,6 +19,8 @@ var consts = require('../../utils/Constants');
 var utils = require('../../utils/Utils');
 var campaignutils = require('../../campaign/CampaignUtils');
 
+var cache_time = consts.cache_time;
+
 /*router.post('/load/', function (request, response) {
 
     var authkey = request.body.authkey;
@@ -143,6 +145,62 @@ var campaignutils = require('../../campaign/CampaignUtils');
 
 });*/
 
+router.get('/load', function (request, response) {
+
+    console.log("request headers are " + JSON.stringify(request.headers, null, 3));
+
+    var uuid = request.headers.uuid;
+    var authkey = request.headers.authkey;
+    var lastindexkey = decodeURIComponent(request.query.lastindexkey);
+
+    var limit = (config.envtype === 'PRODUCTION') ? 10 : 8;
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return loadFeed(connection, uuid, limit, lastindexkey);
+        })
+        .then(function (result) {
+            console.log("result is " + JSON.stringify(result, null, 3));
+            response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
+
+            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+                response.status(304).send().end();
+            }
+            else {
+                response.status(200).send({
+                    tokenstatus: 'valid',
+                    data: result
+                });
+                response.end();
+            }
+
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        })
+});
+
 router.post('/load', function (request, response) {
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
@@ -231,6 +289,8 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
             }
             else {
 
+                console.log("queried rows are " + JSON.stringify(rows, null, 3));
+
                 if(rows.length > 0){
                     var feedEntities = rows.map(function (elem) {
                         return elem.entityid;
@@ -250,8 +310,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                             element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
                         }
 
-                        element.hatsoffstatus = element.hbinarycount === 1;
-                        // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
+                        element.hatsoffstatus = element.hbinarycount === 1; 
 
                         element.creatorname = element.firstname + ' ' + element.lastname;
                         element.merchantable = (element.merchantable !== 0);
