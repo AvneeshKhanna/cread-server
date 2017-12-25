@@ -250,7 +250,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                             element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
                         }
 
-                        element.hatsoffstatus = element.hbinarycount === 1;
+                        element.hatsoffstatus = element.hbinarycount > 0;
                         // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
 
                         element.creatorname = element.firstname + ' ' + element.lastname;

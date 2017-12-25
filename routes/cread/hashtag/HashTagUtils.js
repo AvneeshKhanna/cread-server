@@ -153,7 +153,7 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
                         element.creatorname = element.firstname + ' ' + element.lastname;
 
                         element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
-                        element.hatsoffstatus = element.hbinarycount === 1;
+                        element.hatsoffstatus = element.hbinarycount > 0;
                         element.followstatus = element.binarycount > 0;
                         element.merchantable = (element.merchantable !== 0);
 

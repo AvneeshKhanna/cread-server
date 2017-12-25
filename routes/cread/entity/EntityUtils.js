@@ -265,7 +265,7 @@ function loadEntityData(connection, requesteruuid, entityid) {
                     }
 
                     element.creatorname = element.firstname + ' ' + element.lastname;
-                    element.hatsoffstatus = element.hbinarycount === 1;
+                    element.hatsoffstatus = element.hbinarycount > 0;
                     element.merchantable = (element.merchantable !== 0);
 
                     /*if(element.capid) {

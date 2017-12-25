@@ -177,7 +177,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
 
                         element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
                         element.creatorname = element.firstname + ' ' + element.lastname;
-                        element.hatsoffstatus = element.hbinarycount === 1;
+                        element.hatsoffstatus = element.hbinarycount > 0;
                         element.merchantable = (element.merchantable !== 0);
 
                         if(element.type === 'CAPTURE'){
