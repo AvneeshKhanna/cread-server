@@ -15,6 +15,8 @@ var utils = require('../utils/Utils');
 var entityutils = require('./EntityUtils');
 var captureutils = require('../capture/CaptureUtils');
 
+var cache_time = consts.cache_time;
+
 var rootpath = './images/downloads/';
 
 /*var Canvas = require('canvas'),
@@ -183,6 +185,61 @@ router.post('/load-collab-details', function (request, response) {
                 data: result
             });
             response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+});
+
+router.get('/load-collab-details', function (request, response) {
+
+    var uuid = request.headers.uuid;
+    var authkey = request.headers.authkey;
+    var entityid = decodeURIComponent(request.query.entityid);
+    var entitytype = request.query.entitytype;
+    var lastindexkey = decodeURIComponent(request.query.lastindexkey);
+
+    var limit = (config.envtype === 'PRODUCTION' ? 4 : 2);
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return entityutils.loadCollabDetails(connection, entityid, entitytype, limit, lastindexkey);
+        })
+        .then(function (result) {
+            response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
+
+            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+                response.status(304).send().end();
+            }
+            else {
+                response.status(200).send({
+                    tokenstatus: 'valid',
+                    data: result
+                });
+                response.end();
+            }
+
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {

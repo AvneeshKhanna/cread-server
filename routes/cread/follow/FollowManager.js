@@ -21,6 +21,9 @@ var followutils = require('./FollowUtils');
 var userprofileutils = require('../user-manager/UserProfileUtils');
 var utils = require('../utils/Utils');
 
+var consts = require('../utils/Constants');
+var cache_time = consts.cache_time;
+
 router.post('/on-click', function (request, response) {
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
@@ -174,6 +177,61 @@ router.post('/fb-friends-all', function (request, response) {
         });
 });
 
+router.get('/load-followers', function (request, response) {
+
+    var uuid = request.headers.uuid;
+    var authkey = request.headers.authkey;
+    var requesteduuid = decodeURIComponent(request.query.requesteduuid);
+    var lastindexkey = decodeURIComponent(request.body.lastindexkey);
+
+    var limit = 25;
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return followutils.loadFollowers(connection, requesteduuid, limit, lastindexkey);
+        })
+        .then(function (result) {
+            response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
+
+            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+                response.status(304).send().end();
+            }
+            else {
+                response.status(200).send({
+                    tokenstatus: 'valid',
+                    data: result
+                });
+                response.end();
+            }
+
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
+
 router.post('/load-followers', function (request, response) {
 
     var uuid = request.body.uuid;
@@ -210,6 +268,61 @@ router.post('/load-followers', function (request, response) {
                 data: result
             });
             response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
+
+router.get('/load-following', function (request, response) {
+
+    var uuid = request.headers.uuid;
+    var authkey = request.headers.authkey;
+    var requesteduuid = decodeURIComponent(request.query.requesteduuid);
+    var lastindexkey = decodeURIComponent(request.query.lastindexkey);
+
+    var limit = 25;
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return followutils.loadFollowing(connection, requesteduuid, limit, lastindexkey);
+        })
+        .then(function (result) {
+            response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
+
+            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+                response.status(304).send().end();
+            }
+            else {
+                response.status(200).send({
+                    tokenstatus: 'valid',
+                    data: result
+                });
+                response.end();
+            }
+
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {

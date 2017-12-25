@@ -15,7 +15,65 @@ var utils = require('../utils/Utils');
 var entityutils = require('../entity/EntityUtils');
 var notify = require('../../notification-system/notificationFramework');
 
+var consts = require('../utils/Constants');
+var cache_time = consts.cache_time;
+
 var uuidGenerator = require('uuid');
+
+router.get('/load', function (request, response) {
+
+    var uuid = request.headers.uuid;
+    var authkey = request.headers.authkey;
+    var entityid = decodeURIComponent(request.query.entityid);
+    var lastindexkey = decodeURIComponent(request.query.lastindexkey);
+    var loadAll = decodeURIComponent(request.query.loadall); //Whether to load all comments or top comments [true | false]
+
+    var limit = (config.envtype === 'PRODUCTION') ? 20 : 12;
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return commentutils.loadComments(connection, entityid, limit, lastindexkey, loadAll);
+        })
+        .then(function (result) {
+            response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
+
+            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+                response.status(304).send().end();
+            }
+            else {
+                response.status(200).send({
+                    tokenstatus: 'valid',
+                    data: result
+                });
+                response.end();
+            }
+
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+});
 
 router.post('/load', function (request, response) {
 
