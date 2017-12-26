@@ -30,7 +30,7 @@ const share_time_interval = {
 
 const cache_time = {
     small: config_type === 'DEVELOPMENT' ? 20 : 60,
-    medium: config_type === 'DEVELOPMENT' ? 20 : 120,
+    medium: config_type === 'DEVELOPMENT' ? 40 : 120,
     high: config_type === 'DEVELOPMENT' ? 20 : 300,
     xhigh: config_type === 'DEVELOPMENT' ? 20 : 900,
     xxhigh: config_type === 'DEVELOPMENT' ? 20 : 3600

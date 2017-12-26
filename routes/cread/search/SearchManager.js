@@ -58,7 +58,7 @@ router.get('/load', function (request, response) {
             console.log("result is " + JSON.stringify(result, null, 3));
 
             result.searchtype = searchtype;
-            response.set('Cache-Control', 'public, max-age=' + cache_time.small);
+            response.set('Cache-Control', 'public, max-age=' + cache_time.high);
 
             if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
                 response.status(304).send().end();
@@ -85,7 +85,5 @@ router.get('/load', function (request, response) {
         })
 
 });
-
-
 
 module.exports = router;
