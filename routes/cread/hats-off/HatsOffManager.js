@@ -19,7 +19,9 @@ var utils = require('../utils/Utils');
 var notify = require('../../notification-system/notificationFramework');
 var hatsoffutils = require('./HatsOffUtils');
 var entityutils = require('../entity/EntityUtils');
+
 var consts = require('../utils/Constants');
+var cache_time = consts.cache_time;
 
 router.post('/on-click', function (request, response) {
 
@@ -110,46 +112,6 @@ router.post('/on-click', function (request, response) {
         });
 });
 
-/*function getEntityUsrDetailsForNotif(connection, entityid) {
-    return new Promise(function (resolve, reject) {
-        connection.query('SELECT Entity.type, Creator.uuid AS creatoruuid, ' +
-            'CollabC.uuid AS collabcuuid, CollabS.uuid AS collabsuuid ' +
-            'FROM Entity ' +
-            'LEFT JOIN Capture ' +
-            'ON Capture.entityid = Entity.entityid ' +
-            'LEFT JOIN Short ' +
-            'ON Short.entityid = Entity.entityid ' +
-            'JOIN User AS Creator ' +
-            'ON (Creator.uuid = Short.uuid OR Creator.uuid = Capture.uuid)  ' +
-            'LEFT JOIN Capture AS CollabC ' +
-            'ON Short.capid = CollabC.capid ' +
-            'LEFT JOIN Short AS CollabS ' +
-            'ON Capture.shoid = CollabS.shoid ' +
-            'WHERE Entity.entityid = ?', [entityid], function(err, rows){
-            if(err){
-                reject(err);
-            }
-            else{
-
-                rows.map(function (el) {
-                    if(el.type === 'SHORT'){
-                        if(el.collabcuuid){
-                            el.collabuuid = el.collabcuuid;
-                        }
-                    }
-                    else if(el.type === 'CAPTURE'){
-                        if(el.collabsuuid){
-                            el.collabuuid = el.collabsuuid;
-                        }
-                    }
-                });
-
-                resolve(rows[0]);
-            }
-        });
-    })
-}*/
-
 router.post('/load', function (request, response) {
 
     var uuid = request.body.uuid;
@@ -196,37 +158,52 @@ router.post('/load', function (request, response) {
         });
 });
 
-/*function registerHatsOff(connection, register, uuid, entityid) {
+router.get('/load', function (request, response) {
 
-    var sqlquery;
-    var sqlparams;
+    var uuid = request.headers.uuid;
+    var authkey = request.headers.authkey;
+    var entityid = decodeURIComponent(request.query.entityid);
+    var lastindexkey = decodeURIComponent(request.query.lastindexkey);
 
-    if(register){
-        sqlquery = 'INSERT INTO HatsOff SET ?';
-        sqlparams = {
-            hoid: uuidGenerator.v4(),
-            uuid: uuid,
-            entityid: entityid
-        }
-    }
-    else{
-        sqlquery = 'DELETE FROM HatsOff WHERE uuid = ? AND entityid = ?';
-        sqlparams = [
-            uuid,
-            entityid
-        ]
-    }
+    var limit = (config.envtype === 'PRODUCTION') ? 20 : 10;
+    var connection;
 
-    return new Promise(function (resolve, reject) {
-        connection.query(sqlquery, sqlparams, function (err, rows) {
-            if (err) {
-                reject(err);
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return hatsoffutils.loadHatsOffs(connection, entityid, limit, lastindexkey);
+        })
+        .then(function (result) {
+            response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
+
+            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+                response.status(304).send().end();
             }
             else {
-                resolve();
+                response.status(200).send({
+                    tokenstatus: 'valid',
+                    data: result
+                });
+                response.end();
+            }
+
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if (err instanceof BreakPromiseChainError) {
+                //Do nothing
+            }
+            else {
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
             }
         });
-    });
-}*/
+});
 
 module.exports = router;

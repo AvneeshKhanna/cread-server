@@ -6,28 +6,41 @@
 var utils = require('../utils/Utils');
 var hashutils = require("../hashtag/HashTagUtils");
 
-//TODO: Upgrade MySQL version to support Error: ER_INNODB_NO_FT_TEMP_TABLE: Cannot create FULLTEXT index on temporary InnoDB table
-/*function getUsernamesSearchResult(connection, keyword, limit, lastindexkey) {
+function getUsernamesSearchResult(connection, keyword, limit, lastindexkey) {
 
     lastindexkey = lastindexkey ? Number(lastindexkey) : 0;
 
     keyword = keyword.split(" ").join("* ") + "*";
 
+    //DROP TABLE clause is added because a TEMPRORAY TABLE created is not dropped untill the SQL session is killed. And when using
+    //a connection pool, a session is only killed when it is being re-picked for use from the pool, not when it ends.
     return new Promise(function (resolve, reject) {
-        connection.query('CREATE TEMPORARY TABLE UserSearchTemp ' +
-            '(_id BIGINT NOT NULL AUTO_INCREMENT, PRIMARY KEY(_id)) AS ' +
-            'SELECT uuid, firstname, lastname FROM User;' +
-            'ALTER TABLE UserSearchTemp ADD FULLTEXT INDEX(`firstname`, `lastname`);' +
+        connection.query('CREATE TEMPORARY TABLE UserSearchTemp (_id BIGINT NOT NULL AUTO_INCREMENT, PRIMARY KEY(_id)) AS ' +
+            'SELECT uuid, firstname, lastname FROM User ' +
+            'WHERE MATCH(firstname, lastname) ' +
+            'AGAINST(? IN BOOLEAN MODE);' +
             'SELECT _id, uuid, firstname, lastname ' +
             'FROM UserSearchTemp ' +
-            'WHERE MATCH(firstname, lastname) ' +
-            'AGAINST(? IN BOOLEAN MODE) ' +
-            'AND _id > ? ' +
-            'LIMIT ?', [keyword, lastindexkey, limit], function (err, rows) {
+            'WHERE _id > ? ' +
+            'ORDER BY _id ASC ' +
+            'LIMIT ?;' +
+            'DROP TABLE IF EXISTS UserSearchTemp;', [keyword, lastindexkey, limit], function (err, rows) {
             if (err) {
-                reject(err);
+                //If an error in the above query occurs, TEMPORARY TABLE still remains in existence since the DROP TABLE query might not
+                //have been executed. Hence, for safety, the below query is executed.
+                connection.query('DROP TABLE IF EXISTS UserSearchTemp', null, function (e, data) {
+                    if(e){
+                        console.error(e);
+                    }
+                    reject(err);
+                });
             }
             else {
+
+                //When running multi-statement queries, the root array returned contains three sub-object each corresponding to the
+                //query being executed and in that order. Hence, here, since the 2nd query SELECTs results, we extract the 2nd index
+                //of the root array for actual data
+                rows = rows[1];
 
                 if(rows.length > 0){
                     rows.map(function (element) {
@@ -46,22 +59,22 @@ var hashutils = require("../hashtag/HashTagUtils");
                     resolve({
                         requestmore: rows.length >= limit,
                         lastindexkey: String(rows[rows.length - 1]._id),
-                        feed: rows
+                        items: rows
                     });
                 }
                 else{
                     resolve({
                         requestmore: rows.length >= limit,
-                        lastindexkey: null,
-                        feed: rows
+                        lastindexkey: "",
+                        items: rows
                     });
                 }
             }
         });
     });
-}*/
+}
 
-function getUsernamesSearchResult(connection, keyword) {
+/*function getUsernamesSearchResult(connection, keyword) {
 
     keyword = keyword.split(" ").join("* ") + "*";
 
@@ -92,9 +105,11 @@ function getUsernamesSearchResult(connection, keyword) {
             }
         });
     });
-}
+}*/
 
-function getHashtagSearchResult(connection, query) {
+function getHashtagSearchResult(connection, query, limit, lastindexkey) {
+
+    lastindexkey = lastindexkey ? Number(lastindexkey) : 0;
 
     //Removing hash symbols
     while (query.indexOf('#') !== -1) {
@@ -135,17 +150,33 @@ function getHashtagSearchResult(connection, query) {
                     alluniquetags.push(tag);
                 });
 
-                if (alluniquetags.length > 0) {
-                    hashutils.getHashtagCounts(connection, alluniquetags)
+                var startpgntnindex = lastindexkey;
+                var lastpgntnindex = (alluniquetags.length) > (limit + lastindexkey) ? (limit + lastindexkey) : (alluniquetags.length);
+
+                console.log("startindex " + JSON.stringify(startpgntnindex, null, 3));
+                console.log("lastindex " + JSON.stringify(lastpgntnindex, null, 3));
+
+                var pageuniquetags = alluniquetags.slice(startpgntnindex, lastpgntnindex);
+
+                if (pageuniquetags.length > 0) {
+                    hashutils.getHashtagCounts(connection, pageuniquetags)
                         .then(function (rows) {
-                            resolve(rows);
+                            resolve({
+                                requestmore: (alluniquetags.length) >= (limit + lastindexkey),
+                                lastindexkey: lastpgntnindex,
+                                items: rows
+                            });
                         })
                         .catch(function (err) {
                             reject(err);
                         });
                 }
                 else {
-                    resolve([]);
+                    resolve({
+                        requestmore: false,
+                        lastindexkey: "",
+                        items: []
+                    });
                 }
             }
         });

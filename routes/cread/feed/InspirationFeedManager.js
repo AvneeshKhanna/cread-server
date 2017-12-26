@@ -15,6 +15,63 @@ var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var consts = require('../utils/Constants');
 var utils = require('../utils/Utils');
 
+var envtype = config.envtype;
+var cache_time = consts.cache_time;
+
+router.get('/load', function (request, response) {
+
+    var uuid = request.headers.uuid;
+    var authkey = request.headers.authkey;
+    var lastindexkey = decodeURIComponent(request.query.lastindexkey);
+
+    var limit = envtype === 'PRODUCTION' ? 15 : 5;
+
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return loadInspirationFeed(connection, limit, lastindexkey);
+        })
+        .then(function (result) {
+            response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
+
+            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+                response.status(304).send().end();
+            }
+            else {
+                response.status(200).send({
+                    tokenstatus: 'valid',
+                    data: result
+                });
+                response.end();
+            }
+
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+});
+
 router.post('/load', function (request, response) {
 
     var uuid = request.body.uuid;
@@ -22,7 +79,7 @@ router.post('/load', function (request, response) {
     var page = request.body.page;
     var lastindexkey = request.body.lastindexkey;
 
-    var limit = 15;
+    var limit = envtype === 'PRODUCTION' ? 15 : 5;
 
     var connection;
 

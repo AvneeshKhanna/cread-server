@@ -10,6 +10,8 @@ var config = require('../../Config');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
 var searchutils = require('./SearchUtils');
+var consts = require('../utils/Constants');
+var cache_time = consts.cache_time;
 
 router.get('/load', function (request, response) {
 
@@ -17,9 +19,9 @@ router.get('/load', function (request, response) {
 
     var keyword = decodeURIComponent(request.query.keyword).trim();
     var searchtype = request.query.searchtype ? request.query.searchtype : 'USER';  //Could be of the type 'USER' | 'HASHTAG'
-    var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : null;
+    var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : "";
 
-    var limit = config.envtype === 'PRODUCTION' ? 30 : 1;
+    var limit = config.envtype === 'PRODUCTION' ? 30 : 8;
     var specialcharregex = /[^@>()+\-*"~<]+/;   //Remove all special characters which can cause a bug in FULL TEXT SEARCH
 
     keyword = specialcharregex.exec(keyword) ? specialcharregex.exec(keyword).join("") : "";    // not-null ? array.join("") : ""
@@ -33,16 +35,18 @@ router.get('/load', function (request, response) {
             connection = conn;
             if(keyword.length > 0){
                 if(searchtype === 'USER'){
-                    return searchutils.getUsernamesSearchResult(connection, keyword/*, limit, lastindexkey*/);
+                    return searchutils.getUsernamesSearchResult(connection, keyword, limit, lastindexkey);
                 }
                 else if(searchtype === 'HASHTAG'){
-                    return searchutils.getHashtagSearchResult(connection, keyword);
+                    return searchutils.getHashtagSearchResult(connection, keyword, limit, lastindexkey);
                 }
             }
-            else{
+            else{   //Case where after filtering, keyword is empty
                 response.send({
                     data: {
                         searchtype: searchtype,
+                        requestmore: false,
+                        lastindexky: "",
                         items: []
                     }
                 });
@@ -50,15 +54,21 @@ router.get('/load', function (request, response) {
                 throw new BreakPromiseChainError();
             }
         })
-        .then(function (rows) {
-            console.log("rows " + JSON.stringify(rows, null, 3));
-            response.send({
-                data: {
-                    searchtype: searchtype,
-                    items: rows
-                }
-            });
-            response.end();
+        .then(function (result) {
+            console.log("result is " + JSON.stringify(result, null, 3));
+
+            result.searchtype = searchtype;
+            response.set('Cache-Control', 'public, max-age=' + cache_time.small);
+
+            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+                response.status(304).send().end();
+            }
+            else {
+                response.status(200).send({
+                    data: result
+                });
+                response.end();
+            }
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {

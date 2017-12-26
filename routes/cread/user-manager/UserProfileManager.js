@@ -33,6 +33,9 @@ var userprofileutils = require('./UserProfileUtils');
 var useraccessutils = require('./UserAccessUtils');
 var utils = require('../utils/Utils');
 
+var consts = require('../utils/Constants');
+var cache_time = consts.cache_time;
+
 //TODO: Delete profile pictures after uploading
 
 router.post('/request/', function (request, response) {
@@ -481,6 +484,62 @@ function updateClientBio(connection, clientid, bio) {
     });
 }
 
+router.get('/load-timeline', function (request, response) {
+    var uuid = request.headers.uuid;
+    var authkey = request.headers.authkey;
+    var lastindexkey = decodeURIComponent(request.query.lastindexkey);
+    var requesteduuid = decodeURIComponent(request.query.requesteduuid);
+
+    var limit = (config.envtype === 'PRODUCTION') ? 10 : 6;  //TODO: Change to 10
+
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return userprofileutils.loadTimeline(connection, requesteduuid, uuid, limit, lastindexkey);
+        })
+        .then(function (result) {
+            console.log("result is " + JSON.stringify(result, null, 3));
+            response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
+
+            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+                response.status(304).send().end();
+            }
+            else {
+                response.status(200).send({
+                    tokenstatus: 'valid',
+                    data: result
+                });
+                response.end();
+            }
+
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if (err instanceof BreakPromiseChainError) {
+                //Do nothing
+            }
+            else {
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
+
 router.post('/load-timeline', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
@@ -540,6 +599,65 @@ router.post('/load-timeline', function (request, response) {
 /**
  * Load basic profile info including followers and following count
  * */
+router.get('/load-profile', function (request, response) {
+
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
+    var uuid = request.headers.uuid;
+    var authkey = request.headers.authkey;
+    var requesteduuid = decodeURIComponent(request.query.requesteduuid); //The "uuid" of the profile that is requested
+
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return userprofileutils.loadProfileInformation(connection, requesteduuid, uuid);
+        })
+        .then(function (result) {
+            console.log("result is " + JSON.stringify(result, null, 3));
+            response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
+
+            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+                response.status(304).send().end();
+            }
+            else {
+                response.status(200).send({
+                    tokenstatus: 'valid',
+                    data: result
+                });
+                response.end();
+            }
+
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if (err instanceof BreakPromiseChainError) {
+                //Do nothing
+            }
+            else {
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
+
+/**
+ * Load basic profile info including followers and following count
+ * */
 router.post('/load-profile', function (request, response) {
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
@@ -571,6 +689,62 @@ router.post('/load-profile', function (request, response) {
                 data: result
             });
             response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if (err instanceof BreakPromiseChainError) {
+                //Do nothing
+            }
+            else {
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
+
+router.get('/load-fb-friends', function (request, response) {
+
+    var uuid = request.headers.uuid;
+    var authkey = request.headers.authkey;
+    var fbid = request.query.fbid;
+    var fbaccesstoken = decodeURIComponent(request.query.fbaccesstoken);
+    var nexturl = decodeURIComponent(request.query.nexturl);
+
+    var connection;
+
+    //TODO: Error handling for Facebook Graph API
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return userprofileutils.loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl);
+        })
+        .then(function (result) {
+            response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
+
+            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+                response.status(304).send().end();
+            }
+            else {
+                response.status(200).send({
+                    tokenstatus: 'valid',
+                    data: result
+                });
+                response.end();
+            }
+
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {

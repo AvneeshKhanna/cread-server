@@ -20,6 +20,8 @@ var userprofileutils = require('../user-manager/UserProfileUtils');
 var useraccessutils = require('../user-manager/UserAccessUtils');
 var utils = require('../utils/Utils');
 var sellordersutils = require('./SellOrdersUtils');
+var consts = require('../utils/Constants');
+var cache_time = consts.cache_time;
 
 router.post('/load-balance', function (request, response) {
 
@@ -50,6 +52,62 @@ router.post('/load-balance', function (request, response) {
                 }
             });
             response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
+
+router.get('/load', function (request, response) {
+
+    var uuid = request.headers.uuid;
+    var authkey = request.headers.authkey;
+    var lastindexkey = decodeURIComponent(request.query.lastindexkey);
+    var toloadtotal = decodeURIComponent(request.query.toloadtotal);
+
+    var limit = (config.envtype === 'PRODUCTION') ? 15 : 2;
+
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function (details) {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return sellordersutils.loadSellOrders(connection, uuid, limit, toloadtotal, lastindexkey);
+        })
+        .then(function (result) {
+            response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
+
+            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+                response.status(304).send().end();
+            }
+            else {
+                response.status(200).send({
+                    tokenstatus: 'valid',
+                    data: result
+                });
+                response.end();
+            }
+
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
