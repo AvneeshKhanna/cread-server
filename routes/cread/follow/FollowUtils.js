@@ -19,7 +19,7 @@ function registerFollow(connection, register, follower, followees) {
     var sqlparams;
 
     if (register) {
-        sqlquery = 'INSERT INTO Follow (followid, follower, followee) VALUES ?';
+        sqlquery = 'INSERT IGNORE INTO Follow (followid, follower, followee) VALUES ?';
         sqlparams = structureDataForBatchFollowing(follower, followees);
     }
     else {

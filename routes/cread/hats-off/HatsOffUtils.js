@@ -18,7 +18,7 @@ function registerHatsOff(connection, register, uuid, entityid) {
     var sqlparams;
 
     if(register){
-        sqlquery = 'INSERT INTO HatsOff SET ?';
+        sqlquery = 'INSERT IGNORE INTO HatsOff SET ?';
         sqlparams = {
             hoid: uuidGenerator.v4(),
             uuid: uuid,
