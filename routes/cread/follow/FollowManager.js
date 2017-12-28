@@ -182,7 +182,7 @@ router.get('/load-followers', function (request, response) {
     var uuid = request.headers.uuid;
     var authkey = request.headers.authkey;
     var requesteduuid = decodeURIComponent(request.query.requesteduuid);
-    var lastindexkey = decodeURIComponent(request.body.lastindexkey);
+    var lastindexkey = decodeURIComponent(request.query.lastindexkey);
 
     var limit = 25;
     var connection;
