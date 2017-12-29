@@ -14,6 +14,66 @@ var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var utils = require('../utils/Utils');
 var shortutils = require('./ShortUtils');
 
+router.get('/load-specific', function (request, response) {
+
+    var uuid = request.headers.uuid;
+    var authkey = request.headers.authkey;
+    var entityid = decodeURIComponent(request.query.entityid);
+    var type = request.query.type;
+
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function (details) {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokentstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            var select = [
+                'shoid',
+                'textcolor',
+                'textsize',
+                'bold',
+                'italic',
+                'font'
+            ];
+            return shortutils.getShortDetailsFromCollab(connection, entityid, type, select);
+        })
+        .then(function (result) {
+            console.log("result is " + JSON.stringify(result, null, 3));
+            // response.set('Cache-Control', 'public, max-age=1');
+            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+                response.status(304).send().end();
+            }
+            else {
+                response.status(200).send({
+                    tokenstatus: 'valid',
+                    data: result
+                });
+                response.end();
+            }
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if (err instanceof BreakPromiseChainError) {
+                //Do nothing
+            }
+            else {
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+});
+
 router.post('/load-specific', function (request, response) {
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
@@ -57,10 +117,10 @@ router.post('/load-specific', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     message: 'Some error occurred at the server'

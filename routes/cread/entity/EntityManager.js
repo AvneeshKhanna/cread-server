@@ -22,6 +22,66 @@ var rootpath = './images/downloads/';
 /*var Canvas = require('canvas'),
     Image = Canvas.Image;*/
 
+router.get('/load-captureid', function (request, response) {
+
+    var entityid = decodeURIComponent(request.query.entityid);
+
+    var connection;
+
+    config.getNewConnection()
+        .then(function (conn) {
+            connection = conn;
+            return loadCaptureid(connection, entityid);
+        })
+        .then(function (result) {
+            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+                response.status(304).send().end();
+            }
+            else {
+                response.status(200).send({
+                    data: result
+                });
+                response.end();
+            }
+
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
+
+function loadCaptureid(connection, entityid){
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT C.capid, C.uuid ' +
+            'FROM Entity E ' +
+            'JOIN Capture C ' +
+            'USING(entityid) ' +
+            'WHERE E.entityid = ?', [entityid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                rows.map(function (element) {
+                    element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.capid);
+                });
+
+                resolve(rows[0]);
+            }
+        });
+    });
+}
+
 router.get('/load-specific', function (request, response) {
     var uuid = request.headers.uuid;
     var authkey = request.headers.authkey;
