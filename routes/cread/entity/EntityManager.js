@@ -34,6 +34,8 @@ router.get('/load-captureid', function (request, response) {
             return loadCaptureid(connection, entityid);
         })
         .then(function (result) {
+            console.log("result is " + JSON.stringify(result, null, 3));
+            response.set('Cache-Control', 'public, max-age=1');
             if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
                 response.status(304).send().end();
             }
@@ -73,7 +75,7 @@ function loadCaptureid(connection, entityid){
             }
             else {
                 rows.map(function (element) {
-                    element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.capid);
+                    element.entityurl = utils.createCaptureUrl(element.uuid, element.capid);
                 });
 
                 resolve(rows[0]);
