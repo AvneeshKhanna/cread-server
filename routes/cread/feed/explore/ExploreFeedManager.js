@@ -432,8 +432,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
             'AND Entity.regdate < ? ' +
             'GROUP BY Entity.entityid ' +
             'ORDER BY Entity.regdate DESC ' +
-            'LIMIT ? '/* +
-            'OFFSET ?'*/, [uuid, uuid, lastindexkey, limit/*, offset*/], function (err, rows) {
+            'LIMIT ? ', [uuid, uuid, lastindexkey, limit], function (err, rows) {
             if (err) {
                 reject(err);
             }

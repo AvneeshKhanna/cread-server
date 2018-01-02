@@ -112,8 +112,7 @@ function loadFollowers(connection, requesteduuid, limit, lastindexkey) {
             'WHERE Follow.followee = ? ' +
             'AND Follow.regdate < ? ' +
             'ORDER BY Follow.regdate DESC ' +
-            'LIMIT ? '/* +
-                    'OFFSET ? '*/, [requesteduuid, lastindexkey, limit/*, offset*/], function (err, rows) {
+            'LIMIT ? ', [requesteduuid, lastindexkey, limit], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -163,7 +162,7 @@ function loadFollowingLegacy(connection, requesteduuid, limit, page) {
                     'WHERE Follow.follower = ? ' +
                     'ORDER BY Follow.regdate DESC ' +
                     'LIMIT ? ' +
-                    'OFFSET ? ', [requesteduuid, limit, offset], function (err, rows) {
+                    'OFFSET ?', [requesteduuid, limit, offset], function (err, rows) {
                     if (err) {
                         reject(err);
                     }
@@ -189,15 +188,14 @@ function loadFollowing(connection, requesteduuid, limit, lastindexkey) {
     lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT User.firstname, User.lastname, User.uuid ' +
+        connection.query('SELECT User.firstname, User.lastname, User.uuid, Follow.regdate ' +
             'FROM Follow ' +
             'JOIN User ' +
             'ON Follow.followee = User.uuid ' +
             'WHERE Follow.follower = ? ' +
             'AND Follow.regdate < ? ' +
             'ORDER BY Follow.regdate DESC ' +
-            'LIMIT ? '/* +
-            'OFFSET ? '*/, [requesteduuid, lastindexkey, limit/*, offset*/], function (err, rows) {
+            'LIMIT ?', [requesteduuid, lastindexkey, limit], function (err, rows) {
             if (err) {
                 reject(err);
             }

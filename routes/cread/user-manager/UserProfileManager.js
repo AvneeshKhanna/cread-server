@@ -732,6 +732,7 @@ router.get('/load-fb-friends', function (request, response) {
             return userprofileutils.loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl);
         })
         .then(function (result) {
+            console.log("result is " + JSON.stringify(result, null, 3));
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 
             if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){

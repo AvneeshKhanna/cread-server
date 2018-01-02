@@ -184,7 +184,7 @@ router.get('/load-followers', function (request, response) {
     var requesteduuid = decodeURIComponent(request.query.requesteduuid);
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
 
-    var limit = 25;
+    var limit = (config.envtype === 'PRODUCTION') ? 25 : 10;
     var connection;
 
     _auth.authValid(uuid, authkey)
@@ -292,7 +292,7 @@ router.get('/load-following', function (request, response) {
     var requesteduuid = decodeURIComponent(request.query.requesteduuid);
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
 
-    var limit = 25;
+    var limit = (config.envtype === 'PRODUCTION') ? 25 : 2;
     var connection;
 
     _auth.authValid(uuid, authkey)
@@ -310,6 +310,7 @@ router.get('/load-following', function (request, response) {
             return followutils.loadFollowing(connection, requesteduuid, limit, lastindexkey);
         })
         .then(function (result) {
+            console.log("result is " + JSON.stringify(result, null, 3));
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 
             if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
