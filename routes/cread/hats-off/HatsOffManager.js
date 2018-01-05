@@ -114,6 +114,8 @@ router.post('/on-click', function (request, response) {
 
 router.post('/load', function (request, response) {
 
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var entityid = request.body.entityid;

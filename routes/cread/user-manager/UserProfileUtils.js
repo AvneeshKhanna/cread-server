@@ -335,8 +335,6 @@ function loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl) {
 
         requestclient(graphurl, function (error, res, body) {
 
-            console.log("body-response " + JSON.stringify(JSON.parse(body), null, 3));
-
             if(error){
                 reject(error);
             }
@@ -344,6 +342,7 @@ function loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl) {
                 reject(JSON.parse(body).error);
             }
             else{
+                console.log("body-response " + JSON.stringify(JSON.parse(body), null, 3));
                 var response = JSON.parse(body);
 
                 var friendsids = response.data.map(function (element) {

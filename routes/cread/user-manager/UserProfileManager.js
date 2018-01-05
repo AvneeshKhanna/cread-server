@@ -708,11 +708,13 @@ router.post('/load-profile', function (request, response) {
 
 router.get('/load-fb-friends', function (request, response) {
 
+    console.log("request headers are " + JSON.stringify(request.headers, null, 3));
+
     var uuid = request.headers.uuid;
     var authkey = request.headers.authkey;
     var fbid = request.query.fbid;
     var fbaccesstoken = decodeURIComponent(request.query.fbaccesstoken);
-    var nexturl = decodeURIComponent(request.query.nexturl);
+    var nexturl = request.query.nexturl ? decodeURIComponent(request.query.nexturl) : null;
 
     var connection;
 
