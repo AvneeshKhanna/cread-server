@@ -483,7 +483,7 @@ function createSmallImage(readingpath, writingbasepath, guid, height, width) {
             }
         });
     });
-} 
+}  
 
 function uploadImageToS3(sourcefilepath, uuid, type, destfilename /* ,filekey*/) {
     console.log("uploadImageToS3() called file.path " + sourcefilepath);
