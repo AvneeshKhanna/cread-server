@@ -706,6 +706,16 @@ router.post('/load-profile', function (request, response) {
 
 });
 
+router.get('/load-collab-timeline', function (request, response) {
+
+    var uuid = request.headers.uuid;
+    var lastindexkey = decodeURIComponent(request.query.lastindexkey);
+    var requesteduuid = decodeURIComponent(request.query.requesteduuid);
+
+
+
+});
+
 router.get('/load-fb-friends', function (request, response) {
 
     console.log("request headers are " + JSON.stringify(request.headers, null, 3));
