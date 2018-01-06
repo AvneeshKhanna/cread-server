@@ -430,6 +430,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
             'ON User.uuid = Follow.followee ' +
             'WHERE Entity.status = "ACTIVE" ' +
             'AND Entity.regdate < ? ' +
+            'AND Entity.for_explore = 1 ' +
             'GROUP BY Entity.entityid ' +
             'ORDER BY Entity.regdate DESC ' +
             'LIMIT ? ', [uuid, uuid, lastindexkey, limit], function (err, rows) {
@@ -440,9 +441,9 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
 
                 if (rows.length > 0) {
 
-                    rows = rows.filter(function (el) {
+                    /*rows = rows.filter(function (el) {
                         return (el.for_explore === 1);
-                    });
+                    });*/
 
                     var feedEntities = rows.map(function (elem) {
                         return elem.entityid;
