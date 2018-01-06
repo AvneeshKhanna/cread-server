@@ -312,6 +312,7 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid){
 function loadCollabationTimeline(connection, requesteduuid, requesteruuid, limit, lastindexkey) {
     lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
+    //TODO: Change query
     return new Promise(function (resolve, reject) {
         connection.query('SELECT Entity.caption, Entity.entityid, Entity.regdate, Entity.merchantable, Entity.type, User.uuid, ' +
             'User.firstname, User.lastname, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
