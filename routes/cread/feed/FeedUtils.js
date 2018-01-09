@@ -4,6 +4,7 @@
 'use-strict';
 
 var utils = require('../utils/Utils');
+var buckets = require('buckets-js');
 
 /**
  * Function to retrieve the users' details whose content has been collaborated on
@@ -107,7 +108,7 @@ function getCollaborationData(connection, rows) {
 
                             indexes.forEach(function (index) {
                                 rows[index].cpshort = {
-                                    name: collab.cfirstname  + ' ' + collab.clastname,
+                                    name: collab.cfirstname + ' ' + collab.clastname,
                                     uuid: collab.cuuid,
                                     entityid: collab.entityid
                                 }
@@ -170,7 +171,7 @@ function getCollaborationData(connection, rows) {
     });
 }
 
-function getCollaborationCounts(connection, rows, feedEntities){
+function getCollaborationCounts(connection, rows, feedEntities) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT Entity.entityid, COUNT(DISTINCT SCap.capid) AS shortcollabcount, ' +
             'COUNT(DISTINCT CShort.shoid) AS capturecollabcount ' +
@@ -183,23 +184,26 @@ function getCollaborationCounts(connection, rows, feedEntities){
             'ON Short.shoid = SCap.shoid ' +
             'LEFT JOIN Short AS CShort ' +
             'ON Capture.capid = CShort.capid ' +
+            // 'LEFT JOIN Entity CollabE ' +
+            // 'ON (SCap.entityid = CollabE.entityid OR CShort.entityid = CollabE.entityid) ' +
             'WHERE Entity.entityid IN (?) ' +
+            // 'AND (CollabE.status = "ACTIVE" OR CollabE.entityid IS NULL) ' +
             'GROUP BY Entity.entityid', [feedEntities], function (err, items) {
-            if(err){
+            if (err) {
                 reject(err);
             }
-            else{
-                if(items.length > 0){
+            else {
+                if (items.length > 0) {
                     items.forEach(function (item) {
 
                         var row_element = rows[rows.map(function (el) {
                             return el.entityid;
                         }).indexOf(item.entityid)];
 
-                        if(row_element.type === 'SHORT'){
+                        if (row_element.type === 'SHORT') {
                             row_element.collabcount = item.shortcollabcount;
                         }
-                        else{
+                        else {
                             row_element.collabcount = item.capturecollabcount;
                         }
 
@@ -207,7 +211,7 @@ function getCollaborationCounts(connection, rows, feedEntities){
 
                     resolve(rows);
                 }
-                else{
+                else {
                     resolve(rows);
                 }
             }
@@ -215,7 +219,65 @@ function getCollaborationCounts(connection, rows, feedEntities){
     });
 }
 
+/**
+ * Structure data for explore-feed grid where:
+ *      0th, 3th, 4th, 7th, 8th, 11th, 12th .. correspond to SHORT type elements
+ *      1st, 2nd, 5th, 6th, 9th, 10th, 13th, 14th .. correspond to CAPTURE type elements
+ * */
+function structureDataCrossPattern(rows) {
+    return new Promise(function (resolve, reject) {
+        var captureMasterQueue = buckets.Queue();
+        var shortMasterQueue = buckets.Queue();
+
+        rows.map(function (element) {
+            if (element.type === 'SHORT') {
+                shortMasterQueue.enqueue(element);
+            }
+            else if (element.type === 'CAPTURE') {
+                captureMasterQueue.enqueue(element);
+            }
+        });
+
+        var sQSize = shortMasterQueue.size();
+        var cQSize = captureMasterQueue.size();
+
+        var patternLoopSize = (sQSize < cQSize) ? 2 * sQSize : 2 * cQSize;
+
+        var patternedRows = [];
+
+        for (var index = 0; index < patternLoopSize; index++) {
+            if(patternIndexSeriesIndicator(index)){
+                patternedRows.push(shortMasterQueue.dequeue());
+            }
+            else{
+                patternedRows.push(captureMasterQueue.dequeue());
+            }
+        }
+
+        if(!captureMasterQueue.isEmpty()){
+            patternedRows = patternedRows.concat(captureMasterQueue.toArray());
+        }
+        else if(!shortMasterQueue.isEmpty()){
+            patternedRows = patternedRows.concat(shortMasterQueue.toArray());
+        }
+
+        resolve(patternedRows);
+    });
+}
+
+/**
+ * Returns 'true' for placing 'SHORT' and 'false' for placing 'CAPTURE'
+ *
+ * This function generates a series for input: 0,1,2,3,4... as
+ * "true, false, false, true, true, false, false, true, true" as required for placing 'SHORT' and 'CAPTURE' in cross-pattern
+ * in explore-feed grid
+ * */
+function patternIndexSeriesIndicator(index) {
+    return Math.cos(((2*index + 1)*Math.PI)/4) > 0;
+}
+
 module.exports = {
     getCollaborationData: getCollaborationData,
-    getCollaborationCounts: getCollaborationCounts
+    getCollaborationCounts: getCollaborationCounts,
+    structureDataCrossPattern: structureDataCrossPattern
 };

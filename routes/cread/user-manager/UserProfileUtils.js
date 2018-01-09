@@ -343,11 +343,12 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                     'LEFT JOIN Capture SCapture ' +
                     'ON Short.capid = SCapture.capid ' +
                     'WHERE (SCapture.uuid = ? OR CShort.uuid = ?) ' +
+                    'AND User.uuid <> ? ' +
                     'AND Entity.status = "ACTIVE" ' +
                     'AND Entity.regdate < ? ' +
                     'GROUP BY Entity.entityid ' +
                     'ORDER BY Entity.regdate DESC ' +
-                    'LIMIT ? ', [requesteruuid, requesteduuid, requesteduuid, lastindexkey, limit], function (err, rows) {
+                    'LIMIT ? ', [requesteruuid, requesteduuid, requesteduuid, requesteduuid, lastindexkey, limit], function (err, rows) {
                     if (err) {
                         reject(err);
                     }
@@ -368,7 +369,7 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                                 if(element.type === 'CAPTURE'){
                                     element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
                                     element.cpshort = {
-                                        name: requesteduuiddetails.firstname + ' ' + requesteduuiddetails.lastname,
+                                        name: requesteduuiddetails[0].firstname + ' ' + requesteduuiddetails[0].lastname,
                                         entityid: element.csentityid,
                                         uuid: requesteduuid
                                     }
@@ -376,7 +377,7 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                                 else if(element.type === 'SHORT'){
                                     element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
                                     element.shcapture = {
-                                        name: requesteduuiddetails.firstname + ' ' + requesteduuiddetails.lastname,
+                                        name: requesteduuiddetails[0].firstname + ' ' + requesteduuiddetails[0].lastname,
                                         entityid: element.scentityid,
                                         uuid: requesteduuid
                                     }
