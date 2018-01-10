@@ -184,10 +184,10 @@ function getCollaborationCounts(connection, rows, feedEntities) {
             'ON Short.shoid = SCap.shoid ' +
             'LEFT JOIN Short AS CShort ' +
             'ON Capture.capid = CShort.capid ' +
-            // 'LEFT JOIN Entity CollabE ' +
-            // 'ON (SCap.entityid = CollabE.entityid OR CShort.entityid = CollabE.entityid) ' +
+            'LEFT JOIN Entity CollabE ' +
+            'ON (SCap.entityid = CollabE.entityid OR CShort.entityid = CollabE.entityid) ' +
             'WHERE Entity.entityid IN (?) ' +
-            // 'AND (CollabE.status = "ACTIVE" OR CollabE.entityid IS NULL) ' +
+            'AND (CollabE.status = "ACTIVE" OR CollabE.entityid IS NULL) ' +
             'GROUP BY Entity.entityid', [feedEntities], function (err, items) {
             if (err) {
                 reject(err);
@@ -203,7 +203,7 @@ function getCollaborationCounts(connection, rows, feedEntities) {
                         if (row_element.type === 'SHORT') {
                             row_element.collabcount = item.shortcollabcount;
                         }
-                        else {
+                        else if (row_element.type === 'CAPTURE'){
                             row_element.collabcount = item.capturecollabcount;
                         }
 

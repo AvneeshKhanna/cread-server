@@ -153,6 +153,7 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
     var txt_height = request.body.txt_height;
     var img_width = request.body.img_width;
     var img_height = request.body.img_height;
+    var imgtintcolor = request.body.imgtintcolor ? request.body.imgtintcolor : null;
     var text = request.body.text;
     var textcolor = request.body.textcolor;
     var textsize = request.body.textsize;
@@ -203,6 +204,7 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
                 txt_height: txt_height,
                 img_width: img_width,
                 img_height: img_height,
+                imgtintcolor: imgtintcolor,
                 text: text,
                 textcolor: textcolor,
                 bold: bold,
