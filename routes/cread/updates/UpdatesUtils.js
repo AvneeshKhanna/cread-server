@@ -4,6 +4,7 @@
 'use-strict';
 
 var utils = require('../utils/Utils');
+var moment = require('moment');
 
 function addToUpdatesTable(connection, params){
     return new Promise(function (resolve, reject) {
@@ -18,7 +19,10 @@ function addToUpdatesTable(connection, params){
     });
 }
 
-function loadUpdates(connection, uuid){
+function loadUpdates(connection, uuid, lastindexkey, limit){
+
+    lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
+
     return new Promise(function (resolve, reject) {
         connection.query('SELECT Updates.*, User.firstname, User.lastname, Entity.type ' +
             'FROM Updates ' +
@@ -27,24 +31,40 @@ function loadUpdates(connection, uuid){
             'JOIN User ' +
             'ON (Updates.other_uuid = User.uuid) ' +
             'WHERE Updates.uuid = ? ' +
-            'ORDER BY Updates.regdate DESC', [uuid], function (err, rows) {
+            'AND Updates.regdate < ? ' +
+            'ORDER BY Updates.regdate DESC ' +
+            'LIMIT ?', [uuid, lastindexkey, limit], function (err, rows) {
             if (err) {
                 reject(err);
             }
             else {
 
-                rows.map(function (element) {
-                    if(element.entityid){
-                        if(element.type === 'SHORT'){
+                if(rows.length > 0){
 
+                    rows.map(function (element) {
+                        if (element.entityid) {
+                            if (element.type === 'SHORT') {
+
+                            }
+                            else if (element.type === 'CAPTURE') {
+
+                            }
                         }
-                        else if(element.type === 'CAPTURE'){
+                    });
 
-                        }
-                    }
-                });
-
-                resolve();
+                    resolve({
+                        requestmore: rows.length >= limit,
+                        lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
+                        items: rows
+                    });
+                }
+                else {
+                    resolve({
+                        requestmore: false,
+                        lastindexkey: null,
+                        items: rows
+                    });
+                }
             }
         });
     });
