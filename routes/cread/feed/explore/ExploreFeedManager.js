@@ -179,7 +179,7 @@ router.get('/load', function (request, response) {
     var authkey = request.headers.authkey;
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
 
-    var limit = (config.envtype === 'PRODUCTION') ? 10 : 8;
+    var limit = (config.envtype === 'PRODUCTION') ? 16 : 8;
     var connection;
 
     _auth.authValid(uuid, authkey)
