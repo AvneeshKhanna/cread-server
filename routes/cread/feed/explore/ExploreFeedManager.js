@@ -179,7 +179,7 @@ router.get('/load', function (request, response) {
     var authkey = request.headers.authkey;
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
 
-    var limit = (config.envtype === 'PRODUCTION') ? 10 : 8;
+    var limit = (config.envtype === 'PRODUCTION') ? 16 : 8;
     var connection;
 
     _auth.authValid(uuid, authkey)
@@ -491,6 +491,8 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                         return element;
                     });
 
+                    lastindexkey = moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss');
+
                     //--Retrieve Collaboration Data--
 
                     feedutils.getCollaborationData(connection, rows)
@@ -504,9 +506,12 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                             return feedutils.getCollaborationCounts(connection, rows, feedEntities);
                         })
                         .then(function (rows) {
+                            return feedutils.structureDataCrossPattern(rows);
+                        })
+                        .then(function (rows) {
                             resolve({
-                                requestmore: rows.length >= limit,//totalcount > (offset + limit),
-                                lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
+                                requestmore: rows.length >= limit,
+                                lastindexkey: lastindexkey,
                                 feed: rows
                             });
                         })
@@ -660,7 +665,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                 }
                 else {  //Case of no data
                     resolve({
-                        requestmore: rows.length >= limit,//totalcount > (offset + limit),
+                        requestmore: rows.length >= limit,
                         lastindexkey: null,
                         feed: []
                     });

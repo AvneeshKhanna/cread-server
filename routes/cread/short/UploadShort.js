@@ -31,7 +31,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var short = request.file;
-    var caption = request.body.caption ? request.body.caption : null;
+    var caption = request.body.caption.trim() ? request.body.caption.trim() : null;
 
     var shoid = uuidgen.v4();
     var entityid = uuidgen.v4();
@@ -43,6 +43,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
         txt_height: request.body.txt_height,
         img_width: request.body.img_width,
         img_height: request.body.img_height,
+        imgtintcolor : request.body.imgtintcolor ? request.body.imgtintcolor : null,
         txt: request.body.text,
         textsize: request.body.textsize,
         bold: (request.body.bold === "1"),

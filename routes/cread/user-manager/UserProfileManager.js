@@ -706,6 +706,61 @@ router.post('/load-profile', function (request, response) {
 
 });
 
+router.get('/load-collab-timeline', function (request, response) {
+
+    var uuid = request.headers.uuid;
+    var authkey = request.headers.authkey;
+    var lastindexkey = decodeURIComponent(request.query.lastindexkey);
+    var requesteduuid = decodeURIComponent(request.query.requesteduuid);
+
+    var limit = (config.envtype === 'PRODUCTION') ? 10 : 5;
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function (details) {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return userprofileutils.loadCollaborationTimeline(connection, requesteduuid, uuid, limit, lastindexkey);
+        })
+        .then(function (result) {
+            console.log("result is " + JSON.stringify(result, null, 3));
+            response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
+
+            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+                response.status(304).send().end();
+            }
+            else {
+                response.status(200).send({
+                    tokenstatus: 'valid',
+                    data: result
+                });
+                response.end();
+            }
+
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+});
+
 router.get('/load-fb-friends', function (request, response) {
 
     console.log("request headers are " + JSON.stringify(request.headers, null, 3));

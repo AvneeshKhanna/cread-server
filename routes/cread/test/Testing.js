@@ -34,6 +34,7 @@ var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
  });*/
 
 var monitor = require('../security/UserActivityMonitor');
+var feedutils = require('../feed/FeedUtils');
 
 var interestTableData = {
     'Arts & Entertainment': [
@@ -95,282 +96,6 @@ var interestTableData = {
     ]
 };
 
-router.post('/send-bulk-sms', function (request, response) {
-
-    var users = [
-        {
-            name: "Vishal",
-            number: "9999656496"
-        },
-        {
-            name: "Shivam",
-            number: "8586904878"
-        },
-        {
-            name: "Shivam",
-            number: "8512008435"
-        },
-        {
-            name: "Shivam",
-            number: "9198697174"
-        },
-        {
-            name: "Shivam",
-            number: "8090392031"
-        },
-        {
-            name: "Amit",
-            number: "9919630078"
-        },
-        {
-            name: "Prince",
-            number: "7503370436"
-        },
-        {
-            name: "Sanjay",
-            number: "9717491076"
-        },
-        {
-            name: "Prince",
-            number: "7011582488"
-        },
-        {
-            name: "Shivam",
-            number: "8005011881"
-        },
-        {
-            name: "Shivam",
-            number: "8756479132"
-        },
-        {
-            name: "Ashok",
-            number: "9871122780"
-        },
-        {
-            name: "Shivam",
-            number: "8700760237"
-        },
-        {
-            name: "Manorama",
-            number: "7531075543"
-        },
-        {
-            name: "Shivam",
-            number: "9716280720"
-        }
-    ];
-
-    var sns = new AWS.SNS();
-
-    var params = {
-        attributes : {
-            DefaultSMSType : 'Transactional'
-        }
-    };
-
-    async.eachSeries(users, function(user, callback){
-
-        sns.setSMSAttributes(params, function(err, data){
-
-            if(err){
-                callback(err);
-            }
-            else{
-
-                var params = {
-
-                    Message : "Hi " + user.name + ",\nWe have noticed some unusual usage activity from your Cread account linked to this number. Please make sure that you are not using multiple accounts to use the platform. " +
-                    "We appreciate following fair practices of use and we hope you do as well. Failing to do so might result in deactivation of your account. You can read more about our terms of service here: https://goo.gl/m1NFVq.\n\n" +
-                    "For any queries, you can mail us at: admin@cread.in. We would like to serve you in the best possible way.\n\n" +
-                    "Team Cread",
-                    PhoneNumber : '+91' + user.number
-                };
-
-                console.log('sns request sending');
-
-                sns.publish(params, function(err, data){
-
-                    if(err){
-                        callback(err);
-                    }
-                    else{
-                        console.log(data);
-                        callback();
-                    }
-
-                });
-            }
-        });
-
-    }, function (err) {
-        if(err){
-            console.error(err);
-        }
-    });
-
-    response.send('Initiated').end();
-
-});
-
-router.post('/populate-db', function (request, response) {
-
-    config.getNewConnection()
-        .then(function (connection) {
-
-            /*var users  = [
-                {
-                    firstname: "Avneesh",
-                    lastname: "Khanna"
-                },
-                {
-                    firstname: "Avneesh",
-                    lastname: "Khanna"
-                },
-                {
-                    firstname: "Avneesh",
-                    lastname: "Khanna"
-                },
-                {
-                    firstname: "Avneesh",
-                    lastname: "Khanna"
-                },
-                {
-                    firstname: "Avneesh",
-                    lastname: "Khanna"
-                },
-                {
-                    firstname: "Avneesh",
-                    lastname: "Khanna"
-                },
-                {
-                    firstname: "Avneesh",
-                    lastname: "Khanna"
-                },
-                {
-                    firstname: "Avneesh",
-                    lastname: "Khanna"
-                },
-                {
-                    firstname: "Avneesh",
-                    lastname: "Khanna"
-                },
-                {
-                    firstname: "Avneesh",
-                    lastname: "Khanna"
-                },
-                {
-                    firstname: "Avneesh",
-                    lastname: "Khanna"
-                },
-                {
-                    firstname: "Avneesh",
-                    lastname: "Khanna"
-                },
-                {
-                    firstname: "Avneesh",
-                    lastname: "Khanna"
-                },
-                {
-                    firstname: "Avneesh",
-                    lastname: "Khanna"
-                },
-                {
-                    firstname: "Avneesh",
-                    lastname: "Khanna"
-                },
-                {
-                    firstname: "Avneesh",
-                    lastname: "Khanna"
-                },
-                {
-                    firstname: "Avneesh",
-                    lastname: "Khanna"
-                },
-                {
-                    firstname: "Avneesh",
-                    lastname: "Khanna"
-                },
-                {
-                    firstname: "Avneesh",
-                    lastname: "Khanna"
-                },
-                {
-                    firstname: "Avneesh",
-                    lastname: "Khanna"
-                },
-                {
-                    firstname: "Avneesh",
-                    lastname: "Khanna"
-                },
-                {
-                    firstname: "Avneesh",
-                    lastname: "Khanna"
-                },
-                {
-                    firstname: "Avneesh",
-                    lastname: "Khanna"
-                },
-
-            ];
-
-            async.eachSeries(users, function (user, callback) {
-
-                var params = {
-                    firstname: user.firstname,
-                    lastname: user.lastname,
-                    uuid: uuidgen.v4(),
-                    fbid: uuidgen.v4(),
-                    authkey: uuidgen.v4(),
-                    email: "avneesh.khanna@gmail.com",
-                    phone: "+919999015838",
-                    locale: "en_US",
-                    gender: "male",
-                    profilepicurl: "https://www.cread.in",
-                    age_yrs_min: 21,
-                    fbtimelineurl: "https://www.facebook.com/app_scoped_user_id/10210921694422791/"
-                };
-
-                connection.query('INSERT INTO User SET ?', [params], function (err, data) {
-                    if(err){
-                        callback(err);
-                    }
-                    else{
-                        console.log('A row inserted successfully!');
-                        callback();
-                    }
-                });
-            }, function (err) {
-                if(err){
-                    console.error(err);
-                }
-            });*/
-
-            connection.query('SELECT uuid FROM User', null, function (err, users) {
-                if(err){
-                    throw err;
-                }
-                else{
-
-                    var values = restructureData(users.map(function (el) {
-                        return el.uuid;
-                    }));
-
-                    connection.query('INSERT INTO Follow VALUES ?', [values], function (err, data) {
-                        if(err){
-                            throw err;
-                        }
-                        else{
-                            response.send('Done').end();
-                        }
-                    })
-
-                }
-            });
-
-        });
-
-});
-
 function restructureData(users) {
 
     var master = [];
@@ -410,35 +135,6 @@ router.post('/emailer', function (request, response) {
 
         });
 
-});
-
-router.post('/search', function (request, response) {
-    
-    var keyword = request.body.keyword;
-    var connection;
-
-    config.getNewConnection()
-        .then(function (conn) {
-            connection = conn;
-            return performSearchUsers(connection, keyword);
-        })
-        .then(function (result) {
-            response.send(result).end();
-            throw new BreakPromiseChainError();
-        })
-        .catch(function (err) {
-            config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
-                //Do nothing
-            }
-            else{
-                console.error(err);
-                response.status(500).send({
-                    message: 'Some error occurred at the server'
-                }).end();
-            }
-        });
-    
 });
 
 function performSearchUsers(connection, keyword) {
@@ -589,6 +285,52 @@ router.post('/send-email', function (request, response) {
          */
     });
 
+
+});
+
+router.post('/cross-pattern-explore', function (request, response) {
+
+    //TODO: Remove
+    /*var rows = [
+        {
+            type: "SHORT",
+            i: 0
+        },
+        {
+            type: "CAPTURE",
+            i: 1
+        },
+        {
+            type: "CAPTURE",
+            i: 2
+        },
+        {
+            type: "CAPTURE",
+            i: 3
+        },
+        {
+            type: "SHORT",
+            i: 4
+        },
+        {
+            type: "SHORT",
+            i: 5
+        },
+        {
+            type: "CAPTURE",
+            i: 6
+        },
+        {
+            type: "SHORT",
+            i: 7
+        }
+    ];*/
+    var rows = [];
+
+    feedutils.structureDataCrossPattern(rows)
+        .then(function (rows) {
+            response.send(rows);
+        });
 
 });
 
