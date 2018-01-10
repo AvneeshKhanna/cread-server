@@ -173,8 +173,9 @@ function getCollaborationData(connection, rows) {
 
 function getCollaborationCounts(connection, rows, feedEntities) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT Entity.entityid, COUNT(DISTINCT SCap.capid) AS shortcollabcount, ' +
-            'COUNT(DISTINCT CShort.shoid) AS capturecollabcount ' +
+        connection.query('SELECT Entity.entityid, ' +
+            'COUNT(DISTINCT (CASE WHEN(CollabE.status = "ACTIVE") THEN SCap.capid END)) AS shortcollabcount, ' +
+            'COUNT(DISTINCT (CASE WHEN(CollabE.status = "ACTIVE") THEN CShort.shoid END)) AS capturecollabcount ' +
             'FROM Entity ' +
             'LEFT JOIN Short ' +
             'ON Entity.entityid = Short.entityid ' +
@@ -187,7 +188,7 @@ function getCollaborationCounts(connection, rows, feedEntities) {
             'LEFT JOIN Entity CollabE ' +
             'ON (SCap.entityid = CollabE.entityid OR CShort.entityid = CollabE.entityid) ' +
             'WHERE Entity.entityid IN (?) ' +
-            'AND (CollabE.status = "ACTIVE" OR CollabE.entityid IS NULL) ' +
+            //'AND (CollabE.status = "ACTIVE" OR CollabE.entityid IS NULL) ' +
             'GROUP BY Entity.entityid', [feedEntities], function (err, items) {
             if (err) {
                 reject(err);
