@@ -13,6 +13,7 @@ var moment = require('moment');
 
 var config = require('../../Config');
 var utils = require('../utils/Utils');
+var updatesutils = require('../updates/UpdatesUtils');
 
 function registerFollow(connection, register, follower, followees) {
     var sqlquery;
@@ -224,10 +225,39 @@ function loadFollowing(connection, requesteduuid, limit, lastindexkey) {
     });
 }
 
+function updateFollowDataForUpdates(connection, register, uuid, actor_uuid) {
+    return new Promise(function (resolve, reject) {
+        if(register){   //Case: Follow
+            var updatesparams = {
+                uuid: uuid,
+                actor_uuid: actor_uuid,
+                entityid: null,
+                category: "follow"
+            };
+            return updatesutils.addToUpdatesTable(connection, updatesparams);
+        }
+        else{   //Case: Un-Follow
+            var where_col_names = [
+                "uuid",
+                "actor_uuid",
+                "category"
+            ];
+
+            var where_col_values = [
+                uuid,
+                actor_uuid,
+                "follow"
+            ];
+            return updatesutils.deleteFromUpdatesTable(connection, where_col_names, where_col_values);
+        }
+    })
+}
+
 module.exports = {
     registerFollow: registerFollow,
     loadFollowersLegacy: loadFollowersLegacy,
     loadFollowers: loadFollowers,
     loadFollowingLegacy: loadFollowingLegacy,
-    loadFollowing: loadFollowing
+    loadFollowing: loadFollowing,
+    updateFollowDataForUpdates: updateFollowDataForUpdates
 };

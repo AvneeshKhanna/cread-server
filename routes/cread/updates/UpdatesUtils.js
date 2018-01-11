@@ -6,9 +6,61 @@
 var utils = require('../utils/Utils');
 var moment = require('moment');
 
+function deleteFromUpdatesTable(connection, where_col_names, where_col_values){
+    return new Promise(function (resolve, reject) {
+
+        var where_array = [];
+        var sql_params = [];
+
+        if(!(where_col_names instanceof Array) || !(where_col_values instanceof Array)){
+            reject(new Error("where_col_names and where_col_values should be of type array"));
+            return;
+        }
+        else if(where_col_values.length !== where_col_names.length){
+            reject(new Error("Number of elements in where_col_names & where_col_values should be same"));
+            return;
+        }
+        else if(where_col_values.length === 0 || where_col_names.length === 0){
+            reject(new Error("where_col_names or where_col_values cannot be empty"));
+            return;
+        }
+
+        for (var i = 0; i < where_col_names.length; i++) {
+            var col_name = where_col_names[i];
+            var col_value = where_col_values[i];
+            where_array.push(col_name + " = ?");
+            sql_params.push(col_value);
+        }
+
+        connection.query('DELETE FROM Updates WHERE ' + where_array.join(" AND "), sql_params, function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
 function addToUpdatesTable(connection, params){
     return new Promise(function (resolve, reject) {
-        connection.query('INSERT INTO Updates VALUES ?', [params], function (err, rows) {
+        connection.query('INSERT INTO Updates SET ?', [params], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
+function updateUpdatesUnreadStatus(connection, updateid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('UPDATE Updates ' +
+            'SET unread = ? ' +
+            'WHERE updateid = ?', [false, updateid], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -72,5 +124,7 @@ function loadUpdates(connection, uuid, lastindexkey, limit){
 
 module.exports = {
     loadUpdates: loadUpdates,
-    addToUpdatesTable: addToUpdatesTable
+    addToUpdatesTable: addToUpdatesTable,
+    updateUpdatesUnreadStatus: updateUpdatesUnreadStatus,
+    deleteFromUpdatesTable: deleteFromUpdatesTable
 };

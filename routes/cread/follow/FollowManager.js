@@ -23,6 +23,7 @@ var utils = require('../utils/Utils');
 
 var consts = require('../utils/Constants');
 var cache_time = consts.cache_time;
+var updatesutils = require('../updates/UpdatesUtils');
 
 router.post('/on-click', function (request, response) {
 
@@ -68,6 +69,10 @@ router.post('/on-click', function (request, response) {
                 }
             });
             response.end();
+        })
+        .then(function () {
+            //TODO: For multiple values in followees array
+            return followutils.updateFollowDataForUpdates(connection, register, followees.toString(), uuid);
         })
         .then(function () {
             if(register){
