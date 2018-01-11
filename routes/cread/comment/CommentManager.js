@@ -26,7 +26,7 @@ router.get('/load', function (request, response) {
     var authkey = request.headers.authkey;
     var entityid = decodeURIComponent(request.query.entityid);
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
-    var loadAll = decodeURIComponent(request.query.loadall); //Whether to load all comments or top comments [true | false]
+    var loadAll = (decodeURIComponent(request.query.loadall) === "true"); //Whether to load all comments or top comments [true | false]
 
     var limit = (config.envtype === 'PRODUCTION') ? 20 : 12;
     var connection;
