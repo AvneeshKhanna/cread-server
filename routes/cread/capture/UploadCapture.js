@@ -36,7 +36,7 @@ router.post('/', upload.single('captured-image'), function (request, response) {
     var watermark = request.body.watermark;
     var capture = request.file;
     var merchantable = Number(request.body.merchantable);
-    var caption = request.body.caption ? request.body.caption : null;
+    var caption = request.body.caption.trim() ? request.body.caption.trim() : null;
 
     var uniquehashtags;
 
@@ -139,7 +139,7 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
     var capture_img_high = request.files['capture-img-high'][0];
     var capture_img_low = request.files['capture-img-low'][0];
     var merchantable = Number(request.body.merchantable);
-    var caption = request.body.caption ? request.body.caption : null;
+    var caption = request.body.caption.trim() ? request.body.caption.trim() : null;
 
     var uniquehashtags;
 
