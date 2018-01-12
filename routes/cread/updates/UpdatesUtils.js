@@ -76,12 +76,16 @@ function loadUpdates(connection, uuid, lastindexkey, limit){
     lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT Updates.*, User.firstname, User.lastname, Entity.type ' +
+        connection.query('SELECT Updates.*, User.firstname, User.lastname, Entity.type, Short.shoid, Capture.capid ' +
             'FROM Updates ' +
             'JOIN Entity ' +
             'ON (Entity.entityid = Updates.entityid) ' +
+            'LEFT JOIN Short ' +
+            'ON (Entity.entityid = Short.entityid) ' +
+            'LEFT JOIN Capture ' +
+            'ON (Entity.entityid = Capture.entityid) ' +
             'JOIN User ' +
-            'ON (Updates.other_uuid = User.uuid) ' +
+            'ON (Updates.actor_uuid = User.uuid) ' +
             'WHERE Updates.uuid = ? ' +
             'AND Updates.regdate < ? ' +
             'ORDER BY Updates.regdate DESC ' +
@@ -94,14 +98,42 @@ function loadUpdates(connection, uuid, lastindexkey, limit){
                 if(rows.length > 0){
 
                     rows.map(function (element) {
-                        if (element.entityid) {
+                        if(element.entityid) {
                             if (element.type === 'SHORT') {
-
+                                element.entityurl = utils.createSmallShortUrl(element.actor_uuid, element.shoid);
                             }
                             else if (element.type === 'CAPTURE') {
-
+                                element.entityurl = utils.createSmallCaptureUrl(element.actor_uuid, element.capid);
                             }
                         }
+
+                        if(element.actor_uuid){
+                            element.actor_profilepicurl = utils.createSmallProfilePicUrl(element.actor_uuid);
+                            element.actorname = element.firstname + ' ' + element.lastname;
+                        }
+
+                        element.unread = (element.unread === 1);
+
+                        if(element.hasOwnProperty('type')){
+                            delete element.type;
+                        }
+
+                        if(element.hasOwnProperty('shoid')){
+                            delete element.shoid;
+                        }
+
+                        if(element.hasOwnProperty('capid')){
+                            delete element.capid;
+                        }
+
+                        if(element.hasOwnProperty('firstname')){
+                            delete element.firstname;
+                        }
+
+                        if(element.hasOwnProperty('lastname')){
+                            delete element.lastname;
+                        }
+
                     });
 
                     resolve({

@@ -468,7 +468,7 @@ function loadFeedLegacy(connection, uuid, limit, page) {
                 console.log("totalcount is " + JSON.stringify(totalcount, null, 3));
 
                 if(totalcount > 0){
-                    connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Short.shoid, ' +
+                    connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Entity.caption, Short.shoid, ' +
                         'Capture.capid AS captureid, ' + 'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
                         'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
                         'User.uuid, User.firstname, User.lastname ' +
