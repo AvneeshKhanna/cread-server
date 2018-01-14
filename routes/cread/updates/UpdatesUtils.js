@@ -113,6 +113,7 @@ function loadUpdates(connection, uuid, lastindexkey, limit){
                         }
 
                         element.unread = (element.unread === 1);
+                        element.other_collaborator = (element.other_collaborator === 1);
 
                         if(element.hasOwnProperty('type')){
                             delete element.type;
