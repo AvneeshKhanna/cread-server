@@ -79,7 +79,7 @@ router.post('/send-notification', function (request, response) {
                 }
                 else{
                     response.status(200).send({
-                        message: "Notification sent"
+                        message: "notification sent"
                     });
                     response.end();
                 }
