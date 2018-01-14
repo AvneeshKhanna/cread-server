@@ -320,6 +320,7 @@ function loadFeedLegacy(connection, uuid, limit, page) {
                         'LEFT JOIN Follow ' +
                         'ON User.uuid = Follow.followee ' +
                         'WHERE Entity.status = "ACTIVE" ' +
+                        'AND Entity.for_explore = 1 ' +
                         'GROUP BY Entity.entityid ' +
                         'ORDER BY Entity.regdate DESC ' +
                         'LIMIT ? ' +

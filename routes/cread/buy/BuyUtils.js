@@ -12,6 +12,7 @@ var envtype = envconfig.get("type");
 
 var utils = require('../utils/Utils');
 var entityutils = require('../entity/EntityUtils');
+var updatesutils = require('../updates/UpdatesUtils');
 
 var rzrinstance = new Razorpay({
     key_id: razorpay_creds.key_id,
@@ -163,11 +164,27 @@ function convertPaiseToINR(amount) {
     return parseFloat(amount / 100);
 }
 
+function updateBuyDataForUpdates(connection, uuid, actor_uuid, entityid, other_collaborator) {
+    return new Promise(function (resolve, reject) {
+
+        var updateparams = {
+            uuid: uuid,
+            actor_uuid: actor_uuid,
+            entityid: entityid,
+            category: 'buy',
+            other_collaborator: other_collaborator
+        };
+
+        return updatesutils.addToUpdatesTable(connection, updateparams);
+    });
+}
+
 module.exports = {
     loadAllProducts: loadAllProducts,
     saveOrderDetails: saveOrderDetails,
     loadOrdersForPrint: loadOrdersForPrint,
     captureRazorpayPayment: captureRazorpayPayment,
+    updateBuyDataForUpdates: updateBuyDataForUpdates,
     convertINRtoPaise: convertINRtoPaise,
     convertPaiseToINR: convertPaiseToINR
 };

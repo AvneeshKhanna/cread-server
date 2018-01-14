@@ -39,7 +39,7 @@ router.get('/load', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return updatesutils.loadUpdates(connection, uuid, lastindexkey);
+            return updatesutils.loadUpdates(connection, uuid, lastindexkey, limit);
         })
         .then(function (result) {
             console.log("result is " + JSON.stringify(result, null, 3));
@@ -58,7 +58,18 @@ router.get('/load', function (request, response) {
 
             throw new BreakPromiseChainError();
         })
-
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
 });
 
 /**

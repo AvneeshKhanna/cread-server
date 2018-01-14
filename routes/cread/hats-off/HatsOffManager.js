@@ -61,29 +61,39 @@ router.post('/on-click', function (request, response) {
             response.end();
         })
         .then(function () {
+            return entityutils.getEntityUsrDetailsForNotif(connection, entityid);
+        })
+        .then(function (result) { //Add to Updates table for a notification to creator
+            notifuuids = result;
+            if(notifuuids.creatoruuid !== uuid){    //Send notification only when the two users involved are different
+                return hatsoffutils.updateHatsOffDataForUpdates(connection, register, notifuuids.creatoruuid, uuid, entityid, false);
+            }
+        })
+        .then(function () {   //Send a notification to creator
             if(register){
-                return entityutils.getEntityUsrDetailsForNotif(connection, entityid);
+                if(notifuuids.creatoruuid !== uuid){    //Send notification only when the two users involved are different
+                    var notifData = {
+                        message: requesterdetails.firstname + " " + requesterdetails.lastname + " has given your post a hats-off",
+                        category: "hatsoff",
+                        entityid: entityid,
+                        persistable: "Yes",
+                        other_collaborator : false,
+                        actorimage: utils.createSmallProfilePicUrl(uuid)
+                    };
+                    return notify.notificationPromise(new Array(notifuuids.creatoruuid), notifData);
+                }
             }
             else {
                 throw new BreakPromiseChainError();
             }
         })
-        .then(function (result) {   //Send a notification to creator
-            notifuuids = result;
-            if(notifuuids.creatoruuid !== uuid){    //Send notification only when the two users involved are different
-                var notifData = {
-                    message: requesterdetails.firstname + " " + requesterdetails.lastname + " has given your post a hats-off",
-                    category: "hatsoff",
-                    entityid: entityid,
-                    persistable: "Yes",
-                    other_collaborator : false,
-                    actorimage: utils.createSmallProfilePicUrl(uuid)
-                };
-                return notify.notificationPromise(new Array(notifuuids.creatoruuid), notifData);
+        .then(function () { //Add to Updates table for a notification to collaborator
+            if(notifuuids.collabuuid && notifuuids.collabuuid !== uuid && notifuuids.collabuuid !== notifuuids.creatoruuid){    //Send notification only when the two users involved are different
+                return hatsoffutils.updateHatsOffDataForUpdates(connection, register, notifuuids.collabuuid, uuid, entityid, true);
             }
         })
         .then(function () { //Send a notification to collaborator
-            if(notifuuids.collabuuid && notifuuids.collabuuid !== uuid){    //Send notification only when the two users involved are different
+            if(notifuuids.collabuuid && notifuuids.collabuuid !== uuid && notifuuids.collabuuid !== notifuuids.creatoruuid){    //Send notification only when the two users involved are different
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " has given a hats-off to a post which was inspired by yours",
                     category: "hatsoff",

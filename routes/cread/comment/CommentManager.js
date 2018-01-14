@@ -179,8 +179,13 @@ router.post('/add', function (request, response) {
         .then(function () {
             return entityutils.getEntityUsrDetailsForNotif(connection, entityid);
         })
-        .then(function (result) {   //Send a notification to the creator of this post
+        .then(function (result) {   //Add to Updates table for a notification to creator
             notifuuids = result;
+            if(notifuuids.creatoruuid !== uuid){
+                return commentutils.updateCommentDataForUpdates(connection, notifuuids.creatoruuid, uuid, entityid, "comment", false);
+            }
+        })
+        .then(function () {   //Send a notification to the creator of this post
             if(notifuuids.creatoruuid !== uuid){    //Send notification only when the two users involved are different
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " has commented on your post",
@@ -193,8 +198,13 @@ router.post('/add', function (request, response) {
                 return notify.notificationPromise(new Array(notifuuids.creatoruuid), notifData);
             }
         })
+        .then(function () { //Add to Updates table for a notification to collaborator
+            if(notifuuids.collabuuid && notifuuids.collabuuid !== uuid && notifuuids.collabuuid !== notifuuids.creatoruuid){
+                return commentutils.updateCommentDataForUpdates(connection, notifuuids.collabuuid, uuid, entityid, "comment", true);
+            }
+        })
         .then(function () { //Send a notification to the collaborator of this post
-            if(notifuuids.collabuuid && notifuuids.collabuuid !== uuid){    //Send notification only when the two users involved are different
+            if(notifuuids.collabuuid && notifuuids.collabuuid !== uuid && notifuuids.collabuuid !== notifuuids.creatoruuid){    //Send notification only when the two users involved are different
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " has commented on a post inspired by yours",
                     category: "comment",
@@ -204,6 +214,12 @@ router.post('/add', function (request, response) {
                     actorimage: utils.createSmallProfilePicUrl(uuid)
                 };
                 return notify.notificationPromise(new Array(notifuuids.collabuuid), notifData);
+            }
+        })
+        .then(function () { //Add to Updates table for a notification to other commenters on this thread
+            if(othercommenters && othercommenters.length > 0){
+                //TODO: Case for multiple commenters
+                return commentutils.updateCommentDataForUpdates(connection, othercommenters.toString(), uuid, entityid, "other-comment", false);
             }
         })
         .then(function () {
