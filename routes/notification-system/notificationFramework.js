@@ -116,6 +116,24 @@ function notificationPromise(users, notificationData) {
     });
 }
 
+function notifyTokens(tokens, payload, callback) {
+    var message = new gcm.Message({
+        data: payload
+    });
+
+    var sender = new gcm.Sender(config['fcm-server-key']);
+
+    sender.send(message, {registrationTokens: tokens}, 3, function (err, response) {
+        if (err) {
+            callback(err);
+        }
+
+        console.log(response);
+        callback();
+    });
+}
+
 //module.exports = router;
 module.exports.notification = sendNotification;
 module.exports.notificationPromise = notificationPromise;
+module.exports.notifyTokens = notifyTokens;
