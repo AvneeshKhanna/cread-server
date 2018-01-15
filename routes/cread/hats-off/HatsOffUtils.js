@@ -155,7 +155,11 @@ function updateHatsOffDataForUpdates(connection, register, uuid, actor_uuid, ent
                 other_collaborator: other_collaborator,
                 category: "hatsoff"
             };
-            return updatesutils.addToUpdatesTable(connection, updateparams);
+            updatesutils.addToUpdatesTable(connection, updateparams)
+                .then(resolve)
+                .catch(function (err) {
+                    reject(err);
+                });
         }
         else{   //Case: Hatsoff reverted
             var where_col_names = [
@@ -170,7 +174,11 @@ function updateHatsOffDataForUpdates(connection, register, uuid, actor_uuid, ent
                 other_collaborator,
                 "hatsoff"
             ];
-            return updatesutils.deleteFromUpdatesTable(connection, where_col_names, where_col_values);
+            updatesutils.deleteFromUpdatesTable(connection, where_col_names, where_col_values)
+                .then(resolve)
+                .catch(function (err) {
+                    reject(err);
+                });
         }
     });
 }

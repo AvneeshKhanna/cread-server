@@ -188,7 +188,8 @@ function updateCommentDataForUpdates(connection, uuid, actor_uuid, entityid, cat
                 other_collaborator: other_collaborator,
                 category: category
             };
-            return updatesutils.addToUpdatesTable(connection, updateparams);
+            updatesutils.addToUpdatesTable(connection, updateparams)
+                .then(resolve, reject);
         }
         else{   //Case: Comment deleted TODO: Find a mechanism to locate a particular comment's row in Updates table
             /*var where_col_names = [

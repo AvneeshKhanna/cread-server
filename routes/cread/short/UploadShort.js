@@ -18,6 +18,7 @@ var upload = multer({dest: './images/uploads/short/'});
 var fs = require('fs');
 
 var utils = require('../utils/Utils');
+var entityutils = require('../entity/EntityUtils');
 var hashtagutils = require('../hashtag/HashTagUtils');
 var notify = require('../../notification-system/notificationFramework');
 
@@ -78,6 +79,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
 
     var connection;
     var requesterdetails;
+    var captureuseruuid;
 
     _auth.authValid(uuid, authkey)
         .then(function (details) {
@@ -129,14 +131,20 @@ router.post('/', upload.single('short-image'), function (request, response) {
             }
         })
         .then(function () {
-            if (shortsqlparams.capid) {
+            if (shortsqlparams.capid) { //Send notification to user
                 return retreiveCaptureUserDetails(connection, shortsqlparams.capid);
             }
             else {
                 throw new BreakPromiseChainError();
             }
         })
-        .then(function (captureuseruuid) {
+        .then(function (capuseruuid) {
+            captureuseruuid = capuseruuid;
+            if(captureuseruuid !== uuid){
+                return entityutils.updateEntityCollabDataForUpdates(connection, entityid, captureuseruuid, uuid);
+            }
+        })
+        .then(function () {
             if (captureuseruuid !== uuid) {   //Send notification only when the two users involved are different
                 var notifData = {
                     message: requesterdetails.firstname + ' ' + requesterdetails.lastname + " wrote on your graphic art",

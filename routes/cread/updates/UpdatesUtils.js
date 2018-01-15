@@ -78,7 +78,7 @@ function loadUpdates(connection, uuid, lastindexkey, limit){
     return new Promise(function (resolve, reject) {
         connection.query('SELECT Updates.*, User.firstname, User.lastname, Entity.type, Short.shoid, Capture.capid ' +
             'FROM Updates ' +
-            'JOIN Entity ' +
+            'LEFT JOIN Entity ' +
             'ON (Entity.entityid = Updates.entityid) ' +
             'LEFT JOIN Short ' +
             'ON (Entity.entityid = Short.entityid) ' +
@@ -94,6 +94,8 @@ function loadUpdates(connection, uuid, lastindexkey, limit){
                 reject(err);
             }
             else {
+
+                console.log("rows from load updates query is " + JSON.stringify(rows, null, 3));
 
                 if(rows.length > 0){
 

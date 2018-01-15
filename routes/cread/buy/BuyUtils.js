@@ -175,7 +175,11 @@ function updateBuyDataForUpdates(connection, uuid, actor_uuid, entityid, other_c
             other_collaborator: other_collaborator
         };
 
-        return updatesutils.addToUpdatesTable(connection, updateparams);
+        updatesutils.addToUpdatesTable(connection, updateparams)
+            .then(resolve)
+            .catch(function (err) {
+                reject(err);
+            });
     });
 }
 

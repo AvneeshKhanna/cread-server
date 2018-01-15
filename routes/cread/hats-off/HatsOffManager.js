@@ -83,9 +83,6 @@ router.post('/on-click', function (request, response) {
                     return notify.notificationPromise(new Array(notifuuids.creatoruuid), notifData);
                 }
             }
-            else {
-                throw new BreakPromiseChainError();
-            }
         })
         .then(function () { //Add to Updates table for a notification to collaborator
             if(notifuuids.collabuuid && notifuuids.collabuuid !== uuid && notifuuids.collabuuid !== notifuuids.creatoruuid){    //Send notification only when the two users involved are different
@@ -93,16 +90,18 @@ router.post('/on-click', function (request, response) {
             }
         })
         .then(function () { //Send a notification to collaborator
-            if(notifuuids.collabuuid && notifuuids.collabuuid !== uuid && notifuuids.collabuuid !== notifuuids.creatoruuid){    //Send notification only when the two users involved are different
-                var notifData = {
-                    message: requesterdetails.firstname + " " + requesterdetails.lastname + " has given a hats-off to a post which was inspired by yours",
-                    category: "hatsoff",
-                    entityid: entityid,
-                    persistable: "Yes",
-                    other_collaborator : true,
-                    actorimage: utils.createSmallProfilePicUrl(uuid)
-                };
-                return notify.notificationPromise(new Array(notifuuids.collabuuid), notifData);
+            if(register){
+                if(notifuuids.collabuuid && notifuuids.collabuuid !== uuid && notifuuids.collabuuid !== notifuuids.creatoruuid){    //Send notification only when the two users involved are different
+                    var notifData = {
+                        message: requesterdetails.firstname + " " + requesterdetails.lastname + " has given a hats-off to a post which was inspired by yours",
+                        category: "hatsoff",
+                        entityid: entityid,
+                        persistable: "Yes",
+                        other_collaborator : true,
+                        actorimage: utils.createSmallProfilePicUrl(uuid)
+                    };
+                    return notify.notificationPromise(new Array(notifuuids.collabuuid), notifData);
+                }
             }
         })
         .then(function () {

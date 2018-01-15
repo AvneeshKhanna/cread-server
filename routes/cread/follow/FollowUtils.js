@@ -234,7 +234,8 @@ function updateFollowDataForUpdates(connection, register, uuid, actor_uuid) {
                 entityid: null,
                 category: "follow"
             };
-            return updatesutils.addToUpdatesTable(connection, updatesparams);
+            updatesutils.addToUpdatesTable(connection, updatesparams)
+                .then(resolve, reject);
         }
         else{   //Case: Un-Follow
             var where_col_names = [
@@ -248,7 +249,8 @@ function updateFollowDataForUpdates(connection, register, uuid, actor_uuid) {
                 actor_uuid,
                 "follow"
             ];
-            return updatesutils.deleteFromUpdatesTable(connection, where_col_names, where_col_values);
+            updatesutils.deleteFromUpdatesTable(connection, where_col_names, where_col_values)
+                .then(resolve, reject);
         }
     })
 }

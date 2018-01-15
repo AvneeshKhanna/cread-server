@@ -7,6 +7,7 @@ var utils = require('../utils/Utils');
 
 var moment = require('moment');
 var feedutils = require('../feed/FeedUtils');
+var updatesutils= require('../updates/UpdatesUtils');
 
 function retrieveShortDetails(connection, entityid) {
     return new Promise(function (resolve, reject) {
@@ -388,7 +389,21 @@ function deactivateEntity(connection, entityid, uuid) {
     });
 }
 
+function updateEntityCollabDataForUpdates(connection, entityid, uuid, actor_uuid){
+    return new Promise(function (resolve, reject) {
+        var updateparams = {
+            category: "collaborate",
+            actor_uuid: actor_uuid,
+            uuid: uuid,
+            entityid: entityid
+        };
+        updatesutils.addToUpdatesTable(connection, updateparams)
+            .then(resolve, reject);
+    });
+}
+
 module.exports = {
+    updateEntityCollabDataForUpdates: updateEntityCollabDataForUpdates,
     loadEntityData: loadEntityData,
     retrieveShortDetails: retrieveShortDetails,
     loadCollabDetails: loadCollabDetails,

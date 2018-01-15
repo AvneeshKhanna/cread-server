@@ -23,6 +23,7 @@ var captureutils = require('./CaptureUtils');
 var notify = require('../../notification-system/notificationFramework');
 var shortutils = require('../short/ShortUtils');
 var hashtagutils = require('../hashtag/HashTagUtils');
+var entityutils = require('../entity/EntityUtils');
 
 var filebasepath = './images/uploads/capture/'; 
 
@@ -173,7 +174,7 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
     var toresize;
 
     var filebasepath = './images/uploads/capture/';
-    var filename_high =
+    var shortdetails;
 
     _auth.authValid(uuid, authkey)
         .then(function (details){
@@ -251,7 +252,13 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
             ];
             return shortutils.retrieveShortDetails(connection, shoid, select);
         })
-        .then(function (shortdetails) {
+        .then(function (shdetails) {
+            shortdetails = shdetails;
+            if(shortdetails.uuid !== uuid){
+                return entityutils.updateEntityCollabDataForUpdates(connection, entityid, shortdetails.uuid, uuid);
+            }
+        })
+        .then(function () {
             if(shortdetails.uuid !== uuid){
                 var notifData = {
                     message: requesterdetails.firstname + ' ' + requesterdetails.lastname + " uploaded a graphic art to your writing",
