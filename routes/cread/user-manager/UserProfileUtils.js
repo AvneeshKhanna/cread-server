@@ -138,6 +138,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
         connection.query('SELECT Entity.caption, Entity.entityid, Entity.regdate, Entity.merchantable, Entity.type, User.uuid, ' +
             'User.firstname, User.lastname, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
             'Capture.capid AS captureid, ' +
+            'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
             'COUNT(DISTINCT Comment.commid) AS commentcount ' +
@@ -152,13 +153,15 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
             'ON HatsOff.entityid = Entity.entityid ' +
             'LEFT JOIN Comment ' +
             'ON Comment.entityid = Entity.entityid ' +
+            'LEFT JOIN Follow ' +
+            'ON User.uuid = Follow.followee ' +
             'WHERE User.uuid = ? ' +
             'AND Entity.status = "ACTIVE" ' +
             'AND Entity.regdate < ? ' +
             'GROUP BY Entity.entityid ' +
             'ORDER BY Entity.regdate DESC ' +
             'LIMIT ? '/* +
-            'OFFSET ?'*/, [requesteruuid, requesteduuid, lastindexkey, limit/*, offset*/], function (err, rows) {
+            'OFFSET ?'*/, [requesteruuid, requesteruuid, requesteduuid, lastindexkey, limit/*, offset*/], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -178,6 +181,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
                         element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
                         element.creatorname = element.firstname + ' ' + element.lastname;
                         element.hatsoffstatus = element.hbinarycount > 0;
+                        element.followstatus = element.fbinarycount > 0;
                         element.merchantable = (element.merchantable !== 0);
 
                         if(element.type === 'CAPTURE'){
@@ -197,6 +201,10 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
 
                         if(element.hasOwnProperty('hbinarycount')) {
                             delete element.hbinarycount;
+                        }
+
+                        if(element.hasOwnProperty('fbinarycount')) {
+                            delete element.fbinarycount;
                         }
 
                         return element;
@@ -324,6 +332,7 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                 connection.query('SELECT Entity.caption, Entity.entityid, Entity.regdate, Entity.merchantable, Entity.type, User.uuid, ' +
                     'User.firstname, User.lastname, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
                     'Capture.capid AS captureid, CShort.entityid AS csentityid, SCapture.entityid AS scentityid, ' +
+                    'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
                     'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
                     'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
                     'COUNT(DISTINCT Comment.commid) AS commentcount ' +
@@ -342,13 +351,15 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                     'ON Capture.shoid = CShort.shoid ' +
                     'LEFT JOIN Capture SCapture ' +
                     'ON Short.capid = SCapture.capid ' +
+                    'LEFT JOIN Follow ' +
+                    'ON User.uuid = Follow.followee ' +
                     'WHERE (SCapture.uuid = ? OR CShort.uuid = ?) ' +
                     'AND User.uuid <> ? ' +
                     'AND Entity.status = "ACTIVE" ' +
                     'AND Entity.regdate < ? ' +
                     'GROUP BY Entity.entityid ' +
                     'ORDER BY Entity.regdate DESC ' +
-                    'LIMIT ? ', [requesteruuid, requesteduuid, requesteduuid, requesteduuid, lastindexkey, limit], function (err, rows) {
+                    'LIMIT ? ', [requesteruuid, requesteruuid, requesteduuid, requesteduuid, requesteduuid, lastindexkey, limit], function (err, rows) {
                     if (err) {
                         reject(err);
                     }
@@ -363,6 +374,7 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
 
                                 element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
                                 element.creatorname = element.firstname + ' ' + element.lastname;
+                                element.followstatus = element.fbinarycount > 0;
                                 element.hatsoffstatus = element.hbinarycount > 0;
                                 element.merchantable = (element.merchantable !== 0);
 
@@ -393,6 +405,10 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
 
                                 if(element.hasOwnProperty('hbinarycount')) {
                                     delete element.hbinarycount;
+                                }
+
+                                if(element.hasOwnProperty('fbinarycount')) {
+                                    delete element.fbinarycount;
                                 }
 
                                 return element;

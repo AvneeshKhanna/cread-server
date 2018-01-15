@@ -234,6 +234,7 @@ function loadEntityData(connection, requesteruuid, entityid) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, Short.shoid, Capture.capid AS captureid, ' +
             'Capture.shoid AS cpshortid, Short.capid AS shcaptureid, ' +
+            'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
             'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
@@ -249,7 +250,9 @@ function loadEntityData(connection, requesteruuid, entityid) {
             'ON Comment.entityid = Entity.entityid ' +
             'LEFT JOIN HatsOff ' +
             'ON HatsOff.entityid = Entity.entityid ' +
-            'WHERE Entity.entityid = ?', [requesteruuid, entityid], function (err, row) {
+            'LEFT JOIN Follow ' +
+            'ON User.uuid = Follow.followee ' +
+            'WHERE Entity.entityid = ?', [requesteruuid, requesteruuid, entityid], function (err, row) {
             if (err) {
                 reject(err);
             }
@@ -266,6 +269,7 @@ function loadEntityData(connection, requesteruuid, entityid) {
 
                     element.creatorname = element.firstname + ' ' + element.lastname;
                     element.hatsoffstatus = element.hbinarycount > 0;
+                    element.followstatus = element.fbinarycount > 0;
                     element.merchantable = (element.merchantable !== 0);
 
                     /*if(element.capid) {
@@ -286,6 +290,10 @@ function loadEntityData(connection, requesteruuid, entityid) {
 
                     if (element.hasOwnProperty('hbinarycount')) {
                         delete element.hbinarycount;
+                    }
+
+                    if(element.hasOwnProperty('fbinarycount')) {
+                        delete element.fbinarycount;
                     }
 
                     return element;
