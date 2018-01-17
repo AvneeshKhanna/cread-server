@@ -127,7 +127,7 @@ function sendPlatformSpecificMessage(registrationTokens, notificationData, maste
             }
             else{
                 var message;
-
+                console.log('platform is ' + platform);
                 //Formulating notification message according to device platform
                 if(platform === 'IOS'){
                     message = new gcm.Message({
@@ -138,10 +138,20 @@ function sendPlatformSpecificMessage(registrationTokens, notificationData, maste
                         }    //TODO
                     });
                 }
-                else{
+                else if(platform === 'ANDROID'){
                     message = new gcm.Message({
                         data: notificationData
                     });
+                }
+                else{   //Case when token is invalid (platform is undefined)
+                    if(index === (registrationTokens.length - 1)){
+                        console.log('mastercallback called');
+                        mastercallback();
+                    }
+                    else {
+                        callback();
+                    }
+                    return;
                 }
 
                 sendFormulatedMessage(message, regtoken, function (err) {
@@ -199,6 +209,7 @@ function getTokenPlatform(token, callback){
             callback(err, null);
         }
         else{
+            console.log('body is ' + body);
             var result = JSON.parse(body);
             callback(null, result.platform);
         }

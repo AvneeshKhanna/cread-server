@@ -45,6 +45,10 @@ router.post('/', upload.single('captured-image'), function (request, response) {
         uniquehashtags = hashtagutils.extractUniqueHashtags(caption);
     }
 
+    var captureparams = {
+        filtername: request.body.filtername
+    };
+
     var captureid = uuidgen.v4();
     var entityid = uuidgen.v4();
 
@@ -63,7 +67,7 @@ router.post('/', upload.single('captured-image'), function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return updateCaptureDB(connection, captureid, uuid, watermark, merchantable, caption, entityid, undefined, {});
+            return updateCaptureDB(connection, captureid, uuid, watermark, merchantable, caption, entityid, undefined, captureparams);
         })
         .then(function () {
             if(uniquehashtags && uniquehashtags.length > 0){
@@ -155,6 +159,7 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
     var img_width = request.body.img_width;
     var img_height = request.body.img_height;
     var imgtintcolor = request.body.imgtintcolor ? request.body.imgtintcolor : null;
+    var filtername = request.body.filtername;
     var text = request.body.text;
     var textcolor = request.body.textcolor;
     var textsize = request.body.textsize;
@@ -206,6 +211,7 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
                 img_width: img_width,
                 img_height: img_height,
                 imgtintcolor: imgtintcolor,
+                filtername: filtername,
                 text: text,
                 textcolor: textcolor,
                 bold: bold,

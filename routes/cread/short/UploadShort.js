@@ -45,6 +45,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
         img_width: request.body.img_width,
         img_height: request.body.img_height,
         imgtintcolor : request.body.imgtintcolor ? request.body.imgtintcolor : null,
+        filtername: request.body.filtername,
         txt: request.body.text,
         textsize: request.body.textsize,
         bold: (request.body.bold === "1"),
