@@ -49,7 +49,7 @@ function extractUniqueHashtags(caption) {
     return tags;
 }
 
-function addHashtagsToDb(connection, uniquehashtags, entityid) {
+function addHashtagsForEntity(connection, uniquehashtags, entityid) {
 
     var sqlparams = [];
 
@@ -66,6 +66,23 @@ function addHashtagsToDb(connection, uniquehashtags, entityid) {
         //'INSERT IGNORE' clause is used to ignore insertion of new rows into the table that violate
         //the UNIQUE index criteria of column(s) of the table
         connection.query('INSERT IGNORE INTO HashTagDistribution (hashtag, entityid) VALUES ?', [sqlparams], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
+/**
+ * Delete hashtags for 'entityid' from HashTagDistribution
+ * */
+function deleteHashtagsForEntity(connection, entityid){
+    return new Promise(function (resolve, reject) {
+        connection.query('DELETE FROM HashTagDistribution ' +
+            'WHERE entityid = ?', [entityid], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -210,7 +227,8 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
 module.exports = {
     extractUniqueHashtags: extractUniqueHashtags,
     extractMatchingUniqueHashtags: extractMatchingUniqueHashtags,
-    addHashtagsToDb: addHashtagsToDb,
+    addHashtagsForEntity: addHashtagsForEntity,
+    deleteHashtagsForEntity: deleteHashtagsForEntity,
     getHashtagCounts: getHashtagCounts,
     loadHashtagFeed: loadHashtagFeed
 };

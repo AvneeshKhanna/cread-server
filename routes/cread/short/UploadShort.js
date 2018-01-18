@@ -102,7 +102,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
         })
         .then(function () {
             if (uniquehashtags && uniquehashtags.length > 0) {
-                return hashtagutils.addHashtagsToDb(connection, uniquehashtags, entityid);
+                return hashtagutils.addHashtagsForEntity(connection, uniquehashtags, entityid);
             }
         })
         .then(function () {

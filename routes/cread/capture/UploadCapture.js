@@ -71,7 +71,7 @@ router.post('/', upload.single('captured-image'), function (request, response) {
         })
         .then(function () {
             if(uniquehashtags && uniquehashtags.length > 0){
-                return hashtagutils.addHashtagsToDb(connection, uniquehashtags, entityid);
+                return hashtagutils.addHashtagsForEntity(connection, uniquehashtags, entityid);
             }
         })
         .then(function () {
@@ -225,7 +225,7 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
         })
         .then(function () {
             if(uniquehashtags && uniquehashtags.length > 0){
-                return hashtagutils.addHashtagsToDb(connection, uniquehashtags, entityid);
+                return hashtagutils.addHashtagsForEntity(connection, uniquehashtags, entityid);
             }
         })
         .then(function () {

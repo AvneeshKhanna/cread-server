@@ -389,6 +389,21 @@ function deactivateEntity(connection, entityid, uuid) {
     });
 }
 
+function updateEntityCaption(connection, entityid, caption) {
+    return new Promise(function (resolve, reject) {
+        connection.query('UPDATE Entity ' +
+            'SET caption = ? ' +
+            'WHERE entityid = ?', [caption, entityid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
 function updateEntityCollabDataForUpdates(connection, entityid, uuid, actor_uuid){
     return new Promise(function (resolve, reject) {
         var updateparams = {
@@ -407,6 +422,7 @@ module.exports = {
     loadEntityData: loadEntityData,
     retrieveShortDetails: retrieveShortDetails,
     loadCollabDetails: loadCollabDetails,
+    updateEntityCaption: updateEntityCaption,
     getEntityDetailsForPrint: getEntityDetailsForPrint,
     getEntityUsrDetailsForNotif: getEntityUsrDetailsForNotif,
     deactivateEntity: deactivateEntity

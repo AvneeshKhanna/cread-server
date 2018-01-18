@@ -14,6 +14,7 @@ var consts = require('../utils/Constants');
 var utils = require('../utils/Utils');
 var entityutils = require('./EntityUtils');
 var captureutils = require('../capture/CaptureUtils');
+var hashtagutils = require('../hashtag/HashTagUtils');
 
 var cache_time = consts.cache_time;
 
@@ -367,6 +368,74 @@ router.get('/load-collab-details', function (request, response) {
                 }).end();
             }
         });
+});
+
+/**
+ * Function to update a caption for a particular entity
+ * */
+router.post('/edit-caption', function (request, response) {
+
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var entityid = request.body.entityid;
+    var caption = request.body.caption.trim() ? request.body.caption.trim() : null;
+
+    var uniquehashtags;
+
+    if(caption){
+        uniquehashtags = hashtagutils.extractUniqueHashtags(caption);
+    }
+
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function (details) {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            //Deleting existing hashtags for entity
+            return hashtagutils.deleteHashtagsForEntity(connection, entityid);
+        })
+        .then(function () {
+            //Adding new hashtags for entity
+            if(uniquehashtags && uniquehashtags.length > 0){
+                return hashtagutils.addHashtagsForEntity(connection, uniquehashtags, entityid);
+            }
+        })
+        .then(function () {
+            //Updating caption for entity
+            return entityutils.updateEntityCaption(connection, entityid, caption);
+        })
+        .then(function () {
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    status: 'done'
+                }
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
 });
 
 module.exports = router;
