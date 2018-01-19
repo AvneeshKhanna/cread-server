@@ -380,11 +380,27 @@ function deactivateEntity(connection, entityid, uuid) {
     });
 }
 
+function removeEntityFromExplore(connection, entityid){
+    return new Promise(function (resolve, reject) {
+        connection.query('UPDATE Entity ' +
+            'SET for_explore = 1 ' +
+            'WHERE entityid = ?', [entityid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
 module.exports = {
     loadEntityData: loadEntityData,
     retrieveShortDetails: retrieveShortDetails,
     loadCollabDetails: loadCollabDetails,
     getEntityDetailsForPrint: getEntityDetailsForPrint,
     getEntityUsrDetailsForNotif: getEntityUsrDetailsForNotif,
-    deactivateEntity: deactivateEntity
+    deactivateEntity: deactivateEntity,
+    removeEntityFromExplore: removeEntityFromExplore
 };

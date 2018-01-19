@@ -54,46 +54,6 @@ function getTokens(cities, callback) {
         });
     }
     recursive(undefined, fcmTokens);
-
-
-    /*var table = userstbl_ddb;
-
-    var params = {
-        TableName: table,
-        AttributesToGet: ['Fcm_token']
-    };
-
-    params.ScanFilter = {};
-
-    if (cities !== undefined) {
-
-        params.ScanFilter = {
-            City: {
-                ComparisonOperator: 'IN', /!* required *!/
-                AttributeValueList: cities
-            }
-        }
-    }
-
-    console.log(JSON.stringify(params, null, 3));
-
-    var AWS = config.AWS;
-    var docClient = new AWS.DynamoDB.DocumentClient();
-
-    docClient.scan(params, function (error, data) {
-        if (error) {
-            throw error;
-        }
-        else{
-            console.log('Data from DynamoDB scan is ' + JSON.stringify(data, null, 3));
-            var fcmTokens = pushTokens(data.Items);
-            /!*var fcmTokens = data.Items.reduce(
-                function (a, b) {
-                    return a.concat(b);
-                }, []);*!/
-            callback(fcmTokens);
-        }
-    });*/
 }
 
 function getFcmTokensFromServer(lastevaluatedkey, fcmTokens, callback) {

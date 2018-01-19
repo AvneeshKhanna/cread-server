@@ -223,6 +223,38 @@ router.post('/delete', function (request, response) {
         });
 });
 
+router.post('/remove-from-explore', function (request, response) {
+
+    var entityid = request.body.entityid;
+    var connection;
+
+    config.getNewConnection()
+        .then(function (conn) {
+            connection = conn;
+            return entityutils.removeEntityFromExplore(connection, entityid);
+        })
+        .then(function () {
+            response.send({
+                status: 'done'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
+
 /**
  * Generate a high resolution version of the image for print using entityid
  * */
