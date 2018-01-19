@@ -46,7 +46,7 @@ router.post('/', upload.single('captured-image'), function (request, response) {
     }
 
     var captureparams = {
-        filtername: request.body.filtername
+        filtername: request.body.filtername ? request.body.filtername : 'original'
     };
 
     var captureid = uuidgen.v4();

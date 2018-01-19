@@ -302,7 +302,9 @@ function loadFeedLegacy(connection, uuid, limit, page) {
                 var totalcount = data[0].totalcount;
 
                 if(totalcount > 0){
-                    connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Entity.caption, User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, Short.shoid, ' +
+                    connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Entity.caption, User.uuid, ' +
+                        'User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, Short.shoid, ' +
+                        'Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
                         'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
                         'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount, ' +
                         'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount ' +
@@ -330,53 +332,71 @@ function loadFeedLegacy(connection, uuid, limit, page) {
                         }
                         else{
 
-                            /*var feedEntities = rows.map(function (elem) {
-                                return elem.entityid;
-                            });*/
+                            if(rows.length > 0){
 
-                            rows.map(function (element) {
-                                /*var thisEntityIndex = hdata.map(function (el) {
-                                    return el.entityid;
-                                }).indexOf(element.entityid);*/
+                                var feedEntities = rows.map(function (elem) {
+                                    return elem.entityid;
+                                });
 
-                                if(element.type === 'CAPTURE'){
-                                    element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
-                                }
-                                else{
-                                    element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
-                                }
+                                rows.map(function (element) {
+                                    /*var thisEntityIndex = hdata.map(function (el) {
+                                        return el.entityid;
+                                    }).indexOf(element.entityid);*/
 
-                                element.creatorname = element.firstname + ' ' + element.lastname;
+                                    if(element.type === 'CAPTURE'){
+                                        element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
+                                    }
+                                    else{
+                                        element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
+                                    }
 
-                                element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
-                                element.hatsoffstatus = element.hbinarycount > 0;
-                                element.followstatus = element.binarycount > 0;
-                                element.merchantable = (element.merchantable !== 0);
+                                    element.creatorname = element.firstname + ' ' + element.lastname;
 
-                                if(element.hasOwnProperty('binarycount')){
-                                    delete element.binarycount;
-                                }
+                                    element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
+                                    element.hatsoffstatus = element.hbinarycount > 0;
+                                    element.followstatus = element.binarycount > 0;
+                                    element.merchantable = (element.merchantable !== 0);
 
-                                if(element.hasOwnProperty('hbinarycount')){
-                                    delete element.hbinarycount;
-                                }
+                                    if(element.hasOwnProperty('binarycount')){
+                                        delete element.binarycount;
+                                    }
 
-                                if(element.firstname) {
-                                    delete element.firstname;
-                                }
+                                    if(element.hasOwnProperty('hbinarycount')){
+                                        delete element.hbinarycount;
+                                    }
 
-                                if(element.lastname) {
-                                    delete element.lastname;
-                                }
-                                // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
+                                    if(element.firstname) {
+                                        delete element.firstname;
+                                    }
 
-                                return element;
-                            });
+                                    if(element.lastname) {
+                                        delete element.lastname;
+                                    }
+                                    // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
 
-                            resolve({
-                                requestmore: totalcount > (offset + limit),
-                                feed: rows
-                            });
+                                    return element;
+                                });
+
+                                feedutils.getCollaborationData(connection, rows)
+                                    .then(function (rows) {
+                                        return feedutils.getCollaborationCounts(connection, rows, feedEntities);
+                                    })
+                                    .then(function (rows) {
+                                        resolve({
+                                            requestmore: totalcount > (offset + limit),
+                                            feed: rows
+                                        });
+                                    })
+                                    .catch(function (err) {
+                                        reject(err);
+                                    });
+                            }
+                            else{
+                                resolve({
+                                    requestmore: totalcount > (offset + limit),
+                                    feed: []
+                                });
+                            }
 
                             /*connection.query('SELECT entityid, uuid ' +
                                 'FROM HatsOff ' +

@@ -45,7 +45,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
         img_width: request.body.img_width,
         img_height: request.body.img_height,
         imgtintcolor : request.body.imgtintcolor ? request.body.imgtintcolor : null,
-        filtername: request.body.filtername,
+        filtername: request.body.filtername ? request.body.filtername : 'original',
         txt: request.body.text,
         textsize: request.body.textsize,
         bold: (request.body.bold === "1"),
@@ -172,6 +172,50 @@ router.post('/', upload.single('short-image'), function (request, response) {
                 }).end();
             }
         });
+
+});
+
+router.post('/edit', upload.single('short-image'), function (request, response) {
+
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var short = request.file;
+    var caption = request.body.caption.trim() ? request.body.caption.trim() : null;
+    var shoid = request.body.shoid;
+
+    var shortsqlparams = {
+        dx: request.body.dx,
+        dy: request.body.dy,
+        txt_width: request.body.txt_width,
+        txt_height: request.body.txt_height,
+        img_width: request.body.img_width,
+        img_height: request.body.img_height,
+        imgtintcolor : request.body.imgtintcolor ? request.body.imgtintcolor : null,
+        filtername: request.body.filtername ? request.body.filtername : 'original',
+        txt: request.body.text,
+        textsize: request.body.textsize,
+        bold: (request.body.bold === "1"),
+        italic: (request.body.italic === "1"),
+        bgcolor: (request.body.bgcolor) ? request.body.bgcolor : 'NA', //for backward compatibilty
+        font: (request.body.font) ? request.body.font : 'NA',   //for backward compatibilty
+        textcolor: request.body.textcolor,
+        textgravity: request.body.textgravity,
+        capid: (request.body.captureid) ? request.body.captureid : null
+    };
+
+    try {
+        var uniquehashtags;
+
+        if (caption) {
+            uniquehashtags = hashtagutils.extractUniqueHashtags(caption);
+        }
+    }
+    catch (ex) {
+        console.error(ex);
+        throw ex;
+    }
+
+    var connection;
 
 });
 
