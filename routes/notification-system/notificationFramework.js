@@ -1,4 +1,4 @@
-// This module is used to send notification to users for referrals , application , payment System.
+// This module is used to send notification to users for referrals, application, payment System.
 
 var express = require('express');
 var app = express();
@@ -10,7 +10,7 @@ var gcm = require('node-gcm');
 
 AWS.config.region = 'ap-northeast-1';
 AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-    IdentityPoolId: 'ap-northeast-1:863bdfec-de0f-4e9f-8749-cf7fd96ea2ff',
+    IdentityPoolId: 'ap-northeast-1:863bdfec-de0f-4e9f-8749-cf7fd96ea2ff'
 });
 
 var docClient = new AWS.DynamoDB.DocumentClient();
@@ -20,42 +20,49 @@ var userstbl_ddb = envconfig.get('dynamoDB.users_table');
 
 var config = require('../Config');
 
-/*router.post('/' , function(req,res){
-    var testIds = new Array();
-    testIds.push('43d865a5-f7b7-4c27-84b1-367203744226');
-    testIds.push('11271509-244b-4fac-86a3-a19e5933823a');
-    testIds.push('11271509-244b-4fac-86a3-a19e5933823e');
-    
-    var data = {Category: "Payments" , Status: "Approved" , Referred: "Avneesh Khanna" , Incentive: "500"}
-    
-    sendNotification(testIds , data , function(){
-        res.end('done');
-    });
-});*/
-
 function getfcmTokens(userIds, callback) {
-    var serveruuids = new Array();
     var serverfcmTokens = new Array();
+    var counter = 0;
 
-    var table = userstbl_ddb;
+    var recursive;
+    (recursive = function(counter){
+        if(counter < userIds.length){
+            getUserTokensFromServer(userIds[counter], function (err, tokens) {
+                if(err){
+                    callback(err);
+                }
+                else{
+                    counter++;
+                    serverfcmTokens = serverfcmTokens.concat(tokens);
+                    recursive(counter);
+                }
+            });
+        }
+        else{
+            callback(null, serverfcmTokens);
+        }
+    })(counter);
+}
+
+function getUserTokensFromServer(uuid, callback){
 
     var params = {
-        TableName: table,
+        TableName: userstbl_ddb,
+        Key: {
+            UUID: uuid
+        },
         AttributesToGet: ['Fcm_token', 'UUID']
     };
 
-    docClient.scan(params, function (err, data) {
-        if (err) throw err;
-
-        for (var y in data.Items) {
-            serveruuids.push(data.Items[y].UUID);
-            serverfcmTokens.push(data.Items[y].Fcm_token);
+    docClient.get(params, function (err, data) {
+        if(err){
+            callback(err, null);
         }
-
-        var mappingResult = usersMapping(userIds, serveruuids, serverfcmTokens);
-        console.log(mappingResult);
-        callback(mappingResult);
+        else{
+            callback(null, data.Item.Fcm_token);
+        }
     });
+
 }
 
 function usersMapping(usersuuid, serveruuids, serverFcmtokens) {
@@ -84,21 +91,28 @@ function sendNotification(users, notificationData, callback) {
         callback();
     }
     else {
-        getfcmTokens(users, function (registrationTokens) {
-            var message = new gcm.Message({
-                data: notificationData
-            });
+        getfcmTokens(users, function (err, registrationTokens) {
+            if(err){
+                callback(err);
+            }
+            else{
 
-            var sender = new gcm.Sender(config['fcm-server-key']);
+                var message = new gcm.Message({
+                    data: notificationData
+                });
 
-            sender.send(message, {registrationTokens: registrationTokens}, 3, function (err, response) {
-                if (err) {
-                    callback(err);
-                }
+                var sender = new gcm.Sender(config['fcm-server-key']);
 
-                console.log(response);
-                callback();
-            });
+                sender.send(message, {registrationTokens: registrationTokens}, 3, function (err, response) {
+                    if (err) {
+                        callback(err);
+                    }
+                    else{
+                        console.log(response);
+                        callback();
+                    }
+                });
+            }
         });
     }
 }
