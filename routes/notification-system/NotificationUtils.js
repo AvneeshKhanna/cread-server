@@ -40,7 +40,23 @@ function sendNotification(data, cities, callback) {
  * Function to get the FCM Tokens of all the users from the DynamoDB table. An optional city filter is also catered
  * */
 function getTokens(cities, callback) {
-    var table = userstbl_ddb;
+
+    var fcmTokens = [];
+
+    function recursive(lastevaluatedkey, fcmTokens){
+        getFcmTokensFromServer(lastevaluatedkey, fcmTokens, function (resultTokens, lastevaluatedkey) {
+            if(lastevaluatedkey){
+                recursive(lastevaluatedkey, resultTokens);
+            }
+            else{
+                callback(resultTokens);
+            }
+        });
+    }
+    recursive(undefined, fcmTokens);
+
+
+    /*var table = userstbl_ddb;
 
     var params = {
         TableName: table,
@@ -53,7 +69,7 @@ function getTokens(cities, callback) {
 
         params.ScanFilter = {
             City: {
-                ComparisonOperator: 'IN', /* required */
+                ComparisonOperator: 'IN', /!* required *!/
                 AttributeValueList: cities
             }
         }
@@ -71,13 +87,41 @@ function getTokens(cities, callback) {
         else{
             console.log('Data from DynamoDB scan is ' + JSON.stringify(data, null, 3));
             var fcmTokens = pushTokens(data.Items);
-            /*var fcmTokens = data.Items.reduce(
+            /!*var fcmTokens = data.Items.reduce(
                 function (a, b) {
                     return a.concat(b);
-                }, []);*/
+                }, []);*!/
             callback(fcmTokens);
         }
+    });*/
+}
+
+function getFcmTokensFromServer(lastevaluatedkey, fcmTokens, callback) {
+
+    var params = {
+        TableName: userstbl_ddb,
+        AttributesToGet: ['Fcm_token']
+    };
+
+    if(lastevaluatedkey){
+        params.ExclusiveStartKey = lastevaluatedkey;
+    }
+
+    var AWS = config.AWS;
+    var docClient = new AWS.DynamoDB.DocumentClient();
+
+    docClient.scan(params, function (error, data) {
+        if (error) {
+            throw error;
+        }
+        else{
+            console.log('Scan executed');
+            //console.log('Data from DynamoDB scan is ' + JSON.stringify(data, null, 3));
+            fcmTokens = fcmTokens.concat(pushTokens(data.Items));
+            callback(fcmTokens, data.LastEvaluatedKey);
+        }
     });
+
 }
 
 /**
