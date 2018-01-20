@@ -1,10 +1,5 @@
 // This module is used to send notification to users for referrals, application, payment System.
 
-var express = require('express');
-var app = express();
-var router = express.Router();
-var bodyParser = require('body-parser');
-var dynamo_marshal = require('dynamodb-marshaler');    //package to convert plain JS/JSON objects to DynamoDB JSON
 var AWS = require('aws-sdk');
 var gcm = require('node-gcm');
 
@@ -94,16 +89,21 @@ function sendNotification(users, notificationData, mastercallback) {
         mastercallback();
     }
     else {
-        getfcmTokens(users, function (registrationTokens) {
+        getfcmTokens(users, function (err, registrationTokens) {
 
-            sendPlatformSpecificMessage(registrationTokens, notificationData, function (err) {
-                if(err){
-                    mastercallback(err);
-                }
-                else{
-                    mastercallback();
-                }
-            });
+            if(err){
+                mastercallback(err);
+            }
+            else {
+                sendPlatformSpecificMessage(registrationTokens, notificationData, function (err) {
+                    if(err){
+                        mastercallback(err);
+                    }
+                    else{
+                        mastercallback();
+                    }
+                });
+            }
 
         });
 
@@ -142,7 +142,7 @@ function sendPlatformSpecificMessage(registrationTokens, notificationData, maste
                         notification: {
                             title: "Cread",
                             body: notificationData.message
-                        }    //TODO
+                        }
                     });
                 }
                 else if(platform === 'ANDROID'){
