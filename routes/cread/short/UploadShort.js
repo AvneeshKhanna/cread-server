@@ -98,7 +98,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
             return utils.beginTransaction(connection);
         })
         .then(function () {
-            return uploadToRDS(connection, shortsqlparams, entityparams);
+            return addShortToDb(connection, shortsqlparams, entityparams);
         })
         .then(function () {
             if (uniquehashtags && uniquehashtags.length > 0) {
@@ -177,11 +177,14 @@ router.post('/', upload.single('short-image'), function (request, response) {
 
 router.post('/edit', upload.single('short-image'), function (request, response) {
 
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var short = request.file;
     var caption = request.body.caption.trim() ? request.body.caption.trim() : null;
     var shoid = request.body.shoid;
+    var entityid = request.body.entityid;
 
     var shortsqlparams = {
         dx: request.body.dx,
@@ -203,6 +206,10 @@ router.post('/edit', upload.single('short-image'), function (request, response) 
         capid: (request.body.captureid) ? request.body.captureid : null
     };
 
+    var entityparams = {
+        caption: caption
+    };
+
     try {
         var uniquehashtags;
 
@@ -216,6 +223,69 @@ router.post('/edit', upload.single('short-image'), function (request, response) 
     }
 
     var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function (details) {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return utils.beginTransaction(connection);
+        })
+        .then(function () {
+            return updateShortInDb(connection, shoid, shortsqlparams, entityid, entityparams);
+        })
+        .then(function () {
+            //Deleting existing hashtags for entity
+            return hashtagutils.deleteHashtagsForEntity(connection, entityid);
+        })
+        .then(function () {
+            //Deleting new hashtags for entity
+            if (uniquehashtags && uniquehashtags.length > 0) {
+                return hashtagutils.addHashtagsForEntity(connection, uniquehashtags, entityid);
+            }
+        })
+        .then(function () {
+            return userprofileutils.renameFile(filebasepath, short, shoid);
+        })
+        .then(function (renamedpath) {
+            return userprofileutils.uploadImageToS3(renamedpath, uuid, 'Short', shoid + '-small.jpg');
+        })
+        .then(function () {
+            return utils.commitTransaction(connection);
+        })
+        .then(function () {
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    status: 'done',
+                    shorturl: utils.createSmallShortUrl(uuid, shoid)
+                }
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            if(err instanceof BreakPromiseChainError){
+                config.disconnect(connection);
+            }
+            else{
+                console.error(err);
+                utils.rollbackTransaction(connection)
+                    .catch(function (err) {
+                        config.disconnect(connection);
+                        response.status(500).send({
+                            message: 'Some error occurred at the server'
+                        }).end();
+                    });
+            }
+        });
 
 });
 
@@ -232,7 +302,7 @@ function retreiveCaptureUserDetails(connection, captureid) {
     })
 }
 
-function uploadToRDS(connection, shortsqlparams, entityparams) {
+function addShortToDb(connection, shortsqlparams, entityparams) {
     return new Promise(function (resolve, reject) {
         /*connection.beginTransaction(function (err) {
             if(err){
@@ -261,6 +331,39 @@ function uploadToRDS(connection, shortsqlparams, entityparams) {
                         /*connection.rollback(function () {
                             reject(err);
                         });*/
+                        reject(err);
+                    }
+                    else {
+                        resolve();
+                    }
+                });
+            }
+        });
+
+    });
+}
+
+function updateShortInDb(connection, shoid, shortsqlparams, entityid, entityparams){
+    return new Promise(function (resolve, reject) {
+        /*connection.beginTransaction(function (err) {
+            if(err){
+                connection.rollback(function () {
+                    reject(err);
+                });
+            }
+            else{
+
+
+            }
+        });*/
+
+        connection.query('UPDATE Entity SET ? WHERE entityid = ?', [entityparams,  entityid], function (err, edata) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                connection.query('UPDATE Short SET ? WHERE shoid = ?', [shortsqlparams, shoid], function (err, rows) {
+                    if (err) {
                         reject(err);
                     }
                     else {
