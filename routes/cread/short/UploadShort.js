@@ -19,6 +19,7 @@ var fs = require('fs');
 
 var utils = require('../utils/Utils');
 var entityutils = require('../entity/EntityUtils');
+var shortutils = require('./ShortUtils');
 var hashtagutils = require('../hashtag/HashTagUtils');
 var notify = require('../../notification-system/notificationFramework');
 
@@ -98,7 +99,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
             return utils.beginTransaction(connection);
         })
         .then(function () {
-            return addShortToDb(connection, shortsqlparams, entityparams);
+            return shortutils.addShortToDb(connection, shortsqlparams, entityparams);
         })
         .then(function () {
             if (uniquehashtags && uniquehashtags.length > 0) {
@@ -239,7 +240,7 @@ router.post('/edit', upload.single('short-image'), function (request, response) 
             return utils.beginTransaction(connection);
         })
         .then(function () {
-            return updateShortInDb(connection, shoid, shortsqlparams, entityid, entityparams);
+            return shortutils.updateShortInDb(connection, shoid, shortsqlparams, entityid, entityparams);
         })
         .then(function () {
             //Deleting existing hashtags for entity
@@ -300,80 +301,6 @@ function retreiveCaptureUserDetails(connection, captureid) {
             }
         })
     })
-}
-
-function addShortToDb(connection, shortsqlparams, entityparams) {
-    return new Promise(function (resolve, reject) {
-        /*connection.beginTransaction(function (err) {
-            if(err){
-                connection.rollback(function () {
-                    reject(err);
-                });
-            }
-            else{
-
-
-            }
-        });*/
-
-        entityparams.type = 'SHORT';
-
-        connection.query('INSERT INTO Entity SET ?', [entityparams], function (err, edata) {
-            if (err) {
-                /*connection.rollback(function () {
-                    reject(err);
-                });*/
-                reject(err);
-            }
-            else {
-                connection.query('INSERT INTO Short SET ?', [shortsqlparams], function (err, rows) {
-                    if (err) {
-                        /*connection.rollback(function () {
-                            reject(err);
-                        });*/
-                        reject(err);
-                    }
-                    else {
-                        resolve();
-                    }
-                });
-            }
-        });
-
-    });
-}
-
-function updateShortInDb(connection, shoid, shortsqlparams, entityid, entityparams){
-    return new Promise(function (resolve, reject) {
-        /*connection.beginTransaction(function (err) {
-            if(err){
-                connection.rollback(function () {
-                    reject(err);
-                });
-            }
-            else{
-
-
-            }
-        });*/
-
-        connection.query('UPDATE Entity SET ? WHERE entityid = ?', [entityparams,  entityid], function (err, edata) {
-            if (err) {
-                reject(err);
-            }
-            else {
-                connection.query('UPDATE Short SET ? WHERE shoid = ?', [shortsqlparams, shoid], function (err, rows) {
-                    if (err) {
-                        reject(err);
-                    }
-                    else {
-                        resolve();
-                    }
-                });
-            }
-        });
-
-    });
 }
 
 module.exports = router;
