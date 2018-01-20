@@ -159,8 +159,13 @@ router.post('/place', function (request, response) {
         .then(function () {
             return entityutils.getEntityUsrDetailsForNotif(connection, entityid);
         })
-        .then(function (result) {   //Send a notification to the creator of this post
+        .then(function (result) {   //Add to Updates table for a notification to creator
             notifuuids = result;
+            if(notifuuids.creatoruuid !== uuid){
+                return buyutils.updateBuyDataForUpdates(connection, notifuuids.creatoruuid, uuid, entityid, false);
+            }
+        })
+        .then(function () {   //Send a notification to the creator of this post
             if(notifuuids.creatoruuid !== uuid){    //Send notification only when the two users involved are different
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " has purchased a " + productname + " created using your post",
@@ -173,8 +178,13 @@ router.post('/place', function (request, response) {
                 return notify.notificationPromise(new Array(notifuuids.creatoruuid), notifData);
             }
         })
+        .then(function () { //Add to Updates table for a notification to collaborator
+            if(notifuuids.collabuuid !== uuid && notifuuids.collabuuid !== notifuuids.creatoruuid){
+                return buyutils.updateBuyDataForUpdates(connection, notifuuids.collabuuid, uuid, entityid, true);
+            }
+        })
         .then(function () { //Send a notification to the collaborator of this post
-            if(notifuuids.collabuuid && notifuuids.collabuuid !== uuid){    //Send notification only when the two users involved are different
+            if(notifuuids.collabuuid && notifuuids.collabuuid !== uuid && notifuuids.collabuuid !== notifuuids.creatoruuid){    //Send notification only when the two users involved are different
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " has purchased a " + productname + " created using a post inspired by yours",
                     category: "buy",

@@ -157,6 +157,7 @@ app.use('/sell', require('./routes/cread/sell/SellOrdersManager'));
 app.use('/entity-share-link', require('./routes/cread/entity/share/EntityShareManager'));
 app.use('/search', require('./routes/cread/search/SearchManager'));
 app.use('/hashtag', require('./routes/cread/hashtag/HashTagManager'));
+app.use('/updates', require('./routes/cread/updates/UpdatesManager'));
 
 //-dashboard-
 app.use('/campaign-details', require('./routes/cread/dsbrd/campaign-details/CampaignDetails'));

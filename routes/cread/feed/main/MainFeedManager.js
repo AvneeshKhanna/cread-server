@@ -355,7 +355,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                         })
                         .then(function (rows) {
                             resolve({
-                                requestmore: rows.length >= limit,//totalcount > (offset + limit),
+                                requestmore: rows.length >= limit,
                                 lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
                                 feed: rows
                             });
@@ -363,78 +363,14 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                         .catch(function (err) {
                             reject(err);
                         });
-
-                    /*resolve({
-                        requestmore: rows.length >= limit,//totalcount > (offset + limit),
-                        lastindexkey: moment(rows[rows.length - 1].regdate).format('YYYY-MM-DD hh:mm:ss'),
-                        feed: rows
-                    });*/
                 }
                 else {  //Case of no data
                     resolve({
-                        requestmore: rows.length >= limit,//totalcount > (offset + limit),
+                        requestmore: rows.length >= limit,
                         lastindexkey: null,
                         feed: []
                     });
                 }
-
-                /*connection.query('SELECT entityid, uuid ' +
-                    'FROM HatsOff ' +
-                    'WHERE uuid = ? ' +
-                    'AND entityid IN (?) ' +
-                    'GROUP BY entityid', [uuid, feedEntities], function (err, hdata) {
-
-                    if (err) {
-                        reject(err);
-                    }
-                    else {
-
-                        rows.map(function (element) {
-                            var thisEntityIndex = hdata.map(function (el) {
-                                return el.entityid;
-                            }).indexOf(element.entityid);
-
-                            element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
-
-                            if(element.type === 'CAPTURE'){
-                                element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
-                            }
-                            else{
-                                element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
-                            }
-
-                            element.hatsoffstatus = thisEntityIndex !== -1;
-                            // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
-
-                            element.creatorname = element.firstname + ' ' + element.lastname;
-                            element.merchantable = (element.merchantable !== 0);
-
-                            /!*if(element.capid) {
-                                delete element.capid;
-                            }*!/
-
-                            if(element.shoid) {
-                                delete element.shoid;
-                            }
-
-                            if(element.firstname) {
-                                delete element.firstname;
-                            }
-
-                            if(element.lastname) {
-                                delete element.lastname;
-                            }
-
-                            return element;
-                        });
-
-                        resolve({
-                            requestmore: totalcount > (offset + limit),
-                            feed: rows
-                        });
-                    }
-
-                });*/
             }
         });
     });
@@ -468,7 +404,7 @@ function loadFeedLegacy(connection, uuid, limit, page) {
                 console.log("totalcount is " + JSON.stringify(totalcount, null, 3));
 
                 if(totalcount > 0){
-                    connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Short.shoid, ' +
+                    connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Entity.caption, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
                         'Capture.capid AS captureid, ' + 'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
                         'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
                         'User.uuid, User.firstname, User.lastname ' +
@@ -495,119 +431,78 @@ function loadFeedLegacy(connection, uuid, limit, page) {
                         }
                         else {
 
-                            var feedEntities = rows.map(function (elem) {
-                                return elem.entityid;
-                            });
+                            if(rows.length > 0){
+                                var feedEntities = rows.map(function (elem) {
+                                    return elem.entityid;
+                                });
 
-                            rows.map(function (element) {
-                                /*var thisEntityIndex = hdata.map(function (el) {
-                                    return el.entityid;
-                                }).indexOf(element.entityid);*/
+                                rows.map(function (element) {
+                                    /*var thisEntityIndex = hdata.map(function (el) {
+                                        return el.entityid;
+                                    }).indexOf(element.entityid);*/
 
-                                element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
+                                    element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
 
-                                if(element.type === 'CAPTURE'){
-                                    element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
-                                }
-                                else{
-                                    element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
-                                }
+                                    if(element.type === 'CAPTURE'){
+                                        element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
+                                    }
+                                    else{
+                                        element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
+                                    }
 
-                                element.hatsoffstatus = element.hbinarycount === 1;
-                                // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
+                                    element.hatsoffstatus = element.hbinarycount > 0;
+                                    // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
 
-                                element.creatorname = element.firstname + ' ' + element.lastname;
-                                element.merchantable = (element.merchantable !== 0);
+                                    element.creatorname = element.firstname + ' ' + element.lastname;
+                                    element.merchantable = (element.merchantable !== 0);
 
-                                /*if(element.capid) {
-                                    delete element.capid;
-                                }*/
+                                    /*if(element.capid) {
+                                        delete element.capid;
+                                    }*/
 
-                                /*if(element.shoid) {
-                                    delete element.shoid;
-                                }*/
+                                    /*if(element.shoid) {
+                                        delete element.shoid;
+                                    }*/
 
-                                if(element.firstname) {
-                                    delete element.firstname;
-                                }
+                                    if(element.firstname) {
+                                        delete element.firstname;
+                                    }
 
-                                if(element.lastname) {
-                                    delete element.lastname;
-                                }
+                                    if(element.lastname) {
+                                        delete element.lastname;
+                                    }
 
-                                if(element.hasOwnProperty('hbinarycount')) {
-                                    delete element.hbinarycount;
-                                }
+                                    if(element.hasOwnProperty('hbinarycount')) {
+                                        delete element.hbinarycount;
+                                    }
 
-                                if(element.hasOwnProperty('binarycount')) {
-                                    delete element.binarycount;
-                                }
+                                    if(element.hasOwnProperty('binarycount')) {
+                                        delete element.binarycount;
+                                    }
 
-                                return element;
-                            });
+                                    return element;
+                                });
 
-                            resolve({
-                                requestmore: totalcount > (offset + limit),
-                                feed: rows
-                            });
-
-                            /*connection.query('SELECT entityid, uuid ' +
-                                'FROM HatsOff ' +
-                                'WHERE uuid = ? ' +
-                                'AND entityid IN (?) ' +
-                                'GROUP BY entityid', [uuid, feedEntities], function (err, hdata) {
-
-                                if (err) {
-                                    reject(err);
-                                }
-                                else {
-
-                                    rows.map(function (element) {
-                                        var thisEntityIndex = hdata.map(function (el) {
-                                            return el.entityid;
-                                        }).indexOf(element.entityid);
-
-                                        element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
-
-                                        if(element.type === 'CAPTURE'){
-                                            element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
-                                        }
-                                        else{
-                                            element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
-                                        }
-
-                                        element.hatsoffstatus = thisEntityIndex !== -1;
-                                        // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
-
-                                        element.creatorname = element.firstname + ' ' + element.lastname;
-                                        element.merchantable = (element.merchantable !== 0);
-
-                                        /!*if(element.capid) {
-                                            delete element.capid;
-                                        }*!/
-
-                                        if(element.shoid) {
-                                            delete element.shoid;
-                                        }
-
-                                        if(element.firstname) {
-                                            delete element.firstname;
-                                        }
-
-                                        if(element.lastname) {
-                                            delete element.lastname;
-                                        }
-
-                                        return element;
+                                feedutils.getCollaborationData(connection, rows)
+                                    .then(function (rows) {
+                                        return feedutils.getCollaborationCounts(connection, rows, feedEntities);
+                                    })
+                                    .then(function (rows) {
+                                        resolve({
+                                            requestmore: totalcount > (offset + limit),
+                                            feed: rows
+                                        });
+                                    })
+                                    .catch(function (err) {
+                                        reject(err);
                                     });
-
-                                    resolve({
-                                        requestmore: totalcount > (offset + limit),
-                                        feed: rows
-                                    });
-                                }
-
-                            });*/
+                            }
+                            else{//Case of no data
+                                resolve({
+                                    requestmore: totalcount > (offset + limit),
+                                    feed: []
+                                });
+                            }
                         }
                     });
                 }

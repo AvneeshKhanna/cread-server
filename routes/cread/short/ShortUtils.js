@@ -3,6 +3,8 @@
  */
 'use-strict';
 
+var utils = require('../utils/Utils');
+
 function retrieveShortDetails(connection, shoid, select) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT ' + select.join(', ') + ' ' +
@@ -36,10 +38,12 @@ function getShortDetailsFromCollab(connection, entityid, type, select) {
             return el;
         });
 
-        sqlquery = 'SELECT S.txt AS text, ' + select.join(', ') + ' ' +
+        sqlquery = 'SELECT C.entityid, C.uuid, S.txt AS text, ' + select.join(', ') + ' ' +
             'FROM Entity E ' +
             'JOIN Short S ' +
             'USING(entityid) ' +
+            'LEFT JOIN Capture C ' +
+            'ON (S.capid = C.capid) ' +
             'WHERE E.entityid = ?';
 
     }
@@ -50,7 +54,7 @@ function getShortDetailsFromCollab(connection, entityid, type, select) {
             return el;
         });
 
-        sqlquery = 'SELECT S.txt AS text, ' + select.join(', ') + ' ' +
+        sqlquery = 'SELECT S.entityid, S.uuid, S.txt AS text, ' + select.join(', ') + ' ' +
             'FROM Entity E ' +
             'JOIN Capture C ' +
             'ON E.entityid = C.entityid ' +
@@ -69,6 +73,14 @@ function getShortDetailsFromCollab(connection, entityid, type, select) {
                     if(!element.font){
                         element.font = 'NA';
                     }
+
+                    if(element.capid){
+                        element.captureurl = utils.createCaptureUrl(element.uuid, element.capid);
+                    }
+                    else{
+                        element.captureurl = null;
+                    }
+
                 });
 
                 resolve(rows[0]);
@@ -77,7 +89,83 @@ function getShortDetailsFromCollab(connection, entityid, type, select) {
     });
 }
 
+function addShortToDb(connection, shortsqlparams, entityparams) {
+    return new Promise(function (resolve, reject) {
+        /*connection.beginTransaction(function (err) {
+            if(err){
+                connection.rollback(function () {
+                    reject(err);
+                });
+            }
+            else{
+
+
+            }
+        });*/
+
+        entityparams.type = 'SHORT';
+
+        connection.query('INSERT INTO Entity SET ?', [entityparams], function (err, edata) {
+            if (err) {
+                /*connection.rollback(function () {
+                    reject(err);
+                });*/
+                reject(err);
+            }
+            else {
+                connection.query('INSERT INTO Short SET ?', [shortsqlparams], function (err, rows) {
+                    if (err) {
+                        /*connection.rollback(function () {
+                            reject(err);
+                        });*/
+                        reject(err);
+                    }
+                    else {
+                        resolve();
+                    }
+                });
+            }
+        });
+
+    });
+}
+
+function updateShortInDb(connection, shoid, shortsqlparams, entityid, entityparams){
+    return new Promise(function (resolve, reject) {
+        /*connection.beginTransaction(function (err) {
+            if(err){
+                connection.rollback(function () {
+                    reject(err);
+                });
+            }
+            else{
+
+
+            }
+        });*/
+
+        connection.query('UPDATE Entity SET ? WHERE entityid = ?', [entityparams,  entityid], function (err, edata) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                connection.query('UPDATE Short SET ? WHERE shoid = ?', [shortsqlparams, shoid], function (err, rows) {
+                    if (err) {
+                        reject(err);
+                    }
+                    else {
+                        resolve();
+                    }
+                });
+            }
+        });
+
+    });
+}
+
 module.exports = {
     retrieveShortDetails: retrieveShortDetails,
+    addShortToDb: addShortToDb,
+    updateShortInDb: updateShortInDb,
     getShortDetailsFromCollab: getShortDetailsFromCollab
 };

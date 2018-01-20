@@ -7,6 +7,7 @@ var utils = require('../utils/Utils');
 
 var moment = require('moment');
 var feedutils = require('../feed/FeedUtils');
+var updatesutils= require('../updates/UpdatesUtils');
 
 function retrieveShortDetails(connection, entityid) {
     return new Promise(function (resolve, reject) {
@@ -234,6 +235,7 @@ function loadEntityData(connection, requesteruuid, entityid) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, Short.shoid, Capture.capid AS captureid, ' +
             'Capture.shoid AS cpshortid, Short.capid AS shcaptureid, ' +
+            'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
             'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
@@ -249,7 +251,9 @@ function loadEntityData(connection, requesteruuid, entityid) {
             'ON Comment.entityid = Entity.entityid ' +
             'LEFT JOIN HatsOff ' +
             'ON HatsOff.entityid = Entity.entityid ' +
-            'WHERE Entity.entityid = ?', [requesteruuid, entityid], function (err, row) {
+            'LEFT JOIN Follow ' +
+            'ON User.uuid = Follow.followee ' +
+            'WHERE Entity.entityid = ?', [requesteruuid, requesteruuid, entityid], function (err, row) {
             if (err) {
                 reject(err);
             }
@@ -266,6 +270,7 @@ function loadEntityData(connection, requesteruuid, entityid) {
 
                     element.creatorname = element.firstname + ' ' + element.lastname;
                     element.hatsoffstatus = element.hbinarycount > 0;
+                    element.followstatus = element.fbinarycount > 0;
                     element.merchantable = (element.merchantable !== 0);
 
                     /*if(element.capid) {
@@ -286,6 +291,10 @@ function loadEntityData(connection, requesteruuid, entityid) {
 
                     if (element.hasOwnProperty('hbinarycount')) {
                         delete element.hbinarycount;
+                    }
+
+                    if(element.hasOwnProperty('fbinarycount')) {
+                        delete element.fbinarycount;
                     }
 
                     return element;
@@ -380,6 +389,34 @@ function deactivateEntity(connection, entityid, uuid) {
     });
 }
 
+function updateEntityCaption(connection, entityid, caption) {
+    return new Promise(function (resolve, reject) {
+        connection.query('UPDATE Entity ' +
+            'SET caption = ? ' +
+            'WHERE entityid = ?', [caption, entityid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
+function updateEntityCollabDataForUpdates(connection, entityid, uuid, actor_uuid){
+    return new Promise(function (resolve, reject) {
+        var updateparams = {
+            category: "collaborate",
+            actor_uuid: actor_uuid,
+            uuid: uuid,
+            entityid: entityid
+        };
+        updatesutils.addToUpdatesTable(connection, updateparams)
+            .then(resolve, reject);
+    });
+}
+
 function removeEntityFromExplore(connection, entityid){
     return new Promise(function (resolve, reject) {
         connection.query('UPDATE Entity ' +
@@ -396,9 +433,11 @@ function removeEntityFromExplore(connection, entityid){
 }
 
 module.exports = {
+    updateEntityCollabDataForUpdates: updateEntityCollabDataForUpdates,
     loadEntityData: loadEntityData,
     retrieveShortDetails: retrieveShortDetails,
     loadCollabDetails: loadCollabDetails,
+    updateEntityCaption: updateEntityCaption,
     getEntityDetailsForPrint: getEntityDetailsForPrint,
     getEntityUsrDetailsForNotif: getEntityUsrDetailsForNotif,
     deactivateEntity: deactivateEntity,

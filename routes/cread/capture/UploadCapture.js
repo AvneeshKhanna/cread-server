@@ -23,6 +23,7 @@ var captureutils = require('./CaptureUtils');
 var notify = require('../../notification-system/notificationFramework');
 var shortutils = require('../short/ShortUtils');
 var hashtagutils = require('../hashtag/HashTagUtils');
+var entityutils = require('../entity/EntityUtils');
 
 var filebasepath = './images/uploads/capture/'; 
 
@@ -44,6 +45,10 @@ router.post('/', upload.single('captured-image'), function (request, response) {
         uniquehashtags = hashtagutils.extractUniqueHashtags(caption);
     }
 
+    var captureparams = {
+        filtername: request.body.filtername ? request.body.filtername : 'original'
+    };
+
     var captureid = uuidgen.v4();
     var entityid = uuidgen.v4();
 
@@ -62,11 +67,11 @@ router.post('/', upload.single('captured-image'), function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return updateCaptureDB(connection, captureid, uuid, watermark, merchantable, caption, entityid, undefined, {});
+            return updateCaptureDB(connection, captureid, uuid, watermark, merchantable, caption, entityid, undefined, captureparams);
         })
         .then(function () {
             if(uniquehashtags && uniquehashtags.length > 0){
-                return hashtagutils.addHashtagsToDb(connection, uniquehashtags, entityid);
+                return hashtagutils.addHashtagsForEntity(connection, uniquehashtags, entityid);
             }
         })
         .then(function () {
@@ -154,6 +159,7 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
     var img_width = request.body.img_width;
     var img_height = request.body.img_height;
     var imgtintcolor = request.body.imgtintcolor ? request.body.imgtintcolor : null;
+    var filtername = request.body.filtername;
     var text = request.body.text;
     var textcolor = request.body.textcolor;
     var textsize = request.body.textsize;
@@ -173,7 +179,7 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
     var toresize;
 
     var filebasepath = './images/uploads/capture/';
-    var filename_high =
+    var shortdetails;
 
     _auth.authValid(uuid, authkey)
         .then(function (details){
@@ -205,6 +211,7 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
                 img_width: img_width,
                 img_height: img_height,
                 imgtintcolor: imgtintcolor,
+                filtername: filtername,
                 text: text,
                 textcolor: textcolor,
                 bold: bold,
@@ -218,7 +225,7 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
         })
         .then(function () {
             if(uniquehashtags && uniquehashtags.length > 0){
-                return hashtagutils.addHashtagsToDb(connection, uniquehashtags, entityid);
+                return hashtagutils.addHashtagsForEntity(connection, uniquehashtags, entityid);
             }
         })
         .then(function () {
@@ -251,7 +258,13 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
             ];
             return shortutils.retrieveShortDetails(connection, shoid, select);
         })
-        .then(function (shortdetails) {
+        .then(function (shdetails) {
+            shortdetails = shdetails;
+            if(shortdetails.uuid !== uuid){
+                return entityutils.updateEntityCollabDataForUpdates(connection, entityid, shortdetails.uuid, uuid);
+            }
+        })
+        .then(function () {
             if(shortdetails.uuid !== uuid){
                 var notifData = {
                     message: requesterdetails.firstname + ' ' + requesterdetails.lastname + " uploaded a graphic art to your writing",

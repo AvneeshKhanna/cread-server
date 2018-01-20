@@ -9,6 +9,7 @@
 
 var uuidGenerator = require('uuid');
 var utils = require('../utils/Utils');
+var updatesutils = require('../updates/UpdatesUtils');
 
 var moment = require('moment');
 
@@ -144,8 +145,47 @@ function loadHatsOffs(connection, entityid, limit, lastindexkey) {
     });
 }
 
+function updateHatsOffDataForUpdates(connection, register, uuid, actor_uuid, entityid, other_collaborator){
+    return new Promise(function (resolve, reject) {
+        if(register){   //Case: Hatsoff given
+            var updateparams = {
+                uuid: uuid,
+                actor_uuid: actor_uuid,
+                entityid: entityid,
+                other_collaborator: other_collaborator,
+                category: "hatsoff"
+            };
+            updatesutils.addToUpdatesTable(connection, updateparams)
+                .then(resolve)
+                .catch(function (err) {
+                    reject(err);
+                });
+        }
+        else{   //Case: Hatsoff reverted
+            var where_col_names = [
+                "actor_uuid",
+                "entityid",
+                "other_collaborator",
+                "category"
+            ];
+            var where_col_values = [
+                actor_uuid,
+                entityid,
+                other_collaborator,
+                "hatsoff"
+            ];
+            updatesutils.deleteFromUpdatesTable(connection, where_col_names, where_col_values)
+                .then(resolve)
+                .catch(function (err) {
+                    reject(err);
+                });
+        }
+    });
+}
+
 module.exports = {
     registerHatsOff: registerHatsOff,
     loadHatsOffsLegacy: loadHatsOffsLegacy,
-    loadHatsOffs: loadHatsOffs
+    loadHatsOffs: loadHatsOffs,
+    updateHatsOffDataForUpdates: updateHatsOffDataForUpdates
 };

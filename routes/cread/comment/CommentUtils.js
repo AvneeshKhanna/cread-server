@@ -4,6 +4,8 @@
 'use-strict';
 
 var utils = require('../utils/Utils');
+var updatesutils = require('../updates/UpdatesUtils');
+
 var uuidGen = require('uuid');
 var moment = require('moment');
 
@@ -176,10 +178,43 @@ function deleteComment(connection, commid, uuid) {
     });
 }
 
+function updateCommentDataForUpdates(connection, uuid, actor_uuid, entityid, category, other_collaborator){
+    return new Promise(function (resolve, reject) {
+        if(true){   //Case: Comment added TODO: Change condition during deletion from Updates table
+            var updateparams = {
+                uuid: uuid,
+                actor_uuid: actor_uuid,
+                entityid: entityid,
+                other_collaborator: other_collaborator,
+                category: category
+            };
+            updatesutils.addToUpdatesTable(connection, updateparams)
+                .then(resolve, reject);
+        }
+        else{   //Case: Comment deleted TODO: Find a mechanism to locate a particular comment's row in Updates table
+            /*var where_col_names = [
+                "actor_uuid",
+                "entityid",
+                "other_collaborator",
+                "category"
+            ];
+            var where_col_values = [
+                actor_uuid,
+                entityid,
+                other_collaborator,
+                "comment"
+            ];
+            return updatesutils.deleteFromUpdatesTable(connection, where_col_names, where_col_values);*/
+            resolve();
+        }
+    });
+}
+
 module.exports = {
     loadCommentsLegacy: loadCommentsLegacy,
     loadComments: loadComments,
     addComment: addComment,
     updateComment: updateComment,
-    deleteComment: deleteComment
+    deleteComment: deleteComment,
+    updateCommentDataForUpdates: updateCommentDataForUpdates
 };

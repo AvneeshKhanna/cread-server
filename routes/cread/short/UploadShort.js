@@ -18,6 +18,8 @@ var upload = multer({dest: './images/uploads/short/'});
 var fs = require('fs');
 
 var utils = require('../utils/Utils');
+var entityutils = require('../entity/EntityUtils');
+var shortutils = require('./ShortUtils');
 var hashtagutils = require('../hashtag/HashTagUtils');
 var notify = require('../../notification-system/notificationFramework');
 
@@ -44,6 +46,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
         img_width: request.body.img_width,
         img_height: request.body.img_height,
         imgtintcolor : request.body.imgtintcolor ? request.body.imgtintcolor : null,
+        filtername: request.body.filtername ? request.body.filtername : 'original',
         txt: request.body.text,
         textsize: request.body.textsize,
         bold: (request.body.bold === "1"),
@@ -78,6 +81,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
 
     var connection;
     var requesterdetails;
+    var captureuseruuid;
 
     _auth.authValid(uuid, authkey)
         .then(function (details) {
@@ -95,11 +99,11 @@ router.post('/', upload.single('short-image'), function (request, response) {
             return utils.beginTransaction(connection);
         })
         .then(function () {
-            return uploadToRDS(connection, shortsqlparams, entityparams);
+            return shortutils.addShortToDb(connection, shortsqlparams, entityparams);
         })
         .then(function () {
             if (uniquehashtags && uniquehashtags.length > 0) {
-                return hashtagutils.addHashtagsToDb(connection, uniquehashtags, entityid);
+                return hashtagutils.addHashtagsForEntity(connection, uniquehashtags, entityid);
             }
         })
         .then(function () {
@@ -129,14 +133,20 @@ router.post('/', upload.single('short-image'), function (request, response) {
             }
         })
         .then(function () {
-            if (shortsqlparams.capid) {
+            if (shortsqlparams.capid) { //Send notification to user
                 return retreiveCaptureUserDetails(connection, shortsqlparams.capid);
             }
             else {
                 throw new BreakPromiseChainError();
             }
         })
-        .then(function (captureuseruuid) {
+        .then(function (capuseruuid) {
+            captureuseruuid = capuseruuid;
+            if(captureuseruuid !== uuid){
+                return entityutils.updateEntityCollabDataForUpdates(connection, entityid, captureuseruuid, uuid);
+            }
+        })
+        .then(function () {
             if (captureuseruuid !== uuid) {   //Send notification only when the two users involved are different
                 var notifData = {
                     message: requesterdetails.firstname + ' ' + requesterdetails.lastname + " wrote on your graphic art",
@@ -166,6 +176,120 @@ router.post('/', upload.single('short-image'), function (request, response) {
 
 });
 
+router.post('/edit', upload.single('short-image'), function (request, response) {
+
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var short = request.file;
+    var caption = request.body.caption.trim() ? request.body.caption.trim() : null;
+    var shoid = request.body.shoid;
+    var entityid = request.body.entityid;
+
+    var shortsqlparams = {
+        dx: request.body.dx,
+        dy: request.body.dy,
+        txt_width: request.body.txt_width,
+        txt_height: request.body.txt_height,
+        img_width: request.body.img_width,
+        img_height: request.body.img_height,
+        imgtintcolor : request.body.imgtintcolor ? request.body.imgtintcolor : null,
+        filtername: request.body.filtername ? request.body.filtername : 'original',
+        txt: request.body.text,
+        textsize: request.body.textsize,
+        bold: (request.body.bold === "1"),
+        italic: (request.body.italic === "1"),
+        bgcolor: (request.body.bgcolor) ? request.body.bgcolor : 'NA', //for backward compatibilty
+        font: (request.body.font) ? request.body.font : 'NA',   //for backward compatibilty
+        textcolor: request.body.textcolor,
+        textgravity: request.body.textgravity,
+        capid: (request.body.captureid) ? request.body.captureid : null
+    };
+
+    var entityparams = {
+        caption: caption
+    };
+
+    try {
+        var uniquehashtags;
+
+        if (caption) {
+            uniquehashtags = hashtagutils.extractUniqueHashtags(caption);
+        }
+    }
+    catch (ex) {
+        console.error(ex);
+        throw ex;
+    }
+
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function (details) {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return utils.beginTransaction(connection);
+        })
+        .then(function () {
+            return shortutils.updateShortInDb(connection, shoid, shortsqlparams, entityid, entityparams);
+        })
+        .then(function () {
+            //Deleting existing hashtags for entity
+            return hashtagutils.deleteHashtagsForEntity(connection, entityid);
+        })
+        .then(function () {
+            //Deleting new hashtags for entity
+            if (uniquehashtags && uniquehashtags.length > 0) {
+                return hashtagutils.addHashtagsForEntity(connection, uniquehashtags, entityid);
+            }
+        })
+        .then(function () {
+            return userprofileutils.renameFile(filebasepath, short, shoid);
+        })
+        .then(function (renamedpath) {
+            return userprofileutils.uploadImageToS3(renamedpath, uuid, 'Short', shoid + '-small.jpg');
+        })
+        .then(function () {
+            return utils.commitTransaction(connection);
+        })
+        .then(function () {
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    status: 'done',
+                    shorturl: utils.createSmallShortUrl(uuid, shoid)
+                }
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            if(err instanceof BreakPromiseChainError){
+                config.disconnect(connection);
+            }
+            else{
+                console.error(err);
+                utils.rollbackTransaction(connection)
+                    .catch(function (err) {
+                        config.disconnect(connection);
+                        response.status(500).send({
+                            message: 'Some error occurred at the server'
+                        }).end();
+                    });
+            }
+        });
+
+});
+
 function retreiveCaptureUserDetails(connection, captureid) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT uuid FROM Capture WHERE capid = ?', [captureid], function (err, data) {
@@ -177,47 +301,6 @@ function retreiveCaptureUserDetails(connection, captureid) {
             }
         })
     })
-}
-
-function uploadToRDS(connection, shortsqlparams, entityparams) {
-    return new Promise(function (resolve, reject) {
-        /*connection.beginTransaction(function (err) {
-            if(err){
-                connection.rollback(function () {
-                    reject(err);
-                });
-            }
-            else{
-
-
-            }
-        });*/
-
-        entityparams.type = 'SHORT';
-
-        connection.query('INSERT INTO Entity SET ?', [entityparams], function (err, edata) {
-            if (err) {
-                /*connection.rollback(function () {
-                    reject(err);
-                });*/
-                reject(err);
-            }
-            else {
-                connection.query('INSERT INTO Short SET ?', [shortsqlparams], function (err, rows) {
-                    if (err) {
-                        /*connection.rollback(function () {
-                            reject(err);
-                        });*/
-                        reject(err);
-                    }
-                    else {
-                        resolve();
-                    }
-                });
-            }
-        });
-
-    });
 }
 
 module.exports = router;
