@@ -22,9 +22,13 @@ function generateLongDynamicLink(deeplink){
         '?link=' +
         encodeURIComponent(deeplink) +
         '&apn=' +
-        'com.thetestament.cread' +    //package name
+        'com.thetestament.cread' +    //Android Package Name
+        '&ibi=' +
+        'com.TheTestament.Cread' +  //iOS Bundle ID
+        '&imv=' +
+        '1.0.13' +  //iOS minimum version
         '&amv=' +
-        '12'; //App minimum version code
+        '12'; //Android minimum version code
 }
 
 /**
