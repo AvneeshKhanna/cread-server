@@ -11,6 +11,7 @@ var config = require('../../Config');
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var userprofileutils = require('../user-manager/UserProfileUtils');
+var profilementionutils = require('../profile-mention/ProfileMentionUtils');
 
 var uuidgen = require('uuid');
 var multer = require('multer');
@@ -69,9 +70,11 @@ router.post('/', upload.single('short-image'), function (request, response) {
 
     try {
         var uniquehashtags;
+        var mentioneduuids;
 
         if (caption) {
             uniquehashtags = hashtagutils.extractUniqueHashtags(caption);
+            mentioneduuids = utils.extractProfileMentionUUIDs(caption);
         }
     }
     catch (ex) {
@@ -159,6 +162,22 @@ router.post('/', upload.single('short-image'), function (request, response) {
             }
         })
         .then(function () {
+            //TODO: Add support for multiple uuids
+            return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-post", uuid, mentioneduuids);
+        })
+        .then(function () {
+            if(mentioneduuids.length > 0){
+                var notifData = {
+                    message: requesterdetails.firstname + " " + requesterdetails.lastname + " mentioned you in a post",
+                    category: "profile-mention-post",
+                    entityid: entityid,
+                    persistable: "Yes",
+                    actorimage: utils.createSmallProfilePicUrl(uuid)
+                };
+                return notify.notificationPromise(mentioneduuids, notifData);
+            }
+        })
+        .then(function () {
             throw new BreakPromiseChainError(); //To disconnect server connection
         })
         .catch(function (err) {
@@ -213,9 +232,11 @@ router.post('/edit', upload.single('short-image'), function (request, response) 
 
     try {
         var uniquehashtags;
+        var mentioneduuids;
 
         if (caption) {
             uniquehashtags = hashtagutils.extractUniqueHashtags(caption);
+            mentioneduuids = utils.extractProfileMentionUUIDs(caption);
         }
     }
     catch (ex) {
@@ -224,9 +245,11 @@ router.post('/edit', upload.single('short-image'), function (request, response) 
     }
 
     var connection;
+    var requesterdetails;
 
     _auth.authValid(uuid, authkey)
         .then(function (details) {
+            requesterdetails = details;
             return config.getNewConnection();
         }, function () {
             response.send({
@@ -270,6 +293,23 @@ router.post('/edit', upload.single('short-image'), function (request, response) 
                 }
             });
             response.end();
+        })
+        .then(function () {
+            //TODO: Add data to Updates table for profile-mention-post notification
+        })
+        .then(function () {
+            if(mentioneduuids.length > 0){
+                var notifData = {
+                    message: requesterdetails.firstname + " " + requesterdetails.lastname + " mentioned you in a post",
+                    category: "profile-mention-post",
+                    entityid: entityid,
+                    persistable: "Yes",
+                    actorimage: utils.createSmallProfilePicUrl(uuid)
+                };
+                return notify.notificationPromise(mentioneduuids, notifData);
+            }
+        })
+        .then(function () {
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {

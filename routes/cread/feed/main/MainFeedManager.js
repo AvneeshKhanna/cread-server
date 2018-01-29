@@ -152,6 +152,7 @@ router.get('/load', function (request, response) {
     var uuid = request.headers.uuid;
     var authkey = request.headers.authkey;
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
+    var platform = request.query.platform;
 
     var limit = (config.envtype === 'PRODUCTION') ? 10 : 8;
     var connection;
@@ -171,6 +172,11 @@ router.get('/load', function (request, response) {
             return loadFeed(connection, uuid, limit, lastindexkey);
         })
         .then(function (result) {
+
+            if(platform !== "android"){
+                result.feed = utils.filterProfileMentions(result.feed, "caption")
+            }
+
             console.log("result is " + JSON.stringify(result, null, 3));
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 
@@ -209,6 +215,7 @@ router.post('/load', function (request, response) {
     var authkey = request.body.authkey;
     var page = request.body.page;
     var lastindexkey = request.body.lastindexkey;
+    var platform = request.body.platform;
 
     var limit = (config.envtype === 'PRODUCTION') ? 10 : 8;
     var connection;
@@ -233,6 +240,11 @@ router.post('/load', function (request, response) {
             }
         })
         .then(function (result) {
+
+            if(platform !== "android"){
+                result.feed = utils.filterProfileMentions(result.feed, "caption")
+            }
+
             console.log("result in response is " + JSON.stringify(result, null, 3));
             response.send({
                 tokenstatus: 'valid',

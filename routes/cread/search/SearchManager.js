@@ -46,7 +46,7 @@ router.get('/load', function (request, response) {
                     data: {
                         searchtype: searchtype,
                         requestmore: false,
-                        lastindexky: "",
+                        lastindexkey: "",
                         items: []
                     }
                 });

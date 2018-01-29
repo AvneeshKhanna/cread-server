@@ -11,6 +11,7 @@ var config = require('../../Config');
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var hashtagutils = require('./HashTagUtils');
+var utils = require('../utils/Utils');
 
 var consts = require('../utils/Constants');
 var cache_time = consts.cache_time;
@@ -23,6 +24,7 @@ router.get('/feed', function (request, response) {
     var authkey = request.headers.authkey;
     var htag = decodeURIComponent(request.query.htag).toLowerCase();
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
+    var platform = request.query.platform;
 
     var limit = (config.envtype === 'PRODUCTION') ? 15 : 3;
     var connection;
@@ -42,6 +44,11 @@ router.get('/feed', function (request, response) {
             return hashtagutils.loadHashtagFeed(connection, uuid, limit, htag, lastindexkey);
         })
         .then(function (result) {
+
+            if(platform !== "android"){
+                result.items = utils.filterProfileMentions(result.items, "caption");
+            }
+
             console.log("result is " + JSON.stringify(result, null, 3));
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 

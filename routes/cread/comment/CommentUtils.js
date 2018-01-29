@@ -178,6 +178,19 @@ function deleteComment(connection, commid, uuid) {
     });
 }
 
+function getEntityFromComment(connection, commid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT entityid Comment WHERE commid = ?', [commid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(rows[0]);
+            }
+        });
+    });
+}
+
 function updateCommentDataForUpdates(connection, uuid, actor_uuid, entityid, category, other_collaborator){
     return new Promise(function (resolve, reject) {
         if(true){   //Case: Comment added TODO: Change condition during deletion from Updates table
@@ -216,5 +229,6 @@ module.exports = {
     addComment: addComment,
     updateComment: updateComment,
     deleteComment: deleteComment,
+    getEntityFromComment: getEntityFromComment,
     updateCommentDataForUpdates: updateCommentDataForUpdates
 };

@@ -7,6 +7,7 @@ var express = require('express');
 var router = express.Router();
 
 var config = require('../../Config');
+var notify = require('../../notification-system/notificationFramework');
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
@@ -15,6 +16,7 @@ var utils = require('../utils/Utils');
 var entityutils = require('./EntityUtils');
 var captureutils = require('../capture/CaptureUtils');
 var hashtagutils = require('../hashtag/HashTagUtils');
+var profilementionutils = require('../profile-mention/ProfileMentionUtils');
 
 var cache_time = consts.cache_time;
 
@@ -89,6 +91,7 @@ router.get('/load-specific', function (request, response) {
     var uuid = request.headers.uuid;
     var authkey = request.headers.authkey;
     var entityid = decodeURIComponent(request.query.entityid);
+    var platform = request.query.platform;
 
     var connection;
 
@@ -107,6 +110,11 @@ router.get('/load-specific', function (request, response) {
             return entityutils.loadEntityData(connection, uuid, entityid);
         })
         .then(function (result) {
+
+            if(platform !== "android"){
+                result.entity = utils.filterProfileMentions(new Array(result.entity), "caption")[0];
+            }
+
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 
             if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
@@ -140,6 +148,7 @@ router.post('/load-specific', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var entityid = request.body.entityid;
+    var platform = request.query.platform;
 
     var connection;
 
@@ -158,6 +167,11 @@ router.post('/load-specific', function (request, response) {
             return entityutils.loadEntityData(connection, uuid, entityid);
         })
         .then(function (result) {
+
+            if(platform !== "android"){
+                result.entity = utils.filterProfileMentions(new Array(result.entity), "caption")[0];
+            }
+
             response.send({
                 tokenstatus: 'valid',
                 data: result
@@ -255,47 +269,6 @@ router.post('/remove-from-explore', function (request, response) {
         });
 
 });
-
-/**
- * Generate a high resolution version of the image for print using entityid
- * */
-/*router.post('/load-image-for-print', function (request, response) {
-    var entityid = request.body.entityid;
-    var type = request.body.type;
-
-    var connection;
-
-    config.getNewConnection()
-        .then(function (conn) {
-            connection = conn;
-            return entityutils.getEntityDetailsForPrint(connection, entityid, type);
-        })
-        .then(function (result) {
-            response.send({
-                data: result
-            });
-            response.end();
-            throw new BreakPromiseChainError();
-        })
-        /!*.then(function (short) {
-            return captureutils.downloadCapture(uuid, short.capid, rootpath + short.capid + '.jpg');
-        })
-        .then(function (capturepath) {
-
-        })*!/
-        .catch(function (err) {
-            config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
-                //Do nothing
-            }
-            else{
-                console.error(err);
-                response.status(500).send({
-                    message: 'Some error occurred at the server'
-                }).end();
-            }
-        });
-});*/
 
 router.post('/load-collab-details', function (request, response) {
 
@@ -413,15 +386,19 @@ router.post('/edit-caption', function (request, response) {
     var caption = request.body.caption.trim() ? request.body.caption.trim() : null;
 
     var uniquehashtags;
+    var mentioneduuids;
 
     if(caption){
         uniquehashtags = hashtagutils.extractUniqueHashtags(caption);
+        mentioneduuids = utils.extractProfileMentionUUIDs(caption);
     }
 
     var connection;
+    var requesterdetails;
 
     _auth.authValid(uuid, authkey)
         .then(function (details) {
+            requesterdetails = details;
             return config.getNewConnection();
         }, function () {
             response.send({
@@ -453,6 +430,24 @@ router.post('/edit-caption', function (request, response) {
                 }
             });
             response.end();
+        })
+        .then(function () {
+            //TODO: Add support for multiple uuids
+            return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-post", uuid, mentioneduuids);
+        })
+        .then(function () {
+            if(mentioneduuids.length > 0){
+                var notifData = {
+                    message: requesterdetails.firstname + " " + requesterdetails.lastname + " mentioned you in a post",
+                    category: "profile-mention-post",
+                    entityid: entityid,
+                    persistable: "Yes",
+                    actorimage: utils.createSmallProfilePicUrl(uuid)
+                };
+                return notify.notificationPromise(mentioneduuids, notifData);
+            }
+        })
+        .then(function () {
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
