@@ -209,8 +209,8 @@ function filterProfileMentions(items, item_text_key) {
  * */
 function convertProfileMentionToName(text){
 
-    var mentionregex = /\@\[\(u:[\w\-]+\+n:[\w\s\n]+\)\]/;  //To extract the profile mention part
-    var nameregex = /n:[\w\s\n]+/;  //To further extract the name part from profile mention part
+    var mentionregex = /\@\[\(u:[\w\-]+\+n:([^\x00-\x7F]|\w|\s|\n)+\)\]/;  //To extract the profile mention part
+    var nameregex = /\+n:([^\x00-\x7F]|\w|\s|\n)+/;  //To further extract the name part from profile mention part
 
     var match;
 
@@ -222,18 +222,20 @@ function convertProfileMentionToName(text){
     return text;
 }
 
-/*
+/**
 * A function to extract all the unique UUIDs from Profile Mentions in the text
 * */
 function extractProfileMentionUUIDs(text) {
 
-    var mentionregex = /\@\[\(u:[\w\-]+\+n:[\w\s\n]+\)\]/;  //To extract the profile mention part
+    var mentionregex = /\@\[\(u:[\w\-]+\+n:([^\x00-\x7F]|\w|\s|\n)+\)\]/;  //To extract the profile mention part
     var uuidregex = /u:[\w\-]+/;  //To further extract the uuid part from profile mention part
 
     var match;
     var uniqueuuids = [];
 
     while ((match = mentionregex.exec(text)) !== null) {
+        console.log("profile mention match is " + JSON.stringify(match, null, 3));
+        text = text.replace(match[0].trim(), "");
         var uuid = uuidregex.exec(match[0])[0].split(":")[1];
         uniqueuuids.push(uuid);
     }
