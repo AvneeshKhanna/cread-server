@@ -386,7 +386,7 @@ router.post('/edit-caption', function (request, response) {
     var caption = request.body.caption.trim() ? request.body.caption.trim() : null;
 
     var uniquehashtags;
-    var mentioneduuids;
+    var mentioneduuids = [];
 
     if(caption){
         uniquehashtags = hashtagutils.extractUniqueHashtags(caption);
@@ -433,7 +433,9 @@ router.post('/edit-caption', function (request, response) {
         })
         .then(function () {
             //TODO: Add support for multiple uuids
-            return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-post", uuid, mentioneduuids);
+            if(mentioneduuids.length > 0){
+                return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-post", uuid, mentioneduuids);
+            }
         })
         .then(function () {
             if(mentioneduuids.length > 0){

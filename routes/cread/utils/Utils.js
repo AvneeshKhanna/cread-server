@@ -240,6 +240,7 @@ function extractProfileMentionUUIDs(text) {
         uniqueuuids.push(uuid);
     }
 
+    console.log("uniqueuuids are " + JSON.stringify(uniqueuuids, null, 3));
     return getUniqueValues(uniqueuuids);
 }
 

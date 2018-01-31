@@ -232,7 +232,9 @@ router.post('/add', function (request, response) {
         })
         .then(function () {
             //TODO: Add support for multiple uuids
-            return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-comment", uuid, mentioneduuids);
+            if(mentioneduuids.length > 0){
+                return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-comment", uuid, mentioneduuids);
+            }
         })
         .then(function () {
             if(mentioneduuids.length > 0){
@@ -349,7 +351,9 @@ router.post('/update', function (request, response) {
         .then(function (result) {
             entityid = result.entityid;
             //TODO: Add support for multiple uuids
-            return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-comment", uuid, mentioneduuids);
+            if(mentioneduuids.length > 0){
+                return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-comment", uuid, mentioneduuids);
+            }
         })
         .then(function () {
             if(mentioneduuids.length > 0){
