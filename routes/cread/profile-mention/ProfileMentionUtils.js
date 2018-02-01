@@ -6,7 +6,7 @@
 var updatesutils = require('../updates/UpdatesUtils');
 
 function addProfileMentionToUpdates(connection, entityid, category, actor_uuid, uuid) {
-    return new Promise(function (resolve, reject) {
+    return new Promise(function (resolve, reject) { 
         var updateparams = {
             category: category,
             actor_uuid: actor_uuid,
