@@ -179,7 +179,7 @@ router.post('/place', function (request, response) {
             }
         })
         .then(function () { //Add to Updates table for a notification to collaborator
-            if(notifuuids.collabuuid !== uuid && notifuuids.collabuuid !== notifuuids.creatoruuid){
+            if(notifuuids.collabuuid && notifuuids.collabuuid !== uuid && notifuuids.collabuuid !== notifuuids.creatoruuid){
                 return buyutils.updateBuyDataForUpdates(connection, notifuuids.collabuuid, uuid, entityid, true);
             }
         })

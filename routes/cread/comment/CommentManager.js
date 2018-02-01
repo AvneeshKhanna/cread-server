@@ -231,13 +231,12 @@ router.post('/add', function (request, response) {
             }
         })
         .then(function () {
-            //TODO: Add support for multiple uuids
-            if(mentioneduuids.length > 0){
+            if(mentioneduuids.length > 0  ){
                 return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-comment", uuid, mentioneduuids);
             }
         })
         .then(function () {
-            if(mentioneduuids.length > 0){
+            if(mentioneduuids.length > 0  ){
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " mentioned you in a comment",
                     category: "profile-mention-comment",
@@ -250,8 +249,7 @@ router.post('/add', function (request, response) {
         })
         .then(function () { //Add to Updates table for a notification to other commenters on this thread
             if(othercommenters && othercommenters.length > 0){
-                //TODO: Case for multiple commenters
-                return commentutils.updateCommentDataForUpdates(connection, othercommenters.toString(), uuid, entityid, "other-comment", false);
+                return commentutils.updateCommentDataForUpdates(connection, othercommenters, uuid, entityid, "other-comment", false);
             }
         })
         .then(function () {
@@ -341,7 +339,7 @@ router.post('/update', function (request, response) {
             response.end();
         })
         .then(function () {
-            if(mentioneduuids.length > 0){
+            if(mentioneduuids.length > 0  ){
                 return commentutils.getEntityFromComment(connection, commid);
             }
             else {
@@ -350,13 +348,12 @@ router.post('/update', function (request, response) {
         })
         .then(function (result) {
             entityid = result.entityid;
-            //TODO: Add support for multiple uuids
-            if(mentioneduuids.length > 0){
+            if(mentioneduuids.length > 0  ){
                 return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-comment", uuid, mentioneduuids);
             }
         })
         .then(function () {
-            if(mentioneduuids.length > 0){
+            if(mentioneduuids.length > 0  ){
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " mentioned you in a comment",
                     category: "profile-mention-comment",

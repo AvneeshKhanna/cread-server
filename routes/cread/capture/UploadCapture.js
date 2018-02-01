@@ -117,13 +117,12 @@ router.post('/', upload.single('captured-image'), function (request, response) {
             response.end();
         })
         .then(function () {
-            //TODO: Add support for multiple uuids
-            if(mentioneduuids.length > 0){
+            if(mentioneduuids.length > 0  ){
                 return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-post", uuid, mentioneduuids);
             }
         })
         .then(function () {
-            if(mentioneduuids.length > 0){
+            if(mentioneduuids.length > 0  ){
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " mentioned you in a post",
                     category: "profile-mention-post",
@@ -302,12 +301,12 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
         })
         .then(function () {
             //TODO: Add support for multiple uuids
-            if(mentioneduuids.length > 0){
+            if(mentioneduuids.length > 0  ){
                 return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-post", uuid, mentioneduuids);
             }
         })
         .then(function () {
-            if(mentioneduuids.length > 0){
+            if(mentioneduuids.length > 0  ){
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " mentioned you in a post",
                     category: "profile-mention-post",

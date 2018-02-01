@@ -180,7 +180,9 @@ function deleteComment(connection, commid, uuid) {
 
 function getEntityFromComment(connection, commid) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT entityid Comment WHERE commid = ?', [commid], function (err, rows) {
+        connection.query('SELECT entityid ' +
+            'FROM Comment ' +
+            'WHERE commid = ?', [commid], function (err, rows) {
             if (err) {
                 reject(err);
             }

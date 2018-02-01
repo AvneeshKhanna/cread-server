@@ -74,7 +74,8 @@ router.post('/', upload.single('short-image'), function (request, response) {
 
         if (caption) {
             uniquehashtags = hashtagutils.extractUniqueHashtags(caption);
-            mentioneduuids = utils.extractProfileMentionUUIDs(caption);
+            mentioneduuids = utils
+                .extractProfileMentionUUIDs(caption);
         }
     }
     catch (ex) {
@@ -136,6 +137,23 @@ router.post('/', upload.single('short-image'), function (request, response) {
             }
         })
         .then(function () {
+            if(mentioneduuids.length > 0  ){
+                return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-post", uuid, mentioneduuids);
+            }
+        })
+        .then(function () {
+            if(mentioneduuids.length > 0  ){
+                var notifData = {
+                    message: requesterdetails.firstname + " " + requesterdetails.lastname + " mentioned you in a post",
+                    category: "profile-mention-post",
+                    entityid: entityid,
+                    persistable: "Yes",
+                    actorimage: utils.createSmallProfilePicUrl(uuid)
+                };
+                return notify.notificationPromise(mentioneduuids, notifData);
+            }
+        })
+        .then(function () {
             if (shortsqlparams.capid) { //Send notification to user
                 return retreiveCaptureUserDetails(connection, shortsqlparams.capid);
             }
@@ -159,24 +177,6 @@ router.post('/', upload.single('short-image'), function (request, response) {
                     actorimage: utils.createSmallProfilePicUrl(uuid)
                 };
                 return notify.notificationPromise(new Array(captureuseruuid), notifData);
-            }
-        })
-        .then(function () {
-            //TODO: Add support for multiple uuids
-            if(mentioneduuids.length > 0){
-                return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-post", uuid, mentioneduuids);
-            }
-        })
-        .then(function () {
-            if(mentioneduuids.length > 0){
-                var notifData = {
-                    message: requesterdetails.firstname + " " + requesterdetails.lastname + " mentioned you in a post",
-                    category: "profile-mention-post",
-                    entityid: entityid,
-                    persistable: "Yes",
-                    actorimage: utils.createSmallProfilePicUrl(uuid)
-                };
-                return notify.notificationPromise(mentioneduuids, notifData);
             }
         })
         .then(function () {

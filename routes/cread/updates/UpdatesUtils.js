@@ -45,7 +45,11 @@ function deleteFromUpdatesTable(connection, where_col_names, where_col_values){
 
 function addToUpdatesTable(connection, params){
     return new Promise(function (resolve, reject) {
-        connection.query('INSERT INTO Updates SET ?', [params], function (err, rows) {
+
+        params = restructureParamsForAddUpdates(params);
+
+        connection.query('INSERT INTO Updates (uuid, actor_uuid, category, entityid, other_collaborator) ' +
+            'VALUES ?', [params], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -54,6 +58,35 @@ function addToUpdatesTable(connection, params){
             }
         });
     });
+}
+
+function restructureParamsForAddUpdates(params){
+
+    if(!params.hasOwnProperty("entityid")){
+        params.entityid = null
+    }
+
+    if(!params.hasOwnProperty("other_collaborator")){
+        params.other_collaborator = false
+    }
+
+    if(!(params.uuid instanceof Array)){
+        params.uuid = new Array(params.uuid);
+    }
+
+    var masterArr = [];
+
+    params.uuid.forEach(function (uuid) {
+        masterArr.push([
+            uuid,
+            params.actor_uuid,
+            params.category,
+            params.entityid,
+            params.other_collaborator
+        ]);
+    });
+
+    return masterArr;
 }
 
 function updateUpdatesUnreadStatus(connection, updateid) {
