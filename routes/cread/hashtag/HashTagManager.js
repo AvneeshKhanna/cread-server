@@ -46,7 +46,7 @@ router.get('/feed', function (request, response) {
         .then(function (result) {
 
             if(platform !== "android"){
-                result.items = utils.filterProfileMentions(result.items, "caption");
+                result.feed = utils.filterProfileMentions(result.feed, "caption");
             }
 
             console.log("result is " + JSON.stringify(result, null, 3));
