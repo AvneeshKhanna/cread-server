@@ -143,7 +143,7 @@ function structureProductDetails(products) {
                     4,
                     5
                 ];
-                product.deliverycharge = 80;
+                product.deliverycharge = 1/*80*/;
             }
             else if(product.type === 'POSTER'){
                 product.sizes = [
@@ -162,7 +162,7 @@ function structureProductDetails(products) {
                     4,
                     5
                 ];
-                product.deliverycharge = 80;
+                product.deliverycharge = 1/*80*/;
             }
             else if(product.type === 'FRAME'){
                 product.sizes = [
@@ -181,7 +181,7 @@ function structureProductDetails(products) {
                     4,
                     5
                 ];
-                product.deliverycharge = 80;
+                product.deliverycharge = 1/*80*/;
             }
             else{   //COFFEE_MUG
                 product.sizes = [
@@ -200,7 +200,7 @@ function structureProductDetails(products) {
                     4,
                     5
                 ];
-                product.deliverycharge = 80;
+                product.deliverycharge = 1/*80*/;
             }
         });
         resolve(products);
