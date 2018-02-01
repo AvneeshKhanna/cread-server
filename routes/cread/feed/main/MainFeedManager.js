@@ -152,6 +152,7 @@ router.get('/load', function (request, response) {
     var uuid = request.headers.uuid;
     var authkey = request.headers.authkey;
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
+    var platform = request.query.platform;
 
     var limit = (config.envtype === 'PRODUCTION') ? 10 : 8;
     var connection;
@@ -171,6 +172,11 @@ router.get('/load', function (request, response) {
             return loadFeed(connection, uuid, limit, lastindexkey);
         })
         .then(function (result) {
+
+            if(platform !== "android"){
+                result.feed = utils.filterProfileMentions(result.feed, "caption")
+            }
+
             console.log("result is " + JSON.stringify(result, null, 3));
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 
@@ -209,6 +215,7 @@ router.post('/load', function (request, response) {
     var authkey = request.body.authkey;
     var page = request.body.page;
     var lastindexkey = request.body.lastindexkey;
+    var platform = request.body.platform;
 
     var limit = (config.envtype === 'PRODUCTION') ? 10 : 8;
     var connection;
@@ -233,6 +240,11 @@ router.post('/load', function (request, response) {
             }
         })
         .then(function (result) {
+
+            if(platform !== "android"){
+                result.feed = utils.filterProfileMentions(result.feed, "caption")
+            }
+
             console.log("result in response is " + JSON.stringify(result, null, 3));
             response.send({
                 tokenstatus: 'valid',
@@ -404,8 +416,8 @@ function loadFeedLegacy(connection, uuid, limit, page) {
                 console.log("totalcount is " + JSON.stringify(totalcount, null, 3));
 
                 if(totalcount > 0){
-                    connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Entity.caption, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
-                        'Capture.capid AS captureid, ' + 'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
+                    connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Entity.caption, Short.shoid, Short.txt AS stext, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
+                        'Capture.capid AS captureid, Capture.text AS ctext, ' + 'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
                         'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
                         'User.uuid, User.firstname, User.lastname ' +
                         'FROM Entity ' +
@@ -450,6 +462,13 @@ function loadFeedLegacy(connection, uuid, limit, page) {
                                         element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
                                     }
 
+                                    if(element.hasOwnProperty('stext')){
+                                        element.text = element.stext;
+                                    }
+                                    else{
+                                        element.text = element.ctext;
+                                    }
+
                                     element.hatsoffstatus = element.hbinarycount > 0;
                                     // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
 
@@ -478,6 +497,14 @@ function loadFeedLegacy(connection, uuid, limit, page) {
 
                                     if(element.hasOwnProperty('binarycount')) {
                                         delete element.binarycount;
+                                    }
+
+                                    if(element.hasOwnProperty('ctext')) {
+                                        delete element.ctext;
+                                    }
+
+                                    if(element.hasOwnProperty('stext')) {
+                                        delete element.stext;
                                     }
 
                                     return element;

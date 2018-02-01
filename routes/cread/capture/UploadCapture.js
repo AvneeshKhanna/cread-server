@@ -11,6 +11,7 @@ var config = require('../../Config');
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var userprofileutils = require('../user-manager/UserProfileUtils');
+var profilementionutils = require('../profile-mention/ProfileMentionUtils');
 
 var uuidgen = require('uuid');
 var multer = require('multer');
@@ -40,9 +41,11 @@ router.post('/', upload.single('captured-image'), function (request, response) {
     var caption = request.body.caption.trim() ? request.body.caption.trim() : null;
 
     var uniquehashtags;
+    var mentioneduuids = [];
 
     if(caption){
         uniquehashtags = hashtagutils.extractUniqueHashtags(caption);
+        mentioneduuids = utils.extractProfileMentionUUIDs(caption);
     }
 
     var captureparams = {
@@ -53,10 +56,12 @@ router.post('/', upload.single('captured-image'), function (request, response) {
     var entityid = uuidgen.v4();
 
     var connection;
+    var requesterdetails;
     var toresize;
 
     _auth.authValid(uuid, authkey)
-        .then(function () {
+        .then(function (details) {
+            requesterdetails = details;
             return config.getNewConnection();
         }, function () {
             response.send({
@@ -110,7 +115,23 @@ router.post('/', upload.single('captured-image'), function (request, response) {
                 }
             });
             response.end();
-            throw new BreakPromiseChainError();
+        })
+        .then(function () {
+            if(mentioneduuids.length > 0  ){
+                return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-post", uuid, mentioneduuids);
+            }
+        })
+        .then(function () {
+            if(mentioneduuids.length > 0  ){
+                var notifData = {
+                    message: requesterdetails.firstname + " " + requesterdetails.lastname + " mentioned you in a post",
+                    category: "profile-mention-post",
+                    entityid: entityid,
+                    persistable: "Yes",
+                    actorimage: utils.createSmallProfilePicUrl(uuid)
+                };
+                return notify.notificationPromise(mentioneduuids, notifData);
+            }
         }, function (err) {
             if(!(err instanceof BreakPromiseChainError)) {
                 return utils.rollbackTransaction(connection, undefined, err);
@@ -147,9 +168,11 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
     var caption = request.body.caption.trim() ? request.body.caption.trim() : null;
 
     var uniquehashtags;
+    var mentioneduuids = [];
 
     if(caption){
         uniquehashtags = hashtagutils.extractUniqueHashtags(caption);
+        mentioneduuids = utils.extractProfileMentionUUIDs(caption);
     }
 
     var dx = request.body.dx;
@@ -274,6 +297,24 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
                     actorimage: utils.createSmallProfilePicUrl(uuid)
                 };
                 return notify.notificationPromise(new Array(shortdetails.uuid), notifData)
+            }
+        })
+        .then(function () {
+            //TODO: Add support for multiple uuids
+            if(mentioneduuids.length > 0  ){
+                return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-post", uuid, mentioneduuids);
+            }
+        })
+        .then(function () {
+            if(mentioneduuids.length > 0  ){
+                var notifData = {
+                    message: requesterdetails.firstname + " " + requesterdetails.lastname + " mentioned you in a post",
+                    category: "profile-mention-post",
+                    entityid: entityid,
+                    persistable: "Yes",
+                    actorimage: utils.createSmallProfilePicUrl(uuid)
+                };
+                return notify.notificationPromise(mentioneduuids, notifData);
             }
         })
         .then(function () {

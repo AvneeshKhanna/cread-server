@@ -489,6 +489,7 @@ router.get('/load-timeline', function (request, response) {
     var authkey = request.headers.authkey;
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
     var requesteduuid = decodeURIComponent(request.query.requesteduuid);
+    var platform = request.query.platform;
 
     var limit = (config.envtype === 'PRODUCTION') ? 10 : 6;  //TODO: Change to 10
 
@@ -509,6 +510,11 @@ router.get('/load-timeline', function (request, response) {
             return userprofileutils.loadTimeline(connection, requesteduuid, uuid, limit, lastindexkey);
         })
         .then(function (result) {
+
+            if(platform !== "android"){
+                result.items = utils.filterProfileMentions(result.items, "caption")
+            }
+
             console.log("result is " + JSON.stringify(result, null, 3));
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 
@@ -546,6 +552,7 @@ router.post('/load-timeline', function (request, response) {
     var page = request.body.page;
     var lastindexkey = request.body.lastindexkey;
     var requesteduuid = request.body.requesteduuid;
+    var platform = request.body.platform;
 
     console.log("request for '/load-timeline' is " + JSON.stringify(request.body, null, 3));
 
@@ -573,6 +580,11 @@ router.post('/load-timeline', function (request, response) {
             }
         })
         .then(function (result) {
+
+            if(platform !== "android"){
+                result.items = utils.filterProfileMentions(result.items, "caption")
+            }
+
             console.log("result is " + JSON.stringify(result, null, 3));
             response.send({
                 tokenstatus: 'valid',
@@ -712,6 +724,7 @@ router.get('/load-collab-timeline', function (request, response) {
     var authkey = request.headers.authkey;
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
     var requesteduuid = decodeURIComponent(request.query.requesteduuid);
+    var platform = request.query.platform;
 
     var limit = (config.envtype === 'PRODUCTION') ? 10 : 5;
     var connection;
@@ -731,6 +744,11 @@ router.get('/load-collab-timeline', function (request, response) {
             return userprofileutils.loadCollaborationTimeline(connection, requesteduuid, uuid, limit, lastindexkey);
         })
         .then(function (result) {
+
+            if(platform !== "android"){
+                result.items = utils.filterProfileMentions(result.items, "caption")
+            }
+
             console.log("result is " + JSON.stringify(result, null, 3));
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 

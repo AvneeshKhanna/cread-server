@@ -21,7 +21,7 @@ router.get('/load', function (request, response) {
     var searchtype = request.query.searchtype ? request.query.searchtype : 'USER';  //Could be of the type 'USER' | 'HASHTAG'
     var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : "";
 
-    var limit = config.envtype === 'PRODUCTION' ? 30 : 8;
+    var limit = config.envtype === 'PRODUCTION' ? 30 : 4;
     var specialcharregex = /[^@>()+\-*"~<]+/;   //Remove all special characters which can cause a bug in FULL TEXT SEARCH
 
     keyword = specialcharregex.exec(keyword) ? specialcharregex.exec(keyword).join("") : "";    // not-null ? array.join("") : ""
@@ -46,7 +46,7 @@ router.get('/load', function (request, response) {
                     data: {
                         searchtype: searchtype,
                         requestmore: false,
-                        lastindexky: "",
+                        lastindexkey: "",
                         items: []
                     }
                 });

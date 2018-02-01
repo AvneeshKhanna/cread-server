@@ -46,6 +46,12 @@ function getAllIndexes(arr, val){
     return indexes;
 }
 
+function getUniqueValues(arr) {
+    return arr.filter(function (value, index, self) {
+        return self.indexOf(value) === index;
+    });
+}
+
 /**
 * Sends an AWS Transactional SMS to the given phonenumber
 * */
@@ -180,6 +186,64 @@ function downloadFile(filebasepath, filename, downloadurl){
     });
 }
 
+/**
+ * This function is used to convert the profile mention formatted parts to simply names in texts for backward compatibility with
+ * profile mention
+ * */
+function filterProfileMentions(items, item_text_key) {
+
+    items.map(function (item) {
+        if(!!item[item_text_key]){
+            item[item_text_key] = convertProfileMentionToName(item[item_text_key]);
+        }
+    });
+
+    return items;
+}
+
+/**
+ * This function is used to convert the part of encoded profile mention string in the entire text to simply the name of the user for
+ * app versions that do not contain profile mention feature
+ *
+ * Profile Mention Pattern: @[(u:*****-*****-*****-*****+n:*****)] where '*' can alphanumeric or hyphen
+ * */
+function convertProfileMentionToName(text){
+
+    var mentionregex = /\@\[\(u:[\w\-]+\+n:([^\x00-\x7F]|\w|\s|\n)+\)\]/;  //To extract the profile mention part
+    var nameregex = /\+n:([^\x00-\x7F]|\w|\s|\n)+/;  //To further extract the name part from profile mention part
+
+    var match;
+
+    while ((match = mentionregex.exec(text)) !== null) {
+        var profilename = nameregex.exec(match[0])[0].split(":")[1];
+        text = text.replace(match[0], profilename);
+    }
+
+    return text;
+}
+
+/**
+* A function to extract all the unique UUIDs from Profile Mentions in the text
+* */
+function extractProfileMentionUUIDs(text) {
+
+    var mentionregex = /\@\[\(u:[\w\-]+\+n:([^\x00-\x7F]|\w|\s|\n)+\)\]/;  //To extract the profile mention part
+    var uuidregex = /u:[\w\-]+/;  //To further extract the uuid part from profile mention part
+
+    var match;
+    var uniqueuuids = [];
+
+    while ((match = mentionregex.exec(text)) !== null) {
+        console.log("profile mention match is " + JSON.stringify(match, null, 3));
+        text = text.replace(match[0].trim(), "");
+        var uuid = uuidregex.exec(match[0])[0].split(":")[1];
+        uniqueuuids.push(uuid);
+    }
+
+    console.log("uniqueuuids are " + JSON.stringify(uniqueuuids, null, 3));
+    return getUniqueValues(uniqueuuids);
+}
+
 module.exports = {
     updateQueryStringParameter: updateQueryStringParameter,
     sendAWSSMS: sendAWSSMS,
@@ -194,5 +258,7 @@ module.exports = {
     beginTransaction: beginTransaction,
     rollbackTransaction: rollbackTransaction,
     downloadFile: downloadFile,
-    getAllIndexes: getAllIndexes
+    getAllIndexes: getAllIndexes,
+    filterProfileMentions: filterProfileMentions,
+    extractProfileMentionUUIDs: extractProfileMentionUUIDs
 };

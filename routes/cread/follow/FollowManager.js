@@ -71,8 +71,7 @@ router.post('/on-click', function (request, response) {
             response.end();
         })
         .then(function () {
-            //TODO: For multiple values in followees array
-            return followutils.updateFollowDataForUpdates(connection, register, followees.toString(), uuid);
+            return followutils.updateFollowDataForUpdates(connection, register, followees, uuid);
         })
         .then(function () {
             if(register){

@@ -13,6 +13,7 @@ var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var commentutils = require('./CommentUtils');
 var utils = require('../utils/Utils');
 var entityutils = require('../entity/EntityUtils');
+var profilementionutils = require('../profile-mention/ProfileMentionUtils');
 var notify = require('../../notification-system/notificationFramework');
 
 var consts = require('../utils/Constants');
@@ -27,6 +28,7 @@ router.get('/load', function (request, response) {
     var entityid = decodeURIComponent(request.query.entityid);
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
     var loadAll = (decodeURIComponent(request.query.loadall) === "true"); //Whether to load all comments or top comments [true | false]
+    var platform = request.query.platform;
 
     var limit = (config.envtype === 'PRODUCTION') ? 20 : 12;
     var connection;
@@ -46,6 +48,11 @@ router.get('/load', function (request, response) {
             return commentutils.loadComments(connection, entityid, limit, lastindexkey, loadAll);
         })
         .then(function (result) {
+
+            if(platform !== "android"){
+                result.comments = utils.filterProfileMentions(result.comments, "comment");
+            }
+
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 
             if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
@@ -83,6 +90,7 @@ router.post('/load', function (request, response) {
     var page = request.body.page;
     var lastindexkey = request.body.lastindexkey;
     var loadAll = request.body.loadall; //Whether to load all comments or top comments [true | false]
+    var platform = request.body.platform;
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
 
@@ -109,6 +117,11 @@ router.post('/load', function (request, response) {
             }
         })
         .then(function (result) {
+
+            if(platform !== "android"){
+                result.comments = utils.filterProfileMentions(result.comments, "comment");
+            }
+
             console.log("result is " + JSON.stringify(result, null, 3));
             response.send({
                 tokenstatus: 'valid',
@@ -139,6 +152,7 @@ router.post('/add', function (request, response) {
     var comment = request.body.comment;
 
     var othercommenters = request.body.othercommenters; //An array of uuids of other commenters on this thread
+    var mentioneduuids = utils.extractProfileMentionUUIDs(comment);
 
     var connection;
     var requesterdetails;
@@ -216,10 +230,26 @@ router.post('/add', function (request, response) {
                 return notify.notificationPromise(new Array(notifuuids.collabuuid), notifData);
             }
         })
+        .then(function () {
+            if(mentioneduuids.length > 0  ){
+                return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-comment", uuid, mentioneduuids);
+            }
+        })
+        .then(function () {
+            if(mentioneduuids.length > 0  ){
+                var notifData = {
+                    message: requesterdetails.firstname + " " + requesterdetails.lastname + " mentioned you in a comment",
+                    category: "profile-mention-comment",
+                    entityid: entityid,
+                    persistable: "Yes",
+                    actorimage: utils.createSmallProfilePicUrl(uuid)
+                };
+                return notify.notificationPromise(mentioneduuids, notifData);
+            }
+        })
         .then(function () { //Add to Updates table for a notification to other commenters on this thread
             if(othercommenters && othercommenters.length > 0){
-                //TODO: Case for multiple commenters
-                return commentutils.updateCommentDataForUpdates(connection, othercommenters.toString(), uuid, entityid, "other-comment", false);
+                return commentutils.updateCommentDataForUpdates(connection, othercommenters, uuid, entityid, "other-comment", false);
             }
         })
         .then(function () {
@@ -279,10 +309,14 @@ router.post('/update', function (request, response) {
     var commid = request.body.commid;
     var comment = request.body.comment;
 
+    var mentioneduuids = utils.extractProfileMentionUUIDs(comment);
     var connection;
+    var requesterdetails;
+    var entityid;
 
     _auth.authValid(uuid, authkey)
-        .then(function () {
+        .then(function (details) {
+            requesterdetails = details;
             return config.getNewConnection();
         }, function () {
             response.send({
@@ -303,7 +337,32 @@ router.post('/update', function (request, response) {
                 }
             });
             response.end();
-            throw new BreakPromiseChainError();
+        })
+        .then(function () {
+            if(mentioneduuids.length > 0  ){
+                return commentutils.getEntityFromComment(connection, commid);
+            }
+            else {
+                throw new BreakPromiseChainError();
+            }
+        })
+        .then(function (result) {
+            entityid = result.entityid;
+            if(mentioneduuids.length > 0  ){
+                return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-comment", uuid, mentioneduuids);
+            }
+        })
+        .then(function () {
+            if(mentioneduuids.length > 0  ){
+                var notifData = {
+                    message: requesterdetails.firstname + " " + requesterdetails.lastname + " mentioned you in a comment",
+                    category: "profile-mention-comment",
+                    entityid: entityid,
+                    persistable: "Yes",
+                    actorimage: utils.createSmallProfilePicUrl(uuid)
+                };
+                return notify.notificationPromise(mentioneduuids, notifData);
+            }
         })
         .catch(function (err) {
             config.disconnect(connection);

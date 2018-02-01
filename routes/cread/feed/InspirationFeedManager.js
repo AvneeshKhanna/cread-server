@@ -43,6 +43,7 @@ router.get('/load', function (request, response) {
             return loadInspirationFeed(connection, limit, lastindexkey);
         })
         .then(function (result) {
+            console.log("results is " + JSON.stringify(result, null, 3));
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 
             if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
@@ -201,14 +202,15 @@ function loadInspirationFeed(connection, limit, lastindexkey) {
     lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT Entity.entityid, Entity.regdate, Entity.merchantable, Capture.capid AS captureid, Capture.uuid, User.firstname, User.lastname ' +
+        connection.query('SELECT Entity.entityid, Entity.regdate, Entity.merchantable, Capture.capid AS captureid, ' +
+            'Capture.uuid, Capture.shoid, User.firstname, User.lastname ' +
             'FROM Entity ' +
             'JOIN Capture ' +
             'USING(entityid) ' +
             'JOIN User ' +
             'ON User.uuid = Capture.uuid ' +
             'WHERE Entity.status = "ACTIVE" ' +
-            'AND Capture.shoid IS NULL ' +
+            //'AND Capture.shoid IS NULL ' +
             'AND Entity.regdate < ? ' +
             'ORDER BY Entity.regdate DESC ' +
             'LIMIT ? '/* +
@@ -221,7 +223,14 @@ function loadInspirationFeed(connection, limit, lastindexkey) {
                     rows.map(function (element) {
                         element.creatorname = element.firstname + ' ' + element.lastname;
                         element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
-                        element.captureurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
+
+                        if(element.shoid){  //Case where the capture was added on an existing writing as a collaboration
+                            element.captureurl = utils.createCaptureUrl(element.uuid, element.captureid);
+                        }
+                        else{   //Case where the capture was added as solo (without collaboration)
+                            element.captureurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
+                        }
+
                         element.merchantable = (element.merchantable !== 0);
 
                         if(element.firstname){
