@@ -183,6 +183,26 @@ function structureProductDetails(products) {
                 ];
                 product.deliverycharge = 1/*80*/;
             }
+            else if(product.type === 'JOURNAL'){
+                product.sizes = [
+                    'medium'
+                ];
+                product.colors = [
+                    'white',
+                    'black'
+                ];
+                product.price = [
+                    299
+                ];
+                product.quantity = [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ];
+                product.deliverycharge = 1/*80*/;
+            }
             else{   //COFFEE_MUG
                 product.sizes = [
                     'medium'
