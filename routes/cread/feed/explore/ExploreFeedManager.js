@@ -444,11 +444,14 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
         connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, Entity.for_explore, ' +
             'User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, ' +
             'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
+            '(CASE WHEN(EA.impact_score IS NULL) THEN 5 ELSE EA.impact_score END)/TIME_TO_SEC(TIMEDIFF(NOW(), Entity.regdate)) AS impact_weight, ' +
             'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
             'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
             'FROM Entity ' +
+            'LEFT JOIN EntityAnalytics EA ' +
+            'ON (EA.entityid = Entity.entityid) ' +
             'LEFT JOIN Short ' +
             'ON Short.entityid = Entity.entityid ' +
             'LEFT JOIN Capture ' +
@@ -465,7 +468,8 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
             'AND Entity.regdate < ? ' +
             'AND Entity.for_explore = 1 ' +
             'GROUP BY Entity.entityid ' +
-            'ORDER BY Entity.regdate DESC ' +
+            //'ORDER BY Entity.regdate DESC ' +
+            'ORDER BY impact_weight DESC ' +
             'LIMIT ? ', [uuid, uuid, lastindexkey, limit], function (err, rows) {
             if (err) {
                 reject(err);
