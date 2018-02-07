@@ -162,7 +162,7 @@ router.post('/place', function (request, response) {
         .then(function (result) {   //Add to Updates table for a notification to creator
             notifuuids = result;
             if(notifuuids.creatoruuid !== uuid){
-                return buyutils.updateBuyDataForUpdates(connection, notifuuids.creatoruuid, uuid, entityid, false);
+                return buyutils.updateBuyDataForUpdates(connection, notifuuids.creatoruuid, uuid, entityid, false, productid);
             }
         })
         .then(function () {   //Send a notification to the creator of this post
@@ -180,7 +180,7 @@ router.post('/place', function (request, response) {
         })
         .then(function () { //Add to Updates table for a notification to collaborator
             if(notifuuids.collabuuid && notifuuids.collabuuid !== uuid && notifuuids.collabuuid !== notifuuids.creatoruuid){
-                return buyutils.updateBuyDataForUpdates(connection, notifuuids.collabuuid, uuid, entityid, true);
+                return buyutils.updateBuyDataForUpdates(connection, notifuuids.collabuuid, uuid, entityid, true, productid);
             }
         })
         .then(function () { //Send a notification to the collaborator of this post
