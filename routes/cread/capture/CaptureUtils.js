@@ -12,7 +12,8 @@ var utils = require('../utils/Utils');
 /*var Canvas = require('canvas'),
     Image = Canvas.Image;*/
 
-var gm = require('gm');
+var sizeOf = require('image-size');
+var gm = require('gm').subClass({imageMagick: true});
 var rootpath = './images/uploads/capture/';
 
 /**
@@ -42,10 +43,15 @@ function downloadCapture(uuid, captureid, tofilepath){
     })
 }
 
+//TODO: GraphicsMagick not working. Need to find an alternative
 function addWatermarkToCapture(captureimg, watermark, captureid) {
     return new Promise(function (resolve, reject) {
 
-        var img_gm = gm(captureimg);
+        var image_dimen = sizeOf(captureimg);
+        var toresize = /*size.width */ image_dimen.width > 800;
+        resolve(toresize);
+
+        /*var img_gm = gm(captureimg);
 
         img_gm
             .size(function (err, size) {
@@ -56,8 +62,8 @@ function addWatermarkToCapture(captureimg, watermark, captureid) {
 
                     console.log("size " + JSON.stringify(size, null, 3));
 
-                    /*var img = new Image;
-                    img.src = image;*/
+                    var img = new Image;
+                    img.src = image;
 
                     var toresize = size.width > 800;
 
@@ -85,7 +91,7 @@ function addWatermarkToCapture(captureimg, watermark, captureid) {
                         resolve(toresize);
                     }
 
-                    /*fs.readFile(captureimg, function(err, image){
+                    /!*fs.readFile(captureimg, function(err, image){
                         if (err) {
                             reject(err);
                         }
@@ -125,14 +131,14 @@ function addWatermarkToCapture(captureimg, watermark, captureid) {
                                 });*!/
 
                         }
-                    });*/
+                    });*!/
 
-                    /*resolve({
+                    /!*resolve({
                         imagepath: image,
                         size: size
-                    });*/
+                    });*!/
                 }
-            });
+            });*/
     });
 }
 
