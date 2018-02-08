@@ -20,6 +20,7 @@ var connection = config.createConnection;
 
 var envconfig = require('config');
 var dbConfig = envconfig.get('rdsDB.dbConfig');
+var isProgressive = require('is-progressive');
 
 //--------------
 
@@ -330,6 +331,33 @@ router.post('/cross-pattern-explore', function (request, response) {
     feedutils.structureDataCrossPattern(rows)
         .then(function (rows) {
             response.send(rows);
+        });
+
+});
+
+router.post('/progressive-img', function (request, response) {
+
+    gm('./public/images/high-res-sample.jpg')
+        .strip() // Removes any profiles or comments. Work with pure data
+        .interlace('Line') // Line interlacing creates a progressive build up
+        .quality(80) // Quality is for you to decide
+        .write('./public/images/high-res-sample-progressive.jpg', function (err) {
+            if(err) {
+                console.error(err);
+                response.status(500).send(err).end()
+            }
+            else{
+
+                isProgressive.file('./public/images/high-res-sample.jpg').then(function(progressive) {
+                    console.log('Original image is progressive: ' + progressive);
+                });
+
+                isProgressive.file('./public/images/high-res-sample-progressive.jpg').then(function(progressive) {
+                    console.log('Converted image is is progressive: ' + progressive);
+                });
+
+                response.status(200).send('Converted').end()
+            }
         });
 
 });
