@@ -141,6 +141,9 @@ function loadUpdates(connection, uuid, lastindexkey, limit){
                                 element.entityurl = utils.createSmallCaptureUrl(element.actor_uuid, element.capid);
                             }
                         }
+                        else{
+                            element.entityurl = null
+                        }
 
                         if(element.actor_uuid){
                             element.actor_profilepicurl = utils.createSmallProfilePicUrl(element.actor_uuid);

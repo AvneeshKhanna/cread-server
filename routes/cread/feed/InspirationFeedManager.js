@@ -212,6 +212,7 @@ function loadInspirationFeed(connection, limit, lastindexkey) {
             'WHERE Entity.status = "ACTIVE" ' +
             //'AND Capture.shoid IS NULL ' +
             'AND Entity.regdate < ? ' +
+            'AND Entity.for_explore = 1 ' +
             'ORDER BY Entity.regdate DESC ' +
             'LIMIT ? '/* +
             'OFFSET ?'*/, [lastindexkey, limit/*, offset*/], function(err, rows){
