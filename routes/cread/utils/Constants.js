@@ -17,6 +17,8 @@ const royalty_percentage = 10;
 const markup = 33; //in percentage TODO: Update markup
 const minCashInAmt = (config_type === 'PRODUCTION') ? 10 : 2;    //TODO: Can change the amount based on team discussion
 
+const explore_algo_base_score = 5;  //Base score for each entity
+
 const share_time_interval = {
     same_share : {
         time_diff: config_type === 'PRODUCTION' ? 24 : 2,
@@ -60,5 +62,6 @@ module.exports = {
     required_unverified_checks: required_unverified_checks,
     required_verified_checks: required_verified_checks,
     royalty_percentage: royalty_percentage,
-    cache_time: cache_time
+    cache_time: cache_time,
+    explore_algo_base_score: explore_algo_base_score
 };

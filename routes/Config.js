@@ -22,7 +22,7 @@ var connection = mysql.createConnection({
     database: dbConfig.database,
     timezone: 'UTC',
     port: dbConfig.port,
-    multipleStatements: true,
+    multipleStatements: true,   //To run multiple queries within the same connection callback loop
     charset: 'utf8mb4_unicode_ci'
 });
 
@@ -34,7 +34,7 @@ var connectionPool = mysql.createPool({
     database: dbConfig.database,
     timezone: 'UTC',
     port: dbConfig.port,
-    multipleStatements: true,
+    multipleStatements: true,   //To run multiple queries within the same connection callback loop
     charset: 'utf8mb4_unicode_ci'
 });
 
