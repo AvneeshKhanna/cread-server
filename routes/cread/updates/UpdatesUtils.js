@@ -48,7 +48,7 @@ function addToUpdatesTable(connection, params){
 
         params = restructureParamsForAddUpdates(params);
 
-        connection.query('INSERT INTO Updates (uuid, actor_uuid, category, entityid, other_collaborator) ' +
+        connection.query('INSERT INTO Updates (uuid, actor_uuid, category, entityid, other_collaborator, productid) ' +
             'VALUES ?', [params], function (err, rows) {
             if (err) {
                 reject(err);
@@ -70,6 +70,10 @@ function restructureParamsForAddUpdates(params){
         params.other_collaborator = false
     }
 
+    if(!params.hasOwnProperty("productid")){
+        params.productid = null
+    }
+
     if(!(params.uuid instanceof Array)){
         params.uuid = new Array(params.uuid);
     }
@@ -82,7 +86,8 @@ function restructureParamsForAddUpdates(params){
             params.actor_uuid,
             params.category,
             params.entityid,
-            params.other_collaborator
+            params.other_collaborator,
+            params.productid
         ]);
     });
 
@@ -109,7 +114,8 @@ function loadUpdates(connection, uuid, lastindexkey, limit){
     lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT Updates.*, User.firstname, User.lastname, Entity.type, Short.shoid, Capture.capid ' +
+        connection.query('SELECT Updates.*, User.firstname, User.lastname, Entity.type, Short.shoid, Capture.capid, ' +
+            'Product.type AS producttype ' +
             'FROM Updates ' +
             'LEFT JOIN Entity ' +
             'ON (Entity.entityid = Updates.entityid) ' +
@@ -119,6 +125,8 @@ function loadUpdates(connection, uuid, lastindexkey, limit){
             'ON (Entity.entityid = Capture.entityid) ' +
             'JOIN User ' +
             'ON (Updates.actor_uuid = User.uuid) ' +
+            'LEFT JOIN Product ' +
+            'ON (Product.productid = Updates.productid) ' +
             'WHERE Updates.uuid = ? ' +
             'AND Updates.regdate < ? ' +
             'ORDER BY Updates.regdate DESC ' +
@@ -142,7 +150,7 @@ function loadUpdates(connection, uuid, lastindexkey, limit){
                             }
                         }
                         else{
-                            element.entityurl = null
+                            element.entityurl = null;
                         }
 
                         if(element.actor_uuid){
@@ -152,10 +160,6 @@ function loadUpdates(connection, uuid, lastindexkey, limit){
 
                         element.unread = (element.unread === 1);
                         element.other_collaborator = (element.other_collaborator === 1);
-
-                        if(element.hasOwnProperty('type')){
-                            delete element.type;
-                        }
 
                         if(element.hasOwnProperty('shoid')){
                             delete element.shoid;

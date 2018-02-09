@@ -164,7 +164,7 @@ function convertPaiseToINR(amount) {
     return parseFloat(amount / 100);
 }
 
-function updateBuyDataForUpdates(connection, uuid, actor_uuid, entityid, other_collaborator) {
+function updateBuyDataForUpdates(connection, uuid, actor_uuid, entityid, other_collaborator, productid) {
     return new Promise(function (resolve, reject) {
 
         var updateparams = {
@@ -172,7 +172,8 @@ function updateBuyDataForUpdates(connection, uuid, actor_uuid, entityid, other_c
             actor_uuid: actor_uuid,
             entityid: entityid,
             category: 'buy',
-            other_collaborator: other_collaborator
+            other_collaborator: other_collaborator,
+            productid: productid
         };
 
         updatesutils.addToUpdatesTable(connection, updateparams)
