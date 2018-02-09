@@ -1040,7 +1040,7 @@ router.post('/update-profile-picture', upload.single('display-pic'), function (r
             throw new BreakPromiseChainError();
         })
         .then(function (renamedpath) {
-            return createSmallProfilePic(renamedpath, uuid, 128, 128);
+            return userprofileutils.createSmallProfilePic(renamedpath, uuid, 128, 128);
         })
         .then(function (displaypicsmallpath) {
             return uploadProfilePicToS3(displaypicsmallpath, uuid, 'display-pic-small.jpg');
@@ -1124,29 +1124,6 @@ function uploadProfilePicToS3(filepath, uuid, filename) {
             }
         });
     });
-}
-
-function createSmallProfilePic(renamedpath, uuid, height, width) {
-    console.log("createSmallProfilePic() called renamedpath " + renamedpath);
-    return new Promise(function (resolve, reject) {
-        jimp.read(renamedpath, function (err, resized) {
-            if (err) {
-                reject(err);
-            }
-            else{
-                resized.resize(height, width)            // resize
-                    .quality(80)                    // set JPEG quality
-                    .write("./images/uploads/profile_picture/" + uuid + "-small.jpg", function (err) {
-                        if(err){
-                            reject(err);
-                        }
-                        else{
-                            resolve("./images/uploads/profile_picture/" + uuid + "-small.jpg");
-                        }
-                    });    // save
-            }
-        });
-    })
 }
 
 /*router.post('/update-client-bio', function (request, response) {

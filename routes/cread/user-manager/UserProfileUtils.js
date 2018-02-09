@@ -17,6 +17,8 @@ var config = require('../../Config');
 var AWS = config.AWS;
 var s3bucket = envconfig.get('s3.bucket');
 
+var imagesize = require('image-size');
+
 var feedutils = require('../feed/FeedUtils');
 
 function loadTimelineLegacy(connection, requesteduuid, requesteruuid, limit, page) {
@@ -659,11 +661,25 @@ function copyFacebookProfilePic(fbpicurl, uuid) {
         utils.downloadFile('./images/downloads/profilepic', uuid + '.jpg', fbpicurl)
             .then(function (downldpath) {
                 downloadpath = downldpath;
+
                 console.log("downldpath is " + JSON.stringify(downldpath, null, 3));
-                return uploadImageToS3(downloadpath, uuid, 'Profile', 'display-pic.jpg');
+
+                var imagedimensions = imagesize(downloadpath);
+
+                if(imagedimensions.width > 500){    //To resize
+                    return createSmallProfilePic(downloadpath, uuid, 128, 128);
+                }
+                else{   //Not to resize
+                    return new Promise(function (resolve, reject) {
+                        resolve(downloadpath);
+                    });
+                }
+            })
+            .then(function (smallpicpath) {
+                return uploadImageToS3(smallpicpath, uuid, 'Profile', 'display-pic-small.jpg');
             })
             .then(function () {
-                return uploadImageToS3(downloadpath, uuid, 'Profile', 'display-pic-small.jpg');
+                return uploadImageToS3(downloadpath, uuid, 'Profile', 'display-pic.jpg');
             })
             .then(function () {
                 resolve();
@@ -672,6 +688,32 @@ function copyFacebookProfilePic(fbpicurl, uuid) {
                 reject(err);
             });
     });
+}
+
+function createSmallProfilePic(renamedpath, uuid, height, width) {
+
+    console.log("createSmallProfilePic() called renamedpath " + renamedpath);
+    var writepath = "./images/uploads/profile_picture/" + uuid + "-small.jpg";
+
+    return new Promise(function (resolve, reject) {
+        jimp.read(renamedpath, function (err, resized) {
+            if (err) {
+                reject(err);
+            }
+            else{
+                resized.resize(height, width)            // resize
+                    .quality(80)                    // set JPEG quality
+                    .write(writepath, function (err) {
+                        if(err){
+                            reject(err);
+                        }
+                        else{
+                            resolve(writepath);
+                        }
+                    });    // save
+            }
+        });
+    })
 }
 
 module.exports = {
@@ -685,5 +727,6 @@ module.exports = {
     renameFile: renameFile,
     createSmallImage: createSmallImage,
     uploadImageToS3: uploadImageToS3,
-    copyFacebookProfilePic: copyFacebookProfilePic
+    copyFacebookProfilePic: copyFacebookProfilePic,
+    createSmallProfilePic: createSmallProfilePic
 };
