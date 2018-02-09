@@ -660,7 +660,7 @@ function copyFacebookProfilePic(fbpicurl, uuid) {
     return new Promise(function (resolve, reject) {
         utils.downloadFile('./images/downloads/profilepic', uuid + '.jpg', fbpicurl)
             .then(function (downldpath) {
-                downloadpath = downldpath;
+                downloadpath = downldpath; 
 
                 console.log("downldpath is " + JSON.stringify(downldpath, null, 3));
 
