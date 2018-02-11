@@ -20,6 +20,9 @@ var consts = require('../utils/Constants');
 var cache_time = consts.cache_time;
 
 router.get('/load', function (request, response) {
+
+    console.log("request.headers are " + JSON.stringify(request.headers, null, 3));
+
     var uuid = request.headers.uuid;
     var authkey = request.headers.authkey;
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
