@@ -12,6 +12,9 @@ var cors = require('cors');
 var notifscheduler = require('./routes/notification-system/NotificationScheduler');
 var monitorAccountActivity = require('./routes/cread/security/UserActivityMonitor').accountActivity;
 
+var exploredatahandler = require('./routes/cread/feed/explore/ExploreFeedDataHandler');
+exploredatahandler.explore_feed_processing_recurrent.start();    //To start cron based processing for explore feed data
+
 var routes = require('./routes/index');
 var users = require('./routes/users');
 var Auth = require('./routes/Authentication');

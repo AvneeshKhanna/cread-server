@@ -362,5 +362,21 @@ router.post('/progressive-img', function (request, response) {
 
 });
 
+router.get('/get-all-data', function (request, response) {
+
+    config.getNewConnection()
+        .then(function (connection) {
+            connection.query('SELECT * FROM Entity', null, function (err, data) {
+                if(err){
+                    response.status(500).send(err).end();
+                }
+                else{
+                    response.status(200).send("done").end();
+                }
+            });
+        });
+
+});
+
 module.exports = router;
 

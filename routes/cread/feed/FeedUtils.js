@@ -267,6 +267,75 @@ function structureDataCrossPattern(rows) {
 }
 
 /**
+ * Structure data for explore-feed grid where:
+ *      0th, 3th, 4th, 7th, 8th, 11th, 12th .. correspond to SHORT type elements
+ *      1st, 2nd, 5th, 6th, 9th, 10th, 13th, 14th .. correspond to CAPTURE type elements
+ * */
+function structureDataCrossPatternTopNew(rows) {
+    return new Promise(function (resolve, reject) {
+        var topPostsQueue = buckets.Queue();
+        var newPostsQueue = buckets.Queue();
+
+        var newPostsArray = rows.splice(50);
+        var topPostsArray = rows;   //As splice function is mutable
+
+        //Ordering top posts by last added
+        newPostsArray.sort(function (a, b) {
+            if(a.regdate > b.regdate){
+                return -1;
+            }
+            else{
+                return 1;
+            }
+        });
+
+        newPostsArray.map(function (newPost) {
+            newPostsQueue.enqueue(newPost);
+        });
+
+        topPostsArray.map(function (topPost) {
+            topPostsQueue.enqueue(topPost);
+        });
+
+        /*rows.map(function (element) {
+            if (element.type === 'SHORT') {
+                newPostsQueue.enqueue(element);
+            }
+            else if (element.type === 'CAPTURE') {
+                topPostsQueue.enqueue(element);
+            }
+        });*/
+
+        /*var sQSize = newPostsQueue.size();
+        var cQSize = topPostsQueue.size();*/
+
+        var patternLoopSize = 2 * 50/*(sQSize < cQSize) ? 2 * sQSize : 2 * cQSize*/;
+
+        var patternedRows = [];
+
+        for (var index = 0; index < patternLoopSize; index++) {
+            if(patternIndexSeriesIndicator(index)){
+                patternedRows.push(topPostsQueue.dequeue());
+            }
+            else{
+                patternedRows.push(newPostsQueue.dequeue());
+            }
+        }
+
+        /*if(!topPostsQueue.isEmpty()){
+            patternedRows = patternedRows.concat(topPostsQueue.toArray());
+        }
+        else if(!newPostsQueue.isEmpty()){
+            patternedRows = patternedRows.concat(newPostsQueue.toArray());
+        }*/
+
+        patternedRows = patternedRows.concat(newPostsQueue.toArray());
+
+        resolve(patternedRows);
+    });
+}
+
+/**
  * Returns 'true' for placing 'SHORT' and 'false' for placing 'CAPTURE'
  *
  * This function generates a series for input: 0,1,2,3,4... as
@@ -280,5 +349,6 @@ function patternIndexSeriesIndicator(index) {
 module.exports = {
     getCollaborationData: getCollaborationData,
     getCollaborationCounts: getCollaborationCounts,
-    structureDataCrossPattern: structureDataCrossPattern
+    structureDataCrossPattern: structureDataCrossPattern,
+    structureDataCrossPatternTopNew: structureDataCrossPatternTopNew
 };

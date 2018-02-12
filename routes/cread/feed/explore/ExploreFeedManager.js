@@ -20,6 +20,8 @@ var consts = require('../../utils/Constants');
 var campaignutils = require('../../campaign/CampaignUtils');
 var utils = require('../../utils/Utils');
 
+var exploredatahandler = require('./ExploreFeedDataHandler');
+
 var cache_time = consts.cache_time;
 var explore_algo_base_score = consts.explore_algo_base_score;
 
@@ -196,18 +198,21 @@ router.get('/load', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return loadFeed(connection, uuid, limit, lastindexkey);
+            return exploredatahandler.getEntityDataFromCache();
+        })
+        .then(function (edata) {
+            return loadFeed(connection, uuid, limit, edata, lastindexkey);
         })
         .then(function (result) {
 
-            if(platform !== "android"){
+            if (platform !== "android") {
                 result.feed = utils.filterProfileMentions(result.feed, "caption");
             }
 
             console.log("result is " + JSON.stringify(result, null, 3));
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 
-            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+            if (request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')) {
                 response.status(304).send().end();
             }
             else {
@@ -256,17 +261,20 @@ router.post('/load', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            if(page === 0 || page){
+            return exploredatahandler.getEntityDataFromCache();
+        })
+        .then(function (edata) {
+            if (page === 0 || page) {
                 console.log("loadFeedLegacy called");
                 return loadFeedLegacy(connection, uuid, limit, page);
             }
-            else{
-                return loadFeed(connection, uuid, limit, lastindexkey);
+            else {
+                return loadFeed(connection, uuid, limit, edata, lastindexkey);
             }
         })
         .then(function (result) {
 
-            if(platform !== "android"){
+            if (platform !== "android") {
                 result.feed = utils.filterProfileMentions(result.feed, "caption");
             }
 
@@ -314,7 +322,7 @@ function loadFeedLegacy(connection, uuid, limit, page) {
             else {
                 var totalcount = data[0].totalcount;
 
-                if(totalcount > 0){
+                if (totalcount > 0) {
                     connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, Entity.caption, User.uuid, ' +
                         'User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, Short.shoid, ' +
                         'Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
@@ -340,12 +348,12 @@ function loadFeedLegacy(connection, uuid, limit, page) {
                         'ORDER BY Entity.regdate DESC ' +
                         'LIMIT ? ' +
                         'OFFSET ?', [uuid, uuid, limit, offset], function (err, rows) {
-                        if(err){
+                        if (err) {
                             reject(err);
                         }
-                        else{
+                        else {
 
-                            if(rows.length > 0){
+                            if (rows.length > 0) {
 
                                 var feedEntities = rows.map(function (elem) {
                                     return elem.entityid;
@@ -356,10 +364,10 @@ function loadFeedLegacy(connection, uuid, limit, page) {
                                         return el.entityid;
                                     }).indexOf(element.entityid);*/
 
-                                    if(element.type === 'CAPTURE'){
+                                    if (element.type === 'CAPTURE') {
                                         element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
                                     }
-                                    else{
+                                    else {
                                         element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
                                     }
 
@@ -370,19 +378,19 @@ function loadFeedLegacy(connection, uuid, limit, page) {
                                     element.followstatus = element.binarycount > 0;
                                     element.merchantable = (element.merchantable !== 0);
 
-                                    if(element.hasOwnProperty('binarycount')){
+                                    if (element.hasOwnProperty('binarycount')) {
                                         delete element.binarycount;
                                     }
 
-                                    if(element.hasOwnProperty('hbinarycount')){
+                                    if (element.hasOwnProperty('hbinarycount')) {
                                         delete element.hbinarycount;
                                     }
 
-                                    if(element.firstname) {
+                                    if (element.firstname) {
                                         delete element.firstname;
                                     }
 
-                                    if(element.lastname) {
+                                    if (element.lastname) {
                                         delete element.lastname;
                                     }
                                     // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
@@ -404,7 +412,7 @@ function loadFeedLegacy(connection, uuid, limit, page) {
                                         reject(err);
                                     });
                             }
-                            else{
+                            else {
                                 resolve({
                                     requestmore: totalcount > (offset + limit),
                                     feed: []
@@ -425,7 +433,7 @@ function loadFeedLegacy(connection, uuid, limit, page) {
                         }
                     });
                 }
-                else{
+                else {
                     resolve({
                         requestmore: totalcount > (offset + limit),
                         feed: []
@@ -437,10 +445,25 @@ function loadFeedLegacy(connection, uuid, limit, page) {
     });
 }
 
-function loadFeed(connection, uuid, limit, lastindexkey) {
+function loadFeed(connection, uuid, limit, exploreentities, lastindexkey) {
     return new Promise(function (resolve, reject) {
 
-        lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
+        //lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
+        lastindexkey = (lastindexkey) ? Number(lastindexkey) : 0;
+
+        var entities;
+
+        if(lastindexkey + limit < exploreentities.length){
+            console.log("lastindexkey + limit < exploreentities.length");
+            entities = exploreentities.slice(lastindexkey, lastindexkey + limit).map(function (entity) {
+                return entity.entityid;
+            });
+        }
+        else{
+            entities = exploreentities.slice(lastindexkey, exploreentities.length).map(function (entity) {
+                return entity.entityid;
+            });
+        }
 
         connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, Entity.for_explore, ' +
             'User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, ' +
@@ -462,12 +485,13 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
             'ON Comment.entityid = Entity.entityid ' +
             'LEFT JOIN Follow ' +
             'ON User.uuid = Follow.followee ' +
-            'WHERE Entity.status = "ACTIVE" ' +
-            'AND Entity.regdate < ? ' +
-            'AND Entity.for_explore = 1 ' +
-            'GROUP BY Entity.entityid ' +
-            'ORDER BY Entity.regdate DESC ' +
-            'LIMIT ? ', [uuid, uuid, lastindexkey, limit], function (err, rows) {
+            // 'WHERE Entity.status = "ACTIVE" ' +
+            'WHERE Entity.entityid IN (?) ' +
+            //'AND Entity.regdate < ? ' +
+            //'AND Entity.for_explore = 1 ' +
+            'GROUP BY Entity.entityid ' //+
+            //'ORDER BY Entity.regdate DESC ' +
+            /*'LIMIT ? '*/, [uuid, uuid, entities/*, lastindexkey, limit*/], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -518,14 +542,17 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                             delete element.lastname;
                         }
 
-                        if(element.hasOwnProperty('for_explore')){
+                        if (element.hasOwnProperty('for_explore')) {
                             delete element.for_explore;
                         }
 
                         return element;
                     });
 
-                    lastindexkey = moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss');
+                    //TODO: Map data order from SQL query to the one from cache
+
+                    //lastindexkey = moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss');
+                    lastindexkey = lastindexkey + limit < exploreentities.length ? lastindexkey + limit : exploreentities.length - 1;
 
                     //--Retrieve Collaboration Data--
 
@@ -539,12 +566,12 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
 
                             return feedutils.getCollaborationCounts(connection, rows, feedEntities);
                         })
-                        .then(function (rows) {
+                        /*.then(function (rows) {
                             return feedutils.structureDataCrossPattern(rows);
-                        })
+                        })*/
                         .then(function (rows) {
                             resolve({
-                                requestmore: rows.length >= limit,
+                                requestmore: lastindexkey + limit < exploreentities.length/*rows.length >= limit*/,
                                 lastindexkey: lastindexkey,
                                 feed: rows
                             });
@@ -553,238 +580,16 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                             reject(err);
                         });
 
-                    /*var shcaptureids = rows.filter(function (element) {
-                        return !!(element.shcaptureid);
-                    }).map(function (element) {
-                        return element.shcaptureid;
-                    });
-
-                    console.log("shcaptureids are " + JSON.stringify(shcaptureids, null, 3));
-
-                    var cpshortids = rows.filter(function (element) {
-                        return !!(element.cpshortid);
-                    }).map(function (element) {
-                        return element.cpshortid;
-                    });
-
-                    console.log("cpshortids are " + JSON.stringify(cpshortids, null, 3));
-
-                    var collabdataquery;
-                    var collabsqlparams;
-                    var retrievecollabdata = true;
-
-                    if(cpshortids.length !== 0 && shcaptureids.length !== 0){
-                        collabdataquery = 'SELECT Entity.entityid, Short.shoid, Capture.capid, UserS.firstname AS sfirstname, ' +
-                            'UserS.lastname AS slastname, UserS.uuid AS suuid, UserC.firstname AS cfirstname, ' +
-                            'UserC.lastname AS clastname, UserC.uuid  AS cuuid ' +
-                            'FROM Entity ' +
-                            'LEFT JOIN Short ' +
-                            'ON Entity.entityid = Short.entityid ' +
-                            'LEFT JOIN Capture ' +
-                            'ON Entity.entityid = Capture.entityid ' +
-                            'LEFT JOIN User AS UserS ' +
-                            'ON Capture.uuid = UserS.uuid ' +
-                            'LEFT JOIN User AS UserC ' +
-                            'ON Short.uuid = UserC.uuid ' +
-                            'WHERE Entity.entityid IN (?) ' +
-                            'AND Capture.capid IN (?) ' +
-                            'OR Short.shoid IN (?)';
-                        collabsqlparams = [
-                            feedEntities,
-                            shcaptureids,
-                            cpshortids
-                        ];
-                    }
-                    else if(cpshortids.length === 0 && shcaptureids.length !== 0){
-                        collabdataquery = 'SELECT Entity.entityid, Short.shoid, Capture.capid, UserS.firstname AS sfirstname, ' +
-                            'UserS.lastname AS slastname, UserS.uuid AS suuid ' + //', UserC.firstname AS cfirstname, ' +
-                            // 'UserC.lastname AS clastname, UserC.uuid  AS cuuid ' +
-                            'FROM Entity ' +
-                            // 'LEFT JOIN Short ' +
-                            // 'ON Entity.entityid = Short.entityid ' +
-                            'LEFT JOIN Capture ' +
-                            'ON Entity.entityid = Capture.entityid ' +
-                            'LEFT JOIN User AS UserS ' +
-                            'ON Capture.uuid = UserS.uuid ' +
-                            /!*'LEFT JOIN User AS UserC ' +
-                            'ON Short.uuid = UserC.uuid ' +*!/
-                            'WHERE Entity.entityid IN (?) ' +
-                            'AND Capture.capid IN (?) '/!* +
-                            'OR Capture.shoid IN (?)'*!/;
-
-                        collabsqlparams = [
-                            feedEntities,
-                            shcaptureids/!*,
-                            cpshortids*!/
-                        ];
-                    }
-                    else if(cpshortids.length !== 0 && shcaptureids.length === 0){
-                        collabdataquery = 'SELECT Entity.entityid, Short.shoid, Capture.capid, UserC.firstname AS cfirstname, ' +
-                            'UserC.lastname AS clastname, UserC.uuid  AS cuuid ' +
-                            'FROM Entity ' +
-                            'LEFT JOIN Short ' +
-                            'ON Entity.entityid = Short.entityid ' +
-                            'LEFT JOIN User AS UserC ' +
-                            'ON Short.uuid = UserC.uuid ' +
-                            'WHERE Entity.entityid IN (?) ' +
-                            'AND Short.shoid IN (?)';
-                        collabsqlparams = [
-                            cpshortids
-                        ];
-                    }
-                    else{
-                        retrievecollabdata = false;
-                    }
-
-                    if(retrievecollabdata){
-                        //Retrieve collaboration data
-                        connection.query(collabdataquery, collabsqlparams, function(err, collab_rows){
-                            if(err){
-                                reject(err);
-                            }
-                            else{
-
-                                console.log("collab_rows are " + JSON.stringify(collab_rows, null, 3));
-
-                                collab_rows.forEach(function (collab) {
-
-                                    var row_element;
-
-                                    if(collab.shoid){   //Case where rows[i] is of type CAPTURE & collab_rows[i] is of type SHORT
-                                        row_element = rows[rows.map(function (e) {
-                                            if(!e.cpshortid){
-                                                e.cpshortid = null;
-                                            }
-                                            return e.cpshortid;
-                                        }).indexOf(collab.shoid)];
-
-                                        row_element.cpshort = {
-                                            firstname: collab.cfirstname,
-                                            lastname: collab.clastname,
-                                            uuid: collab.cuuid
-                                        }
-                                    }
-                                    else{   //Case where rows[i] is of type SHORT & collab_rows[i] is of type CAPTURE
-                                        row_element = rows[rows.map(function (e) {
-                                            if(!e.shcaptureid){
-                                                e.shcaptureid = null;
-                                            }
-                                            return e.shcaptureid;
-                                        }).indexOf(collab.capid)];
-
-                                        row_element.shcapture = {
-                                            firstname: collab.sfirstname,
-                                            lastname: collab.slastname,
-                                            uuid: collab.suuid
-                                        }
-                                    }
-                                });
-
-                                resolve({
-                                    requestmore: rows.length >= limit,//totalcount > (offset + limit),
-                                    lastindexkey: moment(rows[rows.length - 1].regdate).format('YYYY-MM-DD hh:mm:ss'),
-                                    feed: rows
-                                });
-                            }
-                        });
-                    }
-                    else{
-                        resolve({
-                            requestmore: rows.length >= limit,//totalcount > (offset + limit),
-                            lastindexkey: moment(rows[rows.length - 1].regdate).format('YYYY-MM-DD hh:mm:ss'),
-                            feed: rows
-                        });
-                    }*/
-
                 }
                 else {  //Case of no data
                     resolve({
-                        requestmore: rows.length >= limit,
+                        requestmore: lastindexkey + limit < exploreentities.length/*rows.length >= limit*/,
                         lastindexkey: null,
                         feed: []
                     });
                 }
-
-                /*connection.query('SELECT entityid, uuid ' +
-                    'FROM HatsOff ' +
-                    'WHERE uuid = ? ' +
-                    'AND entityid IN (?) ' +
-                    'GROUP BY entityid', [uuid, feedEntities], function(err, hdata){
-                    if(err){
-                        reject(err);
-                    }
-                    else{
-                        rows.map(function (element) {
-                            var thisEntityIndex = hdata.map(function (el) {
-                                return el.entityid;
-                            }).indexOf(element.entityid);
-
-                            if(element.type === 'CAPTURE'){
-                                element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
-                            }
-                            else{
-                                element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
-                            }
-
-                            element.creatorname = element.firstname + ' ' + element.lastname;
-
-                            element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
-                            element.hatsoffstatus = thisEntityIndex !== -1;
-                            element.followstatus = element.binarycount > 0;
-                            element.merchantable = (element.merchantable !== 0);
-
-                            if(element.binarycount){
-                                delete element.binarycount;
-                            }
-
-                            if(element.firstname) {
-                                delete element.firstname;
-                            }
-
-                            if(element.lastname) {
-                                delete element.lastname;
-                            }
-                            // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
-
-                            return element;
-                        });
-
-                        resolve({
-                            requestmore: totalcount > (offset + limit),
-                            feed: rows
-                        });
-                    }
-                });*/
             }
         });
-
-        /*connection.query('SELECT COUNT(*) AS totalcount ' +
-            'FROM Entity ' +
-            'LEFT JOIN Short ' +
-            'ON Short.entityid = Entity.entityid ' +
-            'LEFT JOIN Capture ' +
-            'ON Capture.entityid = Entity.entityid ' +
-            'JOIN User ' +
-            'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
-            'WHERE Entity.status = "ACTIVE" ', null, function (err, data) {
-            if (err) {
-                reject(err);
-            }
-            else {
-                var totalcount = data[0].totalcount;
-
-                if(totalcount > 0){
-
-                }
-                else{
-                    resolve({
-                        requestmore: totalcount > (offset + limit),
-                        feed: []
-                    });
-                }
-
-            }
-        });*/
     });
 
 }
