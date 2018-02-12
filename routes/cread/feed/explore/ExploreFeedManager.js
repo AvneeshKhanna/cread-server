@@ -318,7 +318,7 @@ function loadFeedLegacy(connection, uuid, limit, page) {
             'WHERE Entity.status = "ACTIVE" ', null, function (err, data) {
             if (err) {
                 reject(err);
-            }
+            } 
             else {
                 var totalcount = data[0].totalcount;
 
