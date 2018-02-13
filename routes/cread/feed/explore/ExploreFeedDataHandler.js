@@ -14,7 +14,8 @@ const mCache = new NodeCache();
 var CronJob = require('cron').CronJob;
 
 var explore_feed_processing_recurrent = new CronJob({
-    cronTime: '00 */30 * * * *', //second | minute | hour | day-of-month | month | day-of-week
+    //Runs every 15 minutes
+    cronTime: '00 */15 * * * *', //second | minute | hour | day-of-month | month | day-of-week
     onTick: function() {
         /*
          * Runs every half-hour at 00:00
