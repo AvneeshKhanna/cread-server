@@ -161,6 +161,8 @@ app.use('/entity-share-link', require('./routes/cread/entity/share/EntityShareMa
 app.use('/search', require('./routes/cread/search/SearchManager'));
 app.use('/hashtag', require('./routes/cread/hashtag/HashTagManager'));
 app.use('/updates', require('./routes/cread/updates/UpdatesManager'));
+app.use('/chat-convo', require('./routes/cread/chat/ChatConversationManager'));
+app.use('/chat-list', require('./routes/cread/chat/ChatListManager'));
 
 //-dashboard-
 app.use('/campaign-details', require('./routes/cread/dsbrd/campaign-details/CampaignDetails'));

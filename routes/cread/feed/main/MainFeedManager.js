@@ -151,7 +151,7 @@ router.get('/load', function (request, response) {
 
     var uuid = request.headers.uuid;
     var authkey = request.headers.authkey;
-    var lastindexkey = decodeURIComponent(request.query.lastindexkey);
+    var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : null;
     var platform = request.query.platform;
 
     var limit = (config.envtype === 'PRODUCTION') ? 10 : 8;

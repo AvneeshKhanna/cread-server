@@ -40,7 +40,6 @@ function sortTopNewEntitiesForExplore() {
             return feedutils.structureDataCrossPatternTopNew(edata);
         })
         .then(function (patternedRows) {
-            console.log("patternedRows saving to cache - " + JSON.stringify(patternedRows, null, 3));
             return saveEntityDataToCache(patternedRows);
         })
         .then(function () {
