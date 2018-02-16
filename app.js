@@ -136,6 +136,7 @@ app.use('/share-campaign', require('./routes/cread/share/ShareCampaign'));
 app.use('/check-campaign', require('./routes/cread/check/CheckCampaign'));
 app.use('/user-profile', require('./routes/cread/user-manager/UserProfileManager'));
 app.use('/user-access', require('./routes/cread/user-manager/UserAccessManager'));
+app.use('/user-events', require('./routes/cread/user-manager/events/UserEventsManager'));
 app.use('/redeem-from-wallet', require('./routes/cread/user-manager/payments/RedeemFromWallet'));
 app.use('/givers-manager', require('./routes/cread/givers/GiversManager'));
 app.use('/user-interests', require('./routes/cread/user-manager/interests/InterestsManager'));
