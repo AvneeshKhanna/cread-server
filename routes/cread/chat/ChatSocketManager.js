@@ -14,9 +14,6 @@ function initialiseSocket(io){
         var chat_msg_conn;
         var delete_msg_conn;
 
-        console.log('Connected with socketid ' + socket.id);
-        console.log('Connected with uuid ' + socket.handshake.query['uuid']);
-
         chatconvoutils.addToConnectedUsers(socket);
 
         console.log("connectedusers are " + JSON.stringify(chatconvoutils.getConnectedUsers(), null, 3));
@@ -32,7 +29,7 @@ function initialiseSocket(io){
                 .then(function () {
                     if(chatconvoutils.isUserConnected(message.to)){ //User is online i.e. is on the chat screen
 
-                        console.log("isUserConnected block called");
+                        console.log("User online. Send a message");
 
                         //TODO: Change loop mechanism to make it Promise callback compatible
                         chatconvoutils.getUserSockets(message.to).forEach(function (usersocket) {
@@ -40,7 +37,6 @@ function initialiseSocket(io){
                             console.log("getUserSockets block called");
 
                             return new Promise(function (resolve, reject) {
-
                                 io.to(usersocket)
                                     .emit('send-message', message);
 
@@ -50,10 +46,10 @@ function initialiseSocket(io){
                     }
                     else{   //User is offline i.e is not on the chat screen
                         //TODO: Send a push notification
-                        console.log("No user present!");
+                        console.log("User offline. Send a notification!");
 
                         /*var notifData = {
-                            message: message.text,
+                            message: message.body,
                             persistable: "No",
                             category: "personal-chat"
                         };
@@ -117,7 +113,7 @@ function initialiseSocket(io){
 
         socket.on('disconnect', function () {
             chatconvoutils.deleteSocket(socket.id);
-            console.log('User deleted. Connected users now are ' + JSON.stringify(chatconvoutils.getConnectedUsers(), null, 3))
+            console.log('User disconnected. Connected users now are ' + JSON.stringify(chatconvoutils.getConnectedUsers(), null, 3))
         });
 
     });
