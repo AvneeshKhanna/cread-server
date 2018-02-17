@@ -24,9 +24,9 @@ function getUserSockets(uuid){
     });
 }
 
-function deleteSocket(socketid) {
+function deleteSocket(socket) {
     connectedusers.forEach(function (connecteduser) {
-        if(connecteduser.socketid === socketid){
+        if(connecteduser.socketid === socket.id){
             connectedusers.splice(connectedusers.indexOf(connecteduser), 1);
         }
     });
@@ -52,7 +52,8 @@ function addMessageToDb(connection, message) {
         messageid: uuidgen.v4(),
         from_uuid: message.from_uuid,
         to_uuid: message.to_uuid,
-        text: message.text
+        body: message.body,
+        chat_id: message.chat_id
     };
 
     return new Promise(function (resolve, reject) {
@@ -88,7 +89,7 @@ function loadChatMessages(connection, chat_id, limit, lastindexkey) {
         connection.query('SELECT * ' +
             'FROM Message ' +
             'WHERE chat_id = ? ' +
-            'AND regdate > ? ' +
+            'AND regdate < ? ' +
             'ORDER BY regdate DESC' +
             'LIMIT ?', [chat_id, lastindexkey, limit], function (err, rows) {
             if (err) {
@@ -123,12 +124,6 @@ function loadChatMessages(connection, chat_id, limit, lastindexkey) {
                         messages: rows
                     });
                 }
-
-                resolve({
-                    requestmore: rows.length >= limit,
-                    lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
-                    messages: rows
-                });
             }
         });
     });

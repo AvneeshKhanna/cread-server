@@ -14,6 +14,7 @@ function initialiseSocket(io){
         var chat_msg_conn;
         var delete_msg_conn;
 
+        //Adding the user to the list of active socket connections
         chatconvoutils.addToConnectedUsers(socket);
 
         console.log("connectedusers are " + JSON.stringify(chatconvoutils.getConnectedUsers(), null, 3));
@@ -24,15 +25,15 @@ function initialiseSocket(io){
             config.getNewConnection()
                 .then(function (conn) {
                     chat_msg_conn = conn;
-                    //return chatconvoutils.addMessageToDb(chat_msg_conn, message);
+                    return chatconvoutils.addMessageToDb(chat_msg_conn, message);
                 })
                 .then(function () {
-                    if(chatconvoutils.isUserConnected(message.to)){ //User is online i.e. is on the chat screen
+                    if(chatconvoutils.isUserConnected(message.to_uuid)){ //User is online i.e. is on the chat screen
 
                         console.log("User online. Send a message");
 
                         //TODO: Change loop mechanism to make it Promise callback compatible
-                        chatconvoutils.getUserSockets(message.to).forEach(function (usersocket) {
+                        chatconvoutils.getUserSockets(message.to_uuid).forEach(function (usersocket) {
 
                             console.log("getUserSockets block called");
 
@@ -112,7 +113,7 @@ function initialiseSocket(io){
         });
 
         socket.on('disconnect', function () {
-            chatconvoutils.deleteSocket(socket.id);
+            chatconvoutils.deleteSocket(socket);
             console.log('User disconnected. Connected users now are ' + JSON.stringify(chatconvoutils.getConnectedUsers(), null, 3))
         });
 

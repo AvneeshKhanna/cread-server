@@ -18,6 +18,7 @@ var consts = require('../utils/Constants');
 var cache_time = consts.cache_time;
 
 router.get('/load-messages', function (request, response) {
+
     var chat_id = request.query.chat_id;
     var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : null;
 

@@ -66,12 +66,14 @@ router.get('/list-all', function (request, response) {
     var uuid = request.headers.uuid;
     var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : null;
 
+    var limit = (config.envtype === 'PRODUCTION') ? 25 : 10;
+
     var connection;
 
     config.getNewConnection()
         .then(function (conn) {
             connection = conn;
-            return chatlistutils.loadAllChats(connection, uuid);
+            return chatlistutils.loadAllChats(connection, uuid, limit, lastindexkey);
         })
         .then(function (result) {
             console.log("result is " + JSON.stringify(result, null, 3));
@@ -103,7 +105,7 @@ router.get('/list-all', function (request, response) {
             }
         });
 
-    response.status(200).send({
+    /*response.status(200).send({
         tokenstatus: 'valid',
         data: {
             chatlist: dummy,
@@ -111,7 +113,7 @@ router.get('/list-all', function (request, response) {
             lastindexkey: null
         }
     });
-    response.end();
+    response.end();*/
 
 });
 
