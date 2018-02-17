@@ -52,7 +52,7 @@ function getNewConnection() {
 }
 
 function disconnect(connection) {
-    if(connection.state !== "disconnected"){
+    if(connection && connection.state !== "disconnected"){
         console.log('connection released');
         connection.release();
     }

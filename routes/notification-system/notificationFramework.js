@@ -17,6 +17,14 @@ var userstbl_ddb = envconfig.get('dynamoDB.users_table');
 
 var config = require('../Config');
 
+const iosValidCategories = [
+    "general",
+    "follow",
+    "hatsoff",
+    "comment",
+    "collaborate"
+];
+
 function getfcmTokens(userIds, callback) {
     var serverfcmTokens = new Array();
     var counter = 0;
@@ -136,7 +144,8 @@ function sendPlatformSpecificMessage(registrationTokens, notificationData, maste
                 var message;
                 console.log('platform is ' + platform);
                 //Formulating notification message according to device platform
-                if(platform === 'IOS'){
+                if(platform === 'IOS' && iosValidCategories.includes(notificationData['category'])){
+
                     message = new gcm.Message({
                         data: notificationData,
                         notification: {
@@ -150,7 +159,7 @@ function sendPlatformSpecificMessage(registrationTokens, notificationData, maste
                         data: notificationData
                     });
                 }
-                else{   //Case when token is invalid (platform is undefined)
+                else{   //Case when token is invalid (platform is undefined) OR platform is IOS with an invalid notification category
                     if(index === (registrationTokens.length - 1)){
                         console.log('mastercallback called');
                         mastercallback();
