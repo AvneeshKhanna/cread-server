@@ -5,6 +5,7 @@
 
 var connectedusers = [];
 var moment = require('moment');
+var uuidgen = require('uuid');
 
 function isUserConnected(uuid){
     /*return connectedusers.filter(function (connecteduser) {
@@ -47,17 +48,17 @@ function getConnectedUsers() {
 }
 
 function addMessageToDb(connection, message) {
-
-    var messageparams = {
-        messageid: uuidgen.v4(),
-        from_uuid: message.from_uuid,
-        to_uuid: message.to_uuid,
-        body: message.body,
-        chat_id: message.chat_id
-    };
-
     return new Promise(function (resolve, reject) {
-        connection.query('INSERT INTO Message VALUES ?', [messageparams], function (err, rows) {
+
+        var messageparams = {
+            messageid: uuidgen.v4(),
+            from_uuid: message.from_uuid,
+            to_uuid: message.to_uuid,
+            body: message.body,
+            chatid: message.chatid
+        };
+
+        connection.query('INSERT INTO Message SET ?', [messageparams], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -81,17 +82,23 @@ function deleteMessageFromDb(connection, message) {
     });
 }
 
-function loadChatMessages(connection, chat_id, limit, lastindexkey) {
+function loadChatMessages(connection, from_uuid, to_uuid, limit, lastindexkey) {
 
     lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
+
+    var chat_uuids = [
+        from_uuid,
+        to_uuid
+    ];
 
     return new Promise(function (resolve, reject) {
         connection.query('SELECT * ' +
             'FROM Message ' +
-            'WHERE chat_id = ? ' +
+            'WHERE from_uuid IN (?) ' +
+            'AND to_uuid IN (?) ' +
             'AND regdate < ? ' +
-            'ORDER BY regdate DESC' +
-            'LIMIT ?', [chat_id, lastindexkey, limit], function (err, rows) {
+            'ORDER BY regdate DESC ' +
+            'LIMIT ?', [chat_uuids, chat_uuids, lastindexkey, limit], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -104,11 +111,15 @@ function loadChatMessages(connection, chat_id, limit, lastindexkey) {
                     //Reversing the order of messages as they will be displayed from bottom to top
                     rows.sort(function (a, b) {
                         if(a.regdate > b.regdate){
-                            return -1
+                            return 1
                         }
                         else{
-                            return 1;
+                            return -1;
                         }
+                    });
+
+                    rows.map(function (element) {
+                        element.unread = (element.unread === 1);
                     });
 
                     resolve({
@@ -130,6 +141,22 @@ function loadChatMessages(connection, chat_id, limit, lastindexkey) {
 
 }
 
+function isReceiverFollowingSender(connection, msg_sender_uuid, msg_receiver_uuid){
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT Follow.followid ' +
+            'FROM Follow ' +
+            'WHERE followee = ? ' +
+            'AND follower = ?', [msg_sender_uuid, msg_receiver_uuid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(!!rows[0]);
+            }
+        });
+    });
+}
+
 module.exports = {
     isUserConnected: isUserConnected,
     getUserSockets: getUserSockets,
@@ -138,5 +165,6 @@ module.exports = {
     getConnectedUsers: getConnectedUsers,
     addMessageToDb: addMessageToDb,
     deleteMessageFromDb: deleteMessageFromDb,
-    loadChatMessages: loadChatMessages
+    loadChatMessages: loadChatMessages,
+    isReceiverFollowingSender: isReceiverFollowingSender
 };

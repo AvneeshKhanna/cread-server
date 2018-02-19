@@ -19,7 +19,8 @@ var cache_time = consts.cache_time;
 
 router.get('/load-messages', function (request, response) {
 
-    var chat_id = request.query.chat_id;
+    var from_uuid = request.query.from_uuid;
+    var to_uuid = request.query.to_uuid;
     var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : null;
 
     var connection;
@@ -28,7 +29,7 @@ router.get('/load-messages', function (request, response) {
     config.getNewConnection()
         .then(function (conn) {
             connection = conn;
-            return chatconvoutils.loadChatMessages(connection, chat_id, limit, lastindexkey);
+            return chatconvoutils.loadChatMessages(connection, from_uuid, to_uuid, limit, lastindexkey);
         })
         .then(function (result) {
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
