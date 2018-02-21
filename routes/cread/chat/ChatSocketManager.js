@@ -37,7 +37,7 @@ function initialiseSocket(io){
                 })
                 .then(function () {
                     console.log("message received is " + JSON.stringify(message, null, 3));
-                    if(!!message.chatid){   //Case where this is the first message of the chat
+                    if(!message.chatid){   //Case where this is the first message of the chat
                         return chatlistutils.createNewChat(chat_msg_conn, message);
                     }
                 })
@@ -71,7 +71,7 @@ function initialiseSocket(io){
                         });*/
 
                         async.eachSeries(chatconvoutils.getUserSockets(message.to_uuid), function (usersocket, callback) {
-                            console.log("async block for getUserSockets called");
+                            console.log("async block for getUserSockets called with socket " + usersocket);
                             io.to(usersocket)
                                 .emit('send-message', message);
                             callback();

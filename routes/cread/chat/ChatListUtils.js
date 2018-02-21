@@ -158,6 +158,7 @@ function createNewChat(connection, message) {
                 //Chat exists already. Skip creating a new chat
                 if(rows.length > 0){
                     resolve(rows[0].chatid);
+                    console.log('Chat already exists');
                 }
                 //Chat doesn't exists. Create new chat
                 else{
