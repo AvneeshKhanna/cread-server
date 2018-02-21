@@ -17,12 +17,22 @@ function saveUserEvents(connection, user_events) {
 }
 
 function restructureForBulkInsert(user_events){
+
+    var masterArr = [];
+
     user_events.forEach(function (event) {
-        event = new Array(event);
-        return event;
+
+        var subArr = [
+            event['actor_uuid'],
+            event['entityid'],
+            event['event_type'],
+            event['regdate']
+        ];
+
+        masterArr.push(subArr);
     });
 
-    return user_events;
+    return masterArr;
 }
 
 module.exports = {

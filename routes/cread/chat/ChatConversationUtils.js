@@ -157,6 +157,35 @@ function isReceiverFollowingSender(connection, msg_sender_uuid, msg_receiver_uui
     });
 }
 
+function sendChatMessageNotification(connection, message){
+    return new Promise(function (resolve, reject) {
+        isReceiverFollowingSender(connection, message.from_uuid, message.to_uuid)
+            .then(function (isFollowing) {
+                if(isFollowing){
+
+                    console.log('Personal chat notification sent');
+
+                    var notifData = {
+                        message: message.body,
+                        persistable: "No",
+                        category: "personal-chat"
+                    };
+
+                    return notify.notificationPromise(new Array(message.to_uuid), notifData);
+                }
+                else{
+                    console.log('Message would be a request');
+                }
+            })
+            .then(function () {
+                resolve();
+            })
+            .catch(function (err) {
+                reject(err);
+            });
+    });
+}
+
 module.exports = {
     isUserConnected: isUserConnected,
     getUserSockets: getUserSockets,
@@ -166,5 +195,5 @@ module.exports = {
     addMessageToDb: addMessageToDb,
     deleteMessageFromDb: deleteMessageFromDb,
     loadChatMessages: loadChatMessages,
-    isReceiverFollowingSender: isReceiverFollowingSender
+    sendChatMessageNotification: sendChatMessageNotification
 };

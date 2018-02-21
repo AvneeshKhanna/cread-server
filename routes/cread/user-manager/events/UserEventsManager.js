@@ -17,12 +17,14 @@ var moment = require('moment');
 
 router.post('/save', function (request, response) {
 
+    console.log("request is " + JSON.stringify(request.body, null, 3));
+
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var user_events = request.body.user_events;
 
     user_events.map(function (event) {
-        event.regdate = moment(event.regdate, moment.ISO_8601).format('YYYY-MM-DD HH:mm:ss');
+        event.regdate = moment(event.regdate, moment.ISO_8601).utc().format('YYYY-MM-DD HH:mm:ss');
         return event;
     });
 

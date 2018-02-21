@@ -57,7 +57,6 @@ function initialiseSocket(io){
 
                         console.log("User online. Send a message");
 
-                        //TODO: Change loop mechanism to make it Promise callback compatible
                         /*chatconvoutils.getUserSockets(message.to_uuid).forEach(function (usersocket) {
 
                             console.log("getUserSockets block called");
@@ -90,9 +89,8 @@ function initialiseSocket(io){
 
                     }
                     else{   //User is offline i.e is not on the chat screen
-                        //TODO: Send a push notification
                         console.log("User offline. Send a notification!");
-                        return sendChatMessageNotification(chat_msg_conn, message)
+                        return chatconvoutils.sendChatMessageNotification(chat_msg_conn, message)
                     }
                 })
                 .then(function () {
@@ -158,34 +156,6 @@ function initialiseSocket(io){
 
 }
 
-function sendChatMessageNotification(connection, message){
-    return new Promise(function (resolve, reject) {
-        chatconvoutils.isReceiverFollowingSender(connection, message.from_uuid, message.to_uuid)
-            .then(function (isFollowing) {
-                if(isFollowing){
-
-                    console.log('Personal chat notification sent');
-
-                    var notifData = {
-                        message: message.body,
-                        persistable: "No",
-                        category: "personal-chat"
-                    };
-
-                    return notify.notificationPromise(new Array(message.to_uuid), notifData);
-                }
-                else{
-                    console.log('Message would be a request');
-                }
-            })
-            .then(function () {
-                resolve();
-            })
-            .catch(function (err) {
-                reject(err);
-            });
-    });
-}
 
 module.exports = {
     initialiseSocket: initialiseSocket

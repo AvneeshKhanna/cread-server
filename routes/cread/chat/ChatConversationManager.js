@@ -32,6 +32,9 @@ router.get('/load-messages', function (request, response) {
             return chatconvoutils.loadChatMessages(connection, from_uuid, to_uuid, limit, lastindexkey);
         })
         .then(function (result) {
+
+            console.log("result is " + JSON.stringify(result, null, 3));
+
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 
             if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
