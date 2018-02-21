@@ -7,6 +7,8 @@ var connectedusers = [];
 var moment = require('moment');
 var uuidgen = require('uuid');
 
+var utils = require('../utils/Utils');
+
 function isUserConnected(uuid){
     /*return connectedusers.filter(function (connecteduser) {
         return connecteduser.uuid === uuid
@@ -168,7 +170,11 @@ function sendChatMessageNotification(connection, message){
                     var notifData = {
                         message: message.body,
                         persistable: "No",
-                        category: "personal-chat"
+                        category: "personal-chat",
+                        chatid: message.chatid,
+                        from_name: message.from_name,
+                        from_uuid: message.from_uuid,
+                        from_profilepicurl: utils.createSmallProfilePicUrl(message.from_uuid)
                     };
 
                     return notify.notificationPromise(new Array(message.to_uuid), notifData);

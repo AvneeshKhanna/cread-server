@@ -42,7 +42,12 @@ router.post('/save', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return usereventsutils.saveUserEvents(connection, user_events);
+            if(user_events.length > 0){
+                return usereventsutils.saveUserEvents(connection, user_events);
+            }
+            else{
+                console.log('No user events present');
+            }
         })
         .then(function () {
             response.send({
@@ -68,5 +73,38 @@ router.post('/save', function (request, response) {
         })
 
 });
+
+function getUsersForNotifications(){
+    var connection;
+    var allUsers = [];
+
+    config.getNewConnection()
+        .then(function (conn) {
+            connection = conn;
+            return usereventsutils.getRecentPosters(connection);
+        })
+        .then(function (recentPosters) {
+
+            recentPosters.forEach(function (recentPoster) {
+                allUsers.push({
+                    uuid: recentPoster,
+                    notif_category: 'CREATE'
+                });
+            });
+
+            return usereventsutils.getRecentCollaborators(connection, recentPosters);
+        })
+        .then(function (recentCollaborators) {
+
+            recentCollaborators.forEach(function (recentCollaborator) {
+                allUsers.push({
+                    uuid: recentCollaborator,
+                    notif_category: 'COLLABORATE'
+                });
+            });
+
+        })
+
+}
 
 module.exports = router;
