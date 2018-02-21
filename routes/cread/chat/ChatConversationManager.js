@@ -24,7 +24,7 @@ router.get('/load-messages', function (request, response) {
     var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : null;
 
     var connection;
-    var limit = (config.envtype === 'PRODUCTION') ? 25 : 15;
+    var limit = (config.envtype === 'PRODUCTION') ? 30 : 15;
 
     config.getNewConnection()
         .then(function (conn) {

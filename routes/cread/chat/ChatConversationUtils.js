@@ -8,6 +8,7 @@ var moment = require('moment');
 var uuidgen = require('uuid');
 
 var utils = require('../utils/Utils');
+var notify = require('../../notification-system/notificationFramework');
 
 function isUserConnected(uuid){
     /*return connectedusers.filter(function (connecteduser) {

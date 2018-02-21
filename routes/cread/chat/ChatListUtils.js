@@ -18,15 +18,18 @@ function loadPermittedChats(connection, uuid, limit, lastindexkey) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT UserChats.*, CONCAT_WS(" ", User.firstname, User.lastname) AS receivername ' +
             //'CASE WHEN(Follow.followid IS NOT NULL) THEN "FOLLOWING" ELSE "NOT_FOLLOWING" END AS followstatus ' +
-            'FROM (SELECT Chat.chatid, Message.unread, MAX(Message.regdate) AS regdate, Message.body AS lastmessage, ' +
-            'CASE WHEN(Chat.initiator_id = ?) THEN Chat.acceptor_id ELSE Chat.initiator_id END AS receiveruuid ' +
-            'FROM Chat ' +
-            'LEFT JOIN Message ' +
-            'ON (Chat.chatid = Message.chatid) ' +
-            'WHERE (Chat.initiator_id = ? ' +
-            'OR Chat.acceptor_id = ?) ' +
-            'GROUP BY Chat.chatid ' +
-            'ORDER BY regdate DESC) AS UserChats ' +
+            'FROM ' +
+                '(SELECT Chat.chatid, CASE WHEN(Message.from_uuid = ?) THEN 0 ELSE Message.unread END AS unread, ' + //Sub query
+                'Message.regdate, Message.body AS lastmessage, ' +
+                'CASE WHEN(Chat.initiator_id = ?) THEN Chat.acceptor_id ELSE Chat.initiator_id END AS receiveruuid ' +
+                'FROM Chat ' +
+                'LEFT JOIN Message ' +
+                'ON (Chat.chatid = Message.chatid) ' +
+                'JOIN (SELECT MAX(Message.regdate) AS regdate FROM Chat JOIN Message USING(chatid) GROUP BY Chat.chatid) AS Msg ' + //Nested sub query
+                'ON (Message.regdate = Msg.regdate) ' +
+                'WHERE (Chat.initiator_id = ? ' +
+                'OR Chat.acceptor_id = ?) ' +
+                'GROUP BY Chat.chatid) AS UserChats ' +
             'JOIN User ' +
             'ON (User.uuid = UserChats.receiveruuid) ' +
             'LEFT JOIN Follow ' +
@@ -35,7 +38,7 @@ function loadPermittedChats(connection, uuid, limit, lastindexkey) {
             'AND Follow.follower = ? ' +    //To load only those chats where the user is following the other person
             'GROUP BY UserChats.chatid ' +
             'ORDER BY UserChats.regdate DESC ' +
-            'LIMIT ?', [uuid, uuid, uuid, lastindexkey, uuid, limit], function (err, rows) {
+            'LIMIT ?', [uuid, uuid, uuid, uuid, lastindexkey, uuid, limit], function (err, rows) {
             if (err) {
                 reject(err);
             }
