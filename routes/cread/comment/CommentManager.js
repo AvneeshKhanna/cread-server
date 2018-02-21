@@ -49,13 +49,13 @@ router.get('/load', function (request, response) {
         })
         .then(function (result) {
 
-            if(platform !== "android"){
+            if (platform !== "android") {
                 result.comments = utils.filterProfileMentions(result.comments, "comment");
             }
 
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 
-            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+            if (request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')) {
                 response.status(304).send().end();
             }
             else {
@@ -70,10 +70,10 @@ router.get('/load', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
@@ -109,16 +109,16 @@ router.post('/load', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            if(page === 0 || page){
+            if (page === 0 || page) {
                 return commentutils.loadCommentsLegacy(connection, entityid, limit, page, loadAll);
             }
-            else{
+            else {
                 return commentutils.loadComments(connection, entityid, limit, lastindexkey, loadAll);
             }
         })
         .then(function (result) {
 
-            if(platform !== "android"){
+            if (platform !== "android") {
                 result.comments = utils.filterProfileMentions(result.comments, "comment");
             }
 
@@ -132,10 +132,10 @@ router.post('/load', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
@@ -206,48 +206,48 @@ router.post('/add', function (request, response) {
         })
         .then(function (result) {   //Add to Updates table for a notification to creator
             notifuuids = result;
-            if(notifuuids.creatoruuid !== uuid){
+            if (notifuuids.creatoruuid !== uuid) {
                 return commentutils.updateCommentDataForUpdates(connection, notifuuids.creatoruuid, uuid, entityid, "comment", false);
             }
         })
         .then(function () {   //Send a notification to the creator of this post
-            if(notifuuids.creatoruuid !== uuid){    //Send notification only when the two users involved are different
+            if (notifuuids.creatoruuid !== uuid) {    //Send notification only when the two users involved are different
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " has commented on your post",
                     category: "comment",
                     entityid: entityid,
                     persistable: "Yes",
-                    other_collaborator : false,
+                    other_collaborator: false,
                     actorimage: utils.createSmallProfilePicUrl(uuid)
                 };
                 return notify.notificationPromise(new Array(notifuuids.creatoruuid), notifData);
             }
         })
         .then(function () { //Add to Updates table for a notification to collaborator
-            if(notifuuids.collabuuid && notifuuids.collabuuid !== uuid && notifuuids.collabuuid !== notifuuids.creatoruuid){
+            if (notifuuids.collabuuid && notifuuids.collabuuid !== uuid && notifuuids.collabuuid !== notifuuids.creatoruuid) {
                 return commentutils.updateCommentDataForUpdates(connection, notifuuids.collabuuid, uuid, entityid, "comment", true);
             }
         })
         .then(function () { //Send a notification to the collaborator of this post
-            if(notifuuids.collabuuid && notifuuids.collabuuid !== uuid && notifuuids.collabuuid !== notifuuids.creatoruuid){    //Send notification only when the two users involved are different
+            if (notifuuids.collabuuid && notifuuids.collabuuid !== uuid && notifuuids.collabuuid !== notifuuids.creatoruuid) {    //Send notification only when the two users involved are different
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " has commented on a post inspired by yours",
                     category: "comment",
                     entityid: entityid,
                     persistable: "Yes",
-                    other_collaborator : true,
+                    other_collaborator: true,
                     actorimage: utils.createSmallProfilePicUrl(uuid)
                 };
                 return notify.notificationPromise(new Array(notifuuids.collabuuid), notifData);
             }
         })
         .then(function () {
-            if(mentioneduuids.length > 0  ){
+            if (mentioneduuids.length > 0) {
                 return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-comment", uuid, mentioneduuids);
             }
         })
         .then(function () {
-            if(mentioneduuids.length > 0  ){
+            if (mentioneduuids.length > 0) {
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " mentioned you in a comment",
                     category: "profile-mention-comment",
@@ -259,12 +259,12 @@ router.post('/add', function (request, response) {
             }
         })
         .then(function () { //Add to Updates table for a notification to other commenters on this thread
-            if(othercommenters && othercommenters.length > 0){
+            if (othercommenters && othercommenters.length > 0) {
                 return commentutils.updateCommentDataForUpdates(connection, othercommenters, uuid, entityid, "other-comment", false);
             }
         })
         .then(function () {
-            if(othercommenters && othercommenters.length > 0){ //Send a notification to other commenters on this thread
+            if (othercommenters && othercommenters.length > 0) { //Send a notification to other commenters on this thread
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " also commented on a post you commented on",
                     category: "other-comment",
@@ -280,10 +280,10 @@ router.post('/add', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
@@ -303,11 +303,11 @@ function retrieveEntityUserDetails(connection, entityid) {
             'ON Short.entityid = Entity.entityid ' +
             'JOIN User ' +
             'ON (User.uuid = Short.uuid OR User.uuid = Capture.uuid)  ' +
-            'WHERE Entity.entityid = ?', [entityid], function(err, rows){
-            if(err){
+            'WHERE Entity.entityid = ?', [entityid], function (err, rows) {
+            if (err) {
                 reject(err);
             }
-            else{
+            else {
                 resolve(rows[0].uuid);
             }
         });
@@ -350,7 +350,7 @@ router.post('/update', function (request, response) {
             response.end();
         })
         .then(function () {
-            if(mentioneduuids.length > 0  ){
+            if (mentioneduuids.length > 0) {
                 return commentutils.getEntityFromComment(connection, commid);
             }
             else {
@@ -359,12 +359,12 @@ router.post('/update', function (request, response) {
         })
         .then(function (result) {
             entityid = result.entityid;
-            if(mentioneduuids.length > 0  ){
+            if (mentioneduuids.length > 0) {
                 return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-comment", uuid, mentioneduuids);
             }
         })
         .then(function () {
-            if(mentioneduuids.length > 0  ){
+            if (mentioneduuids.length > 0) {
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " mentioned you in a comment",
                     category: "profile-mention-comment",
@@ -377,10 +377,10 @@ router.post('/update', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
@@ -422,10 +422,10 @@ router.post('/delete', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
