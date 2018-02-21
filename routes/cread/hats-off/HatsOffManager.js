@@ -49,7 +49,20 @@ router.post('/on-click', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
+            return utils.beginTransaction(connection);
+        })
+        .then(function () {
             return hatsoffutils.registerHatsOff(connection, register, uuid, entityid);
+        })
+        .then(function () {
+            if(register){
+                return entityutils.updateLastEventTimestamp(connection, entityid, uuid);
+            }
+        })
+        .then(function () {
+            return utils.commitTransaction(connection, undefined);
+        }, function (err) {
+            return utils.rollbackTransaction(connection, undefined, err);
         })
         .then(function () {
             response.send({

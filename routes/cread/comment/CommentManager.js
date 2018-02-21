@@ -173,6 +173,12 @@ router.post('/add', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
+            return utils.beginTransaction(connection);
+        })
+        .then(function () {
+            return entityutils.updateLastEventTimestamp(connection, entityid, uuid);
+        })
+        .then(function () {
             return commentutils.addComment(connection, entityid, comment, uuid);
         })
         .then(function (commid) {
@@ -189,6 +195,11 @@ router.post('/add', function (request, response) {
                 }
             });
             response.end();
+        })
+        .then(function () {
+            return utils.commitTransaction(connection);
+        }, function (err) {
+            return utils.rollbackTransaction(connection, undefined, err)
         })
         .then(function () {
             return entityutils.getEntityUsrDetailsForNotif(connection, entityid);

@@ -247,6 +247,9 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
             return updateCaptureDB(connection, captureid, uuid, watermark, merchantable, caption, entityid, shoid, captureparamas)
         })
         .then(function () {
+            return entityutils.updateLastEventTimestampViaType(connection, shoid, uuid);
+        })
+        .then(function () {
             if(uniquehashtags && uniquehashtags.length > 0){
                 return hashtagutils.addHashtagsForEntity(connection, uniquehashtags, entityid);
             }

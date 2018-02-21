@@ -432,6 +432,57 @@ function removeEntityFromExplore(connection, entityid){
     });
 }
 
+/**
+ * Updates the last_event_time in Entity table to current time if the creator of the entityid is not the same
+ * performing the event
+ * */
+function updateLastEventTimestamp(connection, entityid, uuid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('UPDATE Entity ' +
+            'LEFT JOIN Short ' +
+            'ON (Short.entityid = Entity.entityid) ' +
+            'LEFT JOIN Capture ' +
+            'ON (Capture.entityid = Entity.entityid) ' +
+            'SET Entity.last_event_time = NOW()' +
+            'WHERE Entity.entityid = ?' +
+            'AND ((Short.uuid IS NOT NULL AND Short.uuid <> ?) OR (Capture.uuid IS NOT NULL AND Capture.uuid <> ?)) ', [entityid, uuid, uuid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
+/**
+ * Updates the last_event_time in Entity table to current time if the creator of the entityid is not the same
+ * performing the event. Executes this function based on the shoid (or capid) provided
+ *
+ * @param typeid shoid or capid whichever is provided
+ * */
+function updateLastEventTimestampViaType(connection, typeid, uuid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('UPDATE Entity ' +
+            'LEFT JOIN Short ' +
+            'ON (Short.entityid = Entity.entityid) ' +
+            'LEFT JOIN Capture ' +
+            'ON (Capture.entityid = Entity.entityid) ' +
+            'SET Entity.last_event_time = NOW()' +
+            'WHERE (Short.shoid = ? OR Capture.capid = ?) ' +
+            'AND ((Short.uuid IS NOT NULL AND Short.uuid <> ?) OR (Capture.uuid IS NOT NULL AND Capture.uuid <> ?)) ',
+            [typeid, typeid, uuid, uuid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
 module.exports = {
     updateEntityCollabDataForUpdates: updateEntityCollabDataForUpdates,
     loadEntityData: loadEntityData,
@@ -441,5 +492,7 @@ module.exports = {
     getEntityDetailsForPrint: getEntityDetailsForPrint,
     getEntityUsrDetailsForNotif: getEntityUsrDetailsForNotif,
     deactivateEntity: deactivateEntity,
-    removeEntityFromExplore: removeEntityFromExplore
+    removeEntityFromExplore: removeEntityFromExplore,
+    updateLastEventTimestamp: updateLastEventTimestamp,
+    updateLastEventTimestampViaType: updateLastEventTimestampViaType
 };

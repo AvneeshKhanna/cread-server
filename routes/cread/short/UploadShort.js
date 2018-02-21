@@ -106,6 +106,11 @@ router.post('/', upload.single('short-image'), function (request, response) {
             return shortutils.addShortToDb(connection, shortsqlparams, entityparams);
         })
         .then(function () {
+            if(shortsqlparams.capid){   //Case of collaboration
+                return entityutils.updateLastEventTimestampViaType(connection, shortsqlparams.capid, uuid);
+            }
+        })
+        .then(function () {
             if (uniquehashtags && uniquehashtags.length > 0) {
                 return hashtagutils.addHashtagsForEntity(connection, uniquehashtags, entityid);
             }
