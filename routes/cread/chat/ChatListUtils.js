@@ -127,11 +127,12 @@ function loadChatRequests(connection, uuid, limit, lastindexkey) {
     });
 }
 
-function markChatAsRead(connection, chatid) {
+function markChatAsRead(connection, chatid, requesteruuid) {
     return new Promise(function (resolve, reject) {
         connection.query('UPDATE Message ' +
             'SET unread = false ' +
-            'WHERE chatid = ?', [chatid], function (err, rows) {
+            'WHERE chatid = ? ' +
+            'AND from_uuid <> ?', [chatid, requesteruuid], function (err, rows) {
             if (err) {
                 reject(err);
             }

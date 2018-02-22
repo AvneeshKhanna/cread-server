@@ -175,7 +175,7 @@ function sendChatMessageNotification(connection, message){
                         chatid: message.chatid,
                         from_name: message.from_name,
                         from_uuid: message.from_uuid,
-                        from_profilepicurl: utils.createSmallProfilePicUrl(message.from_uuid)
+                        from_profilepicurl: message.from_profilepicurl
                     };
 
                     return notify.notificationPromise(new Array(message.to_uuid), notifData);

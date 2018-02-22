@@ -21,6 +21,7 @@ var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var utils = require('../utils/Utils');
 var useraccessutils = require('./UserAccessUtils');
 var userprofileutils = require('./UserProfileUtils');
+var notify = require('../../notification-system/notificationFramework');
 
 router.post('/sign-in', function (request, response) {
 
@@ -106,6 +107,8 @@ router.post('/sign-up', function (request, response) {
     }
 
     var connection;
+    var new_user_uuid;
+    var fb_friends_uuids;
 
     config.getNewConnection()
         .then(function (conn) {
@@ -143,6 +146,28 @@ router.post('/sign-up', function (request, response) {
         })
         .then(function (result) {
             return userprofileutils.copyFacebookProfilePic(userdetails.profilepicurl, result.uuid);
+        })
+        .then(function (uuid) { //Sending a notification to the new user's Facebook friends who are on Cread
+            new_user_uuid = uuid;
+            return userprofileutils.getUserFbFriendsViaAppToken(connection, new_user_uuid)
+        })
+        .then(function (fuuids) {
+            fb_friends_uuids = fuuids;
+            if(fb_friends_uuids.length > 0){
+                return useraccessutils.updateNewFacebookUserDataForUpdates(connection, fb_friends_uuids, new_user_uuid, "fb-friend-new");
+            }
+        })
+        .then(function () {
+            if(fb_friends_uuids.length > 0){
+                var notifData = {
+                    persistable: "Yes",
+                    message: "Your Facebook friend " + userdetails.firstname + " " + userdetails.lastname +  " is now on Cread",
+                    category: "fb-friend-new",
+                    actorid: new_user_uuid,
+                    actorimage: utils.createSmallProfilePicUrl(new_user_uuid)
+                };
+                return notify.notificationPromise(fb_friends_uuids, notifData);
+            }
         })
         .then(function () {
             throw new BreakPromiseChainError(); //To disconnect server connection

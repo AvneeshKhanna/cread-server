@@ -74,7 +74,8 @@ router.post('/save', function (request, response) {
 
 });
 
-function getUsersForNotifications(){
+function sendEngagementNotificationsForUsers(){
+
     var connection;
     var allUsers = [];
 
@@ -103,7 +104,27 @@ function getUsersForNotifications(){
                 });
             });
 
+            if(allUsers.length > 0){
+                return usereventsutils.assignNotificationDataToUsers(connection, allUsers);
+            }
+            else{
+                console.log('No users to send notification to');
+                throw new BreakPromiseChainError();
+            }
         })
+        .then(function (notif_data_users) {
+            if(notif_data_users.length > 0){
+                return usereventsutils.sendCustomNotificationEachUser(notif_data_users);
+            }
+            else {
+                console.log('No notification data for users');
+            }
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            console.error(err);
+        });
 
 }
 

@@ -228,7 +228,7 @@ router.post('/mark-as-read', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return chatlistutils.markChatAsRead(connection, chatid);
+            return chatlistutils.markChatAsRead(connection, chatid, uuid);
         })
         .then(function () {
             response.status(200).send({

@@ -28,7 +28,9 @@ function initialiseSocket(io){
         socket.on('send-message', function (message) {
 
             var chat_msg_conn;
+
             message.unread = !chatconvoutils.isUserConnected(message.to_uuid);
+            message.from_profilepicurl = utils.createSmallProfilePicUrl(message.from_uuid);
 
             config.getNewConnection()
                 .then(function (conn) {

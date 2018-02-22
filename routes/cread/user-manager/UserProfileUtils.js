@@ -577,6 +577,49 @@ function loadAllFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl){
     });
 }
 
+function getFbAppAccessToken() {
+    return new Promise(function (resolve, reject) {
+
+        var graphurl = 'https://graph.facebook.com/v2.10/'
+            + 'oauth/access_token?client_id='
+            + config['cread-fb-app-id']
+            + '&client_secret='
+            + config['cread-fb-app-secret']
+            + '&grant_type=client_credentials';
+
+        requestclient(graphurl, function (error, res, body) {
+
+            if(error){
+                reject(error);
+            }
+            else if(JSON.parse(body).error){
+                reject(JSON.parse(body).error);
+            }
+            else{
+                console.log("body-response " + JSON.stringify(JSON.parse(body), null, 3));
+                var response = JSON.parse(body);
+
+                resolve(response.access_token);
+            }
+        });
+    });
+}
+
+function getUserFbFriendsViaAppToken(connection, uuid) {
+    return new Promise(function (resolve, reject) {
+        getFbAppAccessToken()
+            .then(function (fb_app_access_token) {
+                return loadAllFacebookFriends(connection, uuid, fb_app_access_token);
+            })
+            .then(function (fuuids) {
+                resolve(fuuids);
+            })
+            .catch(function (err) {
+                reject(err);
+            });
+    });
+}
+
 /**
  * npm package multer uploads an image to the server with a randomly generated guid without an extension. Hence,
  * the uploaded file needs to be renamed
@@ -682,7 +725,7 @@ function copyFacebookProfilePic(fbpicurl, uuid) {
                 return uploadImageToS3(downloadpath, uuid, 'Profile', 'display-pic.jpg');
             })
             .then(function () {
-                resolve();
+                resolve(uuid);
             })
             .catch(function (err) {
                 reject(err);
@@ -723,6 +766,7 @@ module.exports = {
     loadProfileInformation: loadProfileInformation,
     loadFacebookFriends: loadFacebookFriends,
     loadAllFacebookFriends: loadAllFacebookFriends,
+    getUserFbFriendsViaAppToken: getUserFbFriendsViaAppToken,
     updateProfile: updateProfile,
     renameFile: renameFile,
     createSmallImage: createSmallImage,
