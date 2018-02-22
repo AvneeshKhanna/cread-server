@@ -605,11 +605,11 @@ function getFbAppAccessToken() {
     });
 }
 
-function getUserFbFriendsViaAppToken(connection, uuid) {
+function getUserFbFriendsViaAppToken(connection, user_fbid, uuid) {
     return new Promise(function (resolve, reject) {
         getFbAppAccessToken()
             .then(function (fb_app_access_token) {
-                return loadAllFacebookFriends(connection, uuid, fb_app_access_token);
+                return loadAllFacebookFriends(connection, uuid, user_fbid, fb_app_access_token);
             })
             .then(function (fuuids) {
                 resolve(fuuids);
