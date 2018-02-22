@@ -445,34 +445,25 @@ function loadFeedLegacy(connection, uuid, limit, page) {
     });
 }
 
-function loadFeed(connection, uuid, limit, exploreentities, lastindexkey) {
+function loadFeed(connection, uuid, limit, lastindexkey) {
     return new Promise(function (resolve, reject) {
 
         //lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
         lastindexkey = (lastindexkey) ? Number(lastindexkey) : 0;
 
-        var entities;
-
-        if(lastindexkey + limit < exploreentities.length){
-            console.log("lastindexkey + limit < exploreentities.length");
-            entities = exploreentities.slice(lastindexkey, lastindexkey + limit).map(function (entity) {
-                return entity.entityid;
-            });
-        }
-        else{
-            entities = exploreentities.slice(lastindexkey, exploreentities.length).map(function (entity) {
-                return entity.entityid;
-            });
-        }
-
-        connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, Entity.for_explore, ' +
+        connection.query('SELECT (@rownr := @rownr + 1) AS row_no, master.* ' +
+            'FROM ' +
+            '(SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, Entity.for_explore, ' +
             'User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, ' +
             'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
+            '(CASE WHEN(EA.impact_score IS NULL) THEN ? ELSE EA.impact_score END) AS impact_weight, ' +
             'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
             'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
             'FROM Entity ' +
+            'LEFT JOIN EntityAnalytics EA ' +
+            'ON (EA.entityid = Entity.entityid) ' +
             'LEFT JOIN Short ' +
             'ON Short.entityid = Entity.entityid ' +
             'LEFT JOIN Capture ' +
@@ -485,23 +476,21 @@ function loadFeed(connection, uuid, limit, exploreentities, lastindexkey) {
             'ON Comment.entityid = Entity.entityid ' +
             'LEFT JOIN Follow ' +
             'ON User.uuid = Follow.followee ' +
-            // 'WHERE Entity.status = "ACTIVE" ' +
-            'WHERE Entity.entityid IN (?) ' +
+            'WHERE Entity.status = "ACTIVE" ' +
             //'AND Entity.regdate < ? ' +
-            //'AND Entity.for_explore = 1 ' +
-            'GROUP BY Entity.entityid ' //+
+            'AND Entity.for_explore = 1 ' +
+            'GROUP BY Entity.entityid ' +
             //'ORDER BY Entity.regdate DESC ' +
-            /*'LIMIT ? '*/, [uuid, uuid, entities/*, lastindexkey, limit*/], function (err, rows) {
+            'ORDER BY impact_weight DESC) master ' +
+            'CROSS JOIN (SELECT @rownr := 0) AS dummy ' +
+            'HAVING row_no > ? ' +
+            'LIMIT ?;', [explore_algo_base_score, uuid, uuid, lastindexkey, limit], function (err, rows) {
             if (err) {
                 reject(err);
             }
             else {
 
                 if (rows.length > 0) {
-
-                    /*rows = rows.filter(function (el) {
-                        return (el.for_explore === 1);
-                    });*/
 
                     var feedEntities = rows.map(function (elem) {
                         return elem.entityid;
@@ -542,17 +531,14 @@ function loadFeed(connection, uuid, limit, exploreentities, lastindexkey) {
                             delete element.lastname;
                         }
 
-                        if (element.hasOwnProperty('for_explore')) {
+                        if(element.hasOwnProperty('for_explore')){
                             delete element.for_explore;
                         }
 
                         return element;
                     });
 
-                    //TODO: Map data order from SQL query to the one from cache
-
-                    //lastindexkey = moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss');
-                    lastindexkey = lastindexkey + limit < exploreentities.length ? lastindexkey + limit : exploreentities.length - 1;
+                    lastindexkey = rows[rows.length - 1].row_no;//moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss');
 
                     //--Retrieve Collaboration Data--
 
@@ -571,7 +557,7 @@ function loadFeed(connection, uuid, limit, exploreentities, lastindexkey) {
                         })*/
                         .then(function (rows) {
                             resolve({
-                                requestmore: lastindexkey + limit < exploreentities.length/*rows.length >= limit*/,
+                                requestmore: rows.length >= limit,
                                 lastindexkey: lastindexkey,
                                 feed: rows
                             });
@@ -583,7 +569,7 @@ function loadFeed(connection, uuid, limit, exploreentities, lastindexkey) {
                 }
                 else {  //Case of no data
                     resolve({
-                        requestmore: lastindexkey + limit < exploreentities.length/*rows.length >= limit*/,
+                        requestmore: rows.length >= limit,
                         lastindexkey: null,
                         feed: []
                     });
