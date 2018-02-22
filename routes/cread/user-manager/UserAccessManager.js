@@ -149,7 +149,7 @@ router.post('/sign-up', function (request, response) {
         })
         .then(function (uuid) { //Sending a notification to the new user's Facebook friends who are on Cread
             new_user_uuid = uuid;
-            return userprofileutils.getUserFbFriendsViaAppToken(connection, new_user_uuid)
+            return userprofileutils.getUserFbFriendsViaAppToken(connection, userdetails.fbid, new_user_uuid)
         })
         .then(function (fuuids) {
             fb_friends_uuids = fuuids;

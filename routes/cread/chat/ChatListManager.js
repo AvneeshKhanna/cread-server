@@ -179,6 +179,8 @@ router.get('/requests-count', function (request, response) {
 
     var uuid = request.headers.uuid;
 
+    console.log("headers are " + JSON.stringify(request.headers, null, 3));
+
     var connection;
 
     config.getNewConnection()
@@ -187,6 +189,7 @@ router.get('/requests-count', function (request, response) {
             return chatlistutils.getChatRequestsCount(connection, uuid);
         })
         .then(function (count) {
+            console.log("request count is " + JSON.stringify(count, null, 3));
             response.send({
                 requestcount: count
             });

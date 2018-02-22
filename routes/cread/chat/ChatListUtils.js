@@ -25,8 +25,8 @@ function loadPermittedChats(connection, uuid, limit, lastindexkey) {
                 'FROM Chat ' +
                 'LEFT JOIN Message ' +
                 'ON (Chat.chatid = Message.chatid) ' +
-                'JOIN (SELECT MAX(Message.regdate) AS regdate FROM Chat JOIN Message USING(chatid) GROUP BY Chat.chatid) AS Msg ' + //Nested sub query
-                'ON (Message.regdate = Msg.regdate) ' +
+                'JOIN (SELECT MAX(Message.regdate) AS regdate, Message.chatid FROM Chat JOIN Message USING(chatid) GROUP BY Chat.chatid) AS Msg ' + //Nested sub query
+                'ON (Message.regdate = Msg.regdate AND Message.chatid = Msg.chatid) ' +
                 'WHERE (Chat.initiator_id = ? ' +
                 'OR Chat.acceptor_id = ?) ' +
                 'GROUP BY Chat.chatid) AS UserChats ' +
@@ -77,15 +77,20 @@ function loadChatRequests(connection, uuid, limit, lastindexkey) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT UserChats.*, CONCAT_WS(" ", User.firstname, User.lastname) AS receivername ' +
             //'CASE WHEN(Follow.followid IS NOT NULL) THEN "FOLLOWING" ELSE "NOT_FOLLOWING" END AS followstatus ' +
-            'FROM (SELECT Chat.chatid, Message.unread, MAX(Message.regdate) AS regdate, Message.body AS lastmessage, ' +
-            'CASE WHEN(Chat.initiator_id = ?) THEN Chat.acceptor_id ELSE Chat.initiator_id END AS receiveruuid ' +
-            'FROM Chat ' +
-            'LEFT JOIN Message ' +
-            'ON (Chat.chatid = Message.chatid) ' +
-            'WHERE (Chat.initiator_id = ? ' +
-            'OR Chat.acceptor_id = ?) ' +
-            'GROUP BY Chat.chatid ' +
-            'ORDER BY regdate DESC) AS UserChats ' +
+            'FROM ' +
+                '(SELECT Chat.chatid, CASE WHEN(Message.from_uuid = ?) THEN 0 ELSE Message.unread END AS unread, ' +
+                'Message.regdate, Message.body AS lastmessage, ' +
+                'CASE WHEN(Chat.initiator_id = ?) THEN Chat.acceptor_id ELSE Chat.initiator_id END AS receiveruuid ' +
+                'FROM Chat ' +
+                'LEFT JOIN Message ' +
+                'ON (Chat.chatid = Message.chatid) ' +
+                'JOIN (SELECT MAX(Message.regdate) AS regdate, Message.chatid FROM Chat JOIN Message USING(chatid) GROUP BY Chat.chatid) AS Msg ' + //Nested sub query
+                'ON (Message.regdate = Msg.regdate AND Message.chatid = Msg.chatid) ' +
+                'WHERE (Chat.initiator_id = ? ' +
+                'OR Chat.acceptor_id = ?) ' +
+                'GROUP BY Chat.chatid ' +
+                //'ORDER BY regdate DESC' +
+                ') AS UserChats ' +
             'JOIN User ' +
             'ON (User.uuid = UserChats.receiveruuid) ' +
             'LEFT JOIN Follow ' +
@@ -94,7 +99,7 @@ function loadChatRequests(connection, uuid, limit, lastindexkey) {
             'AND Follow.followid IS NULL ' +    //To load only those chats where the user is not following the other person
             'GROUP BY UserChats.chatid ' +
             'ORDER BY UserChats.regdate DESC ' +
-            'LIMIT ?', [uuid, uuid, uuid, uuid, lastindexkey, limit], function (err, rows) {
+            'LIMIT ?', [uuid, uuid, uuid, uuid, uuid, lastindexkey, limit], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -190,16 +195,17 @@ function createNewChat(connection, message) {
 
 function getChatRequestsCount(connection, uuid){
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT COUNT(DISTINCT Chat.initiator_id) AS requestcount ' +
+        connection.query('SELECT COUNT(DISTINCT Chat.initiator_id) AS requestcount, Follow.followid ' +
             'FROM Chat ' +
-            'JOIN Follow ' +
+            'LEFT JOIN Follow ' +
             'ON (Follow.followee = Chat.initiator_id AND Follow.follower = ?) ' +
-            'WHERE Chat.acceptor_id = ? ', [uuid, uuid], function (err, row) {
+            'WHERE Chat.acceptor_id = ? ' +
+            'AND Follow.followid IS NULL', [uuid, uuid], function (err, row) {
             if (err) {
                 reject(err);
             }
             else {
-                var requestcount = !!row[0] ? 0 : row[0].requestcount;
+                var requestcount = !row[0] ? 0 : row[0].requestcount;
                 resolve(requestcount);
             }
         });
