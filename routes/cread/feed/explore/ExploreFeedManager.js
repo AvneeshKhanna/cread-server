@@ -198,10 +198,10 @@ router.get('/load', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return exploredatahandler.getEntityDataFromCache();
+            //return exploredatahandler.getEntityDataFromCache();
         })
-        .then(function (edata) {
-            return loadFeed(connection, uuid, limit, edata, lastindexkey);
+        .then(function (/*edata*/) {
+            return loadFeed(connection, uuid, limit, /*edata, */lastindexkey);
         })
         .then(function (result) {
 
@@ -449,6 +449,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
     return new Promise(function (resolve, reject) {
 
         //lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
+        console.log("lastindexkey is " + JSON.stringify(lastindexkey, null, 3));
         lastindexkey = (lastindexkey) ? Number(lastindexkey) : 0;
 
         connection.query('SELECT (@rownr := @rownr + 1) AS row_no, master.* ' +
