@@ -18,51 +18,6 @@ var cache_time = consts.cache_time;
 
 router.get('/load', function (request, response) {
 
-    var dummy = [
-        {
-            name: "Avneesh Khanna",
-            senderuuid: "6979be3e-835e-433d-a139-addf86ef2344",
-            profilepicurl: "https://s3-ap-northeast-1.amazonaws.com/testamentbucketdev/Users/6979be3e-835e-433d-a139-addf86ef2344/Profile/display-pic-small.jpg",
-            lastmessage: "Hi, this is a dummy message",
-            unread: false
-        },
-        {
-            name: "Avneesh Khanna",
-            senderuuid: "6979be3e-835e-433d-a139-addf86ef2344",
-            profilepicurl: "https://s3-ap-northeast-1.amazonaws.com/testamentbucketdev/Users/6979be3e-835e-433d-a139-addf86ef2344/Profile/display-pic-small.jpg",
-            lastmessage: "Hi, this is another dummy message",
-            unread: false
-        },
-        {
-            name: "Avneesh Khanna",
-            senderuuid: "6979be3e-835e-433d-a139-addf86ef2344",
-            profilepicurl: "https://s3-ap-northeast-1.amazonaws.com/testamentbucketdev/Users/6979be3e-835e-433d-a139-addf86ef2344/Profile/display-pic-small.jpg",
-            lastmessage: "Hi, yet another dummy message",
-            unread: false
-        },
-        {
-            name: "Avneesh Khanna",
-            senderuuid: "6979be3e-835e-433d-a139-addf86ef2344",
-            profilepicurl: "https://s3-ap-northeast-1.amazonaws.com/testamentbucketdev/Users/6979be3e-835e-433d-a139-addf86ef2344/Profile/display-pic-small.jpg",
-            lastmessage: "This is tiring",
-            unread: false
-        },
-        {
-            name: "Avneesh Khanna",
-            senderuuid: "6979be3e-835e-433d-a139-addf86ef2344",
-            profilepicurl: "https://s3-ap-northeast-1.amazonaws.com/testamentbucketdev/Users/6979be3e-835e-433d-a139-addf86ef2344/Profile/display-pic-small.jpg",
-            lastmessage: "Wow. This is going to be a really long message which might or might not be displayed on screen properly. Let's see",
-            unread: false
-        },
-        {
-            name: "Avneesh Khanna",
-            senderuuid: "6979be3e-835e-433d-a139-addf86ef2344",
-            profilepicurl: "https://s3-ap-northeast-1.amazonaws.com/testamentbucketdev/Users/6979be3e-835e-433d-a139-addf86ef2344/Profile/display-pic-small.jpg",
-            lastmessage: "I saw a reallllllllly nice movie today! :D",
-            unread: false
-        }
-    ];
-
     var uuid = request.headers.uuid;
     var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : null;
 
@@ -79,7 +34,7 @@ router.get('/load', function (request, response) {
         })
         .then(function (result) {
             console.log("result is " + JSON.stringify(result, null, 3));
-            response.set('Cache-Control', 'public, max-age=' + cache_time.xhigh);
+            response.set('Cache-Control', 'public, max-age=' + 2/*cache_time.xhigh*/);  //TODO: Increase cache expiry time
 
             if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
                 response.status(304).send().end();

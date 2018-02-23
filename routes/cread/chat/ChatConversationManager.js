@@ -35,7 +35,7 @@ router.get('/load-messages', function (request, response) {
 
             console.log("result is " + JSON.stringify(result, null, 3));
 
-            response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
+            response.set('Cache-Control', 'public, max-age=' + 2/*cache_time.medium*/); //TODO: Increase cache expiry time
 
             if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
                 response.status(304).send().end();
