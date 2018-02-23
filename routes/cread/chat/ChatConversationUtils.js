@@ -207,5 +207,6 @@ module.exports = {
     addMessageToDb: addMessageToDb,
     deleteMessageFromDb: deleteMessageFromDb,
     loadChatMessages: loadChatMessages,
-    sendChatMessageNotification: sendChatMessageNotification
+    sendChatMessageNotification: sendChatMessageNotification,
+    connectedusers: connectedusers
 };
