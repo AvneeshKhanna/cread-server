@@ -31,7 +31,7 @@ router.get('/restart-heroku', function (request, response) {
         }
     }, function (err, res, body) {
 
-        if(err){
+        if (err) {
             response.status(500).send(err).end();
         }
         else {
@@ -50,36 +50,36 @@ router.post('/send-notification', function (request, response) {
     var fcmtokens = request.body.fcmtokens;
     var payload = request.body.payload;
 
-    if(config.envtype === 'DEVELOPMENT'){
-        if(!(payload instanceof Object)){
+    if (config.envtype === 'DEVELOPMENT') {
+        if (!(payload instanceof Object)) {
             response.status(500).send({
                 message: "Parameter payload should be of the type Object/Map"
             });
             response.end();
             return;
         }
-        else if(!(fcmtokens instanceof Array)){
+        else if (!(fcmtokens instanceof Array)) {
             response.status(500).send({
                 message: "Parameter fcmtokens should be of the type Array/List"
             });
             response.end();
             return;
         }
-        else if(fcmtokens.length === 0){
+        else if (fcmtokens.length === 0) {
             response.status(500).send({
                 message: "Parameter fcmtokens cannot be empty"
             });
             response.end();
             return;
         }
-        else{
+        else {
 
             notify.notifyTokens(fcmtokens, payload, function (err) {
-                if(err){
+                if (err) {
                     response.status(500).send(err);
                     response.end();
                 }
-                else{
+                else {
                     response.status(200).send({
                         message: "notification sent"
                     });
@@ -89,7 +89,7 @@ router.post('/send-notification', function (request, response) {
 
         }
     }
-    else{
+    else {
         response.status(403).send({
             message: "You are not authorised to perform this task"
         });
