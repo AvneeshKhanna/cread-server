@@ -164,25 +164,30 @@ function sendChatMessageNotification(connection, message){
     return new Promise(function (resolve, reject) {
         isReceiverFollowingSender(connection, message.from_uuid, message.to_uuid)
             .then(function (isFollowing) {
+
+                var notif_category;
+
                 if(isFollowing){
-
                     console.log('Personal chat notification sent');
-
-                    var notifData = {
-                        message: message.body,
-                        persistable: "No",
-                        category: "personal-chat",
-                        chatid: message.chatid,
-                        from_name: message.from_name,
-                        from_uuid: message.from_uuid,
-                        from_profilepicurl: message.from_profilepicurl
-                    };
-
-                    return notify.notificationPromise(new Array(message.to_uuid), notifData);
+                    notif_category = "personal-chat";
                 }
                 else{
+                    notif_category = "personal-chat-request";
                     console.log('Message would be a request');
                 }
+
+                var notifData = {
+                    message: message.body,
+                    persistable: "No",
+                    category: notif_category,
+                    chatid: message.chatid,
+                    from_name: message.from_name,
+                    from_uuid: message.from_uuid,
+                    from_profilepicurl: message.from_profilepicurl
+                };
+
+                return notify.notificationPromise(new Array(message.to_uuid), notifData);
+
             })
             .then(function () {
                 resolve();

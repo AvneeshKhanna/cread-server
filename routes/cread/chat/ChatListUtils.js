@@ -195,16 +195,21 @@ function createNewChat(connection, message) {
 
 function getChatRequestsCount(connection, uuid){
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT COUNT(DISTINCT Chat.initiator_id) AS requestcount, Follow.followid ' +
-            'FROM Chat ' +
+        connection.query('SELECT COUNT(DISTINCT UserChats.chatid) AS requestcount ' +
+            'FROM ' +
+                '(SELECT DISTINCT Chat.chatid, ' +
+                'CASE WHEN(Chat.initiator_id = ?) THEN Chat.acceptor_id ELSE Chat.initiator_id END AS receiveruuid ' +
+                'FROM Chat ' +
+                'WHERE (Chat.initiator_id = ? ' +
+                'OR Chat.acceptor_id = ?)) AS UserChats ' +
             'LEFT JOIN Follow ' +
-            'ON (Follow.followee = Chat.initiator_id AND Follow.follower = ?) ' +
-            'WHERE Chat.acceptor_id = ? ' +
-            'AND Follow.followid IS NULL', [uuid, uuid], function (err, row) {
+            'ON (Follow.followee = UserChats.receiveruuid AND Follow.follower = ?) ' +
+            'WHERE Follow.followid IS NULL ', [uuid, uuid, uuid, uuid], function (err, row) {
             if (err) {
                 reject(err);
             }
             else {
+                console.log("row from requestcount query  is " + JSON.stringify(row, null, 3));
                 var requestcount = !row[0] ? 0 : row[0].requestcount;
                 resolve(requestcount);
             }
