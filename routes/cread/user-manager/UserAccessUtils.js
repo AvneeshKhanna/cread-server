@@ -14,6 +14,7 @@ var uuidGen = require('uuid');
 var _auth = require('../../auth-token-management/AuthTokenManager');
 
 var userstbl_ddb = envconfig.get('dynamoDB.users_table');
+var updatesutils = require('../updates/UpdatesUtils');
 
 function checkIfPhoneExists(connection, phone) {
     return new Promise(function (resolve, reject) {
@@ -223,11 +224,24 @@ function removeUserFcmToken(uuid, fcmtoken) {
     });
 }
 
+function updateNewFacebookUserDataForUpdates(connection, uuid, actor_uuid, category){
+    return new Promise(function (resolve, reject) {
+        var updateparams = {
+            uuid: uuid,
+            actor_uuid: actor_uuid,
+            category: category
+        };
+        updatesutils.addToUpdatesTable(connection, updateparams)
+            .then(resolve, reject);
+    });
+}
+
 module.exports = {
     checkIfPhoneExists: checkIfPhoneExists,
     addUserFcmToken: addUserFcmToken,
     removeUserFcmToken: removeUserFcmToken,
     addUserToDynamoDB: addUserToDynamoDB,
     registerUserData: registerUserData,
-    checkIfUserExists: checkIfUserExists
+    checkIfUserExists: checkIfUserExists,
+    updateNewFacebookUserDataForUpdates: updateNewFacebookUserDataForUpdates
 };

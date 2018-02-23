@@ -136,6 +136,7 @@ app.use('/share-campaign', require('./routes/cread/share/ShareCampaign'));
 app.use('/check-campaign', require('./routes/cread/check/CheckCampaign'));
 app.use('/user-profile', require('./routes/cread/user-manager/UserProfileManager'));
 app.use('/user-access', require('./routes/cread/user-manager/UserAccessManager'));
+app.use('/user-events', require('./routes/cread/user-manager/events/UserEventsManager'));
 app.use('/redeem-from-wallet', require('./routes/cread/user-manager/payments/RedeemFromWallet'));
 app.use('/givers-manager', require('./routes/cread/givers/GiversManager'));
 app.use('/user-interests', require('./routes/cread/user-manager/interests/InterestsManager'));
@@ -161,6 +162,8 @@ app.use('/entity-share-link', require('./routes/cread/entity/share/EntityShareMa
 app.use('/search', require('./routes/cread/search/SearchManager'));
 app.use('/hashtag', require('./routes/cread/hashtag/HashTagManager'));
 app.use('/updates', require('./routes/cread/updates/UpdatesManager'));
+app.use('/chat-convo', require('./routes/cread/chat/ChatConversationManager'));
+app.use('/chat-list', require('./routes/cread/chat/ChatListManager'));
 
 //-dashboard-
 app.use('/campaign-details', require('./routes/cread/dsbrd/campaign-details/CampaignDetails'));

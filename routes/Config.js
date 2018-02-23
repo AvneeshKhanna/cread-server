@@ -99,6 +99,8 @@ module.exports = {
     'server_url': getServerBaseUrl(),
     'crypto-secret-key': "0da2d13d-3eaa-4ee8-a918-d0ca08d1e897",
     'firebase_web_api_key': 'AIzaSyAylJMEEhFauggwGb2j0gvGMh22K5oVrxY',
+    'cread-fb-app-id': '362799884145458',
+    'cread-fb-app-secret': '93a98159204ae6ca8647b3cbe00cbf2a',
     'firebase_dynamiclink_domain': 'https://n7sgf.app.goo.gl',  //Obtained from Firebase Developer Console
     'fcm-server-key': 'AAAAWOwUO0Q:APA91bEI7_FLG9hRz2_nHRkBgSnQftSMrGzOzzKod1lPYNyX88jEqUIJRhE7SpxyVQ_a1ugWAZ0CbVgC3pTylZm9w8ZJib8P5B5MTXVh42_48RN_37-Cob0FtTV5-xxRzlSfGgYVobcc'
 };

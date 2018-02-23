@@ -13,6 +13,8 @@ var config = require('../Config');
 
 var request_client = require('request');
 
+var chatconvoutils = require('../cread/chat/ChatConversationUtils');
+
 var hrkuapptoken = '11abc5c3-dd3f-4d62-86df-9061a4c32e2d';
 var hrkuappname = 'cread-dev-remote';
 
@@ -94,6 +96,13 @@ router.post('/send-notification', function (request, response) {
         response.end();
     }
 
+});
+
+router.get('/get-active-connections', function (request, response) {
+    response.status(200).send({
+        connections: chatconvoutils.connectedusers
+    });
+    response.end();
 });
 
 module.exports = router;
