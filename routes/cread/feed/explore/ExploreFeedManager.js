@@ -454,35 +454,35 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
 
         connection.query('SELECT (@rownr := @rownr + 1) AS row_no, master.* ' +
             'FROM ' +
-            '(SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, Entity.for_explore, ' +
-            'User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, ' +
-            'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
-            '(CASE WHEN(EA.impact_score IS NULL) THEN ? ELSE EA.impact_score END) AS impact_weight, ' +
-            'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
-            'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
-            'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
-            'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
-            'FROM Entity ' +
-            'LEFT JOIN EntityAnalytics EA ' +
-            'ON (EA.entityid = Entity.entityid) ' +
-            'LEFT JOIN Short ' +
-            'ON Short.entityid = Entity.entityid ' +
-            'LEFT JOIN Capture ' +
-            'ON Capture.entityid = Entity.entityid ' +
-            'JOIN User ' +
-            'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
-            'LEFT JOIN HatsOff ' +
-            'ON HatsOff.entityid = Entity.entityid ' +
-            'LEFT JOIN Comment ' +
-            'ON Comment.entityid = Entity.entityid ' +
-            'LEFT JOIN Follow ' +
-            'ON User.uuid = Follow.followee ' +
-            'WHERE Entity.status = "ACTIVE" ' +
-            //'AND Entity.regdate < ? ' +
-            'AND Entity.for_explore = 1 ' +
-            'GROUP BY Entity.entityid ' +
-            //'ORDER BY Entity.regdate DESC ' +
-            'ORDER BY impact_weight DESC) master ' +
+                '(SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, Entity.for_explore, ' +
+                'User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, ' +
+                'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
+                '(CASE WHEN(EA.impact_score IS NULL) THEN ? ELSE EA.impact_score END) AS impact_weight, ' +
+                'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
+                'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
+                'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
+                'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
+                'FROM Entity ' +
+                'LEFT JOIN EntityAnalytics EA ' +
+                'ON (EA.entityid = Entity.entityid) ' +
+                'LEFT JOIN Short ' +
+                'ON Short.entityid = Entity.entityid ' +
+                'LEFT JOIN Capture ' +
+                'ON Capture.entityid = Entity.entityid ' +
+                'JOIN User ' +
+                'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
+                'LEFT JOIN HatsOff ' +
+                'ON HatsOff.entityid = Entity.entityid ' +
+                'LEFT JOIN Comment ' +
+                'ON Comment.entityid = Entity.entityid ' +
+                'LEFT JOIN Follow ' +
+                'ON User.uuid = Follow.followee ' +
+                'WHERE Entity.status = "ACTIVE" ' +
+                //'AND Entity.regdate < ? ' +
+                'AND Entity.for_explore = 1 ' +
+                'GROUP BY Entity.entityid ' +
+                //'ORDER BY Entity.regdate DESC ' +
+                'ORDER BY impact_weight DESC) master ' +
             'CROSS JOIN (SELECT @rownr := 0) AS dummy ' +
             'HAVING row_no > ? ' +
             'LIMIT ?;', [explore_algo_base_score, uuid, uuid, lastindexkey, limit], function (err, rows) {
