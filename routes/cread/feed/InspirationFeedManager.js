@@ -47,7 +47,7 @@ router.get('/load', function (request, response) {
             console.log("results is " + JSON.stringify(result, null, 3));
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 
-            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+            if (request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')) {
                 response.status(304).send().end();
             }
             else {
@@ -62,10 +62,10 @@ router.get('/load', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     message: 'Some error occurred at the server'
@@ -97,10 +97,10 @@ router.post('/load', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            if(page === 0 || page){
+            if (page === 0 || page) {
                 return loadInspirationFeedLegacy(connection, limit, page);
             }
-            else{
+            else {
                 return loadInspirationFeed(connection, limit, lastindexkey);
             }
         })
@@ -115,10 +115,10 @@ router.post('/load', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     message: 'Some error occurred at the server'
@@ -146,7 +146,7 @@ function loadInspirationFeedLegacy(connection, limit, page) {
 
                 var totalcount = data[0].totalcount;
 
-                if(totalcount > 0){
+                if (totalcount > 0) {
                     connection.query('SELECT Entity.entityid, Entity.merchantable, Capture.capid AS captureid, Capture.uuid, User.firstname, User.lastname ' +
                         'FROM Entity ' +
                         'JOIN Capture ' +
@@ -157,11 +157,11 @@ function loadInspirationFeedLegacy(connection, limit, page) {
                         'AND Capture.shoid IS NULL ' +
                         'ORDER BY Entity.regdate DESC ' +
                         'LIMIT ? ' +
-                        'OFFSET ?', [limit, offset], function(err, rows){
-                        if(err){
+                        'OFFSET ?', [limit, offset], function (err, rows) {
+                        if (err) {
                             reject(err);
                         }
-                        else{
+                        else {
 
                             rows.map(function (element) {
                                 element.creatorname = element.firstname + ' ' + element.lastname;
@@ -169,11 +169,11 @@ function loadInspirationFeedLegacy(connection, limit, page) {
                                 element.captureurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
                                 element.merchantable = (element.merchantable !== 0);
 
-                                if(element.firstname){
+                                if (element.firstname) {
                                     delete element.firstname;
                                 }
 
-                                if(element.lastname){
+                                if (element.lastname) {
                                     delete element.lastname;
                                 }
 
@@ -187,7 +187,7 @@ function loadInspirationFeedLegacy(connection, limit, page) {
                         }
                     });
                 }
-                else{
+                else {
                     resolve({
                         requestmore: totalcount > (limit + offset),
                         items: []
@@ -225,30 +225,30 @@ function loadInspirationFeed(connection, limit, lastindexkey) {
             'CROSS JOIN (SELECT @rownr := 0) AS dummy ' +
             'HAVING row_no > ? ' +
             'LIMIT ? '/* +
-            'OFFSET ?'*/, [explore_algo_base_score, lastindexkey, limit/*, offset*/], function(err, rows){
-            if(err){
+            'OFFSET ?'*/, [explore_algo_base_score, lastindexkey, limit/*, offset*/], function (err, rows) {
+            if (err) {
                 reject(err);
             }
-            else{
-                if(rows.length > 0){
+            else {
+                if (rows.length > 0) {
                     rows.map(function (element) {
                         element.creatorname = element.firstname + ' ' + element.lastname;
                         element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
 
-                        if(element.shoid){  //Case where the capture was added on an existing writing as a collaboration
+                        if (element.shoid) {  //Case where the capture was added on an existing writing as a collaboration
                             element.captureurl = utils.createCaptureUrl(element.uuid, element.captureid);
                         }
-                        else{   //Case where the capture was added as solo (without collaboration)
+                        else {   //Case where the capture was added as solo (without collaboration)
                             element.captureurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
                         }
 
                         element.merchantable = (element.merchantable !== 0);
 
-                        if(element.firstname){
+                        if (element.firstname) {
                             delete element.firstname;
                         }
 
-                        if(element.lastname){
+                        if (element.lastname) {
                             delete element.lastname;
                         }
 
@@ -261,7 +261,7 @@ function loadInspirationFeed(connection, limit, lastindexkey) {
                         items: rows
                     });
                 }
-                else{
+                else {
                     resolve({
                         requestmore: rows.length >= limit,
                         lastindexkey: null,
