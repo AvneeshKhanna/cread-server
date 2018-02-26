@@ -17,6 +17,7 @@ var utils = require('../utils/Utils');
 
 var envtype = config.envtype;
 var cache_time = consts.cache_time;
+var explore_algo_base_score = consts.explore_algo_base_score;
 
 router.get('/load', function (request, response) {
 
@@ -199,23 +200,32 @@ function loadInspirationFeedLegacy(connection, limit, page) {
 
 function loadInspirationFeed(connection, limit, lastindexkey) {
 
-    lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
+    //lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
+    lastindexkey = (lastindexkey) ? Number(lastindexkey) : 0;
 
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT Entity.entityid, Entity.regdate, Entity.merchantable, Capture.capid AS captureid, ' +
-            'Capture.uuid, Capture.shoid, User.firstname, User.lastname ' +
+        connection.query('SELECT (@rownr := @rownr + 1) AS row_no, Master.* ' +
+            'FROM ' +
+            '(SELECT Entity.entityid, Entity.regdate, Entity.merchantable, Capture.capid AS captureid, ' +
+            'Capture.uuid, Capture.shoid, User.firstname, User.lastname, ' +
+            '(CASE WHEN(EA.impact_score IS NULL) THEN ? ELSE EA.impact_score END) AS impact_weight ' +
             'FROM Entity ' +
             'JOIN Capture ' +
             'USING(entityid) ' +
             'JOIN User ' +
             'ON User.uuid = Capture.uuid ' +
+            'LEFT JOIN EntityAnalytics EA ' +
+            'ON (EA.entityid = Entity.entityid) ' +
             'WHERE Entity.status = "ACTIVE" ' +
             //'AND Capture.shoid IS NULL ' +
-            'AND Entity.regdate < ? ' +
+            //'AND Entity.regdate < ? ' +
             'AND Entity.for_explore = 1 ' +
-            'ORDER BY Entity.regdate DESC ' +
+            'GROUP BY Entity.entityid ' +
+            'ORDER BY impact_weight DESC) AS Master ' +
+            'CROSS JOIN (SELECT @rownr := 0) AS dummy ' +
+            'HAVING row_no > ? ' +
             'LIMIT ? '/* +
-            'OFFSET ?'*/, [lastindexkey, limit/*, offset*/], function(err, rows){
+            'OFFSET ?'*/, [explore_algo_base_score, lastindexkey, limit/*, offset*/], function(err, rows){
             if(err){
                 reject(err);
             }
@@ -247,7 +257,7 @@ function loadInspirationFeed(connection, limit, lastindexkey) {
 
                     resolve({
                         requestmore: rows.length >= limit,
-                        lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
+                        lastindexkey: rows[rows.length - 1].row_no,//moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
                         items: rows
                     });
                 }
