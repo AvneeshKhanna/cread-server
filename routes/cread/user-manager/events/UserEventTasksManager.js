@@ -8,7 +8,7 @@ var usereventsutils = require('./UserEventsUtils');
 
 var engagement_notification_job = new CronJob({
     //Runs every 2nd day, 8:32 pm
-    cronTime: '00 32 20 * * *', //second | minute | hour | day-of-month | month | day-of-week
+    cronTime: '00 32 20 */2 * *', //second | minute | hour | day-of-month | month | day-of-week
     onTick: function() {
 
         usereventsutils.sendEngagementNotificationsForUsers()
