@@ -395,7 +395,7 @@ function getUserSpecificDataForNotification(connection, user) {
             'ON (U.uuid = S.uuid OR U.uuid = C.uuid) ' +
             'WHERE E.status = "ACTIVE" ' +
             'AND U.uuid <> ? ' +
-            'AND E.regdate BETWEEN NOW() AND DATE_SUB(NOW(), INTERVAL ? ' + friends_activity_cutoff_time_unit + ') ' +
+            'AND E.regdate BETWEEN DATE_SUB(NOW(), INTERVAL ? ' + friends_activity_cutoff_time_unit + ') AND NOW() ' +
             'GROUP BY U.uuid ' +
             'LIMIT 20';
         sqlparams = [
@@ -418,13 +418,13 @@ function getUserSpecificDataForNotification(connection, user) {
 
                 if (rows.length === 0) {  //No queried users exist
                     if (user.notif_category === NOTIFICATION_CATEGORY_CREATE) {
-                        notifData.message = "You have not posted in a while recently. You might want to check out the recent artwork on Cread";
+                        notifData.message = "You have not posted in a while recently. You might want to check out the recent artwork on Cread!";
                     }
                     else if (user.notif_category === NOTIFICATION_CATEGORY_COLLABORATE) {
-                        notifData.message = "You have not collaborated with anyone recently. You might want to check out the recent artwork on Cread";
+                        notifData.message = "You have not collaborated with anyone recently. You might want to check out the recent artwork on Cread!";
                     }
                     else if (user.notif_category === NOTIFICATION_CATEGORY_ENTITY_VIEW){
-                        notifData.message = "Some interesting new content is available on Cread. You might want to check out";
+                        notifData.message = "Some interesting new content is available on Cread. You might want to check out!";
                     }
                 }
                 else {   //Queried users exist
@@ -434,11 +434,11 @@ function getUserSpecificDataForNotification(connection, user) {
                     }
                     else if (user.notif_category === NOTIFICATION_CATEGORY_COLLABORATE) {
                         console.log("notification collaborate rows are " + JSON.stringify(rows, null, 3));
-                        notifData.message = rows[0].firstname + (rows[1] ? ", " + rows[1].firstname : "") + " and " + rows.length + " others posted on Cread recently. You might want to check it out";
+                        notifData.message = rows[0].firstname + (rows[1] ? ", " + rows[1].firstname : "") + " and " + rows.length + " others posted on Cread recently. You might want to check it out!";
                     }
                     else if (user.notif_category === NOTIFICATION_CATEGORY_ENTITY_VIEW){
                         console.log("notification entity-view rows are " + JSON.stringify(rows, null, 3));
-                        notifData.message = rows[0].firstname + (rows[1] ? ", " + rows[1].firstname : "") + " and " + rows.length + " others have posted something new on Cread recently. You might want to check it out";
+                        notifData.message = rows[0].firstname + (rows[1] ? ", " + rows[1].firstname : "") + " and " + rows.length + " others have posted something new on Cread recently. You might want to check it out!";
                     }
                 }
 
