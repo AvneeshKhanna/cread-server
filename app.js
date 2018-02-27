@@ -15,6 +15,10 @@ var monitorAccountActivity = require('./routes/cread/security/UserActivityMonito
 var exploredatahandler = require('./routes/cread/feed/explore/ExploreFeedDataHandler');
 //exploredatahandler.explore_feed_processing_recurrent.start();    //To start cron based processing for explore feed data
 
+//To initiate the cron job for engagement notifications
+var engagement_notification_job = require('./routes/cread/user-manager/events/UserEventTasksManager');
+engagement_notification_job.engagement_notification_job.start();
+
 var routes = require('./routes/index');
 var users = require('./routes/users');
 var Auth = require('./routes/Authentication');

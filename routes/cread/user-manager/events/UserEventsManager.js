@@ -14,6 +14,7 @@ var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 var usereventsutils = require('./UserEventsUtils');
 
 var moment = require('moment');
+var CronJob = require('cron').CronJob;
 
 router.post('/save', function (request, response) {
 
@@ -74,58 +75,181 @@ router.post('/save', function (request, response) {
 
 });
 
-function sendEngagementNotificationsForUsers(){
+var engagement_notification_job = new CronJob({
+    //Runs every 2nd day, 7:30 pm
+    cronTime: '00 30 19 */2 * *', //second | minute | hour | day-of-month | month | day-of-week
+    onTick: function() {
 
-    var connection;
+        sendEngagementNotificationsForUsers()
+            .then(function () {
+                console.log("Engagement Notifications Process Completely");
+            })
+            .catch(function (err) {
+                console.error(err);
+                console.log("ERROR: Engagement Notifications Process Stopped");
+            });
+
+    },
+    start: false,   //Whether to start just now
+    timeZone: 'Asia/Kolkata'
+});
+
+router.get('/engagement-notif-data', function (request, response) {
+
+    sendEngagementNotificationsForUsers()
+        .then(function () {
+            response.send("Completed").end();
+        })
+        .catch(function (err) {
+            response.status(500).send(err).end();
+        });
+
+    /*var connection;
     var allUsers = [];
+    var responseUsers = [];
 
     config.getNewConnection()
         .then(function (conn) {
             connection = conn;
-            return usereventsutils.getRecentPosters(connection);
-        })
-        .then(function (recentPosters) {
-
-            recentPosters.forEach(function (recentPoster) {
-                allUsers.push({
-                    uuid: recentPoster,
-                    notif_category: 'CREATE'
-                });
-            });
-
-            return usereventsutils.getRecentCollaborators(connection, recentPosters);
+            return usereventsutils.getRecentCollaborators(connection);
         })
         .then(function (recentCollaborators) {
 
-            recentCollaborators.forEach(function (recentCollaborator) {
-                allUsers.push({
-                    uuid: recentCollaborator,
-                    notif_category: 'COLLABORATE'
-                });
-            });
+            console.log("recentCollaborators are " + JSON.stringify(recentCollaborators, null, 3));
 
-            if(allUsers.length > 0){
-                return usereventsutils.assignNotificationDataToUsers(connection, allUsers);
-            }
-            else{
-                console.log('No users to send notification to');
-                throw new BreakPromiseChainError();
-            }
+            responseUsers.push(recentCollaborators);
+            allUsers = allUsers.concat(recentCollaborators);
+
+            return usereventsutils.getRecentPosters(connection, recentCollaborators);
         })
-        .then(function (notif_data_users) {
-            if(notif_data_users.length > 0){
-                return usereventsutils.sendCustomNotificationEachUser(notif_data_users);
-            }
-            else {
-                console.log('No notification data for users');
-            }
+        .then(function (recentPosters) {
+
+            responseUsers.push(recentPosters);
+            allUsers = allUsers.concat(allUsers);
+
+            return usereventsutils.getRecentInactiveUsers(connection, allUsers);
+        })
+        .then(function (inactiveUsers) {
+
+            responseUsers.push(inactiveUsers);
+            allUsers = allUsers.concat(inactiveUsers);
+
+            response.send(responseUsers).end();
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
             config.disconnect(connection);
-            console.error(err);
-        });
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });*/
 
-}
+});
+
+/**
+ * Initiates the process of engagement notifications for all users on the app
+ * */
+/*function sendEngagementNotificationsForUsers(){
+
+    var connection;
+    var allUsers = [];
+
+    return new Promise(function (resolve, reject) {
+        config.getNewConnection()
+            .then(function (conn) {
+                connection = conn;
+                return usereventsutils.getRecentCollaborators(connection);
+            })
+            .then(function (recentCollaborators) {
+
+                recentCollaborators.forEach(function (recentCollaborator) {
+                    allUsers.push({
+                        uuid: recentCollaborator,
+                        notif_category: usereventsutils.NOTIFICATION_CATEGORY_COLLABORATE
+                    });
+                });
+
+                return usereventsutils.getRecentPosters(connection, recentCollaborators);
+            })
+            .then(function (recentPosters) {
+
+                recentPosters.forEach(function (recentPoster) {
+                    allUsers.push({
+                        uuid: recentPoster,
+                        notif_category: usereventsutils.NOTIFICATION_CATEGORY_CREATE
+                    });
+                });
+
+                return usereventsutils.getRecentInactiveUsers(connection, allUsers);
+
+                /!*if(allUsers.length > 0){
+                    return usereventsutils.assignNotificationDataToUsers(connection, allUsers);
+                }
+                else{
+                    console.log('No users to send notification to');
+                    throw new BreakPromiseChainError();
+                }*!/
+            })
+            .then(function (inactiveUsers) {
+
+                inactiveUsers.forEach(function (inactiveUser) {
+                    allUsers.push({
+                        uuid: inactiveUser,
+                        notif_category: usereventsutils.NOTIFICATION_CATEGORY_ENTITY_VIEW
+                    });
+                });
+
+                if(allUsers.length > 0){
+                    return usereventsutils.assignNotificationDataToUsers(connection, allUsers);
+                }
+                else{
+                    console.log('No users to send notification to');
+                    throw new BreakPromiseChainError();
+                }
+            })
+            /!*.then(function (recentCollaborators) {
+
+                recentCollaborators.forEach(function (recentCollaborator) {
+                    allUsers.push({
+                        uuid: recentCollaborator,
+                        notif_category: 'COLLABORATE'
+                    });
+                });
+
+                if(allUsers.length > 0){
+                    return usereventsutils.assignNotificationDataToUsers(connection, allUsers);
+                }
+                else{
+                    console.log('No users to send notification to');
+                    throw new BreakPromiseChainError();
+                }
+            })*!/
+            .then(function (notif_data_users) {
+                if(notif_data_users.length > 0){
+                    return usereventsutils.sendCustomNotificationEachUser(notif_data_users);
+                }
+                else {
+                    console.log('No notification data for users');
+                }
+                throw new BreakPromiseChainError();
+            })
+            .catch(function (err) {
+                config.disconnect(connection);
+                if(err instanceof BreakPromiseChainError){
+                    //Do nothing
+                    resolve();
+                }
+                else{
+                    reject(err);
+                }
+            });
+    })
+}*/
 
 module.exports = router;
