@@ -13,7 +13,11 @@ var notifscheduler = require('./routes/notification-system/NotificationScheduler
 var monitorAccountActivity = require('./routes/cread/security/UserActivityMonitor').accountActivity;
 
 var exploredatahandler = require('./routes/cread/feed/explore/ExploreFeedDataHandler');
-exploredatahandler.explore_feed_processing_recurrent.start();    //To start cron based processing for explore feed data
+//exploredatahandler.explore_feed_processing_recurrent.start();    //To start cron based processing for explore feed data
+
+//To initiate the cron job for engagement notifications
+var engagement_notification_job = require('./routes/cread/user-manager/events/UserEventTasksManager');
+engagement_notification_job.engagement_notification_job.start();
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
@@ -164,6 +168,7 @@ app.use('/hashtag', require('./routes/cread/hashtag/HashTagManager'));
 app.use('/updates', require('./routes/cread/updates/UpdatesManager'));
 app.use('/chat-convo', require('./routes/cread/chat/ChatConversationManager'));
 app.use('/chat-list', require('./routes/cread/chat/ChatListManager'));
+app.use('/featured-artists', require('./routes/cread/featured-artists/FeaturedArtistsManager'));
 
 //-dashboard-
 app.use('/campaign-details', require('./routes/cread/dsbrd/campaign-details/CampaignDetails'));

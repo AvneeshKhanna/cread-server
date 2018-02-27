@@ -515,7 +515,7 @@ router.get('/load-timeline', function (request, response) {
                 result.items = utils.filterProfileMentions(result.items, "caption")
             }
 
-            console.log("result is " + JSON.stringify(result, null, 3));
+            //console.log("result is " + JSON.stringify(result, null, 3));
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 
             if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
