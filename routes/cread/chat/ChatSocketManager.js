@@ -24,6 +24,8 @@ function initialiseSocket(io){
 
         console.log("connectedusers are " + JSON.stringify(chatconvoutils.getConnectedUsers(), null, 3));
 
+        console.log("connected sockets are " + JSON.stringify(Object.keys(io.sockets.sockets)));
+
         //When a user sends a message in the conversation
         socket.on('send-message', function (message) {
 
@@ -153,6 +155,11 @@ function initialiseSocket(io){
             chatconvoutils.deleteSocket(socket);
             console.log('User disconnected. Connected users now are ' + JSON.stringify(chatconvoutils.getConnectedUsers(), null, 3))
         });
+
+        socket.on('connection_error', function () {
+            chatconvoutils.deleteSocket(socket);
+            console.log('Socket connection failed. Connected users now are ' + JSON.stringify(chatconvoutils.getConnectedUsers(), null, 3));
+        })
 
     });
 

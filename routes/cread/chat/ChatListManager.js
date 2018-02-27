@@ -23,7 +23,7 @@ router.get('/load', function (request, response) {
 
     var limit = (config.envtype === 'PRODUCTION') ? 25 : 1;
 
-    console.log("request headers are " + JSON.stringify(request.headers, null, 3));
+    //console.log("request headers are " + JSON.stringify(request.headers, null, 3));
 
     var connection;
 
@@ -33,7 +33,7 @@ router.get('/load', function (request, response) {
             return chatlistutils.loadPermittedChats(connection, uuid, limit, lastindexkey);
         })
         .then(function (result) {
-            console.log("result is " + JSON.stringify(result, null, 3));
+            //console.log("result is " + JSON.stringify(result, null, 3));
             response.set('Cache-Control', 'public, max-age=' + 2/*cache_time.xhigh*/);  //TODO: Increase cache expiry time
 
             if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
