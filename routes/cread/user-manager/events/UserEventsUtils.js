@@ -351,6 +351,7 @@ function getUserSpecificDataForNotification(connection, user) {
     }
     else if (user.notif_category === NOTIFICATION_CATEGORY_COLLABORATE) {
         //To query those unique USERS WHO THE GIVEN USER HAS RECENTLY COLLABORATED WITH in the previous 144 hours
+        //TODO: Refine query. User tables are being referred twice
         sql = 'SELECT QueriedUsers.uuid, User.firstname ' +
             'FROM ' +
             '(SELECT DISTINCT CU.uuid ' +
