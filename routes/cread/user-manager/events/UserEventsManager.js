@@ -75,80 +75,15 @@ router.post('/save', function (request, response) {
 
 });
 
-var engagement_notification_job = new CronJob({
-    //Runs every 2nd day, 7:30 pm
-    cronTime: '00 30 19 */2 * *', //second | minute | hour | day-of-month | month | day-of-week
-    onTick: function() {
-
-        sendEngagementNotificationsForUsers()
-            .then(function () {
-                console.log("Engagement Notifications Process Completely");
-            })
-            .catch(function (err) {
-                console.error(err);
-                console.log("ERROR: Engagement Notifications Process Stopped");
-            });
-
-    },
-    start: false,   //Whether to start just now
-    timeZone: 'Asia/Kolkata'
-});
-
 router.get('/engagement-notif-data', function (request, response) {
 
-    sendEngagementNotificationsForUsers()
+    usereventsutils.sendEngagementNotificationsForUsers()
         .then(function () {
             response.send("Completed").end();
         })
         .catch(function (err) {
             response.status(500).send(err).end();
         });
-
-    /*var connection;
-    var allUsers = [];
-    var responseUsers = [];
-
-    config.getNewConnection()
-        .then(function (conn) {
-            connection = conn;
-            return usereventsutils.getRecentCollaborators(connection);
-        })
-        .then(function (recentCollaborators) {
-
-            console.log("recentCollaborators are " + JSON.stringify(recentCollaborators, null, 3));
-
-            responseUsers.push(recentCollaborators);
-            allUsers = allUsers.concat(recentCollaborators);
-
-            return usereventsutils.getRecentPosters(connection, recentCollaborators);
-        })
-        .then(function (recentPosters) {
-
-            responseUsers.push(recentPosters);
-            allUsers = allUsers.concat(allUsers);
-
-            return usereventsutils.getRecentInactiveUsers(connection, allUsers);
-        })
-        .then(function (inactiveUsers) {
-
-            responseUsers.push(inactiveUsers);
-            allUsers = allUsers.concat(inactiveUsers);
-
-            response.send(responseUsers).end();
-            throw new BreakPromiseChainError();
-        })
-        .catch(function (err) {
-            config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
-                //Do nothing
-            }
-            else{
-                console.error(err);
-                response.status(500).send({
-                    message: 'Some error occurred at the server'
-                }).end();
-            }
-        });*/
 
 });
 
