@@ -14,7 +14,7 @@ var featuredartistutils = require('../cread/featured-artists/FeaturedArtistsUtil
 
 var top_givers_notification = new CronJob({
     cronTime: '00 30 20 * * 5', //second | minute | hour | day-of-month | month | day-of-week
-    onTick: function() {
+    onTick: function () {
         /*
          * Runs every Friday
          * at 08:30:00 PM
@@ -28,7 +28,7 @@ var top_givers_notification = new CronJob({
         };
 
         notifyUsers.sendNotification(data, undefined, function (err) {
-            if(err){
+            if (err) {
                 console.error(err);
             }
             else {
@@ -43,7 +43,7 @@ var top_givers_notification = new CronJob({
 
 var top_post_notification = new CronJob({
     cronTime: '00 30 20 */3 * 5', //second | minute | hour | day-of-month | month | day-of-week
-    onTick: function() {
+    onTick: function () {
         /*
          * Runs every third day of the month
          * at 08:30:00 PM
@@ -61,7 +61,7 @@ var top_post_notification = new CronJob({
 
                 entity = ent;
 
-                if(entity){
+                if (entity) {
                     return categoriseUsers(connection, entity);
                 }
                 else {
@@ -82,20 +82,20 @@ var top_post_notification = new CronJob({
                     return el.to_send_notif;
                 });
 
-                if(filteredUsers.length > 0){
+                if (filteredUsers.length > 0) {
                     return notify.notificationPromise(filteredUsers, notifData);
                 }
-                else{
+                else {
                     console.log('No users to send notification to');
                     throw new BreakPromiseChainError();
                 }
             })
             .catch(function (err) {
                 config.disconnect(connection);
-                if(err instanceof BreakPromiseChainError){
+                if (err instanceof BreakPromiseChainError) {
                     //Do nothing
                 }
-                else{
+                else {
                     console.error(err);
                 }
             });
@@ -107,7 +107,7 @@ var top_post_notification = new CronJob({
 
 var featured_artist_notification = new CronJob({
     cronTime: '00 00 9 * * *', //second | minute | hour | day-of-month | month | day-of-week
-    onTick: function() {
+    onTick: function () {
 
         var connection;
         var featuredartists;
@@ -133,18 +133,18 @@ var featured_artist_notification = new CronJob({
                     return item.uuid;
                 });
 
-                if(featuredartists.length > 0){
+                if (featuredartists.length > 0) {
                     return notify.notificationPromise(users, notifData);
                 }
-                else{
+                else {
                     throw new BreakPromiseChainError();
                 }
             })
             .then(function () {
-                if(featuredartists.length > 0){
+                if (featuredartists.length > 0) {
                     return featuredartistutils.sendFeaturedArtistNotifToFollowers(connection, featuredartists);
                 }
-                else{
+                else {
                     throw new BreakPromiseChainError();
                 }
             })
@@ -154,10 +154,10 @@ var featured_artist_notification = new CronJob({
             })
             .catch(function (err) {
                 config.disconnect(connection);
-                if(err instanceof BreakPromiseChainError){
+                if (err instanceof BreakPromiseChainError) {
                     //Do nothing
                 }
-                else{
+                else {
                     console.error(err);
                 }
             });
@@ -181,12 +181,12 @@ function getTopPost(connection) {
             'USING(entityid) ' +
             'WHERE E.regdate > ? ' +
             'GROUP BY E.entityid ' +
-            'ORDER BY hatsoffcount DESC', [lastscandate], function(err, rows){
-            if(err){
+            'ORDER BY hatsoffcount DESC', [lastscandate], function (err, rows) {
+            if (err) {
                 reject(err);
             }
-            else{
-                if(rows[0] && rows[0].hatsoffcount >= 3){
+            else {
+                if (rows[0] && rows[0].hatsoffcount >= 3) {
                     resolve(rows[0]);
                 }
                 else {
@@ -220,10 +220,10 @@ function categoriseUsers(connection, entity) {
 
                 rows.map(function (element) {
 
-                    if(entity.type === 'SHORT'){
+                    if (entity.type === 'SHORT') {
                         element.to_send_notif = (capturecount >= shortcount && capturecount !== 0)
                     }
-                    else if(entity.type === 'CAPTURE'){
+                    else if (entity.type === 'CAPTURE') {
                         element.to_send_notif = (shortcount >= capturecount && shortcount !== 0)
                     }
 
