@@ -248,16 +248,28 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
 }
 
 function loadProfileInformation(connection, requesteduuid, requesteruuid){
+
+    var today = moment().format('YYYY-MM-DD 00:00:00');
+
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT User.uuid, User.firstname, User.lastname, User.bio, User.watermarkstatus, User.email, User.phone, Follow.followee, Follow.follower ' +
+        connection.query('SELECT User.uuid, User.firstname, User.lastname, User.bio, User.watermarkstatus, ' +
+            'User.email, User.phone, Follow.followee, Follow.follower, FA.featured_id ' +
             'FROM User ' +
+            'LEFT JOIN ' +
+                '(SELECT uuid, featured_id ' +
+                'FROM FeaturedArtists ' +
+                'WHERE regdate > ? ' +
+                'ORDER BY featured_score DESC ' +
+                'LIMIT 4) FA ' +
+            'ON (FA.uuid = User.uuid) ' +
             'LEFT JOIN Follow ' +
             'ON (Follow.followee = User.uuid OR Follow.follower = User.uuid) ' +
-            'WHERE User.uuid = ?', [requesteduuid], function (err, rows) {
+            'WHERE User.uuid = ?', [today, requesteduuid], function (err, rows) {
             if (err) {
                 reject(err)
             }
             else {
+
                 //People who follow the requesteduuid
                 var followers = rows.filter(function (elem) {
                     return (elem.followee === requesteduuid);
@@ -274,6 +286,11 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid){
                 var userdata = rows[0];
 
                 userdata.profilepicurl = utils.createProfilePicUrl(userdata.uuid);
+                userdata.featured = !!userdata.featured_id;
+
+                if(userdata.hasOwnProperty('featured_id')){
+                    delete userdata.featured_id;
+                }
 
                 //Follow status of the requester w.r.t. the requested
                 userdata.followstatus = (followers.filter(function (elem) {

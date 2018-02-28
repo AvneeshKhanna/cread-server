@@ -6,9 +6,11 @@ var notifyUsers = require('./NotificationUtils');
 var notify = require('./notificationFramework');
 var CronJob = require('cron').CronJob;
 var moment = require('moment');
+var async = require('async');
 
 var config = require('../Config');
 var BreakPromiseChainError = require('../cread/utils/BreakPromiseChainError');
+var featuredartistutils = require('../cread/featured-artists/FeaturedArtistsUtils');
 
 var top_givers_notification = new CronJob({
     cronTime: '00 30 20 * * 5', //second | minute | hour | day-of-month | month | day-of-week
@@ -103,6 +105,68 @@ var top_post_notification = new CronJob({
     timeZone: 'Asia/Kolkata'
 });
 
+var featured_artist_notification = new CronJob({
+    cronTime: '00 00 9 * * *', //second | minute | hour | day-of-month | month | day-of-week
+    onTick: function() {
+
+        var connection;
+        var featuredartists;
+
+        config.getNewConnection()
+            .then(function (conn) {
+                connection = conn;
+                return featuredartistutils.getFeaturedArtists(connection);
+            })
+            .then(function (result) {
+
+                featuredartists = result.featuredlist;
+
+                console.log("featuredartists are " + JSON.stringify(featuredartists, null, 3));
+
+                var notifData = {
+                    persistable: "No",
+                    category: "featured-artist",
+                    message: "Congratulations! You have been chosen as a featured artist on Cread!"
+                };
+
+                var users = featuredartists.map(function (item) {
+                    return item.uuid;
+                });
+
+                if(featuredartists.length > 0){
+                    return notify.notificationPromise(users, notifData);
+                }
+                else{
+                    throw new BreakPromiseChainError();
+                }
+            })
+            .then(function () {
+                if(featuredartists.length > 0){
+                    return featuredartistutils.sendFeaturedArtistNotifToFollowers(connection, featuredartists);
+                }
+                else{
+                    throw new BreakPromiseChainError();
+                }
+            })
+            .then(function () {
+                console.log('Notification for featured artist sent');
+                throw new BreakPromiseChainError();
+            })
+            .catch(function (err) {
+                config.disconnect(connection);
+                if(err instanceof BreakPromiseChainError){
+                    //Do nothing
+                }
+                else{
+                    console.error(err);
+                }
+            });
+
+    },
+    start: false,   //Whether to start just now
+    timeZone: 'Asia/Kolkata'
+});
+
 /**
  * Returns the entityid, type and the hatsoffcount of the Entity that has more than 3 hats-offs within the last scan date
  * */
@@ -173,5 +237,6 @@ function categoriseUsers(connection, entity) {
 
 module.exports = {
     top_givers_notification: top_givers_notification,
-    top_post_notification: top_post_notification
+    top_post_notification: top_post_notification,
+    featured_artist_notification: featured_artist_notification
 };

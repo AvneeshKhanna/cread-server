@@ -11,6 +11,10 @@ var config = require('../../Config');
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
+var featuredartistutils = require('./FeaturedArtistsUtils');
+var consts = require('../utils/Constants');
+var cache_time = consts.cache_time;
+
 router.get('/load', function (request, response) {
 
     var uuid = request.headers.uuid;
@@ -30,29 +34,22 @@ router.get('/load', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            response.status(200).send({
-                tokenstatus: "valid",
-                data: {
-                    featuredlist: [
-                        {
-                            name: "Avneesh",
-                            profilepicurl: "https://s3-ap-northeast-1.amazonaws.com/testamentbucketdev/Users/6979be3e-835e-433d-a139-addf86ef2344/Profile/display-pic.jpg",
-                            uuid: "6979be3e-835e-433d-a139-addf86ef2344"
-                        },
-                        {
-                            name: "Gaurav",
-                            profilepicurl: "https://s3-ap-northeast-1.amazonaws.com/testamentbucketdev/Users/9ff85c43-8a0c-4961-8268-8743e06589bc/Profile/display-pic-small.jpg",
-                            uuid: "9ff85c43-8a0c-4961-8268-8743e06589bc"
-                        },
-                        {
-                            name: "Prakhar",
-                            profilepicurl: "https://s3-ap-northeast-1.amazonaws.com/testamentbucketdev/Users/e1e83dd6-c746-40d8-998e-95f5df54ba9d/Profile/display-pic-small.jpg",
-                            uuid: "e1e83dd6-c746-40d8-998e-95f5df54ba9d"
-                        }
-                    ]
-                }
-            });
-            response.end();
+            return featuredartistutils.getFeaturedArtists(connection);
+        })
+        .then(function (result) {
+            response.set('Cache-Control', 'public, max-age=' + cache_time.xxhigh);
+
+            if (request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')) {
+                response.status(304).send().end();
+            }
+            else {
+                response.status(200).send({
+                    tokenstatus: 'valid',
+                    data: result
+                });
+                response.end();
+            }
+
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
@@ -66,7 +63,7 @@ router.get('/load', function (request, response) {
                     message: 'Some error occurred at the server'
                 }).end();
             }
-        })
+        });
 
 });
 

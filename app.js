@@ -19,6 +19,9 @@ var exploredatahandler = require('./routes/cread/feed/explore/ExploreFeedDataHan
 var engagement_notification_job = require('./routes/cread/user-manager/events/UserEventTasksManager');
 engagement_notification_job.engagement_notification_job.start();
 
+//To initiate the cron job for featured artist notifications
+notifscheduler.featured_artist_notification.start();
+
 var routes = require('./routes/index');
 var users = require('./routes/users');
 var Auth = require('./routes/Authentication');

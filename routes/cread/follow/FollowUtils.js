@@ -255,11 +255,32 @@ function updateFollowDataForUpdates(connection, register, uuid, actor_uuid) {
     })
 }
 
+/**
+ * Returns a specific user's followers
+ * */
+function getUserFollowers(connection, user_uuid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT follower ' +
+            'FROM Follow ' +
+            'WHERE followee = ?', [user_uuid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(rows.map(function (row) {
+                    return row.follower;
+                }));
+            }
+        });
+    });
+}
+
 module.exports = {
     registerFollow: registerFollow,
     loadFollowersLegacy: loadFollowersLegacy,
     loadFollowers: loadFollowers,
     loadFollowingLegacy: loadFollowingLegacy,
     loadFollowing: loadFollowing,
-    updateFollowDataForUpdates: updateFollowDataForUpdates
+    updateFollowDataForUpdates: updateFollowDataForUpdates,
+    getUserFollowers: getUserFollowers
 };
