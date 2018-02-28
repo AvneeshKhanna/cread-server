@@ -7,6 +7,7 @@ var chatconvoutils = require('./ChatConversationUtils');
 var chatlistutils = require('./ChatListUtils');
 var config = require('../../Config');
 var notify = require('../../notification-system/notificationFramework');
+var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
 var async = require('async');
 var uuidgen = require('uuid');
