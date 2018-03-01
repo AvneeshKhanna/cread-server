@@ -170,6 +170,9 @@ router.post('/sign-up', function (request, response) {
             }
         })
         .then(function () {
+            return useraccessutils.addDefaultCreadKalakaarActions(connection, new_user_uuid);
+        })
+        .then(function () {
             throw new BreakPromiseChainError(); //To disconnect server connection
         })
         .catch(function (err) {

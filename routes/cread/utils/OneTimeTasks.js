@@ -16,6 +16,8 @@ var config = require('../../Config');
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var utils = require('./Utils');
+var followutils = require('../follow/FollowUtils');
+var chatconvoutils = require('../chat/ChatConversationUtils');
 
 var async = require('async');
 var uuidGen = require('uuid');
@@ -177,6 +179,161 @@ function loadCaptureUrls(connection) {
                 resolve(rows);
             }
         });
+    });
+}
+
+router.post('/default-follow-cread-kalakaar', function (request, response) {
+
+    var connection;
+
+    config.getNewConnection()
+        .then(function (conn) {
+            connection = conn;
+
+            return new Promise(function (resolve, reject) {
+                connection.query('SELECT DISTINCT uuid FROM User WHERE uuid <> ?', [config.getCreadKalakaarUUID()], function (err, rows) {
+                    if (err) {
+                        reject(err);
+                    }
+                    else {
+                        console.log("users are " + JSON.stringify(rows, null, 3));
+
+                        resolve(rows.map(function (row) {
+                            return row.uuid;
+                        }));
+                    }
+                });
+            });
+
+        })
+        .then(function (user_uuids) {
+            response.status(200).send("Process initiated").end();
+            return registerAllFollowCreadKalakaar(connection, user_uuids);
+        })
+        .then(function () {
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
+
+function registerAllFollowCreadKalakaar(connection, user_uuids) {
+    return new Promise(function (resolve, reject) {
+        async.eachSeries(user_uuids, function (user_uuid, callback) {
+            utils.beginTransaction(connection)
+                .then(function () {
+                    return followutils.registerFollowForCreadKalakaar(connection, user_uuid)
+                })
+                .then(function () {
+                    setTimeout(function () {
+                        callback();
+                    }, 1000);
+                })
+                .catch(function (err) {
+                    callback(err);
+                });
+        }, function (err) {
+            if(err){
+                utils.rollbackTransaction(connection, undefined, err)
+                    .catch(function (err) {
+                        reject(err);
+                    });
+            }
+            else{
+                utils.commitTransaction(connection)
+                    .then(function () {
+                        resolve();
+                    });
+            }
+        })
+    });
+}
+
+router.post('/default-chat-cread-kalakaar', function (request, response) {
+    var connection;
+
+    config.getNewConnection()
+        .then(function (conn) {
+            connection = conn;
+
+            return new Promise(function (resolve, reject) {
+                connection.query('SELECT DISTINCT uuid FROM User WHERE uuid <> ?', [config.getCreadKalakaarUUID()], function (err, rows) {
+                    if (err) {
+                        reject(err);
+                    }
+                    else {
+                        console.log("users are " + JSON.stringify(rows, null, 3));
+
+                        resolve(rows.map(function (row) {
+                            return row.uuid;
+                        }));
+                    }
+                });
+            });
+
+        })
+        .then(function (user_uuids) {
+            response.status(200).send("Process initiated").end();
+            return addAllDefaultMessageFromCreadKalakaar(connection, user_uuids);
+        })
+        .then(function () {
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
+
+function addAllDefaultMessageFromCreadKalakaar(connection, user_uuids) {
+    return new Promise(function (resolve, reject) {
+        async.eachSeries(user_uuids, function (user_uuid, callback) {
+            utils.beginTransaction(connection)
+                .then(function () {
+                  return chatconvoutils.addDefaultMessageFromCreadKalakaar(connection, user_uuid);
+                })
+                .then(function () {
+                    setTimeout(function () {
+                        callback();
+                    }, 1000);
+                })
+                .catch(function (err) {
+                    callback(err);
+                })
+        }, function (err) {
+            if(err){
+                utils.rollbackTransaction(connection, undefined, err)
+                    .catch(function (err) {
+                        reject(err);
+                    });
+            }
+            else{
+                utils.commitTransaction(connection)
+                    .then(function () {
+                        resolve();
+                    });
+            }
+        })
     });
 }
 

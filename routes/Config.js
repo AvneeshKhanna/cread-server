@@ -85,6 +85,29 @@ function getServerBaseUrl(){
     }
 }
 
+function getCreadKalakaarUUID(){
+    if(envtype === 'PRODUCTION'){
+        return '6732bb8e-cffd-4e1b-906f-dc75873a5d92';
+    }
+    else{
+        return '40e88526-6e2f-49f1-82ae-ed2e52fc54fe';
+    }
+}
+
+/**
+ * Returns the default chat message from Cread Kalakaar whenever a new user signs up
+ * */
+function getCreadKalakaarDefaultMessage() {
+    return "Hello, my artist friend! \n" +
+        "\n" +
+        "I'm reaching out to you with a lot of good feelings and hope! I'm glad that you decided to connect with this beautiful community of artists, and hope you enjoy every second of it! On Cread, people create great art, sometimes alone and sometimes in collaboration. They connect with each other, digitally and even through meetups. And finally, they share their work anywhere they want, to give people an opportunity to like and also buy it. \n" +
+        "\n" +
+        "There's a million ways in which Cread can become better. And only you can tell us how. So if you have any feedback/suggestion, please (PLEASE) reach out to me. Your feedback is gold. \n" +
+        "\n" +
+        "Looking forward to your art. \n" +
+        "Cread Kalakaar";
+}
+
 module.exports = {
     'secretKey': '12345-67890-09876-54321',
     'createConnection': connection,
@@ -102,5 +125,7 @@ module.exports = {
     'cread-fb-app-id': '362799884145458',
     'cread-fb-app-secret': '93a98159204ae6ca8647b3cbe00cbf2a',
     'firebase_dynamiclink_domain': 'https://n7sgf.app.goo.gl',  //Obtained from Firebase Developer Console
-    'fcm-server-key': 'AAAAWOwUO0Q:APA91bEI7_FLG9hRz2_nHRkBgSnQftSMrGzOzzKod1lPYNyX88jEqUIJRhE7SpxyVQ_a1ugWAZ0CbVgC3pTylZm9w8ZJib8P5B5MTXVh42_48RN_37-Cob0FtTV5-xxRzlSfGgYVobcc'
+    'fcm-server-key': 'AAAAWOwUO0Q:APA91bEI7_FLG9hRz2_nHRkBgSnQftSMrGzOzzKod1lPYNyX88jEqUIJRhE7SpxyVQ_a1ugWAZ0CbVgC3pTylZm9w8ZJib8P5B5MTXVh42_48RN_37-Cob0FtTV5-xxRzlSfGgYVobcc',
+    getCreadKalakaarUUID: getCreadKalakaarUUID,
+    getCreadKalakaarDefaultMessage: getCreadKalakaarDefaultMessage
 };

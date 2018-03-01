@@ -15,6 +15,9 @@ var _auth = require('../../auth-token-management/AuthTokenManager');
 
 var userstbl_ddb = envconfig.get('dynamoDB.users_table');
 var updatesutils = require('../updates/UpdatesUtils');
+var utils = require('../utils/Utils');
+var followutils = require('../follow/FollowUtils');
+var chatconvoutils = require('../chat/ChatConversationUtils');
 
 function checkIfPhoneExists(connection, phone) {
     return new Promise(function (resolve, reject) {
@@ -236,6 +239,33 @@ function updateNewFacebookUserDataForUpdates(connection, uuid, actor_uuid, categ
     });
 }
 
+/**
+ * Function to add Cread Kalakaar as a follower and a followee for the user as well as add a default chat message
+ * from Cread Kalakaar
+ * */
+function addDefaultCreadKalakaarActions(connection, user_uuid) {
+    return new Promise(function (resolve, reject) {
+        utils.beginTransaction(connection)
+            .then(function () {
+                return followutils.registerFollowForCreadKalakaar(connection, user_uuid);
+            })
+            .then(function () {
+                return chatconvoutils.addDefaultMessageFromCreadKalakaar(connection, user_uuid);
+            })
+            .then(function () {
+                return utils.commitTransaction(connection);
+            }, function (err) {
+                return utils.rollbackTransaction(connection, undefined, err);
+            })
+            .then(function () {
+                resolve();
+            })
+            .catch(function (err) {
+                reject(err);
+            })
+    });
+}
+
 module.exports = {
     checkIfPhoneExists: checkIfPhoneExists,
     addUserFcmToken: addUserFcmToken,
@@ -243,5 +273,6 @@ module.exports = {
     addUserToDynamoDB: addUserToDynamoDB,
     registerUserData: registerUserData,
     checkIfUserExists: checkIfUserExists,
-    updateNewFacebookUserDataForUpdates: updateNewFacebookUserDataForUpdates
+    updateNewFacebookUserDataForUpdates: updateNewFacebookUserDataForUpdates,
+    addDefaultCreadKalakaarActions: addDefaultCreadKalakaarActions
 };

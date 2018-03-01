@@ -275,6 +275,28 @@ function getUserFollowers(connection, user_uuid) {
     });
 }
 
+/**
+ * Register Cread Kalakaar as a follower and a followee for the given user
+ * */
+function registerFollowForCreadKalakaar(connection, user_uuid) {
+    return new Promise(function (resolve, reject) {
+
+        var sqlparams = [
+            [uuidgen.v4(), config.getCreadKalakaarUUID(), user_uuid],
+            [uuidgen.v4(), user_uuid, config.getCreadKalakaarUUID()]
+        ];
+
+        connection.query('INSERT IGNORE INTO Follow (followid, followee, follower) VALUES ?', [sqlparams], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
 module.exports = {
     registerFollow: registerFollow,
     loadFollowersLegacy: loadFollowersLegacy,
@@ -282,5 +304,6 @@ module.exports = {
     loadFollowingLegacy: loadFollowingLegacy,
     loadFollowing: loadFollowing,
     updateFollowDataForUpdates: updateFollowDataForUpdates,
-    getUserFollowers: getUserFollowers
+    getUserFollowers: getUserFollowers,
+    registerFollowForCreadKalakaar: registerFollowForCreadKalakaar
 };

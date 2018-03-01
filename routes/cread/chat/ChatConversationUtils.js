@@ -8,7 +8,9 @@ var moment = require('moment');
 var uuidgen = require('uuid');
 
 var utils = require('../utils/Utils');
+var chatlistutils = require('./ChatListUtils');
 var notify = require('../../notification-system/notificationFramework');
+var config = require('../../Config');
 
 function isUserConnected(uuid){
     /*return connectedusers.filter(function (connecteduser) {
@@ -198,6 +200,29 @@ function sendChatMessageNotification(connection, message){
     });
 }
 
+function addDefaultMessageFromCreadKalakaar(connection, user_uuid) {
+    return new Promise(function (resolve, reject) {
+        var message = {
+            from_uuid: config.getCreadKalakaarUUID(),
+            to_uuid: user_uuid,
+            body: config.getCreadKalakaarDefaultMessage()
+        };
+
+        chatlistutils.createNewChat(connection, message)
+            .then(function (chatid) {
+                message.chatid = chatid;
+                return addMessageToDb(connection, message);
+            })
+            .then(function () {
+                resolve();
+            })
+            .catch(function (err) {
+                resolve(err);
+            });
+
+    });
+}
+
 module.exports = {
     isUserConnected: isUserConnected,
     getUserSockets: getUserSockets,
@@ -208,5 +233,6 @@ module.exports = {
     deleteMessageFromDb: deleteMessageFromDb,
     loadChatMessages: loadChatMessages,
     sendChatMessageNotification: sendChatMessageNotification,
-    connectedusers: connectedusers
+    connectedusers: connectedusers,
+    addDefaultMessageFromCreadKalakaar: addDefaultMessageFromCreadKalakaar
 };
