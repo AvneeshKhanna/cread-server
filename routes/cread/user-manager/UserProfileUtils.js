@@ -142,6 +142,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
             'Capture.capid AS captureid, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
+            'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
             'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
             'COUNT(DISTINCT Comment.commid) AS commentcount ' +
             'FROM Entity ' +
@@ -153,6 +154,8 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
             'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
             'LEFT JOIN HatsOff ' +
             'ON HatsOff.entityid = Entity.entityid ' +
+            'LEFT JOIN Downvote D ' +
+            'ON D.entityid = Entity.entityid ' +
             'LEFT JOIN Comment ' +
             'ON Comment.entityid = Entity.entityid ' +
             'LEFT JOIN Follow ' +
@@ -163,7 +166,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
             'GROUP BY Entity.entityid ' +
             'ORDER BY Entity.regdate DESC ' +
             'LIMIT ? '/* +
-            'OFFSET ?'*/, [requesteruuid, requesteruuid, requesteduuid, lastindexkey, limit/*, offset*/], function (err, rows) {
+            'OFFSET ?'*/, [requesteruuid, requesteruuid, requesteruuid, requesteduuid, lastindexkey, limit/*, offset*/], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -184,6 +187,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
                         element.creatorname = element.firstname + ' ' + element.lastname;
                         element.hatsoffstatus = element.hbinarycount > 0;
                         element.followstatus = element.fbinarycount > 0;
+                        element.downvotestatus = element.dbinarycount > 0;
                         element.merchantable = (element.merchantable !== 0);
 
                         if(element.type === 'CAPTURE'){
@@ -203,6 +207,10 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
 
                         if(element.hasOwnProperty('hbinarycount')) {
                             delete element.hbinarycount;
+                        }
+
+                        if(element.hasOwnProperty('dbinarycount')) {
+                            delete element.dbinarycount;
                         }
 
                         if(element.hasOwnProperty('fbinarycount')) {
@@ -353,6 +361,7 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                     'Capture.capid AS captureid, CShort.entityid AS csentityid, SCapture.entityid AS scentityid, ' +
                     'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
                     'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
+                    'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
                     'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
                     'COUNT(DISTINCT Comment.commid) AS commentcount ' +
                     'FROM Entity ' +
@@ -364,6 +373,8 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                     'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
                     'LEFT JOIN HatsOff ' +
                     'ON HatsOff.entityid = Entity.entityid ' +
+                    'LEFT JOIN Downvote D ' +
+                    'ON D.entityid = Entity.entityid ' +
                     'LEFT JOIN Comment ' +
                     'ON Comment.entityid = Entity.entityid ' +
                     'LEFT JOIN Short CShort ' +
@@ -378,7 +389,7 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                     'AND Entity.regdate < ? ' +
                     'GROUP BY Entity.entityid ' +
                     'ORDER BY Entity.regdate DESC ' +
-                    'LIMIT ? ', [requesteruuid, requesteruuid, requesteduuid, requesteduuid, requesteduuid, lastindexkey, limit], function (err, rows) {
+                    'LIMIT ? ', [requesteruuid, requesteruuid, requesteruuid, requesteduuid, requesteduuid, requesteduuid, lastindexkey, limit], function (err, rows) {
                     if (err) {
                         reject(err);
                     }
@@ -395,6 +406,7 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                                 element.creatorname = element.firstname + ' ' + element.lastname;
                                 element.followstatus = element.fbinarycount > 0;
                                 element.hatsoffstatus = element.hbinarycount > 0;
+                                element.downvotestatus = element.dbinarycount > 0;
                                 element.merchantable = (element.merchantable !== 0);
 
                                 if(element.type === 'CAPTURE'){
@@ -424,6 +436,10 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
 
                                 if(element.hasOwnProperty('hbinarycount')) {
                                     delete element.hbinarycount;
+                                }
+
+                                if(element.hasOwnProperty('dbinarycount')) {
+                                    delete element.dbinarycount;
                                 }
 
                                 if(element.hasOwnProperty('fbinarycount')) {

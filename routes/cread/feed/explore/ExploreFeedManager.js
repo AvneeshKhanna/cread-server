@@ -461,6 +461,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                 'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
                 'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
                 'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
+                'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
                 'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
                 'FROM Entity ' +
                 'LEFT JOIN EntityAnalytics EA ' +
@@ -473,6 +474,8 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                 'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
                 'LEFT JOIN HatsOff ' +
                 'ON HatsOff.entityid = Entity.entityid ' +
+                'LEFT JOIN Downvote D ' +
+                'ON D.entityid = Entity.entityid ' +
                 'LEFT JOIN Comment ' +
                 'ON Comment.entityid = Entity.entityid ' +
                 'LEFT JOIN Follow ' +
@@ -485,7 +488,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                 'ORDER BY impact_weight DESC) master ' +
             'CROSS JOIN (SELECT @rownr := 0) AS dummy ' +
             'HAVING row_no > ? ' +
-            'LIMIT ?;', [explore_algo_base_score, uuid, uuid, lastindexkey, limit], function (err, rows) {
+            'LIMIT ?;', [explore_algo_base_score, uuid, uuid, uuid, lastindexkey, limit], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -513,6 +516,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
 
                         element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
                         element.hatsoffstatus = element.hbinarycount > 0;
+                        element.downvotestatus = element.dbinarycount > 0;
                         element.followstatus = element.binarycount > 0;
                         element.merchantable = (element.merchantable !== 0);
 
@@ -522,6 +526,10 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
 
                         if (element.hasOwnProperty('hbinarycount')) {
                             delete element.hbinarycount;
+                        }
+
+                        if (element.hasOwnProperty('dbinarycount')) {
+                            delete element.dbinarycount;
                         }
 
                         if (element.firstname) {

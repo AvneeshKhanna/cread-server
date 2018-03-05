@@ -126,7 +126,8 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
             'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
             'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
-            'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
+            'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount, ' +
+            'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount ' +
             'FROM Entity ' +
             // 'JOIN HashTagDistribution AS HTD ' +
             // 'ON HTD.entityid = Entity.entityid ' +
@@ -138,6 +139,8 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
             'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
             'LEFT JOIN HatsOff ' +
             'ON HatsOff.entityid = Entity.entityid ' +
+            'LEFT JOIN Downvote D ' +
+            'ON D.entityid = Entity.entityid ' +
             'LEFT JOIN Comment ' +
             'ON Comment.entityid = Entity.entityid ' +
             'LEFT JOIN Follow ' +
@@ -148,7 +151,7 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
             'AGAINST (? IN BOOLEAN MODE) ' +
             'GROUP BY Entity.entityid ' +
             'ORDER BY Entity.regdate DESC ' +
-            'LIMIT ?', [uuid, uuid, lastindexkey, hashtag, limit], function (err, rows) {
+            'LIMIT ?', [uuid, uuid, uuid, lastindexkey, hashtag, limit], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -172,6 +175,7 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
                         element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
                         element.hatsoffstatus = element.hbinarycount > 0;
                         element.followstatus = element.binarycount > 0;
+                        element.downvotestatus = element.dbinarycount > 0;
                         element.merchantable = (element.merchantable !== 0);
 
                         if (element.hasOwnProperty('binarycount')) {
@@ -180,6 +184,10 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
 
                         if (element.hasOwnProperty('hbinarycount')) {
                             delete element.hbinarycount;
+                        }
+
+                        if(element.hasOwnProperty('dbinarycount')) {
+                            delete element.dbinarycount;
                         }
 
                         if (element.firstname) {

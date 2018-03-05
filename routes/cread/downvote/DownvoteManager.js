@@ -12,6 +12,7 @@ var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
 var downvoteutils = require('./DownvoteUtils');
+var utils = require('../utils/Utils');
 
 router.post('/on-click', function (request, response) {
 
