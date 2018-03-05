@@ -145,10 +145,10 @@ router.post('/send-chat-msg-ckalakaar', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     message: 'Some error occurred at the server'
@@ -177,13 +177,13 @@ function sendAllChatMessageFromCreadKalakaar(connection, users_data, message_bod
                     callback(err);
                 })
         }, function (err) {
-            if(err){
+            if (err) {
                 utils.rollbackTransaction(connection, undefined, err)
                     .catch(function (err) {
                         reject(err);
                     });
             }
-            else{
+            else {
                 utils.commitTransaction(connection)
                     .then(function () {
                         resolve();
