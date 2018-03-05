@@ -12,6 +12,7 @@ var router = express.Router();
 var config = require('../Config');
 
 var request_client = require('request');
+var async = require('async');
 
 var chatconvoutils = require('../cread/chat/ChatConversationUtils');
 
@@ -19,6 +20,7 @@ var hrkuapptoken = '11abc5c3-dd3f-4d62-86df-9061a4c32e2d';
 var hrkuappname = 'cread-dev-remote';
 
 var notify = require('../notification-system/notificationFramework');
+var utils = require('../cread/utils/Utils');
 
 router.get('/restart-heroku', function (request, response) {
 
@@ -104,5 +106,97 @@ router.get('/get-active-connections', function (request, response) {
     });
     response.end();
 });
+
+/**
+ * Endpoint to send a chat message to all users from Cread Kalakaar's profile
+ * */
+router.post('/send-chat-msg-ckalakaar', function (request, response) {
+
+    var message_body = request.body.message_body;
+    var connection;
+
+    config.getNewConnection()
+        .then(function (conn) {
+            connection = conn;
+
+            return new Promise(function (resolve, reject) {
+                connection.query('SELECT User.uuid, Chat.chatid ' +
+                    'FROM User ' +
+                    'JOIN Chat ' +
+                    'ON (Chat.acceptor_id = User.uuid) ' +
+                    'WHERE User.uuid <> ? ' +
+                    'AND Chat.initiator_id = ?', [config.getCreadKalakaarUUID(), config.getCreadKalakaarUUID()], function (err, rows) {
+                    if (err) {
+                        reject(err);
+                    }
+                    else {
+                        resolve(rows);
+                    }
+                });
+            });
+
+        })
+        .then(function (users_data) {
+            response.status(200).send("Process initiated").end();
+            return sendAllChatMessageFromCreadKalakaar(connection, users_data, message_body);
+        })
+        .then(function () {
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
+
+function sendAllChatMessageFromCreadKalakaar(connection, users_data, message_body) {
+    return new Promise(function (resolve, reject) {
+        async.eachSeries(users_data, function (user_data, callback) {
+            utils.beginTransaction(connection)
+                .then(function () {
+                    return chatconvoutils.sendChatMessageFromCreadKalakaar(connection, user_data, message_body);
+                })
+                .then(function () {
+                    callback();
+                })
+                /*.then(function () {
+                    setTimeout(function () {
+                        callback();
+                    }, 1000);
+                })*/
+                .catch(function (err) {
+                    callback(err);
+                })
+        }, function (err) {
+            if(err){
+                utils.rollbackTransaction(connection, undefined, err)
+                    .catch(function (err) {
+                        reject(err);
+                    });
+            }
+            else{
+                utils.commitTransaction(connection)
+                    .then(function () {
+                        resolve();
+                    })
+                    .catch(function (err) {
+                        utils.rollbackTransaction(connection, undefined, err)
+                            .catch(function (err) {
+                                reject(err);
+                            });
+                    });
+            }
+        })
+    });
+}
 
 module.exports = router;

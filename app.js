@@ -172,6 +172,7 @@ app.use('/updates', require('./routes/cread/updates/UpdatesManager'));
 app.use('/chat-convo', require('./routes/cread/chat/ChatConversationManager'));
 app.use('/chat-list', require('./routes/cread/chat/ChatListManager'));
 app.use('/featured-artists', require('./routes/cread/featured-artists/FeaturedArtistsManager'));
+app.use('/downvote', require('./routes/cread/downvote/DownvoteManager'));
 
 //-dashboard-
 app.use('/campaign-details', require('./routes/cread/dsbrd/campaign-details/CampaignDetails'));

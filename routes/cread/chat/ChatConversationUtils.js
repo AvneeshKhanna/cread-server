@@ -217,7 +217,50 @@ function addDefaultMessageFromCreadKalakaar(connection, user_uuid) {
                 resolve();
             })
             .catch(function (err) {
-                resolve(err);
+                reject(err);
+            });
+
+    });
+}
+
+/**
+ * Sending a chat message from Cread Kalakaar's account to existing chats
+ * */
+function sendChatMessageFromCreadKalakaar(connection, user_data, body) {
+    return new Promise(function (resolve, reject) {
+
+        console.log("sendChatMessageFromCreadKalakaar called");
+
+        var message = {
+            from_uuid: config.getCreadKalakaarUUID(),
+            to_uuid: user_data.uuid,
+            body: body,
+            chatid: user_data.chatid
+        };
+
+        /*chatlistutils.createNewChat(connection, message)
+            .then(function (chatid) {
+                message.chatid = chatid;
+                return addMessageToDb(connection, message);
+            })*/
+        addMessageToDb(connection, message)
+            .then(function () {
+                var notifData = {
+                    message: message.body,
+                    persistable: "No",
+                    category: "personal-chat",
+                    chatid: message.chatid,
+                    from_name: "Cread Kalakaar",
+                    from_uuid: message.from_uuid,
+                    from_profilepicurl: utils.createSmallProfilePicUrl(message.from_uuid)
+                };
+                return notify.notificationPromise(new Array(user_data.uuid), notifData);
+            })
+            .then(function () {
+                resolve();
+            })
+            .catch(function (err) {
+                reject(err);
             });
 
     });
@@ -234,5 +277,6 @@ module.exports = {
     loadChatMessages: loadChatMessages,
     sendChatMessageNotification: sendChatMessageNotification,
     connectedusers: connectedusers,
-    addDefaultMessageFromCreadKalakaar: addDefaultMessageFromCreadKalakaar
+    addDefaultMessageFromCreadKalakaar: addDefaultMessageFromCreadKalakaar,
+    sendChatMessageFromCreadKalakaar: sendChatMessageFromCreadKalakaar
 };

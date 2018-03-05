@@ -13,6 +13,8 @@ var docClient = new AWS.DynamoDB.DocumentClient();
 var envconfig = require('config');
 var request_client = require('request');
 var async = require('async');
+var buckets = require('buckets-js');
+
 var userstbl_ddb = envconfig.get('dynamoDB.users_table');
 
 var config = require('../Config');
@@ -85,7 +87,6 @@ function usersMapping(usersuuid, serveruuids, serverFcmtokens) {
     return fcmTokens;
 }
 
-//TODO: Optimise code for sending notifications by segregating Android and iOS tokens and sending two sets of notification to both platform tokens
 function sendNotification(users, notificationData, mastercallback) {
 
     if (!(users instanceof Array)) {
@@ -114,25 +115,26 @@ function sendNotification(users, notificationData, mastercallback) {
             }
 
         });
-
-        /*var message = new gcm.Message({
-                data: notificationData
-            });
-
-            var sender = new gcm.Sender(config['fcm-server-key']);
-
-            sender.send(message, {registrationTokens: registrationTokens}, 3, function (err, response) {
-                if (err) {
-                    callback(err);
-                }
-
-                console.log(response);
-                callback();
-            });*/
     }
 }
 
 function sendPlatformSpecificMessage(registrationTokens, notificationData, mastercallback){
+
+    var androidTokens = [];
+    var iOSTokens = [];
+
+    var androidMessage = new gcm.Message({
+        data: notificationData
+    });
+
+    var iosMessage = new gcm.Message({
+        data: notificationData,
+        notification: {
+            title: "Cread",
+            body: notificationData.message
+        }
+    });
+
     async.eachOfSeries(registrationTokens, function (regtoken, index, callback) {
 
         getTokenPlatform(regtoken, function (err, platform) {
@@ -141,74 +143,75 @@ function sendPlatformSpecificMessage(registrationTokens, notificationData, maste
                 callback(err);
             }
             else{
-                var message;
                 console.log('platform is ' + platform);
+
                 //Formulating notification message according to device platform
                 if(platform === 'IOS' && iosValidCategories.includes(notificationData['category'])){
 
-                    message = new gcm.Message({
-                        data: notificationData,
-                        notification: {
-                            title: "Cread",
-                            body: notificationData.message
-                        }
-                    });
+                    iOSTokens.push(regtoken);
                 }
                 else if(platform === 'ANDROID'){
-                    message = new gcm.Message({
-                        data: notificationData
-                    });
+
+                    androidTokens.push(regtoken);
                 }
-                else{   //Case when token is invalid (platform is undefined) OR platform is IOS with an invalid notification category
-                    if(index === (registrationTokens.length - 1)){
-                        console.log('mastercallback called');
-                        mastercallback();
-                    }
-                    else {
-                        callback();
-                    }
-                    return;
+                else{
+                    //Case when token is invalid (platform is undefined) OR platform is IOS with an invalid notification category
                 }
 
-                sendFormulatedMessage(message, regtoken, function (err) {
-                    if(err){
-                        callback(err);
-                    }
-
-                    console.log('registrationTokens.length is ' + registrationTokens.length);
-
-                    if(index === (registrationTokens.length - 1)){
-                        console.log('mastercallback called');
-                        mastercallback();
-                    }
-                    else {
-                        callback();
-                    }
-
-                });
+                callback();
             }
 
         });
 
     }, function (err) {
+
         if(err){
-            console.error(err);
+            mastercallback(err);
+        }
+        else {
+
+            sendFormulatedMessage(androidMessage, androidTokens, function (err) {
+                if(err){
+                    mastercallback(err);
+                }
+                else {
+                    sendFormulatedMessage(iosMessage, iOSTokens, function (err) {
+                        if(err){
+                            mastercallback(err);
+                        }
+                        else {
+                            console.log('mastercallback called');
+
+                            console.log('registrationTokens.length is ' + registrationTokens.length);
+
+                            mastercallback();
+                        }
+                    });
+                }
+            });
         }
     });
 }
 
-function sendFormulatedMessage(message, token, callback) {
+function sendFormulatedMessage(message, tokens, callback) {
+
     var sender = new gcm.Sender(config['fcm-server-key']);
 
-    sender.send(message, {registrationTokens: [token]}, 3, function (err, response) {
-        if (err) {
-            callback(err);
-        }
-        else{
-            console.log(response);
-            callback();
-        }
-    });
+    if(tokens.length > 0){
+        sender.send(message, {registrationTokens: tokens}, 3, function (err, response) {
+            if (err) {
+                callback(err);
+            }
+            else{
+                console.log(response);
+                callback();
+            }
+        });
+    }
+    else{   //Case where tokens do not exist. Example a user is only on Android or iOS
+        callback();
+    }
+
 }
 
 function getTokenPlatform(token, callback){
@@ -255,24 +258,11 @@ function notifyTokens(tokens, payload, mastercallback) {
             mastercallback();
         }
     });
-    /*
-    var message = new gcm.Message({
-        data: payload
-    });
-
-    var sender = new gcm.Sender(config['fcm-server-key']);
-
-    sender.send(message, {registrationTokens: tokens}, 3, function (err, response) {
-        if (err) {
-            callback(err);
-        }
-
-        console.log(response);
-        callback();
-    });*/
 }
 
 //module.exports = router;
-module.exports.notification = sendNotification;
-module.exports.notificationPromise = notificationPromise;
-module.exports.notifyTokens = notifyTokens;
+module.exports = {
+    notification : sendNotification,
+    notificationPromise : notificationPromise,
+    notifyTokens : notifyTokens
+};
