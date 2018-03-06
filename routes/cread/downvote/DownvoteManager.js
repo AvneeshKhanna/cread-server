@@ -57,6 +57,7 @@ router.post('/on-click', function (request, response) {
                 }
             });
             response.end();
+            throw new BreakPromiseChainError();
         })
         .catch(function (err) {
             config.disconnect(connection);
