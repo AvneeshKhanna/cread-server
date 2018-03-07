@@ -128,10 +128,10 @@ router.get('/check-fcmtokens', function (request, response) {
             connection = conn;
             return new Promise(function (resolve, reject) {
                 connection.query('SELECT uuid FROM User', [], function (err, rows) {
-                    if(err){
+                    if (err) {
                         reject(err);
                     }
-                    else{
+                    else {
                         resolve(rows.map(function (row) {
                             return row.uuid;
                         }));
@@ -155,12 +155,12 @@ router.get('/check-fcmtokens', function (request, response) {
                     };
 
                     docClient.get(params, function (err, data) {
-                        if(err){
+                        if (err) {
                             callback(err);
                         }
-                        else{
+                        else {
 
-                            if(!data.Item){
+                            if (!data.Item) {
                                 console.log("inconsistent uuid is " + uuid);
                             }
 
@@ -169,10 +169,10 @@ router.get('/check-fcmtokens', function (request, response) {
                     });
 
                 }, function (err) {
-                    if(err){
+                    if (err) {
                         reject(err);
                     }
-                    else{
+                    else {
                         resolve();
                     }
                 });
@@ -184,10 +184,10 @@ router.get('/check-fcmtokens', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     message: 'Some error occurred at the server'
