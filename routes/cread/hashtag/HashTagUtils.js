@@ -210,6 +210,7 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
                         .then(function (rows) {
                             resolve({
                                 requestmore: rows.length >= limit,
+                                candownvote: true,
                                 lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
                                 feed: rows
                             });
@@ -222,6 +223,7 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
                 else {  //Case of no data
                     resolve({
                         requestmore: rows.length >= limit,
+                        candownvote: true,
                         lastindexkey: null,
                         feed: []
                     });

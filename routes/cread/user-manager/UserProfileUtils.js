@@ -234,6 +234,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
                             console.log("rows after getCollabCounts is " + JSON.stringify(rows, null, 3));
                             resolve({
                                 requestmore: rows.length >= limit,//totalcount > (offset + limit),
+                                candownvote: true,
                                 lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
                                 items: rows
                             });
@@ -246,6 +247,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
                 else{   //Case of no data
                     resolve({
                         requestmore: rows.length >= limit,
+                        candownvote: true,
                         lastindexkey: null,
                         items: []
                     });
@@ -464,6 +466,7 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                                     console.log("rows after getCollabCounts is " + JSON.stringify(rows, null, 3));
                                     resolve({
                                         requestmore: rows.length >= limit,
+                                        candownvote: true,
                                         lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
                                         items: rows
                                     });
@@ -476,6 +479,7 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                         else{   //Case of no data
                             resolve({
                                 requestmore: rows.length >= limit,
+                                candownvote: true,
                                 lastindexkey: null,
                                 items: []
                             });

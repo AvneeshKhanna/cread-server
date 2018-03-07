@@ -320,6 +320,7 @@ function loadEntityData(connection, requesteruuid, entityid) {
                     })
                     .then(function (row) {
                         resolve({
+                            candownvote: true,
                             entity: row[0]
                         });
                     })
