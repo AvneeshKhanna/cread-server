@@ -22,6 +22,18 @@ var hrkuappname = 'cread-dev-remote';
 var notify = require('../notification-system/notificationFramework');
 var utils = require('../cread/utils/Utils');
 
+var AWS = require('aws-sdk');
+
+AWS.config.region = 'ap-northeast-1';
+AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+    IdentityPoolId: 'ap-northeast-1:863bdfec-de0f-4e9f-8749-cf7fd96ea2ff'
+});
+
+var docClient = new AWS.DynamoDB.DocumentClient();
+
+var envconfig = require('config');
+var userstbl_ddb = envconfig.get('dynamoDB.users_table');
+
 router.get('/restart-heroku', function (request, response) {
 
     request_client.delete({
@@ -105,6 +117,84 @@ router.get('/get-active-connections', function (request, response) {
         connections: chatconvoutils.connectedusers
     });
     response.end();
+});
+
+router.get('/check-fcmtokens', function (request, response) {
+
+    var connection;
+
+    config.getNewConnection()
+        .then(function (conn) {
+            connection = conn;
+            return new Promise(function (resolve, reject) {
+                connection.query('SELECT uuid FROM User', [], function (err, rows) {
+                    if(err){
+                        reject(err);
+                    }
+                    else{
+                        resolve(rows.map(function (row) {
+                            return row.uuid;
+                        }));
+                    }
+                });
+            });
+
+        })
+        .then(function (uuids) {
+            return new Promise(function (resolve, reject) {
+                async.eachSeries(uuids, function (uuid, callback) {
+
+                    console.log('process initiated');
+
+                    var params = {
+                        TableName: userstbl_ddb,
+                        Key: {
+                            UUID: uuid
+                        },
+                        AttributesToGet: ['Fcm_token', 'UUID']
+                    };
+
+                    docClient.get(params, function (err, data) {
+                        if(err){
+                            callback(err);
+                        }
+                        else{
+
+                            if(!data.Item){
+                                console.log("inconsistent uuid is " + uuid);
+                            }
+
+                            callback();
+                        }
+                    });
+
+                }, function (err) {
+                    if(err){
+                        reject(err);
+                    }
+                    else{
+                        resolve();
+                    }
+                });
+            });
+        })
+        .then(function () {
+            response.send("completed").end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
 });
 
 /**

@@ -66,7 +66,13 @@ function getUserTokensFromServer(uuid, callback){
             callback(err, null);
         }
         else{
-            callback(null, data.Item.Fcm_token);
+            if(data.Item){
+                callback(null, data.Item.Fcm_token);
+            }
+            else{
+                console.error("Data inconsistency found! DynamoDB record for UUID: " + uuid + " does not exist!");
+                callback(null, []);
+            }
         }
     });
 
