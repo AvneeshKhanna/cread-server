@@ -258,13 +258,14 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid){
             'LEFT JOIN ' +
                 '(SELECT uuid, featured_id ' +
                 'FROM FeaturedArtists ' +
-                'WHERE regdate > ? ' +
+                'WHERE regdate >= ? ' +
+                'AND uuid <> ? ' +
                 'ORDER BY featured_score DESC ' +
                 'LIMIT 4) FA ' +
             'ON (FA.uuid = User.uuid) ' +
             'LEFT JOIN Follow ' +
             'ON (Follow.followee = User.uuid OR Follow.follower = User.uuid) ' +
-            'WHERE User.uuid = ?', [today, requesteduuid], function (err, rows) {
+            'WHERE User.uuid = ?', [today, config.getCreadKalakaarUUID(), requesteduuid], function (err, rows) {
             if (err) {
                 reject(err)
             }

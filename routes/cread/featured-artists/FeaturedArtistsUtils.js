@@ -10,6 +10,7 @@ var utils = require('../utils/Utils');
 var followutils = require('../follow/FollowUtils');
 
 var notify = require('../../notification-system/notificationFramework');
+var config = require('../../Config');
 
 function getFeaturedArtists(connection) {
 
@@ -20,9 +21,10 @@ function getFeaturedArtists(connection) {
             'FROM FeaturedArtists FA ' +
             'JOIN User U ' +
             'ON (FA.uuid = U.uuid) ' +
-            'WHERE FA.regdate > ? ' +
+            'WHERE FA.regdate >= ? ' +
+            'AND FA.uuid <> ? ' +
             'ORDER BY FA.featured_score DESC ' +
-            'LIMIT 4', [today], function (err, rows) {
+            'LIMIT 4', [today, config.getCreadKalakaarUUID()], function (err, rows) {
             if (err) {
                 reject(err);
             }
