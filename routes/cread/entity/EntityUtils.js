@@ -8,6 +8,8 @@ var utils = require('../utils/Utils');
 var moment = require('moment');
 var feedutils = require('../feed/FeedUtils');
 var updatesutils= require('../updates/UpdatesUtils');
+var userprofileutils = require('../user-manager/UserProfileUtils');
+var consts = require('../utils/Constants');
 
 function retrieveShortDetails(connection, entityid) {
     return new Promise(function (resolve, reject) {
@@ -308,7 +310,13 @@ function loadEntityData(connection, requesteruuid, entityid) {
                     return element;
                 });
 
-                feedutils.getCollaborationData(connection, row)
+                var candownvote;
+
+                userprofileutils.getUserQualityPercentile(connection, requesteruuid)
+                    .then(function (result) {
+                        candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user;
+                        return feedutils.getCollaborationData(connection, row);
+                    })
                     .then(function (row) {
 
                         /*rows.map(function (e) {
@@ -320,7 +328,7 @@ function loadEntityData(connection, requesteruuid, entityid) {
                     })
                     .then(function (row) {
                         resolve({
-                            candownvote: true,
+                            candownvote: candownvote,
                             entity: row[0]
                         });
                     })

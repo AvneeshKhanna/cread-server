@@ -20,6 +20,7 @@ var s3bucket = envconfig.get('s3.bucket');
 var imagesize = require('image-size');
 
 var feedutils = require('../feed/FeedUtils');
+var consts = require('../utils/Constants');
 
 function loadTimelineLegacy(connection, requesteduuid, requesteruuid, limit, page) {
 
@@ -220,21 +221,25 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
                         return element;
                     });
 
-                    feedutils.getCollaborationData(connection, rows)
-                        .then(function (rows) {
+                    var candownvote;
 
+                    getUserQualityPercentile(connection, requesteruuid)
+                        .then(function (result) {
+                            candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user;
+                            return feedutils.getCollaborationData(connection, rows);
+                        })
+                        .then(function (rows) {
                             /*rows.map(function (e) {
                                 e.collabcount = 0;
                                 return e;
                             });*/
-
                             return feedutils.getCollaborationCounts(connection, rows, feedEntities);
                         })
                         .then(function (rows) {
                             console.log("rows after getCollabCounts is " + JSON.stringify(rows, null, 3));
                             resolve({
                                 requestmore: rows.length >= limit,//totalcount > (offset + limit),
-                                candownvote: true,
+                                candownvote: candownvote,
                                 lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
                                 items: rows
                             });
@@ -247,7 +252,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
                 else{   //Case of no data
                     resolve({
                         requestmore: rows.length >= limit,
-                        candownvote: true,
+                        candownvote: candownvote,
                         lastindexkey: null,
                         items: []
                     });
@@ -461,12 +466,19 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
 
                                     return feedutils.getCollaborationCounts(connection, rows, feedEntities);
                                 })*/
-                            feedutils.getCollaborationCounts(connection, rows, feedEntities)
+
+                            var candownvote;
+
+                            getUserQualityPercentile(connection, requesteruuid)
+                                .then(function (result) {
+                                    candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user;
+                                    return feedutils.getCollaborationCounts(connection, rows, feedEntities);
+                                })
                                 .then(function (rows) {
                                     console.log("rows after getCollabCounts is " + JSON.stringify(rows, null, 3));
                                     resolve({
                                         requestmore: rows.length >= limit,
-                                        candownvote: true,
+                                        candownvote: candownvote,
                                         lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
                                         items: rows
                                     });
@@ -479,7 +491,7 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                         else{   //Case of no data
                             resolve({
                                 requestmore: rows.length >= limit,
-                                candownvote: true,
+                                candownvote: candownvote,
                                 lastindexkey: null,
                                 items: []
                             });
@@ -796,6 +808,26 @@ function createSmallProfilePic(renamedpath, uuid, height, width) {
     })
 }
 
+function getUserQualityPercentile(connection, uuid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT quality_percentile_score ' +
+            'FROM UserAnalytics ' +
+            'WHERE uuid = ?', [uuid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                if(!rows[0]){
+                    rows[0] = {
+                        quality_percentile_score: 0
+                    }
+                }
+                resolve(rows[0]);
+            }
+        });
+    });
+}
+
 module.exports = {
     loadTimelineLegacy: loadTimelineLegacy,
     loadTimeline: loadTimeline,
@@ -809,5 +841,6 @@ module.exports = {
     createSmallImage: createSmallImage,
     uploadImageToS3: uploadImageToS3,
     copyFacebookProfilePic: copyFacebookProfilePic,
-    createSmallProfilePic: createSmallProfilePic
+    createSmallProfilePic: createSmallProfilePic,
+    getUserQualityPercentile: getUserQualityPercentile
 };

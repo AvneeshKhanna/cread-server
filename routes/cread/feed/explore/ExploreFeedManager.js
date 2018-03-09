@@ -13,6 +13,7 @@ var moment = require('moment');
 
 var envconfig = require('config');
 var feedutils = require('../FeedUtils');
+var userprofileutils = require('../../user-manager/UserProfileUtils');
 
 var _auth = require('../../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
@@ -462,8 +463,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                 'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
                 'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
                 'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
-                'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount, ' +
-                'UA.user_analytics_id ' +
+                'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
                 'FROM Entity ' +
                 'LEFT JOIN EntityAnalytics EA ' +
                 'ON (EA.entityid = Entity.entityid) ' +
@@ -473,8 +473,6 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                 'ON Capture.entityid = Entity.entityid ' +
                 'JOIN User ' +
                 'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
-                'LEFT JOIN UserAnalytics UA ' +
-                'ON (UA.uuid = ? AND UA.quality_percentile_score > ?) ' +
                 'LEFT JOIN HatsOff ' +
                 'ON HatsOff.entityid = Entity.entityid ' +
                 'LEFT JOIN Downvote D ' +
@@ -491,7 +489,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                 'ORDER BY impact_weight DESC) master ' +
             'CROSS JOIN (SELECT @rownr := 0) AS dummy ' +
             'HAVING row_no > ? ' +
-            'LIMIT ?;', [explore_algo_base_score, uuid, uuid, uuid, uuid, consts.min_percentile_quality_user, lastindexkey, limit], function (err, rows) {
+            'LIMIT ?;', [explore_algo_base_score, uuid, uuid, uuid, lastindexkey, limit], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -552,9 +550,15 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
 
                     lastindexkey = rows[rows.length - 1].row_no;//moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss');
 
+                    var candownvote;
+
                     //--Retrieve Collaboration Data--
 
-                    feedutils.getCollaborationData(connection, rows)
+                    userprofileutils.getUserQualityPercentile(connection, uuid)
+                        .then(function (result) {
+                            candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user;
+                            return feedutils.getCollaborationData(connection, rows);
+                        })
                         .then(function (rows) {
 
                             /*rows.map(function (e) {
@@ -570,7 +574,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                         .then(function (rows) {
                             resolve({
                                 requestmore: rows.length >= limit,
-                                candownvote: true,
+                                candownvote: candownvote,
                                 lastindexkey: lastindexkey,
                                 feed: rows
                             });
@@ -583,7 +587,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                 else {  //Case of no data
                     resolve({
                         requestmore: rows.length >= limit,
-                        candownvote: true,
+                        candownvote: candownvote,
                         lastindexkey: null,
                         feed: []
                     });
