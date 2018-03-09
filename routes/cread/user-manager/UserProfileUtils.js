@@ -36,14 +36,14 @@ function loadTimelineLegacy(connection, requesteduuid, requesteruuid, limit, pag
             'JOIN User ' +
             'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
             'WHERE User.uuid = ? ' +
-            'AND Entity.status = "ACTIVE" ', [requesteduuid], function(err, data){
-            if(err){
+            'AND Entity.status = "ACTIVE" ', [requesteduuid], function (err, data) {
+            if (err) {
                 reject(err);
             }
-            else{
+            else {
                 var totalcount = (data[0]) ? data[0].totalcount : 0;
 
-                if(totalcount > 0){
+                if (totalcount > 0) {
                     connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, User.uuid, User.firstname, User.lastname, Short.shoid, Capture.capid AS captureid, ' +
                         'COUNT(DISTINCT HatsOff.hoid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount ' +
                         'FROM Entity ' +
@@ -76,12 +76,12 @@ function loadTimelineLegacy(connection, requesteduuid, requesteruuid, limit, pag
                                 'FROM HatsOff ' +
                                 'WHERE uuid = ? ' +
                                 'AND entityid IN (?) ' +
-                                'GROUP BY entityid', [requesteruuid, feedEntities], function(err, hdata){
+                                'GROUP BY entityid', [requesteruuid, feedEntities], function (err, hdata) {
 
-                                if(err){
+                                if (err) {
                                     reject(err);
                                 }
-                                else{
+                                else {
                                     rows.map(function (element) {
 
                                         var thisEntityIndex = hdata.map(function (el) {
@@ -93,18 +93,18 @@ function loadTimelineLegacy(connection, requesteduuid, requesteruuid, limit, pag
                                         element.hatsoffstatus = thisEntityIndex !== -1;
                                         element.merchantable = (element.merchantable !== 0);
 
-                                        if(element.type === 'CAPTURE'){
+                                        if (element.type === 'CAPTURE') {
                                             element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
                                         }
-                                        else{
+                                        else {
                                             element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
                                         }
 
-                                        if(element.firstname){
+                                        if (element.firstname) {
                                             delete element.firstname;
                                         }
 
-                                        if(element.lastname){
+                                        if (element.lastname) {
                                             delete element.lastname;
                                         }
 
@@ -120,7 +120,7 @@ function loadTimelineLegacy(connection, requesteduuid, requesteruuid, limit, pag
                         }
                     });
                 }
-                else{
+                else {
                     resolve({
                         requestmore: totalcount > (offset + limit),
                         items: []
@@ -177,7 +177,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
                     return elem.entityid;
                 });
 
-                if(rows.length > 0){
+                if (rows.length > 0) {
                     rows.map(function (element) {
 
                         /*var thisEntityIndex = hdata.map(function (el) {
@@ -191,30 +191,30 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
                         element.downvotestatus = element.dbinarycount > 0;
                         element.merchantable = (element.merchantable !== 0);
 
-                        if(element.type === 'CAPTURE'){
+                        if (element.type === 'CAPTURE') {
                             element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
                         }
-                        else{
+                        else {
                             element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
                         }
 
-                        if(element.firstname){
+                        if (element.firstname) {
                             delete element.firstname;
                         }
 
-                        if(element.lastname){
+                        if (element.lastname) {
                             delete element.lastname;
                         }
 
-                        if(element.hasOwnProperty('hbinarycount')) {
+                        if (element.hasOwnProperty('hbinarycount')) {
                             delete element.hbinarycount;
                         }
 
-                        if(element.hasOwnProperty('dbinarycount')) {
+                        if (element.hasOwnProperty('dbinarycount')) {
                             delete element.dbinarycount;
                         }
 
-                        if(element.hasOwnProperty('fbinarycount')) {
+                        if (element.hasOwnProperty('fbinarycount')) {
                             delete element.fbinarycount;
                         }
 
@@ -249,7 +249,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
                         });
 
                 }
-                else{   //Case of no data
+                else {   //Case of no data
                     resolve({
                         requestmore: rows.length >= limit,
                         candownvote: candownvote,
@@ -262,7 +262,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
     });
 }
 
-function loadProfileInformation(connection, requesteduuid, requesteruuid){
+function loadProfileInformation(connection, requesteduuid, requesteruuid) {
 
     var today = moment().format('YYYY-MM-DD 00:00:00');
 
@@ -271,12 +271,12 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid){
             'User.email, User.phone, Follow.followee, Follow.follower, FA.featured_id ' +
             'FROM User ' +
             'LEFT JOIN ' +
-                '(SELECT uuid, featured_id ' +
-                'FROM FeaturedArtists ' +
-                'WHERE regdate >= ? ' +
-                'AND uuid <> ? ' +
-                'ORDER BY featured_score DESC ' +
-                'LIMIT 4) FA ' +
+            '(SELECT uuid, featured_id ' +
+            'FROM FeaturedArtists ' +
+            'WHERE regdate >= ? ' +
+            'AND uuid <> ? ' +
+            'ORDER BY featured_score DESC ' +
+            'LIMIT 4) FA ' +
             'ON (FA.uuid = User.uuid) ' +
             'LEFT JOIN Follow ' +
             'ON (Follow.followee = User.uuid OR Follow.follower = User.uuid) ' +
@@ -304,7 +304,7 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid){
                 userdata.profilepicurl = utils.createProfilePicUrl(userdata.uuid);
                 userdata.featured = !!userdata.featured_id;
 
-                if(userdata.hasOwnProperty('featured_id')){
+                if (userdata.hasOwnProperty('featured_id')) {
                     delete userdata.featured_id;
                 }
 
@@ -335,11 +335,11 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid){
                     'LEFT JOIN Comment AS Cmt ' +
                     'ON E.entityid = Cmt.entityid ' +
                     'WHERE (S.uuid = ? OR C.uuid = ?) ' +
-                    'AND E.status = "ACTIVE"', [requesteduuid, requesteduuid], function(err, data){
-                    if(err){
+                    'AND E.status = "ACTIVE"', [requesteduuid, requesteduuid], function (err, data) {
+                    if (err) {
                         reject(err);
                     }
-                    else{
+                    else {
                         userdata.postcount = data[0].postcount; //Total posts uploaded by this user
                         userdata.commentscount = data[0].commentscount; //Total comments received by this user's posts
                         userdata.hatsoffscount = data[0].hatsoffscount; //Total hatsoffs received by this user's posts
@@ -360,10 +360,10 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
         connection.query('SELECT firstname, lastname ' +
             'FROM User ' +
             'WHERE uuid = ?', [requesteduuid], function (err, requesteduuiddetails) {
-            if(err){
+            if (err) {
                 reject(err);
             }
-            else{
+            else {
                 connection.query('SELECT Entity.caption, Entity.entityid, Entity.regdate, Entity.merchantable, Entity.type, User.uuid, ' +
                     'User.firstname, User.lastname, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
                     'Capture.capid AS captureid, CShort.entityid AS csentityid, SCapture.entityid AS scentityid, ' +
@@ -407,7 +407,7 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                             return elem.entityid;
                         });
 
-                        if(rows.length > 0){
+                        if (rows.length > 0) {
                             rows.map(function (element) {
 
                                 element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
@@ -417,7 +417,7 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                                 element.downvotestatus = element.dbinarycount > 0;
                                 element.merchantable = (element.merchantable !== 0);
 
-                                if(element.type === 'CAPTURE'){
+                                if (element.type === 'CAPTURE') {
                                     element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
                                     element.cpshort = {
                                         name: requesteduuiddetails[0].firstname + ' ' + requesteduuiddetails[0].lastname,
@@ -425,7 +425,7 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                                         uuid: requesteduuid
                                     }
                                 }
-                                else if(element.type === 'SHORT'){
+                                else if (element.type === 'SHORT') {
                                     element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
                                     element.shcapture = {
                                         name: requesteduuiddetails[0].firstname + ' ' + requesteduuiddetails[0].lastname,
@@ -434,23 +434,23 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                                     }
                                 }
 
-                                if(element.firstname){
+                                if (element.firstname) {
                                     delete element.firstname;
                                 }
 
-                                if(element.lastname){
+                                if (element.lastname) {
                                     delete element.lastname;
                                 }
 
-                                if(element.hasOwnProperty('hbinarycount')) {
+                                if (element.hasOwnProperty('hbinarycount')) {
                                     delete element.hbinarycount;
                                 }
 
-                                if(element.hasOwnProperty('dbinarycount')) {
+                                if (element.hasOwnProperty('dbinarycount')) {
                                     delete element.dbinarycount;
                                 }
 
-                                if(element.hasOwnProperty('fbinarycount')) {
+                                if (element.hasOwnProperty('fbinarycount')) {
                                     delete element.fbinarycount;
                                 }
 
@@ -489,7 +489,7 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                                 });
 
                         }
-                        else{   //Case of no data
+                        else {   //Case of no data
                             resolve({
                                 requestmore: rows.length >= limit,
                                 candownvote: candownvote,
@@ -530,13 +530,13 @@ function loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl) {
 
         requestclient(graphurl, function (error, res, body) {
 
-            if(error){
+            if (error) {
                 reject(error);
             }
-            else if(JSON.parse(body).error){
+            else if (JSON.parse(body).error) {
                 reject(JSON.parse(body).error);
             }
-            else{
+            else {
                 console.log("body-response " + JSON.stringify(JSON.parse(body), null, 3));
                 var response = JSON.parse(body);
 
@@ -546,13 +546,13 @@ function loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl) {
 
                 var result = {};
 
-                if(friendsids.length === 0){    //Case of no data
+                if (friendsids.length === 0) {    //Case of no data
                     result.nexturl = null;
                     result.requestmore = false;
                     result.friends = response.data;
                     resolve(result);
                 }
-                else{
+                else {
                     connection.query('SELECT User.firstname, User.lastname, User.uuid, ' +
                         'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
                         'FROM User ' +
@@ -594,12 +594,12 @@ function loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl) {
  * A recursive implementation of loadFacebookFriends() that returns uuids of all the Facebook friends of the user who
  * have installed the app
  * */
-function loadAllFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl){
+function loadAllFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl) {
     return new Promise(function (resolve, reject) {
 
         var friends = [];
 
-        function recursive(nexturl){
+        function recursive(nexturl) {
             loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl)
                 .then(function (result) {
 
@@ -608,7 +608,7 @@ function loadAllFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl){
                         return !elem.followstatus;
                     }));
 
-                    if(result.requestmore){
+                    if (result.requestmore) {
                         recursive(result.nexturl);
                     }
                     else {
@@ -639,13 +639,13 @@ function getFbAppAccessToken() {
 
         requestclient(graphurl, function (error, res, body) {
 
-            if(error){
+            if (error) {
                 reject(error);
             }
-            else if(JSON.parse(body).error){
+            else if (JSON.parse(body).error) {
                 reject(JSON.parse(body).error);
             }
-            else{
+            else {
                 console.log("body-response " + JSON.stringify(JSON.parse(body), null, 3));
                 var response = JSON.parse(body);
 
@@ -707,14 +707,14 @@ function createSmallImage(readingpath, writingbasepath, guid, height, width) {
             if (err) {
                 reject(err);
             }
-            else{
+            else {
                 resized.resize(height, width)            // resize
                     .quality(80)                    // set JPEG quality
                     .write(/*"./images/uploads/profile_picture/"*/writingbasepath + guid + "-small.jpg", function (err) {
-                        if(err){
+                        if (err) {
                             reject(err);
                         }
-                        else{
+                        else {
                             resolve(/*"./images/uploads/profile_picture/"*/writingbasepath + guid + "-small.jpg");
                         }
                     });    // save
@@ -753,16 +753,16 @@ function copyFacebookProfilePic(fbpicurl, uuid) {
     return new Promise(function (resolve, reject) {
         utils.downloadFile('./images/downloads/profilepic', uuid + '.jpg', fbpicurl)
             .then(function (downldpath) {
-                downloadpath = downldpath; 
+                downloadpath = downldpath;
 
                 console.log("downldpath is " + JSON.stringify(downldpath, null, 3));
 
                 var imagedimensions = imagesize(downloadpath);
 
-                if(imagedimensions.width > 500){    //To resize
+                if (imagedimensions.width > 500) {    //To resize
                     return createSmallProfilePic(downloadpath, uuid, 128, 128);
                 }
-                else{   //Not to resize
+                else {   //Not to resize
                     return new Promise(function (resolve, reject) {
                         resolve(downloadpath);
                     });
@@ -793,14 +793,14 @@ function createSmallProfilePic(renamedpath, uuid, height, width) {
             if (err) {
                 reject(err);
             }
-            else{
+            else {
                 resized.resize(height, width)            // resize
                     .quality(80)                    // set JPEG quality
                     .write(writepath, function (err) {
-                        if(err){
+                        if (err) {
                             reject(err);
                         }
-                        else{
+                        else {
                             resolve(writepath);
                         }
                     });    // save
@@ -818,7 +818,7 @@ function getUserQualityPercentile(connection, uuid) {
                 reject(err);
             }
             else {
-                if(!rows[0]){
+                if (!rows[0]) {
                     rows[0] = {
                         quality_percentile_score: 0
                     }
