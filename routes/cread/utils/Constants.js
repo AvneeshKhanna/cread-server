@@ -19,6 +19,8 @@ const minCashInAmt = (config_type === 'PRODUCTION') ? 10 : 2;    //TODO: Can cha
 
 const explore_algo_base_score = 5;  //Base score for each entity
 
+const min_percentile_quality_user = 80;
+
 const share_time_interval = {
     same_share : {
         time_diff: config_type === 'PRODUCTION' ? 24 : 2,
@@ -63,5 +65,6 @@ module.exports = {
     required_verified_checks: required_verified_checks,
     royalty_percentage: royalty_percentage,
     cache_time: cache_time,
-    explore_algo_base_score: explore_algo_base_score
+    explore_algo_base_score: explore_algo_base_score,
+    min_percentile_quality_user: min_percentile_quality_user
 };

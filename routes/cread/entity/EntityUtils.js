@@ -8,6 +8,8 @@ var utils = require('../utils/Utils');
 var moment = require('moment');
 var feedutils = require('../feed/FeedUtils');
 var updatesutils= require('../updates/UpdatesUtils');
+var userprofileutils = require('../user-manager/UserProfileUtils');
+var consts = require('../utils/Constants');
 
 function retrieveShortDetails(connection, entityid) {
     return new Promise(function (resolve, reject) {
@@ -238,6 +240,7 @@ function loadEntityData(connection, requesteruuid, entityid) {
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
+            'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
             'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
             'User.uuid, User.firstname, User.lastname ' +
             'FROM Entity ' +
@@ -251,9 +254,11 @@ function loadEntityData(connection, requesteruuid, entityid) {
             'ON Comment.entityid = Entity.entityid ' +
             'LEFT JOIN HatsOff ' +
             'ON HatsOff.entityid = Entity.entityid ' +
+            'LEFT JOIN Downvote D ' +
+            'ON D.entityid = Entity.entityid ' +
             'LEFT JOIN Follow ' +
             'ON User.uuid = Follow.followee ' +
-            'WHERE Entity.entityid = ?', [requesteruuid, requesteruuid, entityid], function (err, row) {
+            'WHERE Entity.entityid = ?', [requesteruuid, requesteruuid, requesteruuid, entityid], function (err, row) {
             if (err) {
                 reject(err);
             }
@@ -271,6 +276,7 @@ function loadEntityData(connection, requesteruuid, entityid) {
                     element.creatorname = element.firstname + ' ' + element.lastname;
                     element.hatsoffstatus = element.hbinarycount > 0;
                     element.followstatus = element.fbinarycount > 0;
+                    element.downvotestatus = element.dbinarycount > 0;
                     element.merchantable = (element.merchantable !== 0);
 
                     /*if(element.capid) {
@@ -293,6 +299,10 @@ function loadEntityData(connection, requesteruuid, entityid) {
                         delete element.hbinarycount;
                     }
 
+                    if (element.hasOwnProperty('dbinarycount')) {
+                        delete element.dbinarycount;
+                    }
+
                     if(element.hasOwnProperty('fbinarycount')) {
                         delete element.fbinarycount;
                     }
@@ -300,7 +310,13 @@ function loadEntityData(connection, requesteruuid, entityid) {
                     return element;
                 });
 
-                feedutils.getCollaborationData(connection, row)
+                var candownvote;
+
+                userprofileutils.getUserQualityPercentile(connection, requesteruuid)
+                    .then(function (result) {
+                        candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user;
+                        return feedutils.getCollaborationData(connection, row);
+                    })
                     .then(function (row) {
 
                         /*rows.map(function (e) {
@@ -312,6 +328,7 @@ function loadEntityData(connection, requesteruuid, entityid) {
                     })
                     .then(function (row) {
                         resolve({
+                            candownvote: candownvote,
                             entity: row[0]
                         });
                     })

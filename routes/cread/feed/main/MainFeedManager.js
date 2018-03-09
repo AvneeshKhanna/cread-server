@@ -17,6 +17,7 @@ var _auth = require('../../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 var consts = require('../../utils/Constants');
 var utils = require('../../utils/Utils');
+var userprofileutils = require('../../user-manager/UserProfileUtils');
 var campaignutils = require('../../campaign/CampaignUtils');
 
 var cache_time = consts.cache_time;
@@ -275,6 +276,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
         connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
             'Capture.capid AS captureid, ' + 'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
+            'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
             'User.uuid, User.firstname, User.lastname ' +
             'FROM Entity ' +
             'LEFT JOIN Short ' +
@@ -287,6 +289,8 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
             'ON Comment.entityid = Entity.entityid ' +
             'LEFT JOIN HatsOff ' +
             'ON HatsOff.entityid = Entity.entityid ' +
+            'LEFT JOIN Downvote D ' +
+            'ON D.entityid = Entity.entityid ' +
             'LEFT JOIN Follow ' +
             'ON Follow.followee = User.uuid ' +
             'WHERE Follow.follower = ? ' +
@@ -295,7 +299,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
             'GROUP BY Entity.entityid ' +
             'ORDER BY Entity.regdate DESC ' +
             'LIMIT ? '/* +
-            'OFFSET ?'*/, [uuid, uuid, lastindexkey, limit/*, offset*/], function (err, rows) {
+            'OFFSET ?'*/, [uuid, uuid, uuid, lastindexkey, limit/*, offset*/], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -321,6 +325,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                         }
 
                         element.hatsoffstatus = element.hbinarycount > 0;
+                        element.downvotestatus = element.dbinarycount > 0;
                         // element.hatsoffcount = (thisEntityIndex !== -1 ? hdata[thisEntityIndex].hatsoffcount : 0);
 
                         element.creatorname = element.firstname + ' ' + element.lastname;
@@ -346,6 +351,10 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                             delete element.hbinarycount;
                         }
 
+                        if(element.hasOwnProperty('dbinarycount')) {
+                            delete element.dbinarycount;
+                        }
+
                         if(element.hasOwnProperty('binarycount')) {
                             delete element.binarycount;
                         }
@@ -355,7 +364,13 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
 
                     console.log("original rows were " + JSON.stringify(rows, null, 3));
 
-                    feedutils.getCollaborationData(connection, rows)
+                    var candownvote;
+
+                    userprofileutils.getUserQualityPercentile(connection, uuid)
+                        .then(function (result) {
+                            candownvote = result.quality_percentile_score > consts.min_percentile_quality_user;
+                            return feedutils.getCollaborationData(connection, rows);
+                        })
                         .then(function (rows) {
 
                             /*rows.map(function (e) {
@@ -368,6 +383,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                         .then(function (rows) {
                             resolve({
                                 requestmore: rows.length >= limit,
+                                candownvote: candownvote,
                                 lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
                                 feed: rows
                             });
@@ -379,6 +395,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                 else {  //Case of no data
                     resolve({
                         requestmore: rows.length >= limit,
+                        candownvote: candownvote,
                         lastindexkey: null,
                         feed: []
                     });
