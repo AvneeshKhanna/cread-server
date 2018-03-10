@@ -12,7 +12,7 @@ function getUsernamesSearchResult(connection, keyword, limit, lastindexkey) {
 
     keyword = keyword.split(" ").join("* ") + "*";
 
-    //DROP TABLE clause is added because a TEMPRORAY TABLE created is not dropped untill the SQL session is killed. And when using
+    //DROP TABLE clause is added because a TEMPRORAY TABLE created is not dropped until the SQL session is killed. And when using
     //a connection pool, a session is only killed when it is being re-picked for use from the pool, not when it ends.
     return new Promise(function (resolve, reject) {
         connection.query('CREATE TEMPORARY TABLE UserSearchTemp (_id BIGINT NOT NULL AUTO_INCREMENT, PRIMARY KEY(_id)) AS ' +

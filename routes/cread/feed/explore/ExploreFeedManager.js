@@ -450,12 +450,10 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
     return new Promise(function (resolve, reject) {
 
         //lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
-        console.log("lastindexkey is " + JSON.stringify(lastindexkey, null, 3));
         lastindexkey = (lastindexkey) ? Number(lastindexkey) : 0;
 
-        connection.query('SELECT (@rownr := @rownr + 1) AS row_no, master.* ' +
-            'FROM ' +
-                '(SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, Entity.for_explore, ' +
+        connection.query('CREATE TEMPORARY TABLE ExploreFeedTemp (_id BIGINT NOT NULL AUTO_INCREMENT, PRIMARY KEY(_id)) AS ' +
+                'SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, Entity.for_explore, ' +
                 'User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, ' +
                 'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
                 '(CASE WHEN(EA.impact_score IS NULL) THEN ? ELSE EA.impact_score END) AS impact_weight, ' +
@@ -482,18 +480,31 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                 'LEFT JOIN Follow ' +
                 'ON User.uuid = Follow.followee ' +
                 'WHERE Entity.status = "ACTIVE" ' +
-                //'AND Entity.regdate < ? ' +
                 'AND Entity.for_explore = 1 ' +
                 'GROUP BY Entity.entityid ' +
-                //'ORDER BY Entity.regdate DESC ' +
-                'ORDER BY impact_weight DESC) master ' +
-            'CROSS JOIN (SELECT @rownr := 0) AS dummy ' +
-            'HAVING row_no > ? ' +
-            'LIMIT ?;', [explore_algo_base_score, uuid, uuid, uuid, lastindexkey, limit], function (err, rows) {
+                'ORDER BY impact_weight DESC;' +    //Query 1 Ends
+            'SELECT * ' +
+            'FROM ExploreFeedTemp ' +
+            'WHERE _id > ? ' +
+            'ORDER BY _id ASC ' +
+            'LIMIT ?;' +                            //Query 2 Ends
+            'DROP TABLE IF EXISTS ExploreFeedTemp;' /*Query 3 Ends*/, [explore_algo_base_score, uuid, uuid, uuid, lastindexkey, limit], function (err, rows) {
             if (err) {
-                reject(err);
+                //If an error in the above query occurs, TEMPORARY TABLE still remains in existence since the DROP TABLE query might not
+                //have been executed. Hence, for safety, the below query is executed.
+                connection.query('DROP TABLE IF EXISTS ExploreFeedTemp', null, function (e, data) {
+                    if(e){
+                        console.error(e);
+                    }
+                    reject(err);
+                });
             }
             else {
+
+                //When running multi-statement queries, the root array returned contains three sub-object each corresponding to the
+                //query being executed and in that order. Hence, here, since the 2nd query SELECTs results, we extract the 2nd index
+                //of the root array for actual data
+                rows = rows[1];
 
                 if (rows.length > 0) {
 
@@ -505,6 +516,8 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                         /*var thisEntityIndex = hdata.map(function (el) {
                             return el.entityid;
                         }).indexOf(element.entityid);*/
+
+                        console.log("entityid is " + JSON.stringify(element.entityid, null, 3));
 
                         if (element.type === 'CAPTURE') {
                             element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
@@ -548,7 +561,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                         return element;
                     });
 
-                    lastindexkey = rows[rows.length - 1].row_no;//moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss');
+                    lastindexkey = rows[rows.length - 1]._id;//moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss');
 
                     var candownvote;
 
