@@ -19,7 +19,7 @@ const minCashInAmt = (config_type === 'PRODUCTION') ? 10 : 2;    //TODO: Can cha
 
 const explore_algo_base_score = 5;  //Base score for each entity
 
-const min_percentile_quality_user = 80;
+const min_percentile_quality_user = 90;
 
 const share_time_interval = {
     same_share : {
