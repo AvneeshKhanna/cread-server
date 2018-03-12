@@ -40,6 +40,8 @@ router.post('/generate-dynamic-link', function (request, response) {
     var entityurl = request.body.entityurl;
     var creatorname = request.body.creatorname;
 
+    console.log("Request is " + JSON.stringify(request.body, null, 3));
+
     if(!entityid || !entityurl || !creatorname){
         response.status(500).send({
             message: 'Entityid, entityurl or creatorname cannot be null'

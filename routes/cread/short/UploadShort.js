@@ -129,6 +129,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
                 tokenstatus: 'valid',
                 data: {
                     status: 'done',
+                    entityid: entityid,
                     shorturl: utils.createSmallShortUrl(uuid, shoid)
                 }
             });

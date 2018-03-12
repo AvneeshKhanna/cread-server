@@ -111,7 +111,9 @@ router.post('/', upload.single('captured-image'), function (request, response) {
             response.send({
                 tokenstatus: 'valid',
                 data: {
-                    status: 'done'
+                    status: 'done',
+                    entityid: entityid,
+                    captureurl: utils.createSmallCaptureUrl(uuid, captureid)
                 }
             });
             response.end();
@@ -274,7 +276,9 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
             response.send({
                 tokenstatus: 'valid',
                 data: {
-                    status: 'done'
+                    status: 'done',
+                    entityid: entityid,
+                    captureurl: utils.createSmallCaptureUrl(uuid, captureid)
                 }
             }).end();
         })
