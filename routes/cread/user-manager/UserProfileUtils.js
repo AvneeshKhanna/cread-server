@@ -252,7 +252,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
                 else {   //Case of no data
                     resolve({
                         requestmore: rows.length >= limit,
-                        candownvote: candownvote,
+                        candownvote: false, //Since no posts exist, user would have a percentile 0. Hence, not a quality user
                         lastindexkey: null,
                         items: []
                     });
@@ -492,7 +492,7 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                         else {   //Case of no data
                             resolve({
                                 requestmore: rows.length >= limit,
-                                candownvote: candownvote,
+                                candownvote: false, //Since no posts exist, user would have a percentile 0. Hence, not a quality user
                                 lastindexkey: null,
                                 items: []
                             });

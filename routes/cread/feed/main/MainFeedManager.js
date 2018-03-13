@@ -395,7 +395,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                 else {  //Case of no data
                     resolve({
                         requestmore: rows.length >= limit,
-                        candownvote: candownvote,
+                        candownvote: false,
                         lastindexkey: null,
                         feed: []
                     });
