@@ -319,7 +319,7 @@ function loadFeedLegacy(connection, uuid, limit, page) {
             'WHERE Entity.status = "ACTIVE" ', null, function (err, data) {
             if (err) {
                 reject(err);
-            } 
+            }
             else {
                 var totalcount = data[0].totalcount;
 
@@ -452,59 +452,50 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
         //lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
         lastindexkey = (lastindexkey) ? Number(lastindexkey) : 0;
 
-        connection.query('CREATE TEMPORARY TABLE ExploreFeedTemp (_id BIGINT NOT NULL AUTO_INCREMENT, PRIMARY KEY(_id)) AS ' +
-                'SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, Entity.for_explore, ' +
-                'User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, ' +
-                'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
-                '(CASE WHEN(EA.impact_score IS NULL) THEN ? ELSE EA.impact_score END) AS impact_weight, ' +
-                'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
-                'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
-                'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
-                'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
-                'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
-                'FROM Entity ' +
-                'LEFT JOIN EntityAnalytics EA ' +
-                'ON (EA.entityid = Entity.entityid) ' +
-                'LEFT JOIN Short ' +
-                'ON Short.entityid = Entity.entityid ' +
-                'LEFT JOIN Capture ' +
-                'ON Capture.entityid = Entity.entityid ' +
-                'JOIN User ' +
-                'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
-                'LEFT JOIN HatsOff ' +
-                'ON HatsOff.entityid = Entity.entityid ' +
-                'LEFT JOIN Downvote D ' +
-                'ON D.entityid = Entity.entityid ' +
-                'LEFT JOIN Comment ' +
-                'ON Comment.entityid = Entity.entityid ' +
-                'LEFT JOIN Follow ' +
-                'ON User.uuid = Follow.followee ' +
-                'WHERE Entity.status = "ACTIVE" ' +
-                'AND Entity.for_explore = 1 ' +
-                'GROUP BY Entity.entityid ' +
-                'ORDER BY impact_weight DESC;' +    //Query 1 Ends
-            'SELECT * ' +
-            'FROM ExploreFeedTemp ' +
-            'WHERE _id > ? ' +
-            'ORDER BY _id ASC ' +
-            'LIMIT ?;' +                            //Query 2 Ends
-            'DROP TABLE IF EXISTS ExploreFeedTemp;' /*Query 3 Ends*/, [explore_algo_base_score, uuid, uuid, uuid, lastindexkey, limit], function (err, rows) {
+        connection.query('SELECT EA.caption, EA.entityid, EA.merchantable, EA.type, EA.regdate, ' +
+            'User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, ' +
+            'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
+            '(CASE WHEN(EA.impact_score IS NULL) THEN ? ELSE EA.impact_score END) AS impact_weight, ' +
+            'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
+            'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
+            'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
+            'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
+            'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
+            'FROM ' +
+                '(SELECT E.caption, E.entityid, E.merchantable, E.type, E.regdate, EntityAnalytics.impact_score ' +
+                'FROM EntityAnalytics ' +
+                'JOIN Entity E ' +
+                'USING(entityid) ' +
+                'WHERE E.status = "ACTIVE" ' +
+                'AND E.for_explore = 1 ' +
+                'ORDER BY impact_score DESC ' +
+                'LIMIT ? ' +
+                'OFFSET ?) EA ' +
+            //'ON (EA.entityid = Entity.entityid) ' +
+            'LEFT JOIN Short ' +
+            'ON Short.entityid = EA.entityid ' +
+            'LEFT JOIN Capture ' +
+            'ON Capture.entityid = EA.entityid ' +
+            'JOIN User ' +
+            'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
+            'LEFT JOIN HatsOff ' +
+            'ON HatsOff.entityid = EA.entityid ' +
+            'LEFT JOIN Downvote D ' +
+            'ON D.entityid = EA.entityid ' +
+            'LEFT JOIN Comment ' +
+            'ON Comment.entityid = EA.entityid ' +
+            'LEFT JOIN Follow ' +
+            'ON User.uuid = Follow.followee ' +
+            /*'WHERE Entity.status = "ACTIVE" ' +
+            'AND Entity.for_explore = 1 ' +*/
+            'GROUP BY EA.entityid ' +
+            'ORDER BY impact_weight DESC '/* +
+            'LIMIT ? ' +
+            'OFFSET ?;'*/, [explore_algo_base_score, uuid, uuid, uuid, limit, lastindexkey], function (err, rows) {
             if (err) {
-                //If an error in the above query occurs, TEMPORARY TABLE still remains in existence since the DROP TABLE query might not
-                //have been executed. Hence, for safety, the below query is executed.
-                connection.query('DROP TABLE IF EXISTS ExploreFeedTemp', null, function (e, data) {
-                    if(e){
-                        console.error(e);
-                    }
-                    reject(err);
-                });
+                reject(err);
             }
             else {
-
-                //When running multi-statement queries, the root array returned contains three sub-object each corresponding to the
-                //query being executed and in that order. Hence, here, since the 2nd query SELECTs results, we extract the 2nd index
-                //of the root array for actual data
-                rows = rows[1];
 
                 if (rows.length > 0) {
 
@@ -554,14 +545,10 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                             delete element.lastname;
                         }
 
-                        if(element.hasOwnProperty('for_explore')){
-                            delete element.for_explore;
-                        }
-
                         return element;
                     });
 
-                    lastindexkey = rows[rows.length - 1]._id;//moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss');
+                    lastindexkey = lastindexkey + rows.length; /*rows[rows.length - 1]._id*/ //moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss');
 
                     var candownvote;
 
