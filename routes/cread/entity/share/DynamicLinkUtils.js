@@ -7,14 +7,21 @@ var request_client = require('request');
 var config = require('../../../Config');
 var serverbaseurl = config.server_url;
 
-function generateShareEntityDeepLink(entityid, entityurl, creatorname){
-    return serverbaseurl + '/entity-share-link?' +
+function generateShareEntityDeepLink(entityid, entityurl, creatorname, share_source){
+
+    var deepLink = serverbaseurl + '/entity-share-link?' +
         'entityid=' +
         entityid +
         '&creatorname=' +
         creatorname +
         '&entityurl=' +
         encodeURIComponent(entityurl);
+
+    if(share_source){
+        deepLink += '&share_source=' + share_source;
+    }
+
+    return deepLink;
 }
 
 function generateLongDynamicLink(deeplink){
