@@ -94,6 +94,15 @@ function getCreadKalakaarUUID(){
     }
 }
 
+function getNishantMittalUUID(){
+    if(envtype === 'PRODUCTION'){
+        return '0a5a46bc-13f1-42b5-ae9b-ff518c044b80';
+    }
+    else{
+        return '8d905ac6-881d-492c-9aa9-e81f066f4d6f';
+    }
+}
+
 /**
  * Returns the default chat message from Cread Kalakaar whenever a new user signs up
  * */
@@ -127,5 +136,6 @@ module.exports = {
     'firebase_dynamiclink_domain': 'https://n7sgf.app.goo.gl',  //Obtained from Firebase Developer Console
     'fcm-server-key': 'AAAAWOwUO0Q:APA91bEI7_FLG9hRz2_nHRkBgSnQftSMrGzOzzKod1lPYNyX88jEqUIJRhE7SpxyVQ_a1ugWAZ0CbVgC3pTylZm9w8ZJib8P5B5MTXVh42_48RN_37-Cob0FtTV5-xxRzlSfGgYVobcc',
     getCreadKalakaarUUID: getCreadKalakaarUUID,
+    getNishantMittalUUID: getNishantMittalUUID,
     getCreadKalakaarDefaultMessage: getCreadKalakaarDefaultMessage
 };
