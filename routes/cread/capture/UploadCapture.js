@@ -15,7 +15,7 @@ var profilementionutils = require('../profile-mention/ProfileMentionUtils');
 
 var uuidgen = require('uuid');
 var multer = require('multer');
-var upload = multer({dest: './images/uploads/capture/'});
+var upload = multer({dest: './images/uploads/capture/', limits: { fileSize: 20*1024*1024 }});
 var fs = require('fs');
 
 var utils = require('../utils/Utils');
