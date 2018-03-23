@@ -56,6 +56,8 @@ router.post('/', upload.single('short-image'), function (request, response) {
         font: (request.body.font) ? request.body.font : 'NA',   //for backward compatibilty
         textcolor: request.body.textcolor,
         textgravity: request.body.textgravity,
+        textshadow: request.body.textshadow ? Number(request.body.textshadow) : 0,
+        shape: request.body.shape ? request.body.shape : 'shape_none',
         capid: (request.body.captureid) ? request.body.captureid : null,
         uuid: uuid,
         entityid: entityid,

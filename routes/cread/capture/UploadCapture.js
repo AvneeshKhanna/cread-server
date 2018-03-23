@@ -187,6 +187,8 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
     var textcolor = request.body.textcolor;
     var textsize = request.body.textsize;
     var textgravity = request.body.textgravity;
+    var textshadow = request.body.textshadow;
+    var shape = request.query.shape;
     var shoid = request.body.shoid;
 
     var bold = (request.body.bold === "1"),
@@ -242,7 +244,9 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
                 bgcolor: bgcolor,
                 font: font,
                 textsize: textsize,
-                textgravity: textgravity
+                textgravity: textgravity,
+                textshadow: textshadow ? Number(textshadow) : 0,
+                shape: shape ? shape : 'shape_none'
             };
             return updateCaptureDB(connection, captureid, uuid, watermark, merchantable, caption, entityid, shoid, captureparamas)
         })
