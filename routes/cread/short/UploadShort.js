@@ -15,7 +15,7 @@ var profilementionutils = require('../profile-mention/ProfileMentionUtils');
 
 var uuidgen = require('uuid');
 var multer = require('multer');
-var upload = multer({dest: './images/uploads/short/'});
+var upload = multer({dest: './images/uploads/short/', limits: { fileSize: 20*1024*1024 }});
 var fs = require('fs');
 
 var utils = require('../utils/Utils');
@@ -131,6 +131,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
                 tokenstatus: 'valid',
                 data: {
                     status: 'done',
+                    entityid: entityid,
                     shorturl: utils.createSmallShortUrl(uuid, shoid)
                 }
             });

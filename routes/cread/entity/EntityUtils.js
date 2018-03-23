@@ -437,6 +437,21 @@ function updateEntityCollabDataForUpdates(connection, entityid, uuid, actor_uuid
 function removeEntityFromExplore(connection, entityid){
     return new Promise(function (resolve, reject) {
         connection.query('UPDATE Entity ' +
+            'SET for_explore = 0 ' +
+            'WHERE entityid = ?', [entityid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
+function putEntityToExplore(connection, entityid){
+    return new Promise(function (resolve, reject) {
+        connection.query('UPDATE Entity ' +
             'SET for_explore = 1 ' +
             'WHERE entityid = ?', [entityid], function (err, rows) {
             if (err) {
@@ -510,6 +525,7 @@ module.exports = {
     getEntityUsrDetailsForNotif: getEntityUsrDetailsForNotif,
     deactivateEntity: deactivateEntity,
     removeEntityFromExplore: removeEntityFromExplore,
+    putEntityToExplore: putEntityToExplore,
     updateLastEventTimestamp: updateLastEventTimestamp,
     updateLastEventTimestampViaType: updateLastEventTimestampViaType
 };

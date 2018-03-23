@@ -10,7 +10,7 @@ var userprofileutils = require('../user-manager/UserProfileUtils');
 var consts = require('../utils/Constants');
 
 function extractMatchingUniqueHashtags(caption, matchword) {
-    var regex = new RegExp("\\#" + matchword + "(\\w+|\\s+)", "i");   //Match pattern containing specific hashtags
+    var regex = new RegExp("\\#" + matchword + "(\\w*|\\s*)", "i");   //Match pattern containing specific hashtags
     var tagSet = new Set();
     var match;
 
@@ -231,7 +231,7 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
                 else {  //Case of no data
                     resolve({
                         requestmore: rows.length >= limit,
-                        candownvote: candownvote,
+                        candownvote: true,
                         lastindexkey: null,
                         feed: []
                     });

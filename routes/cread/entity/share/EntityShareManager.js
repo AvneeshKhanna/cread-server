@@ -32,6 +32,9 @@ router.get('/', function (request, response) {
 
 });
 
+/**
+ * To generate a dynamic link for the user who is sharing the link
+ * */
 router.post('/generate-dynamic-link', function (request, response) {
 
     var uuid = request.body.uuid;
@@ -39,6 +42,9 @@ router.post('/generate-dynamic-link', function (request, response) {
     var entityid = request.body.entityid;
     var entityurl = request.body.entityurl;
     var creatorname = request.body.creatorname;
+    var share_source = request.body.share_source;
+
+    console.log("Request is " + JSON.stringify(request.body, null, 3));
 
     if(!entityid || !entityurl || !creatorname){
         response.status(500).send({
@@ -47,7 +53,7 @@ router.post('/generate-dynamic-link', function (request, response) {
         return;
     }
 
-    var deeplink = dylinkutils.generateShareEntityDeepLink(entityid, entityurl, creatorname);
+    var deeplink = dylinkutils.generateShareEntityDeepLink(entityid, entityurl, creatorname, share_source);
     var longDynamicLink = dylinkutils.generateLongDynamicLink(deeplink);
 
     _auth.authValid(uuid, authkey)

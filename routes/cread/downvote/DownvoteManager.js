@@ -12,6 +12,7 @@ var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
 var downvoteutils = require('./DownvoteUtils');
+var entityutils = require('../entity/EntityUtils');
 var utils = require('../utils/Utils');
 
 router.post('/on-click', function (request, response) {
@@ -43,6 +44,16 @@ router.post('/on-click', function (request, response) {
         })
         .then(function () {
             return downvoteutils.registerDownvote(connection, register, uuid, entityid);
+        })
+        .then(function () {
+            //Remove entity from explore if the downvoter is a team member
+            if(register && uuid === config.getNishantMittalUUID()){
+                return entityutils.removeEntityFromExplore(connection, entityid);
+            }
+            //Put entity to explore if the un-downvoter is a team member
+            else if(!register && uuid === config.getNishantMittalUUID()){
+                return entityutils.putEntityToExplore(connection, entityid);
+            }
         })
         .then(function () {
             return utils.commitTransaction(connection, undefined);
