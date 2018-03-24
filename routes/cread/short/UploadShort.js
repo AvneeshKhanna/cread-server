@@ -15,7 +15,7 @@ var profilementionutils = require('../profile-mention/ProfileMentionUtils');
 
 var uuidgen = require('uuid');
 var multer = require('multer');
-var upload = multer({dest: './images/uploads/short/', limits: { fileSize: 20*1024*1024 }});
+var upload = multer({dest: './images/uploads/short/', limits: {fileSize: 20 * 1024 * 1024}});
 var fs = require('fs');
 
 var utils = require('../utils/Utils');
@@ -46,7 +46,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
         txt_height: request.body.txt_height,
         img_width: request.body.img_width,
         img_height: request.body.img_height,
-        imgtintcolor : request.body.imgtintcolor ? request.body.imgtintcolor : null,
+        imgtintcolor: request.body.imgtintcolor ? request.body.imgtintcolor : null,
         filtername: request.body.filtername ? request.body.filtername : 'original',
         txt: request.body.text,
         textsize: request.body.textsize,
@@ -108,7 +108,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
             return shortutils.addShortToDb(connection, shortsqlparams, entityparams);
         })
         .then(function () {
-            if(shortsqlparams.capid){   //Case of collaboration
+            if (shortsqlparams.capid) {   //Case of collaboration
                 return entityutils.updateLastEventTimestampViaType(connection, shortsqlparams.capid, uuid);
             }
         })
@@ -145,12 +145,12 @@ router.post('/', upload.single('short-image'), function (request, response) {
             }
         })
         .then(function () {
-            if(mentioneduuids.length > 0  ){
+            if (mentioneduuids.length > 0) {
                 return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-post", uuid, mentioneduuids);
             }
         })
         .then(function () {
-            if(mentioneduuids.length > 0  ){
+            if (mentioneduuids.length > 0) {
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " mentioned you in a post",
                     category: "profile-mention-post",
@@ -171,7 +171,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
         })
         .then(function (capuseruuid) {
             captureuseruuid = capuseruuid;
-            if(captureuseruuid !== uuid){
+            if (captureuseruuid !== uuid) {
                 return entityutils.updateEntityCollabDataForUpdates(connection, entityid, captureuseruuid, uuid);
             }
         })
@@ -223,7 +223,7 @@ router.post('/edit', upload.single('short-image'), function (request, response) 
         txt_height: request.body.txt_height,
         img_width: request.body.img_width,
         img_height: request.body.img_height,
-        imgtintcolor : request.body.imgtintcolor ? request.body.imgtintcolor : null,
+        imgtintcolor: request.body.imgtintcolor ? request.body.imgtintcolor : null,
         filtername: request.body.filtername ? request.body.filtername : 'original',
         txt: request.body.text,
         textsize: request.body.textsize,
@@ -310,7 +310,7 @@ router.post('/edit', upload.single('short-image'), function (request, response) 
             //TODO: Add data to Updates table for profile-mention-post notification
         })
         .then(function () {
-            if(mentioneduuids.length > 0){
+            if (mentioneduuids.length > 0) {
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " mentioned you in a post",
                     category: "profile-mention-post",
@@ -325,10 +325,10 @@ router.post('/edit', upload.single('short-image'), function (request, response) 
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 config.disconnect(connection);
             }
-            else{
+            else {
                 console.error(err);
                 utils.rollbackTransaction(connection)
                     .catch(function (err) {
