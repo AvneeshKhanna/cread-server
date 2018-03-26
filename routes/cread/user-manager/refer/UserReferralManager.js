@@ -7,8 +7,11 @@ var express = require('express');
 var router = express.Router();
 
 var config = require('../../../Config');
-var dynamiclinkutils = require('../entity/share/DynamicLinkUtils');
+var dynamiclinkutils = require('../../entity/share/DynamicLinkUtils');
 var userreferralutils = require('./UserReferralUtils');
+
+var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
+var _auth = require('../../../auth-token-management/AuthTokenManager');
 
 router.get('/get-referral-link', function (request, response) {
 

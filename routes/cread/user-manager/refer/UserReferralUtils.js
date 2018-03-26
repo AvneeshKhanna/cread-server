@@ -18,7 +18,7 @@ function generateShareAppDeepLink(referrer_uuid){
 
     return serverbaseurl
         + '?referral_code='
-        + cipher_text;
+        + encodeURIComponent(cipher_text);
 }
 
 module.exports = {

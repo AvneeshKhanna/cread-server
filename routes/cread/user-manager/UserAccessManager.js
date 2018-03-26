@@ -111,7 +111,7 @@ router.post('/sign-up', function (request, response) {
     if(referral_code){
 
         // Decrypt Data
-        var decryptedBytes  = CryptoJS.AES.decrypt(referral_code.toString(), config['crypto-secret-key']);
+        var decryptedBytes  = CryptoJS.AES.decrypt(decodeURIComponent(referral_code).toString(), config['crypto-secret-key']);
         var payload = JSON.parse(decryptedBytes.toString(CryptoJS.enc.Utf8));
 
         userdetails.referred_by = payload.referrer_uuid;
