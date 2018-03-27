@@ -6,16 +6,21 @@
 var request_client = require('request');
 var config = require('../../../Config');
 var serverbaseurl = config.server_url;
+var userreferralutils = require('../../user-manager/refer/UserReferralUtils');
 
-function generateShareEntityDeepLink(entityid, entityurl, creatorname, share_source){
+function generateShareEntityDeepLink(entityid, entityurl, creatorname, referrer_uuid, share_source){
 
-    var deepLink = serverbaseurl + '/entity-share-link?' +
-        'entityid=' +
+    var referral_code = userreferralutils.getEncryptedReferralPayload(referrer_uuid);
+
+    var deepLink = serverbaseurl + '/entity-share-link' +
+        '?entityid=' +
         entityid +
         '&creatorname=' +
         creatorname +
         '&entityurl=' +
-        encodeURIComponent(entityurl);
+        encodeURIComponent(entityurl) +
+        "&referral_code=" +
+        encodeURIComponent(referral_code);
 
     if(share_source){
         deepLink += '&share_source=' + share_source;
@@ -35,7 +40,7 @@ function generateLongDynamicLink(deeplink){
         '&imv=' +
         '1.0.13' +  //iOS minimum version
         '&amv=' +
-        '12'; //Android minimum version code
+        '20'; //Android minimum version code TODO: Change to 44
 }
 
 /**

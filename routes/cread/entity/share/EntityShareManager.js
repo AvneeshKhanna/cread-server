@@ -53,7 +53,7 @@ router.post('/generate-dynamic-link', function (request, response) {
         return;
     }
 
-    var deeplink = dylinkutils.generateShareEntityDeepLink(entityid, entityurl, creatorname, share_source);
+    var deeplink = dylinkutils.generateShareEntityDeepLink(entityid, entityurl, creatorname, uuid, share_source);
     var longDynamicLink = dylinkutils.generateLongDynamicLink(deeplink);
 
     _auth.authValid(uuid, authkey)

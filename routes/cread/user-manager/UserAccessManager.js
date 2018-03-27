@@ -15,6 +15,7 @@ var config = require('../../Config');
 var envconfig = require('config');
 var uuidGen = require('uuid');
 var request_client = require('request');
+var CryptoJS = require('crypto-js');
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
@@ -85,6 +86,7 @@ router.post('/sign-up', function (request, response) {
     console.log("request is " + JSON.stringify(request.body, null, 3));
 
     var fcmtoken = request.body.fcmtoken;
+    var referral_code = request.body.referral_code;
 
     try{
         var userdata = request.body.userdata;
@@ -104,6 +106,15 @@ router.post('/sign-up', function (request, response) {
     }
     catch(ex){
         console.error(ex);
+    }
+
+    if(referral_code){
+
+        // Decrypt Data
+        var decryptedBytes  = CryptoJS.AES.decrypt(decodeURIComponent(referral_code).toString(), config['crypto-secret-key']);
+        var payload = JSON.parse(decryptedBytes.toString(CryptoJS.enc.Utf8));
+
+        userdetails.referred_by = payload.referrer_uuid;
     }
 
     var connection;
@@ -167,6 +178,18 @@ router.post('/sign-up', function (request, response) {
                     actorimage: utils.createSmallProfilePicUrl(new_user_uuid)
                 };
                 return notify.notificationPromise(fb_friends_uuids, notifData);
+            }
+        })
+        .then(function () {
+            if(userdetails.referred_by){
+                var notifData = {
+                    persistable: "No",
+                    message: userdetails.firstname + " " + userdetails.lastname +  " has joined Cread using your referral",
+                    category: "join-referral",
+                    actorid: new_user_uuid,
+                    actorimage: utils.createSmallProfilePicUrl(new_user_uuid)
+                };
+                return notify.notificationPromise(new Array(userdetails.referred_by), notifData);
             }
         })
         .then(function () {
