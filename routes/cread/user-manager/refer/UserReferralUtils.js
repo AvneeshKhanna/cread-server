@@ -8,13 +8,17 @@ var CryptoJS = require('crypto-js');
 var config = require('../../../Config');
 var serverbaseurl = config.server_url;
 
-function generateShareAppDeepLink(referrer_uuid){
-
+function getEncryptedReferralPayload(referrer_uuid){
     var payload = {
         referrer_uuid: referrer_uuid
     };
 
-    var cipher_text = CryptoJS.AES.encrypt(JSON.stringify(payload), config['crypto-secret-key']);
+    return CryptoJS.AES.encrypt(JSON.stringify(payload), config['crypto-secret-key']);
+}
+
+function generateShareAppDeepLink(referrer_uuid){
+
+    var cipher_text = getEncryptedReferralPayload(referrer_uuid);
 
     return serverbaseurl
         + '?referral_code='
@@ -22,5 +26,6 @@ function generateShareAppDeepLink(referrer_uuid){
 }
 
 module.exports = {
-    generateShareAppDeepLink: generateShareAppDeepLink
+    generateShareAppDeepLink: generateShareAppDeepLink,
+    getEncryptedReferralPayload: getEncryptedReferralPayload
 };
