@@ -57,8 +57,8 @@ function getUniqueValues(arr) {
 * */
 function sendAWSSMS(message, phonenumber, callback){
 
-    if(phonenumber.length !== 10){
-        phonenumber = phonenumber.slice(3, phonenumber.length);
+    if(!phonenumber.includes("+91")){   //If phone number doesn't contain '+91'
+        phonenumber = "+91" + phonenumber;
     }
 
     var sns = new AWS.SNS();
@@ -78,7 +78,7 @@ function sendAWSSMS(message, phonenumber, callback){
 
             var params = {
                 Message : message,
-                PhoneNumber : '+91' + phonenumber
+                PhoneNumber : phonenumber
             };
 
             console.log('sns request sending');

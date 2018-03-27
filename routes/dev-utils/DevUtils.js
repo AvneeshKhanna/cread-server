@@ -289,4 +289,74 @@ function sendAllChatMessageFromCreadKalakaar(connection, users_data, message_bod
     });
 }
 
+router.post('/send-sms-all', function (request, response) {
+
+    var message = request.body.message;
+
+    var connection;
+
+    config.getNewConnection()
+        .then(function (conn) {
+            connection = conn;
+            return new Promise(function (resolve, reject) {
+                connection.query('SELECT firstname, phone ' +
+                    'FROM User', [null], function (err, rows) {
+                    if (err) {
+                        reject(err);
+                    }
+                    else {
+                        resolve(rows);
+                    }
+                });
+            });
+        })
+        .then(function (users) {
+            response.send("Process initiated").end();
+            return sendSMSToAllUsers(users, message);
+        })
+        .then(function () {
+            //Process complete.
+            throw new BreakPromiseChainError(); //To disconnect MySQL connection
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+            }
+        });
+
+});
+
+function sendSMSToAllUsers(users, message){
+    return new Promise(function (resolve, reject) {
+        async.eachSeries(users, function (user, callback) {
+
+            var edited_msg = "Hi " + user.firstname + ",\n" + message;
+
+            utils.sendAWSSMS(edited_msg, user.phone, function (err, data) {
+                if(err){
+                    callback(err);
+                }
+                else{
+                    console.log(JSON.stringify(data, null, 3));
+                    callback();
+                }
+            });
+
+        }, function (err) {
+            if(err){
+                console.log('SMS could only be sent to a few users');
+                reject(err);
+            }
+            else{
+                console.log('SMS sent to all users');
+                resolve();
+            }
+        });
+    });
+}
+
 module.exports = router;
