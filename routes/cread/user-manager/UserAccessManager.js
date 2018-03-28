@@ -39,20 +39,20 @@ router.post('/sign-in', function (request, response) {
             return useraccessutils.checkIfUserExists(connection, fbid);
         })
         .then(function (result) {
-            if(result && fcmtoken){ //Case of existing user and non-null fcmtoken
+            if (result && fcmtoken) { //Case of existing user and non-null fcmtoken
                 return useraccessutils.addUserFcmToken(result.uuid, fcmtoken, result);
             }
-            else{   //Case of new user
+            else {   //Case of new user
                 return new Promise(function (resolve, reject) {
                     resolve(result);
                 });
             }
         })
         .then(function (result) {
-            if(result){
+            if (result) {
                 result.status = "existing-user";
             }
-            else{
+            else {
                 result = {
                     status: "new-user"
                 };
@@ -68,10 +68,10 @@ router.post('/sign-in', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
@@ -88,7 +88,7 @@ router.post('/sign-up', function (request, response) {
     var fcmtoken = request.body.fcmtoken;
     var referral_code = request.body.referral_code;
 
-    try{
+    try {
         var userdata = request.body.userdata;
 
         utils.changePropertyName(userdata, "id", "fbid");
@@ -104,14 +104,14 @@ router.post('/sign-up', function (request, response) {
 
         delete userdata.age_range;
     }
-    catch(ex){
+    catch (ex) {
         console.error(ex);
     }
 
-    if(referral_code){
+    if (referral_code) {
 
         // Decrypt Data
-        var decryptedBytes  = CryptoJS.AES.decrypt(decodeURIComponent(referral_code).toString(), config['crypto-secret-key']);
+        var decryptedBytes = CryptoJS.AES.decrypt(decodeURIComponent(referral_code).toString(), config['crypto-secret-key']);
         var payload = JSON.parse(decryptedBytes.toString(CryptoJS.enc.Utf8));
 
         userdetails.referred_by = payload.referrer_uuid;
@@ -127,7 +127,7 @@ router.post('/sign-up', function (request, response) {
             return useraccessutils.checkIfPhoneExists(connection, userdetails.phone);
         })
         .then(function (result) {
-            if(result){
+            if (result) {
                 response.send({
                     data: {
                         status: 'phone-exists'
@@ -136,7 +136,7 @@ router.post('/sign-up', function (request, response) {
                 response.end();
                 throw new BreakPromiseChainError();
             }
-            else{
+            else {
                 return useraccessutils.registerUserData(connection, userdetails, fcmtoken);
             }
         })
@@ -164,15 +164,15 @@ router.post('/sign-up', function (request, response) {
         })
         .then(function (fuuids) {
             fb_friends_uuids = fuuids;
-            if(fb_friends_uuids.length > 0){
+            if (fb_friends_uuids.length > 0) {
                 return useraccessutils.updateNewFacebookUserDataForUpdates(connection, fb_friends_uuids, new_user_uuid, "fb-friend-new");
             }
         })
         .then(function () {
-            if(fb_friends_uuids.length > 0){
+            if (fb_friends_uuids.length > 0) {
                 var notifData = {
                     persistable: "Yes",
-                    message: "Your Facebook friend " + userdetails.firstname + " " + userdetails.lastname +  " is now on Cread",
+                    message: "Your Facebook friend " + userdetails.firstname + " " + userdetails.lastname + " is now on Cread",
                     category: "fb-friend-new",
                     actorid: new_user_uuid,
                     actorimage: utils.createSmallProfilePicUrl(new_user_uuid)
@@ -181,10 +181,10 @@ router.post('/sign-up', function (request, response) {
             }
         })
         .then(function () {
-            if(userdetails.referred_by){
+            if (userdetails.referred_by) {
                 var notifData = {
                     persistable: "No",
-                    message: userdetails.firstname + " " + userdetails.lastname +  " has joined Cread using your referral",
+                    message: userdetails.firstname + " " + userdetails.lastname + " has joined Cread using your referral",
                     category: "join-referral",
                     actorid: new_user_uuid,
                     actorimage: utils.createSmallProfilePicUrl(new_user_uuid)
@@ -200,10 +200,10 @@ router.post('/sign-up', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     message: 'Some error occurred at the server'
@@ -228,10 +228,10 @@ router.post('/sign-out', function (request, response) {
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     message: 'Some error occurred at the server'
