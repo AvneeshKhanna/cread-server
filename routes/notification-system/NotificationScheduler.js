@@ -11,6 +11,7 @@ var async = require('async');
 var config = require('../Config');
 var BreakPromiseChainError = require('../cread/utils/BreakPromiseChainError');
 var featuredartistutils = require('../cread/featured-artists/FeaturedArtistsUtils');
+var usereventsutils = require('../cread/user-manager/events/UserEventsUtils');
 
 var top_givers_notification = new CronJob({
     cronTime: '00 30 20 * * 5', //second | minute | hour | day-of-month | month | day-of-week
@@ -235,8 +236,28 @@ function categoriseUsers(connection, entity) {
     });
 }
 
+var engagement_notification_job = new CronJob({
+    //Runs every 2nd day, 8:30 pm
+    cronTime: '00 30 20 */2 * *', //second | minute | hour | day-of-month | month | day-of-week
+    onTick: function() {
+
+        usereventsutils.sendEngagementNotificationsForUsers()
+            .then(function () {
+                console.log("Engagement Notifications Process Completely");
+            })
+            .catch(function (err) {
+                console.error(err);
+                console.log("ERROR: Engagement Notifications Process Stopped");
+            });
+
+    },
+    start: false,   //Whether to start just now
+    timeZone: 'Asia/Kolkata'
+});
+
 module.exports = {
     top_givers_notification: top_givers_notification,
     top_post_notification: top_post_notification,
-    featured_artist_notification: featured_artist_notification
+    featured_artist_notification: featured_artist_notification,
+    engagement_notification_job: engagement_notification_job
 };

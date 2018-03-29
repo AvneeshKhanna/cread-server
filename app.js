@@ -16,8 +16,7 @@ var exploredatahandler = require('./routes/cread/feed/explore/ExploreFeedDataHan
 //exploredatahandler.explore_feed_processing_recurrent.start();    //To start cron based processing for explore feed data
 
 //To initiate the cron job for engagement notifications
-var engagement_notification_job = require('./routes/cread/user-manager/events/UserEventTasksManager');
-engagement_notification_job.engagement_notification_job.start();
+notifscheduler.engagement_notification_job.start();
 
 //To initiate the cron job for featured artist notifications
 notifscheduler.featured_artist_notification.start();

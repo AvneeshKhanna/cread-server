@@ -40,7 +40,7 @@ function generateLongDynamicLink(deeplink){
         '&imv=' +
         '1.0.13' +  //iOS minimum version
         '&amv=' +
-        '20'; //Android minimum version code TODO: Change to 44
+        '45'; //Android minimum version code
 }
 
 /**
