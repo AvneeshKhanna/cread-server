@@ -345,6 +345,55 @@ function loadEntityData(connection, requesteruuid, entityid) {
 }
 
 /**
+ * Load textual data and image's url separately from a collaborated entityid
+ * */
+function loadEntityDataSeparate(connection, entityid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT E.type, C.* ' +
+            'FROM Entity E ' +
+            'LEFT JOIN Capture C ' +
+            'USING(entityid) ' +
+            'WHERE E.entityid = ?;' +
+            'SELECT E.type, S.* ' +
+            'FROM Entity E ' +
+            'LEFT JOIN Short S ' +
+            'USING(entityid) ' +
+            'WHERE E.entityid = ?', [entityid, entityid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+
+                var row;
+
+                if(rows[0][0].type === 'CAPTURE'){
+                    row = rows[0];
+                }
+                else{
+                    row = rows[1];
+                }
+
+                row.map(function (element) {
+                    if(element.capid) {
+                        element.entityurl = utils.createCaptureUrl(element.uuid, element.capid);
+                    }
+                    else{
+                        element.entityurl = null;
+                    }
+
+                    if(element.txt){
+                        utils.changePropertyName(element, "txt", "text");
+                    }
+
+                });
+
+                resolve(row[0])
+            }
+        });
+    });
+}
+
+/**
  * Retrieves the creator and collaborator's (if exists) uuids from entityid
  * */
 function getEntityUsrDetailsForNotif(connection, entityid) {
@@ -518,6 +567,7 @@ function updateLastEventTimestampViaType(connection, typeid, uuid) {
 module.exports = {
     updateEntityCollabDataForUpdates: updateEntityCollabDataForUpdates,
     loadEntityData: loadEntityData,
+    loadEntityDataSeparate: loadEntityDataSeparate,
     retrieveShortDetails: retrieveShortDetails,
     loadCollabDetails: loadCollabDetails,
     updateEntityCaption: updateEntityCaption,
