@@ -48,6 +48,7 @@ router.get('/load-specific', function (request, response) {
                 'txt_height',
                 'imgtintcolor',
                 'filtername',
+                'text_long',
                 'textshadow',
                 'shape',
                 'entityid',
