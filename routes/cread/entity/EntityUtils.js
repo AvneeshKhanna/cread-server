@@ -7,7 +7,7 @@ var utils = require('../utils/Utils');
 
 var moment = require('moment');
 var feedutils = require('../feed/FeedUtils');
-var updatesutils= require('../updates/UpdatesUtils');
+var updatesutils = require('../updates/UpdatesUtils');
 var userprofileutils = require('../user-manager/UserProfileUtils');
 var consts = require('../utils/Constants');
 
@@ -72,9 +72,9 @@ function getEntityDetailsForPrint(connection, entityids) {
                     var C = element.C;
                     var CS = element.CS;
 
-                    if(E.type === 'SHORT'){
+                    if (E.type === 'SHORT') {
 
-                        if(S.hasOwnProperty('regdate')){
+                        if (S.hasOwnProperty('regdate')) {
                             delete S.regdate;
                         }
 
@@ -84,17 +84,17 @@ function getEntityDetailsForPrint(connection, entityids) {
 
                         element.entityurl = utils.createSmallShortUrl(S.uuid, S.shoid);
 
-                        if(S.capid){
+                        if (S.capid) {
                             element.highresurl = utils.createCaptureUrl(CS.uuid, CS.capid);
                         }
-                        else{
+                        else {
                             element.highresurl = null;
                         }
 
                     }
-                    else if(E.type === 'CAPTURE'){
+                    else if (E.type === 'CAPTURE') {
 
-                        if(C.hasOwnProperty('regdate')){
+                        if (C.hasOwnProperty('regdate')) {
                             delete C.regdate;
                         }
 
@@ -106,30 +106,30 @@ function getEntityDetailsForPrint(connection, entityids) {
                         element.highresurl = utils.createCaptureUrl(C.uuid, C.capid);
                     }
 
-                    if(element.textgravity === 'East'){
+                    if (element.textgravity === 'East') {
                         element.textgravity = 'Right';
                     }
-                    else if(element.textgravity === 'West'){
+                    else if (element.textgravity === 'West') {
                         element.textgravity = 'Left';
                     }
 
-                    if(element.hasOwnProperty('txt')){
+                    if (element.hasOwnProperty('txt')) {
                         utils.changePropertyName(element, 'txt', 'text');
                     }
 
-                    if(element.hasOwnProperty('E')){
+                    if (element.hasOwnProperty('E')) {
                         delete element.E;
                     }
 
-                    if(element.hasOwnProperty('S')){
+                    if (element.hasOwnProperty('S')) {
                         delete element.S;
                     }
 
-                    if(element.hasOwnProperty('C')){
+                    if (element.hasOwnProperty('C')) {
                         delete element.C;
                     }
 
-                    if(element.hasOwnProperty('CS')){
+                    if (element.hasOwnProperty('CS')) {
                         delete element.CS;
                     }
 
@@ -147,7 +147,7 @@ function loadCollabDetails(connection, entityid, entitytype, limit, lastindexkey
 
     var query;
 
-    if(entitytype === 'SHORT'){
+    if (entitytype === 'SHORT') {
         query = 'SELECT User.firstname, User.lastname, User.uuid, Capture.capid, Capture.entityid, Capture.regdate ' +
             'FROM Short ' +
             'JOIN Capture ' +
@@ -189,10 +189,10 @@ function loadCollabDetails(connection, entityid, entitytype, limit, lastindexkey
                     element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
                     element.name = element.firstname + ' ' + element.lastname;
 
-                    if(entitytype === 'SHORT'){
+                    if (entitytype === 'SHORT') {
                         element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.capid);
                     }
-                    else{
+                    else {
                         element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
                     }
 
@@ -204,24 +204,24 @@ function loadCollabDetails(connection, entityid, entitytype, limit, lastindexkey
                         delete element.shoid;
                     }*/
 
-                    if(element.firstname){
+                    if (element.firstname) {
                         delete element.firstname;
                     }
 
-                    if(element.lastname){
+                    if (element.lastname) {
                         delete element.lastname;
                     }
 
                 });
 
-                if(rows.length > 0){
+                if (rows.length > 0) {
                     resolve({
                         requestmore: rows.length >= limit,
                         lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
                         items: rows
                     });
                 }
-                else{
+                else {
                     resolve({
                         requestmore: rows.length >= limit,
                         lastindexkey: null,
@@ -267,10 +267,10 @@ function loadEntityData(connection, requesteruuid, entityid) {
                 row.map(function (element) {
                     element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
 
-                    if(element.type === 'CAPTURE'){
+                    if (element.type === 'CAPTURE') {
                         element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
                     }
-                    else{
+                    else {
                         element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
                     }
 
@@ -289,11 +289,11 @@ function loadEntityData(connection, requesteruuid, entityid) {
                         delete element.shoid;
                     }*/
 
-                    if(element.firstname) {
+                    if (element.firstname) {
                         delete element.firstname;
                     }
 
-                    if(element.lastname) {
+                    if (element.lastname) {
                         delete element.lastname;
                     }
 
@@ -305,7 +305,7 @@ function loadEntityData(connection, requesteruuid, entityid) {
                         delete element.dbinarycount;
                     }
 
-                    if(element.hasOwnProperty('fbinarycount')) {
+                    if (element.hasOwnProperty('fbinarycount')) {
                         delete element.fbinarycount;
                     }
 
@@ -370,28 +370,28 @@ function loadEntityDataSeparate(connection, entityid) {
 
                 var row;
 
-                if(rows[0][0].type === 'CAPTURE'){
+                if (rows[0][0].type === 'CAPTURE') {
                     row = rows[0];
                 }
-                else{
+                else {
                     row = rows[1];
                 }
 
                 row.map(function (element) {
-                    if(element.capid) {
+                    if (element.capid) {
                         element.entityurl = utils.createCaptureUrl(element.uuid, element.capid);
                     }
-                    else{
+                    else {
                         element.entityurl = null;
                     }
 
-                    if(element.txt){
+                    if (element.txt) {
                         utils.changePropertyName(element, "txt", "text");
                     }
 
                     element.text = element.text + '\n' + element.text_long;
 
-                    if(element.hasOwnProperty('text_long')){
+                    if (element.hasOwnProperty('text_long')) {
                         delete element.text_long;
                     }
 
@@ -421,20 +421,20 @@ function getEntityUsrDetailsForNotif(connection, entityid) {
             'ON Short.capid = CollabC.capid ' +
             'LEFT JOIN Short AS CollabS ' +
             'ON Capture.shoid = CollabS.shoid ' +
-            'WHERE Entity.entityid = ?', [entityid], function(err, rows){
-            if(err){
+            'WHERE Entity.entityid = ?', [entityid], function (err, rows) {
+            if (err) {
                 reject(err);
             }
-            else{
+            else {
 
                 rows.map(function (el) {
-                    if(el.type === 'SHORT'){
-                        if(el.collabcuuid){
+                    if (el.type === 'SHORT') {
+                        if (el.collabcuuid) {
                             el.collabuuid = el.collabcuuid;
                         }
                     }
-                    else if(el.type === 'CAPTURE'){
-                        if(el.collabsuuid){
+                    else if (el.type === 'CAPTURE') {
+                        if (el.collabsuuid) {
                             el.collabuuid = el.collabsuuid;
                         }
                     }
@@ -480,7 +480,7 @@ function updateEntityCaption(connection, entityid, caption) {
     });
 }
 
-function updateEntityCollabDataForUpdates(connection, entityid, uuid, actor_uuid){
+function updateEntityCollabDataForUpdates(connection, entityid, uuid, actor_uuid) {
     return new Promise(function (resolve, reject) {
         var updateparams = {
             category: "collaborate",
@@ -493,7 +493,7 @@ function updateEntityCollabDataForUpdates(connection, entityid, uuid, actor_uuid
     });
 }
 
-function removeEntityFromExplore(connection, entityid){
+function removeEntityFromExplore(connection, entityid) {
     return new Promise(function (resolve, reject) {
         connection.query('UPDATE Entity ' +
             'SET for_explore = 0 ' +
@@ -508,7 +508,7 @@ function removeEntityFromExplore(connection, entityid){
     });
 }
 
-function putEntityToExplore(connection, entityid){
+function putEntityToExplore(connection, entityid) {
     return new Promise(function (resolve, reject) {
         connection.query('UPDATE Entity ' +
             'SET for_explore = 1 ' +
@@ -564,13 +564,13 @@ function updateLastEventTimestampViaType(connection, typeid, uuid) {
             'WHERE (Short.shoid = ? OR Capture.capid = ?) ' +
             'AND ((Short.uuid IS NOT NULL AND Short.uuid <> ?) OR (Capture.uuid IS NOT NULL AND Capture.uuid <> ?)) ',
             [typeid, typeid, uuid, uuid], function (err, rows) {
-            if (err) {
-                reject(err);
-            }
-            else {
-                resolve();
-            }
-        });
+                if (err) {
+                    reject(err);
+                }
+                else {
+                    resolve();
+                }
+            });
     });
 }
 
