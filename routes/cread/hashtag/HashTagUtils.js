@@ -127,6 +127,7 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
             'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
             'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
             'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
+            'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount ' +
@@ -179,6 +180,7 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
                         element.followstatus = element.binarycount > 0;
                         element.downvotestatus = element.dbinarycount > 0;
                         element.merchantable = (element.merchantable !== 0);
+                        element.long_form = (element.long_form === 1);
 
                         if (element.hasOwnProperty('binarycount')) {
                             delete element.binarycount;

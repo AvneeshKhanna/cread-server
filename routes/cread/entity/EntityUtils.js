@@ -237,6 +237,7 @@ function loadEntityData(connection, requesteruuid, entityid) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, Short.shoid, Capture.capid AS captureid, ' +
             'Capture.shoid AS cpshortid, Short.capid AS shcaptureid, ' +
+            'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
@@ -278,6 +279,7 @@ function loadEntityData(connection, requesteruuid, entityid) {
                     element.followstatus = element.fbinarycount > 0;
                     element.downvotestatus = element.dbinarycount > 0;
                     element.merchantable = (element.merchantable !== 0);
+                    element.long_form = (element.long_form === 1);
 
                     /*if(element.capid) {
                         delete element.capid;
@@ -354,10 +356,12 @@ function loadEntityDataSeparate(connection, entityid) {
             'LEFT JOIN Capture C ' +
             'USING(entityid) ' +
             'WHERE E.entityid = ?;' +
-            'SELECT E.type, S.* ' +
+            'SELECT E.type, S.*, C.uuid, C.capid ' +    //Note: Here, 'uuid' and 'capid' values retrieved will be overwritten for those in Short table
             'FROM Entity E ' +
             'LEFT JOIN Short S ' +
             'USING(entityid) ' +
+            'LEFT JOIN Capture C ' +
+            'ON (S.capid = C.capid)' +
             'WHERE E.entityid = ?', [entityid, entityid], function (err, rows) {
             if (err) {
                 reject(err);
@@ -383,6 +387,12 @@ function loadEntityDataSeparate(connection, entityid) {
 
                     if(element.txt){
                         utils.changePropertyName(element, "txt", "text");
+                    }
+
+                    element.text = element.text + '\n' + element.text_long;
+
+                    if(element.hasOwnProperty('text_long')){
+                        delete element.text_long;
                     }
 
                 });

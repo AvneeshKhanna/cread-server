@@ -456,6 +456,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
             'User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, ' +
             'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
             '(CASE WHEN(EA.impact_score IS NULL) THEN ? ELSE EA.impact_score END) AS impact_weight, ' +
+            'CASE WHEN(EA.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
             'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
             'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
@@ -524,6 +525,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                         element.downvotestatus = element.dbinarycount > 0;
                         element.followstatus = element.binarycount > 0;
                         element.merchantable = (element.merchantable !== 0);
+                        element.long_form = (element.long_form === 1);
 
                         if (element.hasOwnProperty('binarycount')) {
                             delete element.binarycount;

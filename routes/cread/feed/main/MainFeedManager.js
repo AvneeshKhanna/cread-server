@@ -274,7 +274,9 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
         lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
         connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
-            'Capture.capid AS captureid, ' + 'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
+            'Capture.capid AS captureid, ' +
+            'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
+            'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
             'User.uuid, User.firstname, User.lastname ' +
@@ -330,6 +332,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
 
                         element.creatorname = element.firstname + ' ' + element.lastname;
                         element.merchantable = (element.merchantable !== 0);
+                        element.long_form = (element.long_form === 1);
 
                         /*if(element.capid) {
                             delete element.capid;

@@ -141,6 +141,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
         connection.query('SELECT Entity.caption, Entity.entityid, Entity.regdate, Entity.merchantable, Entity.type, User.uuid, ' +
             'User.firstname, User.lastname, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
             'Capture.capid AS captureid, ' +
+            'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
@@ -190,6 +191,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
                         element.followstatus = element.fbinarycount > 0;
                         element.downvotestatus = element.dbinarycount > 0;
                         element.merchantable = (element.merchantable !== 0);
+                        element.long_form = (element.long_form === 1);
 
                         if (element.type === 'CAPTURE') {
                             element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
@@ -367,6 +369,7 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                 connection.query('SELECT Entity.caption, Entity.entityid, Entity.regdate, Entity.merchantable, Entity.type, User.uuid, ' +
                     'User.firstname, User.lastname, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
                     'Capture.capid AS captureid, CShort.entityid AS csentityid, SCapture.entityid AS scentityid, ' +
+                    'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
                     'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
                     'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
                     'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
@@ -416,6 +419,7 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                                 element.hatsoffstatus = element.hbinarycount > 0;
                                 element.downvotestatus = element.dbinarycount > 0;
                                 element.merchantable = (element.merchantable !== 0);
+                                element.long_form = (element.long_form === 1);
 
                                 if (element.type === 'CAPTURE') {
                                     element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);

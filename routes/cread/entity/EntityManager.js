@@ -489,6 +489,9 @@ router.get('/load-data-long-form', function (request, response) {
             return entityutils.loadEntityDataSeparate(connection, entityid);
         })
         .then(function (result) {
+
+            console.log("result is " + JSON.stringify(result, null, 3));
+
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 
             if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
