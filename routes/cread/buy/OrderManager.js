@@ -95,7 +95,7 @@ router.post('/place', function (request, response) {
             return buyutils.saveOrderDetails(connection, sqlparams);
         })
         .then(function () {
-            if(payment_mode){
+            if(paymentid){
                 return buyutils.captureRazorpayPayment(connection, paymentid, buyutils.convertINRtoPaise(amount));
             }
         })
