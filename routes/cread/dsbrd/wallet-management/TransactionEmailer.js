@@ -137,6 +137,7 @@ function sendOrderTransactionEmail(type, customerdetails, subject, paymentdetail
     var renderdata = {
         name: customerdetails.name,
         paymentid: paymentdetails.paymentid,
+        payment_mode: paymentdetails.payment_mode,
         billingname: customerdetails.billingname,
         billingcontact: customerdetails.billingcontact,
         amount: paymentdetails.amount,
@@ -178,7 +179,9 @@ function sendOrderTransactionEmail(type, customerdetails, subject, paymentdetail
 
             if(envtype === 'PRODUCTION'){
                 params.Destination.BccAddresses = [
-                    'admin@thetestament.com'
+                    'admin@thetestament.com',
+                    'nishantmittal2410@gmail.com',
+                    'avneesh.khanna92@gmail.com'
                 ]
             }
 

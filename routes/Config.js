@@ -117,6 +117,10 @@ function getCreadKalakaarDefaultMessage() {
         "Cread Kalakaar";
 }
 
+function isProduction(){
+    return envtype === 'PRODUCTION';
+}
+
 module.exports = {
     'secretKey': '12345-67890-09876-54321',
     'createConnection': connection,
@@ -137,5 +141,6 @@ module.exports = {
     'fcm-server-key': 'AAAAWOwUO0Q:APA91bEI7_FLG9hRz2_nHRkBgSnQftSMrGzOzzKod1lPYNyX88jEqUIJRhE7SpxyVQ_a1ugWAZ0CbVgC3pTylZm9w8ZJib8P5B5MTXVh42_48RN_37-Cob0FtTV5-xxRzlSfGgYVobcc',
     getCreadKalakaarUUID: getCreadKalakaarUUID,
     getNishantMittalUUID: getNishantMittalUUID,
-    getCreadKalakaarDefaultMessage: getCreadKalakaarDefaultMessage
+    getCreadKalakaarDefaultMessage: getCreadKalakaarDefaultMessage,
+    isProduction: isProduction
 };

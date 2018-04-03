@@ -347,7 +347,7 @@ function loadEntityData(connection, requesteruuid, entityid) {
 }
 
 /**
- * Load textual data and image's url separately from a collaborated entityid
+ * Load textual data and image's url separately from a collaborated post using 'entityid'
  * */
 function loadEntityDataSeparate(connection, entityid) {
     return new Promise(function (resolve, reject) {
@@ -385,14 +385,16 @@ function loadEntityDataSeparate(connection, entityid) {
                         element.entityurl = null;
                     }
 
-                    if (element.txt) {
-                        utils.changePropertyName(element, "txt", "text");
+                    if (element.hasOwnProperty('txt')) {
+                        delete element.txt;
                     }
 
-                    element.text = element.text + '\n' + element.text_long;
+                    if (element.hasOwnProperty('text')) {
+                        delete element.text;
+                    }
 
-                    if (element.hasOwnProperty('text_long')) {
-                        delete element.text_long;
+                    if (element.text_long) {
+                        utils.changePropertyName(element, "text_long", "text");
                     }
 
                 });

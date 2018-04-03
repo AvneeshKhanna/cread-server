@@ -43,6 +43,7 @@ router.post('/place', function (request, response) {
     var amount = buyutils.convertPaiseToINR(request.body.amount);    //Amount requested in paise
     var royalty_percentage = consts.royalty_percentage;
     var paymentid = request.body.paymentid; //ID of the payment transacted through payment gateway portal
+    var payment_mode = request.body.payment_mode;
 
     var shortuuid = request.body.shortuuid;
     var captureuuid = request.body.captureuuid;
@@ -53,6 +54,7 @@ router.post('/place', function (request, response) {
         entityid: entityid,
         productid: productid,
         paymentid: paymentid,
+        payment_mode: payment_mode,
         amount: amount,
         shortuuid: shortuuid,
         captureuuid: captureuuid,
@@ -93,7 +95,9 @@ router.post('/place', function (request, response) {
             return buyutils.saveOrderDetails(connection, sqlparams);
         })
         .then(function () {
-            return buyutils.captureRazorpayPayment(connection, paymentid, buyutils.convertINRtoPaise(amount));
+            if(payment_mode){
+                return buyutils.captureRazorpayPayment(connection, paymentid, buyutils.convertINRtoPaise(amount));
+            }
         })
         .then(function () {
             return utils.commitTransaction(connection);
@@ -112,7 +116,8 @@ router.post('/place', function (request, response) {
                 return new Promise(function (resolve, reject) {
 
                     var paymentdetails = {
-                        paymentid: paymentid,
+                        paymentid: paymentid ? paymentid : 'NA',
+                        payment_mode: payment_mode,
                         amount: amount
                     };
                     var customerdetails = {
