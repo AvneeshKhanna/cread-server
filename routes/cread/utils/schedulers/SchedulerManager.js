@@ -13,7 +13,7 @@ var BreakPromiseChainError = require('../BreakPromiseChainError');
 var userprofileutils = require('../../user-manager/UserProfileUtils');
 
 var update_latestposts_cache_job = new CronJob({
-    cronTime: '00 59 21 * * *', //second | minute | hour | day-of-month | month | day-of-week
+    cronTime: '00 00 01 * * *', //second | minute | hour | day-of-month | month | day-of-week
     onTick: function () {
 
         var connection;
