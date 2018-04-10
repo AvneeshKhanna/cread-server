@@ -22,6 +22,10 @@ var imagesize = require('image-size');
 var feedutils = require('../feed/FeedUtils');
 var consts = require('../utils/Constants');
 
+var cache_manager = require('../utils/cache/CacheManager');
+var cache_utils = require('../utils/cache/CacheUtils');
+var REDIS_KEYS = cache_utils.REDIS_KEYS;
+
 function loadTimelineLegacy(connection, requesteduuid, requesteruuid, limit, page) {
 
     var offset = limit * page;
@@ -227,7 +231,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
 
                     getUserQualityPercentile(connection, requesteruuid)
                         .then(function (result) {
-                            candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user;
+                            candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user_downvote;
                             return feedutils.getCollaborationData(connection, rows);
                         })
                         .then(function (rows) {
@@ -476,7 +480,7 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
 
                             getUserQualityPercentile(connection, requesteruuid)
                                 .then(function (result) {
-                                    candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user;
+                                    candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user_downvote;
                                     return feedutils.getCollaborationCounts(connection, rows, feedEntities);
                                 })
                                 .then(function (rows) {
@@ -833,6 +837,174 @@ function getUserQualityPercentile(connection, uuid) {
     });
 }
 
+/**
+ * Value is converted from as an array of URLs to a comma separated value of encoded URLs
+ * */
+function flattenPostsArrFrCache(posts) {
+    posts.map(function (post) {
+        return encodeURIComponent(post);
+    });
+
+    return posts.join(",");
+}
+
+/**
+ * Value is parsed from a comma separated value of encoded URLs to an array
+ * */
+function parseLatestPostsCacheValue(posts) {
+    posts = posts.split(",");
+
+    posts.map(function (post) {
+        return decodeURIComponent(post);
+    });
+
+    return posts;
+}
+
+function addToLatestPostsCache(connection, uuid, entityurl) {
+    return new Promise(function (resolve, reject) {
+        /*connection.query('SELECT E.type, S.shoid, C.capid, U.uuid ' +
+            'FROM Entity E ' +
+            'LEFT JOIN Short S ' +
+            'USING(entityid) ' +
+            'LEFT JOIN Capture C ' +
+            'USING(entityid) ' +
+            'JOIN User U ' +
+            'ON(U.uuid = S.uuid OR U.uuid = C.uuid) ' +
+            'WHERE U.uuid = ? ' +
+            'AND E.status = "ACTIVE" ' +
+            'GROUP BY E.entityid ' +
+            'ORDER BY E.regdate DESC ' +
+            'LIMIT 4', [uuid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+
+                var posts = [
+                    entityurl
+                ];
+
+                rows.map(function (element) {
+                    if(element.type === 'SHORT'){
+                        posts.push(utils.createSmallShortUrl(uuid, element.shoid));
+                    }
+                    else{
+                        posts.push(utils.createSmallCaptureUrl(uuid, element.capid));
+                    }
+                });
+
+
+            }
+        });*/
+
+        var posts;
+        getUserQualityPercentile(connection, uuid)
+            .then(function (result) {
+                if(result.quality_percentile_score >= consts.min_qpercentile_user_recommendation){
+                    return cache_manager.getCacheHMapValue(REDIS_KEYS.USER_LATEST_POSTS, uuid);
+                }
+                else{
+                    return new Promise(function (resolve, reject) {
+                        resolve();
+                    });
+                }
+            })
+            .then(function (result) {
+                if(result){
+                    posts = parseLatestPostsCacheValue(result);
+                }
+                else {
+                    posts = [];
+                }
+
+                posts.unshift(entityurl);
+
+                if(posts.length > 7){
+                    posts.pop();
+                }
+
+                return new Promise(function (resolve, reject) {
+                    resolve(flattenPostsArrFrCache(posts));
+                });
+            })
+            .then(function (result) {
+
+                var lp_hmap = {};
+                lp_hmap[uuid] = result;
+
+                return cache_manager.setCacheHMap(REDIS_KEYS.USER_LATEST_POSTS, lp_hmap);
+            })
+            .then(resolve, reject);
+
+    });
+}
+
+function updateLatestPostsCache(connection, uuid, entityurl) {
+    return new Promise(function (resolve, reject) {
+        getUserQualityPercentile(connection, uuid)
+            .then(function (result) {
+                if(result.quality_percentile_score >= consts.min_qpercentile_user_recommendation){
+                    resolve();
+                }
+                else{
+                    connection.query('SELECT E.type, S.shoid, C.capid, U.uuid ' +
+                        'FROM Entity E ' +
+                        'LEFT JOIN Short S ' +
+                        'USING(entityid) ' +
+                        'LEFT JOIN Capture C ' +
+                        'USING(entityid) ' +
+                        'JOIN User U ' +
+                        'ON(U.uuid = S.uuid OR U.uuid = C.uuid) ' +
+                        'WHERE U.uuid = ? ' +
+                        'AND E.status = "ACTIVE" ' +
+                        'GROUP BY E.entityid ' +
+                        'ORDER BY E.regdate DESC ' +
+                        'LIMIT 6', [uuid], function (err, rows) {
+                        if (err) {
+                            reject(err);
+                        }
+                        else {
+
+                            var posts = [
+                                entityurl
+                            ];
+
+                            rows.map(function (element) {
+                                if(element.type === 'SHORT'){
+                                    posts.push(utils.createSmallShortUrl(uuid, element.shoid));
+                                }
+                                else{
+                                    posts.push(utils.createSmallCaptureUrl(uuid, element.capid));
+                                }
+                            });
+
+                            var lp_hmap = {};
+                            lp_hmap[uuid] = flattenPostsArrFrCache(posts);
+
+                            cache_manager.setCacheHMap(REDIS_KEYS.USER_LATEST_POSTS, lp_hmap)
+                                .then(function () {
+                                    resolve(posts);
+                                }, reject);
+                        }
+                    });
+                }
+            });
+    });
+}
+
+function getLatestPostsCache(uuids) {
+    return new Promise(function (resolve, reject) {
+        cache_manager.getCacheHMapMultiple(cache_utils.REDIS_KEYS.USER_LATEST_POSTS, uuids)
+            .then(function (result) {
+                resolve(result ? parseLatestPostsCacheValue(result) : null);
+            })
+            .catch(function (err) {
+                reject(err);
+            });
+    });
+}
+
 module.exports = {
     loadTimelineLegacy: loadTimelineLegacy,
     loadTimeline: loadTimeline,
@@ -847,5 +1019,8 @@ module.exports = {
     uploadImageToS3: uploadImageToS3,
     copyFacebookProfilePic: copyFacebookProfilePic,
     createSmallProfilePic: createSmallProfilePic,
-    getUserQualityPercentile: getUserQualityPercentile
+    getUserQualityPercentile: getUserQualityPercentile,
+    getLatestPostsCache: getLatestPostsCache,
+    addToLatestPostsCache: addToLatestPostsCache,
+    updateLatestPostsCache: updateLatestPostsCache
 };

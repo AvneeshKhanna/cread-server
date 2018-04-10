@@ -2,8 +2,12 @@ var mysql = require('mysql');
 var AWS = require('aws-sdk');
 var AWS_EU_WEST_1 = require('aws-sdk');
 var config = require('config');
+var redis = require("redis");
 var dbConfig = config.get('rdsDB.dbConfig');
 var envtype = config.get('type');
+
+var production_server_url = "http://cread-server-main.ap-northeast-1.elasticbeanstalk.com";
+var development_server_url = "http://cread-server-dev.ap-northeast-1.elasticbeanstalk.com";
 
 AWS.config.region = 'ap-northeast-1';
 AWS.config.credentials = new AWS.CognitoIdentityCredentials({
@@ -76,13 +80,37 @@ var dynamodbCredentials = function () {
     });
 };
 
+function isRunningOnAWS() {
+    return process.env.HOST_PLATFORM === 'AWS'
+}
+
 function getServerBaseUrl(){
     if(envtype === 'PRODUCTION'){
-        return 'http://cread-server-main.ap-northeast-1.elasticbeanstalk.com';
+        return production_server_url;
     }
     else{
-        return 'http://cread-server-dev.ap-northeast-1.elasticbeanstalk.com';
+        return development_server_url;
     }
+}
+
+function getRedisClusterEndpoint(){
+    if(isRunningOnAWS()){
+        //Redis cache cluster endpoint for accessing via code running on AWS machines
+        return "cache-redis-main.v8mrt0.0001.apne1.cache.amazonaws.com"
+    }
+    else{
+        //NAT Instance Endpoint for accessing Redis cache cluster from local machine
+        return "ec2-13-230-33-245.ap-northeast-1.compute.amazonaws.com"
+    }
+}
+
+function getRedisClient() {
+    return new Promise(function (resolve, reject) {
+        resolve(redis.createClient({
+            host: getRedisClusterEndpoint(),
+            port: 6379
+        }));
+    });
 }
 
 function getCreadKalakaarUUID(){
@@ -142,5 +170,6 @@ module.exports = {
     getCreadKalakaarUUID: getCreadKalakaarUUID,
     getNishantMittalUUID: getNishantMittalUUID,
     getCreadKalakaarDefaultMessage: getCreadKalakaarDefaultMessage,
-    isProduction: isProduction
+    isProduction: isProduction,
+    getRedisClient: getRedisClient
 };

@@ -316,7 +316,7 @@ function loadEntityData(connection, requesteruuid, entityid) {
 
                 userprofileutils.getUserQualityPercentile(connection, requesteruuid)
                     .then(function (result) {
-                        candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user;
+                        candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user_downvote;
                         return feedutils.getCollaborationData(connection, row);
                     })
                     .then(function (row) {

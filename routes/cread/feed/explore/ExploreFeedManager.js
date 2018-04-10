@@ -558,7 +558,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
 
                     userprofileutils.getUserQualityPercentile(connection, uuid)
                         .then(function (result) {
-                            candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user;
+                            candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user_downvote;
                             return feedutils.getCollaborationData(connection, rows);
                         })
                         .then(function (rows) {

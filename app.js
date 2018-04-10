@@ -173,6 +173,9 @@ app.use('/chat-list', require('./routes/cread/chat/ChatListManager'));
 app.use('/featured-artists', require('./routes/cread/featured-artists/FeaturedArtistsManager'));
 app.use('/downvote', require('./routes/cread/downvote/DownvoteManager'));
 app.use('/user-referral', require('./routes/cread/user-manager/refer/UserReferralManager'));
+app.use('/recommend-users', require('./routes/cread/recommendations/UserRecommendManager'));
+app.use('/recommend-posts', require('./routes/cread/recommendations/PostsRecommendManager'));
+app.use('/redis', require('./routes/cread/recommendations/RedisExample'));  //TODO: Remove
 
 //-dashboard-
 app.use('/campaign-details', require('./routes/cread/dsbrd/campaign-details/CampaignDetails'));
