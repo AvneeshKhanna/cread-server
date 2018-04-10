@@ -140,6 +140,9 @@ router.post('/', upload.single('captured-image'), function (request, response) {
             }
         })
         .then(function () {
+            return userprofileutils.addToLatestPostsCache(connection, uuid, utils.createSmallCaptureUrl(uuid, captureid));
+        })
+        .then(function () {
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
@@ -329,6 +332,9 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
                 };
                 return notify.notificationPromise(mentioneduuids, notifData);
             }
+        })
+        .then(function () {
+            return userprofileutils.addToLatestPostsCache(connection, uuid, utils.createSmallCaptureUrl(uuid, captureid));
         })
         .then(function () {
             throw new BreakPromiseChainError(); //To disconnect server connection

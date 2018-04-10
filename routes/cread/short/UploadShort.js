@@ -189,6 +189,9 @@ router.post('/', upload.single('short-image'), function (request, response) {
             }
         })
         .then(function () {
+            return userprofileutils.addToLatestPostsCache(connection, uuid, utils.createSmallShortUrl(uuid, shoid));
+        })
+        .then(function () {
             throw new BreakPromiseChainError(); //To disconnect server connection
         })
         .catch(function (err) {

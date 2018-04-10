@@ -841,7 +841,7 @@ function getUserQualityPercentile(connection, uuid) {
  * Value is converted from as an array of URLs to a comma separated value of encoded URLs
  * */
 function flattenPostsArrFrCache(posts) {
-    posts.map(function (post) {
+    posts = posts.map(function (post) {
         return encodeURIComponent(post);
     });
 
@@ -853,11 +853,9 @@ function flattenPostsArrFrCache(posts) {
  * */
 function parseLatestPostsCacheValue(posts) {
     posts = posts.split(",");
-
-    posts.map(function (post) {
+    posts = posts.map(function (post) {
         return decodeURIComponent(post);
     });
-
     return posts;
 }
 
@@ -940,54 +938,70 @@ function addToLatestPostsCache(connection, uuid, entityurl) {
     });
 }
 
-function updateLatestPostsCache(connection, uuid, entityurl) {
+function getLatestPostsOfUser(connection, uuid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT E.type, S.shoid, C.capid, U.uuid ' +
+            'FROM Entity E ' +
+            'LEFT JOIN Short S ' +
+            'USING(entityid) ' +
+            'LEFT JOIN Capture C ' +
+            'USING(entityid) ' +
+            'JOIN User U ' +
+            'ON(U.uuid = S.uuid OR U.uuid = C.uuid) ' +
+            'WHERE U.uuid = ? ' +
+            'AND E.status = "ACTIVE" ' +
+            'GROUP BY E.entityid ' +
+            'ORDER BY E.regdate DESC ' +
+            'LIMIT 7', [uuid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+
+                var posts = [];
+
+                rows.map(function (element) {
+                    if(element.type === 'SHORT'){
+                        posts.push(utils.createSmallShortUrl(uuid, element.shoid));
+                    }
+                    else{
+                        posts.push(utils.createSmallCaptureUrl(uuid, element.capid));
+                    }
+                });
+
+                resolve(posts);
+            }
+        });
+    });
+}
+
+function updateLatestPostsCache(connection, uuid) {
     return new Promise(function (resolve, reject) {
         getUserQualityPercentile(connection, uuid)
             .then(function (result) {
-                if(result.quality_percentile_score >= consts.min_qpercentile_user_recommendation){
-                    resolve();
+                if(result.quality_percentile_score < consts.min_qpercentile_user_recommendation){
+                    resolve([]);
                 }
                 else{
-                    connection.query('SELECT E.type, S.shoid, C.capid, U.uuid ' +
-                        'FROM Entity E ' +
-                        'LEFT JOIN Short S ' +
-                        'USING(entityid) ' +
-                        'LEFT JOIN Capture C ' +
-                        'USING(entityid) ' +
-                        'JOIN User U ' +
-                        'ON(U.uuid = S.uuid OR U.uuid = C.uuid) ' +
-                        'WHERE U.uuid = ? ' +
-                        'AND E.status = "ACTIVE" ' +
-                        'GROUP BY E.entityid ' +
-                        'ORDER BY E.regdate DESC ' +
-                        'LIMIT 6', [uuid], function (err, rows) {
-                        if (err) {
-                            reject(err);
-                        }
-                        else {
-
-                            var posts = [
-                                entityurl
-                            ];
-
-                            rows.map(function (element) {
-                                if(element.type === 'SHORT'){
-                                    posts.push(utils.createSmallShortUrl(uuid, element.shoid));
-                                }
-                                else{
-                                    posts.push(utils.createSmallCaptureUrl(uuid, element.capid));
-                                }
-                            });
-
-                            var lp_hmap = {};
-                            lp_hmap[uuid] = flattenPostsArrFrCache(posts);
-
-                            cache_manager.setCacheHMap(REDIS_KEYS.USER_LATEST_POSTS, lp_hmap)
-                                .then(function () {
+                    var posts;
+                    getLatestPostsOfUser(connection, uuid)
+                        .then(function (psts) {
+                            posts = psts;
+                            if(posts.length > 0){
+                                var lp_hmap = {};
+                                lp_hmap[uuid] = flattenPostsArrFrCache(posts);
+                                return cache_manager.setCacheHMap(REDIS_KEYS.USER_LATEST_POSTS, lp_hmap);
+                            }
+                            else{
+                                //TODO: Add code to delete cache key if it exists
+                                return new Promise(function (resolve, reject) {
                                     resolve(posts);
-                                }, reject);
-                        }
-                    });
+                                });
+                            }
+                        })
+                        .then(function () {
+                            resolve(posts);
+                        }, reject);
                 }
             });
     });
@@ -996,8 +1010,23 @@ function updateLatestPostsCache(connection, uuid, entityurl) {
 function getLatestPostsCache(uuids) {
     return new Promise(function (resolve, reject) {
         cache_manager.getCacheHMapMultiple(cache_utils.REDIS_KEYS.USER_LATEST_POSTS, uuids)
-            .then(function (result) {
-                resolve(result ? parseLatestPostsCacheValue(result) : null);
+            .then(function (stringified_posts) {
+                if(stringified_posts){
+                    var res = {};
+                    for (var i = 0; i < stringified_posts.length; i++) {
+                        var stringified_post = stringified_posts[i];
+                        if(stringified_post){
+                            res[uuids[i]] = parseLatestPostsCacheValue(stringified_post);
+                        }
+                        else{
+                            res[uuids[i]] = [];
+                        }
+                    }
+                    resolve(res);
+                }
+                else {
+                    resolve();
+                }
             })
             .catch(function (err) {
                 reject(err);

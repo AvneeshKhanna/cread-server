@@ -21,7 +21,7 @@ function getCacheString(key){
     return new Promise(function (resolve, reject) {
         config.getRedisClient()
             .then(function (redis_client) {
-                redis_client.get(key, function (err, value) {
+                redis_client.get(cache_utils.addKeyPrefix(key), function (err, value) {
                     if(err){
                         reject(err);
                     }
@@ -96,9 +96,44 @@ function getCacheHMapValue(key, field){
     });
 }
 
+function deleteCacheKey(key) {
+    return new Promise(function (resolve, reject) {
+        config.getRedisClient()
+            .then(function (redis_client) {
+                redis_client.del(cache_utils.addKeyPrefix(key), function (err, response) {
+                    if(err){
+                        reject(err);
+                    }
+                    else {
+                        resolve();
+                    }
+                });
+            });
+    });
+}
+
+function getAllCacheKeys() {
+    return new Promise(function (resolve, reject) {
+        config.getRedisClient()
+            .then(function (redis_client) {
+                redis_client.keys("*", function (err, response) {
+                    if(err){
+                        reject(err);
+                    }
+                    else{
+                        resolve(response);
+                    }
+                    redis_client.quit();
+                });
+            })
+    });
+}
+
 module.exports = {
     setCacheHMap: setCacheHMap,
     getCacheHMap: getCacheHMap,
     getCacheHMapValue: getCacheHMapValue,
-    getCacheHMapMultiple: getCacheHMapMultiple
+    getCacheHMapMultiple: getCacheHMapMultiple,
+    deleteCacheKey: deleteCacheKey,
+    getAllCacheKeys: getAllCacheKeys
 };

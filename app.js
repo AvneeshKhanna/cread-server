@@ -21,6 +21,9 @@ notifscheduler.engagement_notification_job.start();
 //To initiate the cron job for featured artist notifications
 notifscheduler.featured_artist_notification.start();
 
+var scheduler = require('./routes/cread/utils/schedulers/SchedulerManager');
+scheduler.update_latestposts_cache_job.start();
+
 var routes = require('./routes/index');
 var users = require('./routes/users');
 var Auth = require('./routes/Authentication');
@@ -175,7 +178,7 @@ app.use('/downvote', require('./routes/cread/downvote/DownvoteManager'));
 app.use('/user-referral', require('./routes/cread/user-manager/refer/UserReferralManager'));
 app.use('/recommend-users', require('./routes/cread/recommendations/UserRecommendManager'));
 app.use('/recommend-posts', require('./routes/cread/recommendations/PostsRecommendManager'));
-app.use('/redis', require('./routes/cread/recommendations/RedisExample'));  //TODO: Remove
+app.use('/redis', require('./routes/dev-utils/RedisExample'));  //TODO: Remove
 
 //-dashboard-
 app.use('/campaign-details', require('./routes/cread/dsbrd/campaign-details/CampaignDetails'));

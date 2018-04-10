@@ -106,10 +106,13 @@ function getRedisClusterEndpoint(){
 
 function getRedisClient() {
     return new Promise(function (resolve, reject) {
-        resolve(redis.createClient({
+
+        var redis_client = redis.createClient({
             host: getRedisClusterEndpoint(),
             port: 6379
-        }));
+        });
+
+        resolve(redis_client);
     });
 }
 

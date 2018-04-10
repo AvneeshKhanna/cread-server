@@ -101,7 +101,7 @@ router.get('/details', function (request, response) {
 
     var lastindexkey = request.query.lastindexkey;
 
-    var limit = config.isProduction() ? 8 : 1;
+    var limit = config.isProduction() ? 8 : 2;
 
     var connection;
 
@@ -158,7 +158,7 @@ router.get('/load', function (request, response) {
     var uuid = request.headers.uuid;
     var authkey = request.headers.authkey;
 
-    var lastindexkey = request.query.lastindexkey;
+    /*var lastindexkey = request.query.lastindexkey;*/
 
     var limit = config.isProduction() ? 8 : 10;
 
@@ -176,10 +176,10 @@ router.get('/load', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return userrecommendutils.getTopUsersOverview(connection, uuid, limit, lastindexkey)
+            return userrecommendutils.getTopUsersOverview(connection, uuid, limit/*, lastindexkey*/)
         })
         .then(function (result) {
-            response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
+            response.set('Cache-Control', 'public, max-age=' + cache_time.high);
 
             if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
                 response.status(304).send().end();

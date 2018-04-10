@@ -17,6 +17,7 @@ var entityutils = require('./EntityUtils');
 var captureutils = require('../capture/CaptureUtils');
 var hashtagutils = require('../hashtag/HashTagUtils');
 var profilementionutils = require('../profile-mention/ProfileMentionUtils');
+var userprofileutils = require('../user-manager/UserProfileUtils');
 
 var cache_time = consts.cache_time;
 
@@ -222,6 +223,11 @@ router.post('/delete', function (request, response) {
                 }
             });
             response.end();
+        })
+        .then(function () {
+            return userprofileutils.updateLatestPostsCache(connection, uuid);
+        })
+        .then(function (posts) {
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
