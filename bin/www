@@ -31,8 +31,8 @@ require('../routes/cread/chat/ChatSocketManager').initialiseSocket(io);
  * Listen on provided port, on all network interfaces.
  */
 
-server.setTimeout(10 * 60 * 1000);  //Waiting timeout period in milliseconds
 server.listen(port);
+server.timeout = 10 * 60 * 1000;  //Waiting timeout period in milliseconds
 server.on('error', onError);
 server.on('listening', onListening);
 
