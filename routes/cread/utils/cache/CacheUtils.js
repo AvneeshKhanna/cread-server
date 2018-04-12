@@ -6,7 +6,8 @@
 var config = require('../../../Config');
 
 const REDIS_KEYS = {
-    USER_LATEST_POSTS: "usr:latest-posts"
+    USER_LATEST_POSTS: "usr:latest-posts",
+    HTAG_OF_THE_DAY: "htag-of-the-day"
 };
 
 function addKeyPrefix(key) {

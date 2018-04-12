@@ -135,5 +135,7 @@ module.exports = {
     getCacheHMapValue: getCacheHMapValue,
     getCacheHMapMultiple: getCacheHMapMultiple,
     deleteCacheKey: deleteCacheKey,
-    getAllCacheKeys: getAllCacheKeys
+    getAllCacheKeys: getAllCacheKeys,
+    setCacheString: setCacheString,
+    getCacheString: getCacheString
 };

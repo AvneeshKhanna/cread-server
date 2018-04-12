@@ -85,6 +85,54 @@ function updateLatestPostsAllCache(connection, users){
     });
 }
 
+var delete_stale_hotds_job = new CronJob({
+    cronTime: '00 05 00 * * *', //second | minute | hour | day-of-month | month | day-of-week
+    onTick: function () {
+
+        var connection;
+
+        config.getNewConnection()
+            .then(function (conn) {
+                connection = conn;
+                return removeStaleHOTDs(connection);
+            })
+            .then(function () {
+                console.log("delete_stale_hotds_job complete");
+                throw new BreakPromiseChainError();
+            })
+            .catch(function (err) {
+                config.disconnect(connection);
+                if (err instanceof BreakPromiseChainError) {
+                    //Do nothing
+                }
+                else {
+                    console.error(err);
+                }
+            });
+
+    },
+    start: false,   //Whether to start just now
+    timeZone: 'Asia/Kolkata'
+});
+
+/**
+ * Delete Hashtag-of-the-days which are older than today
+ * */
+function removeStaleHOTDs(connection) {
+    return new Promise(function (resolve, reject) {
+        connection.query('DELETE FROM HTagOfTheDay ' +
+            'WHERE for_date < DATE(NOW())', [], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
 module.exports = {
-    update_latestposts_cache_job: update_latestposts_cache_job
+    update_latestposts_cache_job: update_latestposts_cache_job,
+    delete_stale_hotds_job: delete_stale_hotds_job
 };
