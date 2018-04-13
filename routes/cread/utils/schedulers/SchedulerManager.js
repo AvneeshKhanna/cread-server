@@ -86,6 +86,7 @@ function updateLatestPostsAllCache(connection, users){
 }
 
 var delete_stale_hotds_job = new CronJob({
+    //Runs at 12:05 am
     cronTime: '00 05 00 * * *', //second | minute | hour | day-of-month | month | day-of-week
     onTick: function () {
 
@@ -97,6 +98,37 @@ var delete_stale_hotds_job = new CronJob({
                 return removeStaleHOTDs(connection);
             })
             .then(function () {
+                console.log("delete_stale_hotds_job complete");
+                throw new BreakPromiseChainError();
+            })
+            .catch(function (err) {
+                config.disconnect(connection);
+                if (err instanceof BreakPromiseChainError) {
+                    //Do nothing
+                }
+                else {
+                    console.error(err);
+                }
+            });
+
+    },
+    start: false,   //Whether to start just now
+    timeZone: 'Asia/Kolkata'
+});
+
+var reminder_hotd_job = new CronJob({
+    //Runs at 12:05 am
+    cronTime: '00 00 20 * * *', //second | minute | hour | day-of-month | month | day-of-week
+    onTick: function () {
+
+        var connection;
+
+        config.getNewConnection()
+            .then(function (conn) {
+                connection = conn;
+                return checkForScheduledHOTD(connection);
+            })
+            .then(function (isScheduled) {
                 console.log("delete_stale_hotds_job complete");
                 throw new BreakPromiseChainError();
             })
@@ -127,6 +159,19 @@ function removeStaleHOTDs(connection) {
             }
             else {
                 resolve();
+            }
+        });
+    });
+}
+
+function checkForScheduledHOTD(connection) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT * FROM HTagOfTheDay WHERE for_date = DATE(DATE_ADD(NOW(), INTERVAL 1 DAY))', [], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(!!rows[0]);
             }
         });
     });

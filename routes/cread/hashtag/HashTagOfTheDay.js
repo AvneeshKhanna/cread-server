@@ -52,10 +52,11 @@ router.post('/add-htag', function (request, response) {
             connection = conn;
             return addHTagToHOTD(connection, hashtag, for_date);
         })
-        .then(function () {
+        .then(function (insertId) {
             response.send({
                 data: {
-                    status: 'done'
+                    status: 'done',
+                    hotdid: insertId
                 }
             });
             response.end();
@@ -79,14 +80,13 @@ router.post('/add-htag', function (request, response) {
 router.post('/edit-htag', function (request, response) {
     var hotdid = request.body.hotdid;
     var hashtag = request.body.hashtag;
-    var for_date = request.body.for_date;
 
     var connection;
 
     config.getNewConnection()
         .then(function (conn) {
             connection = conn;
-            return updateHTagToHOTD(connection, hotdid, hashtag, for_date);
+            return updateHTagToHOTD(connection, hotdid, hashtag);
         })
         .then(function () {
             response.send({
@@ -148,7 +148,7 @@ router.post('/remove-htag', function (request, response) {
 
 function loadScheduledHTODs(connection) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT hotdid, hashtag, for_date FROM HTagOfTheDay ORDER BY for_date DESC', [], function (err, rows) {
+        connection.query('SELECT hotdid, hashtag, for_date FROM HTagOfTheDay ORDER BY for_date', [], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -161,10 +161,12 @@ function loadScheduledHTODs(connection) {
 
 function addHTagToHOTD(connection, hashtag, for_date) {
 
-    var sqlparams = {
-        hashtag: hashtag,
-        for_date: for_date
-    };
+    var sqlparams = [
+        [
+            hashtag,
+            for_date
+        ]
+    ];
 
     return new Promise(function (resolve, reject) {
         connection.query('INSERT INTO HTagOfTheDay (hashtag, for_date) VALUES ?', [sqlparams], function (err, rows) {
@@ -172,18 +174,18 @@ function addHTagToHOTD(connection, hashtag, for_date) {
                 reject(err);
             }
             else {
-                resolve();
+                console.log("rows are " + JSON.stringify(rows, null, 3));
+                resolve(rows.insertId);
             }
         });
     });
     
 }
 
-function updateHTagToHOTD(connection, hotdid, hashtag, for_date) {
+function updateHTagToHOTD(connection, hotdid, hashtag) {
 
     var sqlparams = {
-        hashtag: hashtag,
-        for_date: for_date
+        hashtag: hashtag
     };
 
     return new Promise(function (resolve, reject) {
