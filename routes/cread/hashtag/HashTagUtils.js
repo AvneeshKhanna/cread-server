@@ -288,7 +288,19 @@ function loadHTagOfTheDay(connection) {
                 reject(err);
             }
             else {
-                resolve(rows[0]);
+
+                var result = {};
+
+                if(!rows[0]){
+                    result = {
+                        htag: null
+                    }
+                }
+                else{
+                    result = rows[0];
+                }
+
+                resolve(result);
             }
         });
     });

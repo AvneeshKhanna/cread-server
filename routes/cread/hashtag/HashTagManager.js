@@ -109,9 +109,7 @@ router.get('/day/load', function (request, response) {
             else {
                 response.status(200).send({
                     tokenstatus: 'valid',
-                    data: {
-                        htag: 'dummy'
-                    }//result TODO: Uncomment
+                    data: result
                 });
                 response.end();
             }
