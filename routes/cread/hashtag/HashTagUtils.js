@@ -8,6 +8,9 @@ var feedutils = require('../feed/FeedUtils');
 var utils = require('../utils/Utils');
 var userprofileutils = require('../user-manager/UserProfileUtils');
 var consts = require('../utils/Constants');
+var cachemanager = require('../utils/cache/CacheManager');
+var cacheutils = require('../utils/cache/CacheUtils');
+var REDIS_KEYS = cacheutils.REDIS_KEYS;
 
 function extractMatchingUniqueHashtags(caption, matchword) {
     var regex = new RegExp("\\#" + matchword + "(\\w*|\\s*)", "i");   //Match pattern containing specific hashtags
@@ -244,11 +247,59 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
 
 }
 
+function loadHTagOfTheDayCache() {
+    return new Promise(function (resolve, reject) {
+        cachemanager.getCacheString(REDIS_KEYS.HTAG_OF_THE_DAY)
+            .then(function (value) {
+                resolve(value);
+            })
+            .catch(function (err) {
+                reject(err);
+            });
+    });
+}
+
+function loadHTagOfTheDay(connection) {
+    return new Promise(function (resolve, reject) {
+        /*loadHTagOfTheDayCache()
+            .then(function (hashtag) {
+                if(hashtag){
+                    resolve({
+                        htag: hashtag
+                    });
+                }
+                else{
+                    connection.query('SELECT hashtag AS htag ' +
+                        'FROM HTagOfTheDay HOTD ' +
+                        'WHERE for_date = DATE(NOW())', [], function (err, rows) {
+                        if (err) {
+                            reject(err);
+                        }
+                        else {
+                            resolve(rows[0]);
+                        }
+                    });
+                }
+            });*/
+        connection.query('SELECT hashtag AS htag ' +
+            'FROM HTagOfTheDay HOTD ' +
+            'WHERE for_date = DATE(NOW())', [], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(rows[0]);
+            }
+        });
+    });
+}
+
 module.exports = {
     extractUniqueHashtags: extractUniqueHashtags,
     extractMatchingUniqueHashtags: extractMatchingUniqueHashtags,
     addHashtagsForEntity: addHashtagsForEntity,
     deleteHashtagsForEntity: deleteHashtagsForEntity,
     getHashtagCounts: getHashtagCounts,
-    loadHashtagFeed: loadHashtagFeed
+    loadHashtagFeed: loadHashtagFeed,
+    loadHTagOfTheDay: loadHTagOfTheDay
 };

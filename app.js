@@ -23,6 +23,7 @@ notifscheduler.featured_artist_notification.start();
 
 var scheduler = require('./routes/cread/utils/schedulers/SchedulerManager');
 scheduler.update_latestposts_cache_job.start();
+scheduler.delete_stale_hotds_job.start();
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
@@ -170,6 +171,7 @@ app.use('/sell', require('./routes/cread/sell/SellOrdersManager'));
 app.use('/entity-share-link', require('./routes/cread/entity/share/EntityShareManager'));
 app.use('/search', require('./routes/cread/search/SearchManager'));
 app.use('/hashtag', require('./routes/cread/hashtag/HashTagManager'));
+app.use('/hotd', require('./routes/cread/hashtag/HashTagOfTheDay'));
 app.use('/updates', require('./routes/cread/updates/UpdatesManager'));
 app.use('/chat-convo', require('./routes/cread/chat/ChatConversationManager'));
 app.use('/chat-list', require('./routes/cread/chat/ChatListManager'));

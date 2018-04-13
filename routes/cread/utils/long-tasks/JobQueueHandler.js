@@ -5,8 +5,8 @@
 
 //TODO: Setup AWS Elasticache for Redis to use 'kue' job framework
 
-var kue = require('kue')
-    , jobqueue = kue.createQueue();
+var config = require('../../../Config');
+var jobqueue = config.getKueJobQueue();
 
 var job = jobqueue.create('email', {
     title: 'welcome email for tj',

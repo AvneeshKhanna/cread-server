@@ -3,6 +3,7 @@ var AWS = require('aws-sdk');
 var AWS_EU_WEST_1 = require('aws-sdk');
 var config = require('config');
 var redis = require("redis");
+var kue = require('kue');
 var dbConfig = config.get('rdsDB.dbConfig');
 var envtype = config.get('type');
 
@@ -18,6 +19,11 @@ AWS_EU_WEST_1.config.region = 'eu-west-1';
 AWS_EU_WEST_1.config.credentials = new AWS_EU_WEST_1.CognitoIdentityCredentials({
     IdentityPoolId: 'eu-west-1:d29fce0a-ac1a-4aaf-b3f6-0bc48b58b87e'
 });
+
+const REDIS = {
+    port: 6379,
+    host: getRedisClusterEndpoint()
+};
 
 var connection = mysql.createConnection({
     host: dbConfig.host,
@@ -100,7 +106,7 @@ function getRedisClusterEndpoint(){
     }
     else{
         //NAT Instance Endpoint for accessing Redis cache cluster from local machine
-        return "ec2-13-230-33-245.ap-northeast-1.compute.amazonaws.com"
+        return "ec2-18-182-40-218.ap-northeast-1.compute.amazonaws.com "
     }
 }
 
@@ -108,11 +114,20 @@ function getRedisClient() {
     return new Promise(function (resolve, reject) {
 
         var redis_client = redis.createClient({
-            host: getRedisClusterEndpoint(),
-            port: 6379
+            host: REDIS.host,
+            port: REDIS.port
         });
 
         resolve(redis_client);
+    });
+}
+
+function getKueJobQueue() {
+    return kue.createQueue({
+        redis: {
+            host: REDIS.host,
+            port: REDIS.port
+        }
     });
 }
 
@@ -174,5 +189,6 @@ module.exports = {
     getNishantMittalUUID: getNishantMittalUUID,
     getCreadKalakaarDefaultMessage: getCreadKalakaarDefaultMessage,
     isProduction: isProduction,
-    getRedisClient: getRedisClient
+    getRedisClient: getRedisClient,
+    getKueJobQueue: getKueJobQueue
 };
