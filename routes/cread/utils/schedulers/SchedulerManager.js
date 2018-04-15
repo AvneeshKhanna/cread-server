@@ -9,6 +9,7 @@ var async = require('async');
 
 var config = require('../../../Config');
 var consts = require('../Constants');
+var utils = require('../Utils');
 var BreakPromiseChainError = require('../BreakPromiseChainError');
 var userprofileutils = require('../../user-manager/UserProfileUtils');
 
@@ -129,7 +130,24 @@ var reminder_hotd_job = new CronJob({
                 return checkForScheduledHOTD(connection);
             })
             .then(function (isScheduled) {
-                console.log("delete_stale_hotds_job complete");
+
+                if(isScheduled){
+                    console.log("HOTD scheduled for tomorrow");
+                }
+                else{
+                    var toAddresses  = [
+                        "admin@thetestament.com",
+                        "nishantmittal2410@gmail.com",
+                        "avneesh.khanna92@gmail.com"
+                    ];
+                    return utils.sendAWSTextEmail("Hashtag-Of-The-Day Not Scheduled",
+                        "Hi,\nThis is to remind you that Hashtag-Of-The-Day is not scheduled for tomorrow on Cread. Please look into it",
+                        toAddresses);
+                }
+
+            })
+            .then(function () {
+                console.log("reminder_hotd_job complete");
                 throw new BreakPromiseChainError();
             })
             .catch(function (err) {
@@ -179,5 +197,6 @@ function checkForScheduledHOTD(connection) {
 
 module.exports = {
     update_latestposts_cache_job: update_latestposts_cache_job,
-    delete_stale_hotds_job: delete_stale_hotds_job
+    delete_stale_hotds_job: delete_stale_hotds_job,
+    reminder_hotd_job: reminder_hotd_job
 };

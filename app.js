@@ -24,6 +24,7 @@ notifscheduler.featured_artist_notification.start();
 var scheduler = require('./routes/cread/utils/schedulers/SchedulerManager');
 scheduler.update_latestposts_cache_job.start();
 scheduler.delete_stale_hotds_job.start();
+scheduler.reminder_hotd_job.start();
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
