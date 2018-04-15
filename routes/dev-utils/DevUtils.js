@@ -322,39 +322,39 @@ router.post('/send-sms-all', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
             }
         });
 
 });
 
-function sendSMSToAllUsers(users, message){
+function sendSMSToAllUsers(users, message) {
     return new Promise(function (resolve, reject) {
         async.eachSeries(users, function (user, callback) {
 
             var edited_msg = "Hi " + user.firstname + ",\n" + message;
 
             utils.sendAWSSMS(edited_msg, user.phone, function (err, data) {
-                if(err){
+                if (err) {
                     console.error(err);
                     callback();
                 }
-                else{
+                else {
                     console.log(JSON.stringify(data, null, 3));
                     callback();
                 }
             });
 
         }, function (err) {
-            if(err){
+            if (err) {
                 console.log('SMS could only be sent to a few users');
                 reject(err);
             }
-            else{
+            else {
                 console.log('SMS sent to all users');
                 resolve();
             }
