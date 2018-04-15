@@ -34,6 +34,8 @@ var docClient = new AWS.DynamoDB.DocumentClient();
 var envconfig = require('config');
 var userstbl_ddb = envconfig.get('dynamoDB.users_table');
 
+var BreakPromiseChainError = require('../cread/utils/BreakPromiseChainError');
+
 router.get('/restart-heroku', function (request, response) {
 
     request_client.delete({
@@ -338,7 +340,8 @@ function sendSMSToAllUsers(users, message){
 
             utils.sendAWSSMS(edited_msg, user.phone, function (err, data) {
                 if(err){
-                    callback(err);
+                    console.error(err);
+                    callback();
                 }
                 else{
                     console.log(JSON.stringify(data, null, 3));
