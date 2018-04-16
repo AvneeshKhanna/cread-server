@@ -37,6 +37,7 @@ router.get('/load-specific', function (request, response) {
             connection = conn;
             var select = [
                 'shoid',
+                'bg_sound',
                 'textcolor',
                 'textsize',
                 'textgravity',

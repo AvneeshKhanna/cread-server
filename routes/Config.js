@@ -106,7 +106,7 @@ function getRedisClusterEndpoint(){
     }
     else{
         //NAT Instance Endpoint for accessing Redis cache cluster from local machine
-        return "ec2-18-182-40-218.ap-northeast-1.compute.amazonaws.com "
+        return "ec2-18-182-40-218.ap-northeast-1.compute.amazonaws.com"
     }
 }
 
@@ -129,6 +129,10 @@ function getKueJobQueue() {
             port: REDIS.port
         }
     });
+}
+
+function getKueClient() {
+    return kue;
 }
 
 function getCreadKalakaarUUID(){
@@ -190,5 +194,6 @@ module.exports = {
     getCreadKalakaarDefaultMessage: getCreadKalakaarDefaultMessage,
     isProduction: isProduction,
     getRedisClient: getRedisClient,
-    getKueJobQueue: getKueJobQueue
+    getKueJobQueue: getKueJobQueue,
+    getKueClient: getKueClient
 };

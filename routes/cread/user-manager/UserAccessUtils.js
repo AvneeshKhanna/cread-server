@@ -18,6 +18,11 @@ var updatesutils = require('../updates/UpdatesUtils');
 var utils = require('../utils/Utils');
 var followutils = require('../follow/FollowUtils');
 var chatconvoutils = require('../chat/ChatConversationUtils');
+var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
+
+var cache_utils = require('../utils/cache/CacheUtils');
+var REDIS_KEYS = cache_utils.REDIS_KEYS;
+var jobqueuehandler = require('../utils/long-tasks/JobQueueHandler');
 
 function checkIfPhoneExists(connection, phone) {
     return new Promise(function (resolve, reject) {
@@ -250,7 +255,14 @@ function addDefaultCreadKalakaarActions(connection, user_uuid) {
                 return followutils.registerFollowForCreadKalakaar(connection, user_uuid);
             })
             .then(function () {
-                return chatconvoutils.addDefaultMessageFromCreadKalakaar(connection, user_uuid);
+                var default_ck_chat_job_data = {
+                    for_uuid: user_uuid
+                };
+
+                return jobqueuehandler.scheduleJob(REDIS_KEYS.KUE_DEFAULT_CK_CHAT_MSG, default_ck_chat_job_data, {
+                    delay: 10 * 60 * 1000,
+                    removeOnComplete: true
+                });
             })
             .then(function () {
                 return utils.commitTransaction(connection);
@@ -265,6 +277,40 @@ function addDefaultCreadKalakaarActions(connection, user_uuid) {
             })
     });
 }
+
+(function processDefaultCKChatJob() {
+
+    var connection;
+
+    jobqueuehandler.processJob(REDIS_KEYS.KUE_DEFAULT_CK_CHAT_MSG, function (jobData) {
+        config.getNewConnection()
+            .then(function (conn) {
+                connection = conn;
+                console.log('Process job in IIFE called');
+                return utils.beginTransaction(connection);
+            })
+            .then(function () {
+                return chatconvoutils.addDefaultMessageFromCreadKalakaar(connection, jobData.for_uuid);
+            })
+            .then(function () {
+                return utils.commitTransaction(connection);
+            }, function (err) {
+                return utils.rollbackTransaction(connection, undefined, err);
+            })
+            .then(function () {
+                throw new BreakPromiseChainError();
+            })
+            .catch(function (err) {
+                config.disconnect(connection);
+                if(err instanceof BreakPromiseChainError){
+                    //Do nothing
+                }
+                else{
+                    console.error(err);
+                }
+            });
+    })
+})();
 
 module.exports = {
     checkIfPhoneExists: checkIfPhoneExists,

@@ -202,6 +202,11 @@ function sendChatMessageNotification(connection, message){
 
 function addDefaultMessageFromCreadKalakaar(connection, user_uuid) {
     return new Promise(function (resolve, reject) {
+
+        var user_data = {
+            uuid: user_uuid
+        };
+
         var message = {
             from_uuid: config.getCreadKalakaarUUID(),
             to_uuid: user_uuid,
@@ -210,8 +215,9 @@ function addDefaultMessageFromCreadKalakaar(connection, user_uuid) {
 
         chatlistutils.createNewChat(connection, message)
             .then(function (chatid) {
-                message.chatid = chatid;
-                return addMessageToDb(connection, message);
+                user_data.chatid = chatid;
+                return sendChatMessageFromCreadKalakaar(connection, user_data, message.body);
+                // return addMessageToDb(connection, message);
             })
             .then(function () {
                 resolve();

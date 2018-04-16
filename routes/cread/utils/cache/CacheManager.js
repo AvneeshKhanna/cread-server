@@ -96,6 +96,24 @@ function getCacheHMapValue(key, field){
     });
 }
 
+//TODO: Test
+function getCacheList(key) {
+    return new Promise(function (resolve, reject) {
+        config.getRedisClient()
+            .then(function (redis_client) {
+                redis_client.lrange(cache_utils.addKeyPrefix(key), function (err, reply) {
+                    if(err){
+                        reject(err);
+                    }
+                    else{
+                        resolve(reply);
+                    }
+                    redis_client.quit();
+                });
+            });
+    });
+}
+
 function deleteCacheKey(key) {
     return new Promise(function (resolve, reject) {
         config.getRedisClient()
