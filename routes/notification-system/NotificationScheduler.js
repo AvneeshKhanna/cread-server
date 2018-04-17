@@ -255,9 +255,116 @@ var engagement_notification_job = new CronJob({
     timeZone: 'Asia/Kolkata'
 });
 
+var newusers_no_post_notification = new CronJob({
+    //Runs at 10:00 am
+    cronTime: '00 30 14 * * *', //second | minute | hour | day-of-month | month | day-of-week
+    onTick: function () {
+
+        var connection;
+        var new_usr_uuids;
+
+        config.getNewConnection()
+            .then(function (conn) {
+                connection = conn;
+                return checkForNewUsersWithNoPosts(connection);
+            })
+            .then(function (uuids) {
+                new_usr_uuids = uuids;
+                if(new_usr_uuids.length > 0){
+                    return getRecentPosters(connection);
+                }
+                else{
+                    console.log('newusers_no_post_notification complete. No users to send notification to.');
+                    throw new BreakPromiseChainError();
+                }
+            })
+            .then(function (message) {
+                var notifData = {
+                    category: 'engagement-notification',
+                    persistable: 'No',
+                    message: message
+                };
+
+                return notify.notificationPromise(new_usr_uuids, notifData);
+            })
+            .then(function () {
+                console.log('newusers_no_post_notification complete');
+                throw new BreakPromiseChainError();
+            })
+            .catch(function (err) {
+                config.disconnect(connection);
+                if (err instanceof BreakPromiseChainError) {
+                    //Do nothing
+                }
+                else {
+                    console.error(err);
+                }
+            });
+
+    },
+    start: false,   //Whether to start just now
+    timeZone: 'Asia/Kolkata'
+});
+
+function checkForNewUsersWithNoPosts(connection) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT DISTINCT U.uuid ' +
+            'FROM User U ' +
+            'LEFT JOIN Short S ' +
+            'USING(uuid) ' +
+            'LEFT JOIN Capture C ' +
+            'USING(uuid) ' +
+            'WHERE U.regdate > DATE_SUB(NOW(), INTERVAL 48 HOUR) ' +
+            'AND (S.uuid IS NULL AND C.uuid IS NULL)', [], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(rows.map(function (r) {
+                    return r.uuid;
+                }));
+            }
+        });
+    });
+}
+
+function getRecentPosters(connection) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT U.firstname ' +
+            'FROM User U ' +
+            'LEFT JOIN Short S ' +
+            'USING(uuid) ' +
+            'LEFT JOIN Capture C ' +
+            'USING(uuid) ' +
+            'JOIN Entity E ' +
+            'ON(S.entityid = E.entityid OR C.entityid = E.entityid) ' +
+            'WHERE E.regdate < DATE_SUB(NOW(), INTERVAL 48 HOUR) ' +
+            'AND U.uuid <> ? ' +
+            'GROUP BY U.uuid', [config.getCreadKalakaarUUID()], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+
+                var message;
+
+                if(rows.length > 0){
+                    message = rows[0].firstname + (rows[1] ? ", " + rows[1].firstname : "") + " and " + rows.length + " others posted recently since you joined. We thought you might want to post something of your own"
+                }
+                else{
+                    message = "Some nice artwork has been shared on Cread since you joined. We thought you might want to post something of your own";
+                }
+
+                resolve(message);
+            }
+        });
+    });
+}
+
 module.exports = {
     top_givers_notification: top_givers_notification,
     top_post_notification: top_post_notification,
     featured_artist_notification: featured_artist_notification,
+    newusers_no_post_notification: newusers_no_post_notification,
     engagement_notification_job: engagement_notification_job
 };

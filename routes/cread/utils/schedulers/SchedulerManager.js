@@ -116,6 +116,23 @@ var delete_stale_hotds_job = new CronJob({
     timeZone: 'Asia/Kolkata'
 });
 
+/**
+ * Delete Hashtag-of-the-days which are older than today
+ * */
+function removeStaleHOTDs(connection) {
+    return new Promise(function (resolve, reject) {
+        connection.query('DELETE FROM HTagOfTheDay ' +
+            'WHERE for_date < DATE(NOW())', [], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
 var reminder_hotd_job = new CronJob({
     //Runs at 12:05 am
     cronTime: '00 00 20 * * *', //second | minute | hour | day-of-month | month | day-of-week
@@ -146,23 +163,6 @@ var reminder_hotd_job = new CronJob({
     start: false,   //Whether to start just now
     timeZone: 'Asia/Kolkata'
 });
-
-/**
- * Delete Hashtag-of-the-days which are older than today
- * */
-function removeStaleHOTDs(connection) {
-    return new Promise(function (resolve, reject) {
-        connection.query('DELETE FROM HTagOfTheDay ' +
-            'WHERE for_date < DATE(NOW())', [], function (err, rows) {
-            if (err) {
-                reject(err);
-            }
-            else {
-                resolve();
-            }
-        });
-    });
-}
 
 function checkForScheduledHOTD(connection) {
     return new Promise(function (resolve, reject) {
