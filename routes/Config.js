@@ -57,8 +57,8 @@ function getNewConnection() {
             else{
                 resolve(connection);
             }
-        })
-    })
+        });
+    });
 }
 
 function disconnect(connection) {
@@ -91,7 +91,7 @@ function isRunningOnAWS() {
 }
 
 function getServerBaseUrl(){
-    if(envtype === 'PRODUCTION'){
+    if(isProduction()){
         return production_server_url;
     }
     else{
@@ -136,7 +136,7 @@ function getKueClient() {
 }
 
 function getCreadKalakaarUUID(){
-    if(envtype === 'PRODUCTION'){
+    if(isProduction()){
         return '6732bb8e-cffd-4e1b-906f-dc75873a5d92';
     }
     else{
@@ -145,7 +145,7 @@ function getCreadKalakaarUUID(){
 }
 
 function getNishantMittalUUID(){
-    if(envtype === 'PRODUCTION'){
+    if(isProduction()){
         return '0a5a46bc-13f1-42b5-ae9b-ff518c044b80';
     }
     else{
