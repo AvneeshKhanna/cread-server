@@ -400,6 +400,7 @@ router.post('/delete', function (request, response) {
     var commid = request.body.commid;
 
     var connection;
+    var entityid;
 
     _auth.authValid(uuid, authkey)
         .then(function () {
@@ -413,6 +414,10 @@ router.post('/delete', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
+            return commentutils.getEntityFromComment(connection, commid);
+        })
+        .then(function (result) {
+            entityid = result.entityid;
             return commentutils.deleteComment(connection, commid, uuid);
         })
         .then(function () {
@@ -423,6 +428,13 @@ router.post('/delete', function (request, response) {
                 }
             });
             response.end();
+        })
+        .then(function () { //Updating cache for comments count
+            return commentutils.updateCommentCountCacheFromDB(connection, [{
+                entityid: entityid
+            }]);
+        })
+        .then(function () {
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
