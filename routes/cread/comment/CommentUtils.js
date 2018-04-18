@@ -3,11 +3,16 @@
  */
 'use-strict';
 
-var utils = require('../utils/Utils');
-var updatesutils = require('../updates/UpdatesUtils');
-
 var uuidGen = require('uuid');
 var moment = require('moment');
+var async = require('async');
+
+var utils = require('../utils/Utils');
+var updatesutils = require('../updates/UpdatesUtils');
+var cacheutils = require('../utils/cache/CacheUtils');
+var cachemanager = require('../utils/cache/CacheManager');
+
+var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
 function loadCommentsLegacy(connection, entityid, limit, page, loadAll) {
     var query = 'SELECT User.firstname, User.lastname, User.uuid, Comment.edited, Comment.commid, Comment.txt AS comment ' +
@@ -225,6 +230,153 @@ function updateCommentDataForUpdates(connection, uuid, actor_uuid, entityid, cat
     });
 }
 
+function getAllCommentCounts(connection, entities) {
+
+    var entityids = entities.map(function (e) {
+        return e.entityid;
+    });
+
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT E.entityid, COUNT(Cmt.commid) AS commentcount ' +
+            'FROM Entity E ' +
+            'LEFT JOIN Comment Cmt ' +
+            'USING(entityid) ' +
+            'WHERE E.entityid IN (?) ' +
+            'GROUP BY E.entityid', [entityids], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(rows);
+            }
+        });
+    });
+}
+
+/**
+ * entities Entities whose comments counts are to be cached. Should be of the structure: [{entityid: *string*}]
+ * */
+function updateCommentCountCacheFromDB(connection, entities) {
+    return new Promise(function (resolve, reject) {
+        getAllCommentCounts(connection, entities)
+            .then(function (rows) {
+                return updateCommentCountsCache(rows);
+            })
+            .then(resolve, reject);
+    });
+}
+
+/**
+ * entities Entities whose comments counts are to be cached. Should be of the structure: [{entityid: *string*, commentcount: *number*}]
+ * */
+function updateCommentCountsCache(entities) {
+    return new Promise(function (resolve, reject) {
+        async.each(entities, function (entity, callback) {
+
+            var ent_cmtcnt_cache_key = cacheutils.getEntityCommentCntCacheKey(entity.entityid);
+
+            if(typeof entity.commentcount !== "number"){
+                callback(new Error("Value to store for comments count in cache should be a number"));
+            }
+            else{
+                cachemanager.setCacheString(ent_cmtcnt_cache_key, String(entity.commentcount))
+                    .then(function () {
+                        callback();
+                    })
+                    .catch(function (err) {
+                        callback(err);
+                    });
+            }
+
+        }, function (err) {
+            if(err){
+                reject(err);
+            }
+            else{
+                resolve();
+            }
+        });
+
+    });
+}
+
+/**
+ * @param entities Entities whose comments counts are to be fetched from cache. Should be of the structure: [{entityid: *string*}]
+ * */
+function getAllCommentCountsCache(entities) {
+    return new Promise(function (resolve, reject) {
+        async.eachOf(entities, function (entity, index, callback) {
+
+            var ent_cmtcnt_cache_key = cacheutils.getEntityCommentCntCacheKey(entity.entityid);
+
+            cachemanager.getCacheString(ent_cmtcnt_cache_key)
+                .then(function (commentcount) {
+                    entities[index].commentcount = (!commentcount || commentcount === "null" || commentcount === "undefined") ? null : Number(commentcount);
+
+                    (commentcount === "null" || commentcount === "undefined") ? console.log('Incorrect values are being stored in cache for comments count') : //Do nothig;
+
+                    callback();
+                })
+                .catch(function (err) {
+                    callback(err);
+                });
+
+        }, function (err) {
+            if(err){
+                reject(err);
+            }
+            else{
+                resolve(entities);
+            }
+        });
+    });
+}
+
+//TODO: Update cache after reading data from the server
+function loadCommentCountsFast(connection, master_rows) {
+    return new Promise(function (resolve, reject) {
+        getAllCommentCountsCache(master_rows)
+            .then(function (rows) {
+
+                master_rows = rows;
+
+                var entities_no_commentcnt = master_rows.filter(function (r) {
+                    return r.commentcount === null;
+                });
+
+                if(entities_no_commentcnt.length > 0){
+                    return getAllCommentCounts(connection, entities_no_commentcnt);
+                }
+                else{
+                    resolve(master_rows);
+                    throw new BreakPromiseChainError();
+                }
+            })
+            .then(function (rows) {
+
+                var master_entityids = master_rows.map(function (mr) {
+                    return mr.entityid;
+                });
+
+                rows.forEach(function (r) {
+                    master_rows[master_entityids.indexOf(r.entityid)].commentcount = r.commentcount;
+                });
+
+                resolve(master_rows);
+                updateCommentCountsCache(rows);
+                throw new BreakPromiseChainError();
+            })
+            .catch(function (err) {
+                if(err instanceof BreakPromiseChainError){
+                    //Do nothing
+                }
+                else{
+                    reject(err);
+                }
+            });
+    });
+}
+
 module.exports = {
     loadCommentsLegacy: loadCommentsLegacy,
     loadComments: loadComments,
@@ -232,5 +384,7 @@ module.exports = {
     updateComment: updateComment,
     deleteComment: deleteComment,
     getEntityFromComment: getEntityFromComment,
-    updateCommentDataForUpdates: updateCommentDataForUpdates
+    updateCommentDataForUpdates: updateCommentDataForUpdates,
+    loadCommentCountsFast: loadCommentCountsFast,
+    updateCommentCountCacheFromDB: updateCommentCountCacheFromDB
 };

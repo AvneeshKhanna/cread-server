@@ -15,6 +15,14 @@ const REDIS_KEYS = {
     KUE_DEFAULT_CK_CHAT_MSG: addKeyPrefix("kue-default-ck-chat-msg")    //For the welcome chat message from C. Kalakar to a new user
 };
 
+function getEntityCommentCntCacheKey(entityid) {
+    if (!entityid) {
+        throw new Error("Entity ID cannot be undefined/null/empty-string");
+    }
+
+    return "ent:cmnt-cnt:" + entityid;
+}
+
 function addKeyPrefix(key) {
     key = (config.isProduction() ? "p:" : "d:") + key;
     return key;
@@ -22,5 +30,6 @@ function addKeyPrefix(key) {
 
 module.exports = {
     addKeyPrefix: addKeyPrefix,
+    getEntityCommentCntCacheKey: getEntityCommentCntCacheKey,
     REDIS_KEYS: REDIS_KEYS
 };

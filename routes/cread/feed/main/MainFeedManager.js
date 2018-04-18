@@ -12,6 +12,7 @@ var AWS = config.AWS;
 
 var moment = require('moment');
 var feedutils = require('../FeedUtils');
+var commentutils = require('../../comment/CommentUtils');
 
 var _auth = require('../../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
@@ -155,7 +156,7 @@ router.get('/load', function (request, response) {
     var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : null;
     var platform = request.query.platform;
 
-    var limit = (config.envtype === 'PRODUCTION') ? 10 : 8;
+    var limit = (config.envtype === 'PRODUCTION') ? 10 : 10;
     var connection;
 
     _auth.authValid(uuid, authkey)
@@ -276,7 +277,8 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
         connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
             'Capture.capid AS captureid, ' +
             'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
-            'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, COUNT(DISTINCT Comment.commid) AS commentcount, ' +
+            'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
+            /*'COUNT(DISTINCT Comment.commid) AS commentcount, ' +*/
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
             'User.uuid, User.firstname, User.lastname ' +
@@ -287,8 +289,8 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
             'ON Capture.entityid = Entity.entityid ' +
             'JOIN User ' +
             'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
-            'LEFT JOIN Comment ' +
-            'ON Comment.entityid = Entity.entityid ' +
+            /*'LEFT JOIN Comment ' +
+            'ON Comment.entityid = Entity.entityid ' +*/
             'LEFT JOIN HatsOff ' +
             'ON HatsOff.entityid = Entity.entityid ' +
             'LEFT JOIN Downvote D ' +
@@ -369,7 +371,11 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
 
                     var candownvote;
 
-                    userprofileutils.getUserQualityPercentile(connection, uuid)
+                    commentutils.loadCommentCountsFast(connection, rows)
+                        .then(function (updated_rows) {
+                            rows = updated_rows;
+                            return userprofileutils.getUserQualityPercentile(connection, uuid)
+                        })
                         .then(function (result) {
                             candownvote = result.quality_percentile_score > consts.min_percentile_quality_user_downvote;
                             return feedutils.getCollaborationData(connection, rows);

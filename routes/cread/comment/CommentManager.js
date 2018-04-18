@@ -275,6 +275,11 @@ router.post('/add', function (request, response) {
                 return notify.notificationPromise(othercommenters, notifData);
             }
         })
+        .then(function () { //Updating cache for comments count
+            return commentutils.updateCommentCountCacheFromDB(connection, [{
+                entityid: entityid
+            }]);
+        })
         .then(function () {
             throw new BreakPromiseChainError(); //To disconnect server connection
         })
