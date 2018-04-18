@@ -314,7 +314,9 @@ router.post('/edit', upload.single('short-image'), function (request, response) 
             response.end();
         })
         .then(function () {
-            //TODO: Add data to Updates table for profile-mention-post notification
+            if (mentioneduuids.length > 0) {
+                return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-post", uuid, mentioneduuids);
+            }
         })
         .then(function () {
             if (mentioneduuids.length > 0) {

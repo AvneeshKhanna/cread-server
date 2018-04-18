@@ -3,8 +3,6 @@
  */
 'use-strict';
 
-//TODO: Setup AWS Elasticache for Redis to use 'kue' job framework
-
 var config = require('../../../Config');
 
 var jobqueue = config.getKueJobQueue();

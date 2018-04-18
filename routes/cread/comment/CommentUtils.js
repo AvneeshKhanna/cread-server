@@ -332,7 +332,6 @@ function getAllCommentCountsCache(entities) {
     });
 }
 
-//TODO: Update cache after reading data from the server
 function loadCommentCountsFast(connection, master_rows) {
     return new Promise(function (resolve, reject) {
         getAllCommentCountsCache(master_rows)
