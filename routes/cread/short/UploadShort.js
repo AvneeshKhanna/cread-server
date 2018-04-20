@@ -56,7 +56,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
         bgcolor: (request.body.bgcolor) ? request.body.bgcolor : 'NA', //for backward compatibilty
         font: (request.body.font) ? request.body.font : 'NA',   //for backward compatibilty
         textcolor: request.body.textcolor,
-        bg_sound: request.body.bg_sound ? request.body.bg_sound : undefined,
+        bg_sound: request.body.bg_sound ? request.body.bg_sound : 'none',
         textgravity: request.body.textgravity,
         textshadow: request.body.textshadow ? Number(request.body.textshadow) : 0,
         shape: request.body.shape ? request.body.shape : 'shape_none',
@@ -230,7 +230,7 @@ router.post('/edit', upload.single('short-image'), function (request, response) 
         img_height: request.body.img_height,
         imgtintcolor: request.body.imgtintcolor ? request.body.imgtintcolor : null,
         filtername: request.body.filtername ? request.body.filtername : 'original',
-        bg_sound: request.body.bg_sound ? request.body.bg_sound : undefined,
+        bg_sound: request.body.bg_sound ? request.body.bg_sound : 'none',
         txt: request.body.text,
         text_long: request.body.text_long ? request.body.text_long : null,
         textsize: request.body.textsize,

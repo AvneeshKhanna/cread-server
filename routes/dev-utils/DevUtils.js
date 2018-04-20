@@ -334,7 +334,7 @@ router.post('/send-sms-all', function (request, response) {
 
 function sendSMSToAllUsers(users, message) {
     return new Promise(function (resolve, reject) {
-        async.eachSeries(users, function (user, callback) {
+        async.eachLimit(users, 5, function (user, callback) {
 
             var edited_msg = "Hi " + user.firstname + ",\n" + message;
 

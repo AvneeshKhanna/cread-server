@@ -190,7 +190,7 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
     var filtername = request.body.filtername;
     var text = request.body.text;
     var text_long = request.body.text_long ? request.body.text_long : null;
-    var bg_sound = request.body.bg_sound ? request.body.bg_sound : undefined;
+    var bg_sound = request.body.bg_sound ? request.body.bg_sound : 'none';
     var textcolor = request.body.textcolor;
     var textsize = request.body.textsize;
     var textgravity = request.body.textgravity;
