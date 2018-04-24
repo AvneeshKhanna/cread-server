@@ -149,6 +149,14 @@ var featured_artist_notification = new CronJob({
                     throw new BreakPromiseChainError();
                 }
             })
+            .then(function (followers) {
+
+                followers = followers.concat(featuredartists.map(function (fa) {
+                    return fa.uuid;
+                }));
+
+                return featuredartistutils.sendFeaturedArtistNotifGeneral(connection, followers, featuredartists);
+            })
             .then(function () {
                 console.log('Notification for featured artist sent');
                 throw new BreakPromiseChainError();
