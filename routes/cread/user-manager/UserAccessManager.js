@@ -15,6 +15,14 @@ var config = require('../../Config');
 var envconfig = require('config');
 var uuidGen = require('uuid');
 var request_client = require('request');
+const google = require('googleapis').google;
+
+const oauth2Client = new google.auth.OAuth2(
+    '381917870916-vet9ejb07fqipbuok5kj0pgraf3nfrr4.apps.googleusercontent.com',
+    '0FJzEgbLoWUhAs0eCh_ediH4',
+    ''
+);
+
 var CryptoJS = require('crypto-js');
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
@@ -261,6 +269,53 @@ router.post('/update-fcmtoken', function (request, response) {
                 message: 'Some error occurred at the server'
             }).end();
         })
+});
+
+//TODO: Remove
+router.post('/g-sign-up-test', function (request, response) {
+
+    var g_auth_code = "4/AACFW84t4MLq16G8Y4I9ntfwCAdD9dlmJVuJQA1uWaCe1i7jAcJqNyW407lpAmdhG4oOyFwfvr_dqsLVFCaAl3g";
+
+    try {
+
+        // generate a url that asks permissions for Google+ and Google Calendar scopes
+        const scopes = [
+            'profile',
+            'email'
+        ];
+
+        const url = oauth2Client.generateAuthUrl({
+            // 'online' (default) or 'offline' (gets refresh_token)
+            access_type: 'offline',
+
+            // If you only need one scope you can pass it as a string
+            scope: scopes
+        });
+
+    oauth2Client.getToken(g_auth_code, function (err, tokens) {
+        console.log("tokens are " + JSON.stringify(tokens, null, 3));
+    });
+
+        // console.log("token is " + JSON.stringify(token, null, 3));
+
+        /*.then(function (tokens) {
+            oauth2Client.setCredentials(tokens);
+            response.send('done').end();
+        })
+        .catch(function (err) {
+            response.status(500).send(err).end();
+        });*/
+    }
+    catch (ex){
+        response.status(500).send(ex).end();
+    }
+
+});
+
+router.get('/callback', function (request, response) {
+    oauth2Client.getToken(request.query.code, function (err, tokens) {
+        console.log("tokens are " + JSON.stringify(tokens, null, 3));
+    });
 });
 
 module.exports = router;
