@@ -11,6 +11,9 @@ var config = require('../../Config');
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var buyutils = require('./BuyUtils');
+var entityutils = require('../entity/EntityUtils');
+var consts = require('../utils/Constants');
+var cache_time = consts.cache_time;
 
 router.post('/load', function (request, response) {
 
@@ -22,6 +25,7 @@ router.post('/load', function (request, response) {
 
     var connection;
     var products;
+    var entityurl;
 
     _auth.authValid(uuid, authkey)
         .then(function () {
@@ -35,6 +39,10 @@ router.post('/load', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
+            return entityutils.getEntityUrl(connection, entityid);
+        })
+        .then(function (url) {
+            entityurl = url;
             return buyutils.loadAllProducts(connection);
         })
         .then(function (products) {
@@ -76,6 +84,7 @@ router.post('/load', function (request, response) {
                 tokenstatus: 'valid',
                 data: {
                     products: products,
+                    entityurl: entityurl,
                     detailsexist: detailsexist,
                     details: details,
                     billing_contact: billing_contact,
@@ -97,6 +106,62 @@ router.post('/load', function (request, response) {
                 }).end();
             }
         });
+});
+
+/**
+ * For loading a particular product's details in a separate page in web-store
+ * */
+router.get('/load/:product_id', function (request, response) {
+
+    var productid = request.params.product_id;
+    var entityid = decodeURIComponent(request.query.entityid);
+
+    var connection;
+    var entityurl;
+
+    config.getNewConnection()
+        .then(function (conn) {
+            connection = conn;
+            return entityutils.getEntityUrl(connection, entityid);
+        })
+        .then(function (url) {
+            entityurl = url;
+            return buyutils.loadProduct(connection, productid);
+        })
+        .then(function (products) {
+            return structureProductDetails(products);
+        })
+        .then(function (prducts) {
+            response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
+
+            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+                response.status(304).send().end();
+            }
+            else {
+                response.status(200).send({
+                    data: {
+                        entityurl: entityurl,
+                        product: prducts[0]
+                    }
+                });
+                response.end();
+            }
+
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
 });
 
 function retrieveLastPlacedDetails(connection, uuid) {
