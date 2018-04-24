@@ -125,6 +125,21 @@ function loadAllProducts(connection) {
     });
 }
 
+function loadProduct(connection, productid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT Product.productid, Product.type, Product.imageurl as productimgurl ' +
+            'FROM Product ' +
+            'WHERE productid = ?', [productid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(rows);
+            }
+        });
+    });
+}
+
 function saveOrderDetails(connection, sqlparams) {
     return new Promise(function (resolve, reject) {
         connection.query('INSERT INTO Orders SET ?', [sqlparams], function (err, rows) {
@@ -186,6 +201,7 @@ function updateBuyDataForUpdates(connection, uuid, actor_uuid, entityid, other_c
 
 module.exports = {
     loadAllProducts: loadAllProducts,
+    loadProduct: loadProduct,
     saveOrderDetails: saveOrderDetails,
     loadOrdersForPrint: loadOrdersForPrint,
     captureRazorpayPayment: captureRazorpayPayment,

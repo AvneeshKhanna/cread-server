@@ -448,6 +448,37 @@ function getEntityUsrDetailsForNotif(connection, entityid) {
     })
 }
 
+function getEntityUrl(connection, entityid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT E.type, U.uuid, S.shoid, C.capid ' +
+            'FROM Entity E ' +
+            'LEFT JOIN Short S ' +
+            'ON(S.entityid = E.entityid) ' +
+            'LEFT JOIN Capture C ' +
+            'ON(C.entityid = E.entityid) ' +
+            'JOIN User U ' +
+            'ON(S.uuid = U.uuid OR C.uuid = U.uuid) ' +
+            'WHERE E.entityid = ?', [entityid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+
+                var entityurl;
+
+                if(rows[0].type === 'SHORT'){
+                    entityurl = utils.createSmallShortUrl(rows[0].uuid, rows[0].shoid);
+                }
+                else{
+                    entityurl = utils.createSmallCaptureUrl(rows[0].uuid, rows[0].capid);
+                }
+
+                resolve(entityurl);
+            }
+        });
+    });
+}
+
 function deactivateEntity(connection, entityid, uuid) {
     return new Promise(function (resolve, reject) {
         connection.query('UPDATE Entity ' +
@@ -585,6 +616,7 @@ module.exports = {
     updateEntityCaption: updateEntityCaption,
     getEntityDetailsForPrint: getEntityDetailsForPrint,
     getEntityUsrDetailsForNotif: getEntityUsrDetailsForNotif,
+    getEntityUrl: getEntityUrl,
     deactivateEntity: deactivateEntity,
     removeEntityFromExplore: removeEntityFromExplore,
     putEntityToExplore: putEntityToExplore,

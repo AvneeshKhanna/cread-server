@@ -45,6 +45,8 @@ function getFeaturedArtists(connection) {
 function sendFeaturedArtistNotifToFollowers(connection, featuredartists) {
     return new Promise(function (resolve, reject) {
 
+        var fartist_followers = [];
+
         async.each(featuredartists, function (featuredartist, callback) {
 
             followutils.getUserFollowers(connection, featuredartist.uuid)
@@ -53,6 +55,9 @@ function sendFeaturedArtistNotifToFollowers(connection, featuredartists) {
                     console.log("followers are " + JSON.stringify(followers, null, 3));
 
                     if(followers.length > 0){
+
+                        fartist_followers = fartist_followers.concat(followers);
+
                         var notifData = {
                             category: "featured-artist-follower",
                             persistable: "No",
@@ -73,7 +78,35 @@ function sendFeaturedArtistNotifToFollowers(connection, featuredartists) {
                 reject(err);
             }
             else{
-                resolve();
+                resolve(fartist_followers);
+            }
+        });
+    });
+}
+
+function sendFeaturedArtistNotifGeneral(connection, featured_and_followers, featuredartists) {
+
+    featured_and_followers = utils.getUniqueValues(featured_and_followers);
+
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT uuid FROM User WHERE uuid NOT IN (?)', [featured_and_followers], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+
+                var uuids = rows.map(function (row) {
+                    return row.uuid;
+                });
+
+                var notifData = {
+                    category: "featured-artist-follower",
+                    persistable: "No",
+                    message: featuredartists.map(function(fa){ return fa.name }).join(", ") + " have been chosen as featured artists for today. Check them out on Cread!"
+                };
+
+                notify.notificationPromise(uuids, notifData)
+                    .then(resolve, reject);
             }
         });
     });
@@ -81,5 +114,6 @@ function sendFeaturedArtistNotifToFollowers(connection, featuredartists) {
 
 module.exports = {
     getFeaturedArtists: getFeaturedArtists,
-    sendFeaturedArtistNotifToFollowers: sendFeaturedArtistNotifToFollowers
+    sendFeaturedArtistNotifToFollowers: sendFeaturedArtistNotifToFollowers,
+    sendFeaturedArtistNotifGeneral: sendFeaturedArtistNotifGeneral
 };

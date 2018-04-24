@@ -341,5 +341,6 @@ module.exports = {
     getAllIndexes: getAllIndexes,
     filterProfileMentions: filterProfileMentions,
     extractProfileMentionUUIDs: extractProfileMentionUUIDs,
-    shuffle: shuffle
+    shuffle: shuffle,
+    getUniqueValues: getUniqueValues
 };
