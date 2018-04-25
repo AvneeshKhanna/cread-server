@@ -635,6 +635,22 @@ function loadAllFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl) 
     });
 }
 
+/**
+ * This function checks if the given fbid is attached to a user's record other than the given uuid
+ * */
+function checkIfFbIdAttachedToAnother(connection, fbid, uuid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT uuid FROM User WHERE fbid = ? AND uuid <> ?', [fbid, uuid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(!!rows[0])
+            }
+        });
+    });
+}
+
 function getFbAppAccessToken() {
     return new Promise(function (resolve, reject) {
 
@@ -1041,6 +1057,7 @@ module.exports = {
     loadProfileInformation: loadProfileInformation,
     loadFacebookFriends: loadFacebookFriends,
     loadAllFacebookFriends: loadAllFacebookFriends,
+    checkIfFbIdAttachedToAnother: checkIfFbIdAttachedToAnother,
     getUserFbFriendsViaAppToken: getUserFbFriendsViaAppToken,
     updateProfile: updateProfile,
     renameFile: renameFile,

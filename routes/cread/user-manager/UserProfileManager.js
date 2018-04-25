@@ -792,6 +792,8 @@ router.get('/load-fb-friends', function (request, response) {
     var connection;
 
     //TODO: Error handling for Facebook Graph API
+
+    //TODO: Add code to save fbid to user's record in 'User' table
     _auth.authValid(uuid, authkey)
         .then(function () {
             return config.getNewConnection();
@@ -804,11 +806,28 @@ router.get('/load-fb-friends', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return userprofileutils.loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl);
+            return userprofileutils.checkIfFbIdAttachedToAnother(connection, fbid, uuid);
+        })
+        .then(function (isAttachedToAnother) {
+            if(!isAttachedToAnother){
+                return userprofileutils.loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl);
+            }
+            else{
+                response.status(200).send({
+                    tokenstatus: 'valid',
+                    data: {
+                        duplicate_fbid: isAttachedToAnother
+                    }
+                });
+                response.end();
+                throw new BreakPromiseChainError();
+            }
         })
         .then(function (result) {
             console.log("result is " + JSON.stringify(result, null, 3));
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
+
+            result.duplicate_fbid = false;
 
             if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
                 response.status(304).send().end();
