@@ -15,13 +15,6 @@ var config = require('../../Config');
 var envconfig = require('config');
 var uuidGen = require('uuid');
 var request_client = require('request');
-const google = require('googleapis').google;
-
-const oauth2Client = new google.auth.OAuth2(
-    '381917870916-vet9ejb07fqipbuok5kj0pgraf3nfrr4.apps.googleusercontent.com',
-    '0FJzEgbLoWUhAs0eCh_ediH4',
-    ''
-);
 
 var CryptoJS = require('crypto-js');
 
@@ -37,6 +30,7 @@ router.post('/sign-in', function (request, response) {
     console.log("request is " + JSON.stringify(request.body, null, 3));
 
     var fbid = request.body.fbid;
+    var google_access_token = request.body.google_access_token;
     var fcmtoken = request.body.fcmtoken;
 
     var connection;
@@ -44,7 +38,20 @@ router.post('/sign-in', function (request, response) {
     config.getNewConnection()
         .then(function (conn) {
             connection = conn;
-            return useraccessutils.checkIfUserExists(connection, fbid);
+            if(google_access_token){
+                return useraccessutils.getUserDetailsFromGoogle(google_access_token);
+            }
+            else {
+                //Do Nothing
+            }
+        })
+        .then(function (result) {
+            if(result){ //Case where google_access_token exists in request
+                return useraccessutils.checkIfUserExists(connection, fbid, result.ggl_userid);
+            }
+            else {  //Case where google_access_token is undefined in request
+                return useraccessutils.checkIfUserExists(connection, fbid, undefined);
+            }
         })
         .then(function (result) {
             if (result && fcmtoken) { //Case of existing user and non-null fcmtoken
@@ -65,8 +72,6 @@ router.post('/sign-in', function (request, response) {
                     status: "new-user"
                 };
             }
-
-            console.log("result is " + JSON.stringify(result, null, 3));
 
             response.send({
                 data: result
@@ -94,26 +99,35 @@ router.post('/sign-up', function (request, response) {
     console.log("request is " + JSON.stringify(request.body, null, 3));
 
     var fcmtoken = request.body.fcmtoken;
+    var google_access_token = request.body.google_access_token;
     var referral_code = request.body.referral_code;
 
     try {
         var userdata = request.body.userdata;
 
-        utils.changePropertyName(userdata, "id", "fbid");
-        utils.changePropertyName(userdata, "first_name", "firstname");
-        utils.changePropertyName(userdata, "last_name", "lastname");
-        utils.changePropertyName(userdata, "link", "fbtimelineurl");
-        utils.changePropertyName(userdata, "picture", "profilepicurl");
+        if(!google_access_token){
+            utils.changePropertyName(userdata, "id", "fbid");
+            utils.changePropertyName(userdata, "first_name", "firstname");
+            utils.changePropertyName(userdata, "last_name", "lastname");
+            utils.changePropertyName(userdata, "link", "fbtimelineurl");
+            utils.changePropertyName(userdata, "picture", "profilepicurl");
+        }
 
         var userdetails = userdata;
 
-        userdetails.age_yrs_min = userdata.age_range.min;
-        userdetails.age_yrs_max = userdata.age_range.max;
+        if(!google_access_token){
+            userdetails.age_yrs_min = userdata.age_range.min;
+            userdetails.age_yrs_max = userdata.age_range.max;
 
-        delete userdata.age_range;
+            delete userdata.age_range;
+        }
     }
     catch (ex) {
         console.error(ex);
+        response.status(500).send({
+            message: 'Some error occurred at the server'
+        }).end();
+        return;
     }
 
     if (referral_code) {
@@ -132,6 +146,20 @@ router.post('/sign-up', function (request, response) {
     config.getNewConnection()
         .then(function (conn) {
             connection = conn;
+            if(google_access_token){
+                return useraccessutils.getUserDetailsFromGoogle(google_access_token);
+            }
+        })
+        .then(function (result) {
+            if(result){
+                userdetails.ggl_userid = result.ggl_userid;
+                userdetails.firstname = result.firstname;
+                userdetails.lastname = result.lastname;
+                userdetails.locale = result.locale;
+                userdetails.email = result.email;
+            }
+        })
+        .then(function () {
             return useraccessutils.checkIfPhoneExists(connection, userdetails.phone);
         })
         .then(function (result) {
@@ -164,28 +192,37 @@ router.post('/sign-up', function (request, response) {
             });
         })
         .then(function (result) {
-            return userprofileutils.copyFacebookProfilePic(userdetails.profilepicurl, result.uuid);
+            new_user_uuid = result.uuid;
+            if(!google_access_token){
+                return userprofileutils.copyFacebookProfilePic(userdetails.profilepicurl, result.uuid);
+            }
         })
         .then(function (uuid) { //Sending a notification to the new user's Facebook friends who are on Cread
-            new_user_uuid = uuid;
-            return userprofileutils.getUserFbFriendsViaAppToken(connection, userdetails.fbid, new_user_uuid)
+            /*new_user_uuid = uuid;*/
+            if(!google_access_token){
+                return userprofileutils.getUserFbFriendsViaAppToken(connection, userdetails.fbid, new_user_uuid);
+            }
         })
         .then(function (fuuids) {
-            fb_friends_uuids = fuuids;
-            if (fb_friends_uuids.length > 0) {
-                return useraccessutils.updateNewFacebookUserDataForUpdates(connection, fb_friends_uuids, new_user_uuid, "fb-friend-new");
+            if(!google_access_token){
+                fb_friends_uuids = fuuids;
+                if (fb_friends_uuids.length > 0) {
+                    return useraccessutils.updateNewFacebookUserDataForUpdates(connection, fb_friends_uuids, new_user_uuid, "fb-friend-new");
+                }
             }
         })
         .then(function () {
-            if (fb_friends_uuids.length > 0) {
-                var notifData = {
-                    persistable: "Yes",
-                    message: "Your Facebook friend " + userdetails.firstname + " " + userdetails.lastname + " is now on Cread",
-                    category: "fb-friend-new",
-                    actorid: new_user_uuid,
-                    actorimage: utils.createSmallProfilePicUrl(new_user_uuid)
-                };
-                return notify.notificationPromise(fb_friends_uuids, notifData);
+            if(!google_access_token){
+                if (fb_friends_uuids.length > 0) {
+                    var notifData = {
+                        persistable: "Yes",
+                        message: "Your Facebook friend " + userdetails.firstname + " " + userdetails.lastname + " is now on Cread",
+                        category: "fb-friend-new",
+                        actorid: new_user_uuid,
+                        actorimage: utils.createSmallProfilePicUrl(new_user_uuid)
+                    };
+                    return notify.notificationPromise(fb_friends_uuids, notifData);
+                }
             }
         })
         .then(function () {
@@ -274,39 +311,33 @@ router.post('/update-fcmtoken', function (request, response) {
 //TODO: Remove
 router.post('/g-sign-up-test', function (request, response) {
 
-    var g_auth_code = "4/AACFW84t4MLq16G8Y4I9ntfwCAdD9dlmJVuJQA1uWaCe1i7jAcJqNyW407lpAmdhG4oOyFwfvr_dqsLVFCaAl3g";
+    var token = request.body.token;
 
     try {
+        function verify() {
+            return new Promise(function (resolve, reject) {
+                client.verifyIdToken({
+                    idToken: token,
+                    audience: '381917870916-vet9ejb07fqipbuok5kj0pgraf3nfrr4.apps.googleusercontent.com' // Specify the CLIENT_ID of the app that accesses the backend
+                    // Or, if multiple clients access the backend:
+                    //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
+                })
+                    .then(function (ticket) {
+                        const payload = ticket.getPayload();
+                        const userid = payload['sub'];
+                        // If request specified a G Suite domain:
+                        //const domain = payload['hd'];
+                    })
+                    .catch(function (err) {
+                        reject(err);
+                    });
+            });
+        }
 
-        // generate a url that asks permissions for Google+ and Google Calendar scopes
-        const scopes = [
-            'profile',
-            'email'
-        ];
-
-        const url = oauth2Client.generateAuthUrl({
-            // 'online' (default) or 'offline' (gets refresh_token)
-            access_type: 'offline',
-
-            // If you only need one scope you can pass it as a string
-            scope: scopes
-        });
-
-    oauth2Client.getToken(g_auth_code, function (err, tokens) {
-        console.log("tokens are " + JSON.stringify(tokens, null, 3));
-    });
-
-        // console.log("token is " + JSON.stringify(token, null, 3));
-
-        /*.then(function (tokens) {
-            oauth2Client.setCredentials(tokens);
-            response.send('done').end();
-        })
-        .catch(function (err) {
-            response.status(500).send(err).end();
-        });*/
+        verify()
+            .catch(console.error);
     }
-    catch (ex){
+    catch (ex) {
         response.status(500).send(ex).end();
     }
 
