@@ -158,7 +158,23 @@ function performSearchUsers(connection, keyword) {
 router.post('/gm-test', function (request, response) {
 
     try{
+
         gm('./images/downloads/gm.jpg')
+            .command('convert')
+            .out('-crop')
+            .out('3x387')
+            .out('+adjoin') //Used to split images into multiple
+            .write('./images/downloads/tile-%03d.jpg', function(error) {
+            if (error) {
+                console.error(error);
+                response.send(error).end();
+            }
+            else{
+                response.send('done').end();
+            }
+        });
+
+        /*gm('./images/downloads/gm.jpg')
             .font('./public/fonts/ubuntu/Ubuntu-Medium.ttf')
             .drawText(50, 50, 'This is a test')
             .write('./images/downloads/gm1.jpg', function (err) {
@@ -169,7 +185,7 @@ router.post('/gm-test', function (request, response) {
                 else{
                     response.send('done').end();
                 }
-            });
+            });*/
     }
     catch(err){
         console.error(err);
