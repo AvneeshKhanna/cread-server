@@ -37,7 +37,7 @@ var connection = mysql.createConnection({
 });
 
 var connectionPool = mysql.createPool({
-    connectionLimit : 50,
+    connectionLimit: 50,
     host: dbConfig.host,
     user: dbConfig.user,
     password: dbConfig.password,
@@ -51,10 +51,10 @@ var connectionPool = mysql.createPool({
 function getNewConnection() {
     return new Promise(function (resolve, reject) {
         connectionPool.getConnection(function (err, connection) {
-            if(err){
+            if (err) {
                 reject(err);
             }
-            else{
+            else {
                 resolve(connection);
             }
         });
@@ -62,7 +62,7 @@ function getNewConnection() {
 }
 
 function disconnect(connection) {
-    if(connection && connection.state !== "disconnected"){
+    if (connection && connection.state !== "disconnected") {
         console.log('connection released');
         connection.release();
     }
@@ -90,21 +90,21 @@ function isRunningOnAWS() {
     return process.env.HOST_PLATFORM === 'AWS'
 }
 
-function getServerBaseUrl(){
-    if(isProduction()){
+function getServerBaseUrl() {
+    if (isProduction()) {
         return production_server_url;
     }
-    else{
+    else {
         return development_server_url;
     }
 }
 
-function getRedisClusterEndpoint(){
-    if(isRunningOnAWS()){
+function getRedisClusterEndpoint() {
+    if (isRunningOnAWS()) {
         //Redis cache cluster endpoint for accessing via code running on AWS machines
         return "cache-redis-main.v8mrt0.0001.apne1.cache.amazonaws.com"
     }
-    else{
+    else {
         //NAT Instance Endpoint for accessing Redis cache cluster from local machine
         return "ec2-18-182-40-218.ap-northeast-1.compute.amazonaws.com"
     }
@@ -135,20 +135,20 @@ function getKueClient() {
     return kue;
 }
 
-function getCreadKalakaarUUID(){
-    if(isProduction()){
+function getCreadKalakaarUUID() {
+    if (isProduction()) {
         return '6732bb8e-cffd-4e1b-906f-dc75873a5d92';
     }
-    else{
+    else {
         return '40e88526-6e2f-49f1-82ae-ed2e52fc54fe';
     }
 }
 
-function getNishantMittalUUID(){
-    if(isProduction()){
+function getNishantMittalUUID() {
+    if (isProduction()) {
         return '0a5a46bc-13f1-42b5-ae9b-ff518c044b80';
     }
-    else{
+    else {
         return '8d905ac6-881d-492c-9aa9-e81f066f4d6f';
     }
 }
@@ -167,7 +167,7 @@ function getCreadKalakaarDefaultMessage() {
         "Cread Kalakaar";
 }
 
-function isProduction(){
+function isProduction() {
     return envtype === 'PRODUCTION';
 }
 
