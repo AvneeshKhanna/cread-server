@@ -651,6 +651,19 @@ function checkIfFbIdAttachedToAnother(connection, fbid, uuid) {
     });
 }
 
+function saveFbIdUser(connection, fbid, uuid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('UPDATE User SET fbid = ? WHERE fbid IS NULL AND uuid = ?', [fbid, uuid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
 function getFbAppAccessToken() {
     return new Promise(function (resolve, reject) {
 
@@ -1058,6 +1071,7 @@ module.exports = {
     loadFacebookFriends: loadFacebookFriends,
     loadAllFacebookFriends: loadAllFacebookFriends,
     checkIfFbIdAttachedToAnother: checkIfFbIdAttachedToAnother,
+    saveFbIdUser: saveFbIdUser,
     getUserFbFriendsViaAppToken: getUserFbFriendsViaAppToken,
     updateProfile: updateProfile,
     renameFile: renameFile,

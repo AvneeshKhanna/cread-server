@@ -12,9 +12,9 @@ var router = express.Router();
 
 var config = require('../../Config');
 
-var envconfig = require('config');
+/*var envconfig = require('config');
 var uuidGen = require('uuid');
-var request_client = require('request');
+var request_client = require('request');*/
 
 var CryptoJS = require('crypto-js');
 
@@ -47,14 +47,14 @@ router.post('/sign-in', function (request, response) {
         })
         .then(function (result) {
             if(result){ //Case where google_access_token exists in request
-                return useraccessutils.checkIfUserExists(connection, fbid, result.ggl_userid);
+                return useraccessutils.checkIfUserExists(connection, undefined, result.ggl_userid);
             }
             else {  //Case where google_access_token is undefined in request
                 return useraccessutils.checkIfUserExists(connection, fbid, undefined);
             }
         })
         .then(function (result) {
-            if (result && fcmtoken) { //Case of existing user and non-null fcmtoken
+            if (result && fcmtoken) { //Case of existing user in DB and non-null fcmtoken in request
                 return useraccessutils.addUserFcmToken(result.uuid, fcmtoken, result);
             }
             else {   //Case of new user
@@ -343,6 +343,7 @@ router.post('/g-sign-up-test', function (request, response) {
 
 });
 
+//TODO: Remove
 router.get('/callback', function (request, response) {
     oauth2Client.getToken(request.query.code, function (err, tokens) {
         console.log("tokens are " + JSON.stringify(tokens, null, 3));
