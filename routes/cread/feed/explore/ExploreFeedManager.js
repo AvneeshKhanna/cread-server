@@ -32,7 +32,7 @@ router.get('/load', function (request, response) {
     var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : null;
     var platform = request.query.platform;
 
-    var limit = (config.envtype === 'PRODUCTION') ? 16 : 8; //Keep the value even for cross pattern in grid view
+    var limit = (config.isProduction()) ? 16 : 8; //Keep the value even for cross pattern in grid view
     var connection;
 
     _auth.authValid(uuid, authkey)
