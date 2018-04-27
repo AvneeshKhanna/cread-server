@@ -283,9 +283,12 @@ function loadHTagOfTheDay(connection) {
                     });
                 }
             });*/
-        connection.query('SELECT hashtag AS htag ' +
+        connection.query('SELECT HOTD.hashtag AS htag, COUNT(HTD.entityid) AS hpostcount ' +
             'FROM HTagOfTheDay HOTD ' +
-            'WHERE for_date = DATE(NOW())', [], function (err, rows) {
+            'LEFT JOIN HashTagDistribution HTD ' +
+            'ON(LCASE(HOTD.hashtag) = HTD.hashtag) ' +
+            'WHERE for_date = DATE(NOW()) ' +
+            'GROUP BY htag', [], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -295,7 +298,8 @@ function loadHTagOfTheDay(connection) {
 
                 if(!rows[0]){
                     result = {
-                        htag: null
+                        htag: null,
+                        hpostcount: 0
                     }
                 }
                 else{
