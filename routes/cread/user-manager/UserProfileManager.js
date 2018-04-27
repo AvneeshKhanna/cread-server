@@ -793,7 +793,6 @@ router.get('/load-fb-friends', function (request, response) {
 
     //TODO: Error handling for Facebook Graph API
 
-    //TODO: Add code to save fbid to user's record in 'User' table
     _auth.authValid(uuid, authkey)
         .then(function () {
             return config.getNewConnection();

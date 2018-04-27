@@ -308,46 +308,4 @@ router.post('/update-fcmtoken', function (request, response) {
         })
 });
 
-//TODO: Remove
-router.post('/g-sign-up-test', function (request, response) {
-
-    var token = request.body.token;
-
-    try {
-        function verify() {
-            return new Promise(function (resolve, reject) {
-                client.verifyIdToken({
-                    idToken: token,
-                    audience: '381917870916-vet9ejb07fqipbuok5kj0pgraf3nfrr4.apps.googleusercontent.com' // Specify the CLIENT_ID of the app that accesses the backend
-                    // Or, if multiple clients access the backend:
-                    //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
-                })
-                    .then(function (ticket) {
-                        const payload = ticket.getPayload();
-                        const userid = payload['sub'];
-                        // If request specified a G Suite domain:
-                        //const domain = payload['hd'];
-                    })
-                    .catch(function (err) {
-                        reject(err);
-                    });
-            });
-        }
-
-        verify()
-            .catch(console.error);
-    }
-    catch (ex) {
-        response.status(500).send(ex).end();
-    }
-
-});
-
-//TODO: Remove
-router.get('/callback', function (request, response) {
-    oauth2Client.getToken(request.query.code, function (err, tokens) {
-        console.log("tokens are " + JSON.stringify(tokens, null, 3));
-    });
-});
-
 module.exports = router;
