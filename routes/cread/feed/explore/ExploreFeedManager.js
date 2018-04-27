@@ -311,15 +311,15 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
             'FROM ' +
-                '(SELECT E.caption, E.entityid, E.merchantable, E.type, E.regdate, EntityAnalytics.impact_score ' +
-                'FROM EntityAnalytics ' +
-                'JOIN Entity E ' +
-                'USING(entityid) ' +
-                'WHERE E.status = "ACTIVE" ' +
-                'AND E.for_explore = 1 ' +
-                'ORDER BY impact_score DESC ' +
-                'LIMIT ? ' +
-                'OFFSET ?) EA ' +
+            '(SELECT E.caption, E.entityid, E.merchantable, E.type, E.regdate, EntityAnalytics.impact_score ' +
+            'FROM EntityAnalytics ' +
+            'JOIN Entity E ' +
+            'USING(entityid) ' +
+            'WHERE E.status = "ACTIVE" ' +
+            'AND E.for_explore = 1 ' +
+            'ORDER BY impact_score DESC ' +
+            'LIMIT ? ' +
+            'OFFSET ?) EA ' +
             //'ON (EA.entityid = Entity.entityid) ' +
             'LEFT JOIN Short ' +
             'ON Short.entityid = EA.entityid ' +
@@ -398,7 +398,8 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                         return element;
                     });
 
-                    lastindexkey = lastindexkey + rows.length; /*rows[rows.length - 1]._id*/ //moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss');
+                    lastindexkey = lastindexkey + rows.length;
+                    /*rows[rows.length - 1]._id*/ //moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss');
 
                     var candownvote;
 
