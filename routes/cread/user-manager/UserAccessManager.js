@@ -88,6 +88,8 @@ router.post('/sign-up', function (request, response) {
     var fcmtoken = request.body.fcmtoken;
     var referral_code = request.body.referral_code;
 
+    //TODO: Make 'firstname' and 'lastname' to proper case, especially for Google
+
     try {
         var userdata = request.body.userdata;
 
