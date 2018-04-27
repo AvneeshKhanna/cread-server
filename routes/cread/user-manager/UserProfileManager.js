@@ -792,6 +792,8 @@ router.get('/load-fb-friends', function (request, response) {
     var connection;
 
     //TODO: Error handling for Facebook Graph API
+
+    //TODO: Add code to save fbid to user's record in 'User' table
     _auth.authValid(uuid, authkey)
         .then(function () {
             return config.getNewConnection();
@@ -804,11 +806,41 @@ router.get('/load-fb-friends', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
+            return utils.beginTransaction(connection);
+        })
+        .then(function () {
+            return userprofileutils.checkIfFbIdAttachedToAnother(connection, fbid, uuid);
+        })
+        .then(function (isAttachedToAnother) {
+            if(!isAttachedToAnother){
+                return userprofileutils.saveFbIdUser(connection, fbid, uuid);
+            }
+            else{
+                response.status(200).send({
+                    tokenstatus: 'valid',
+                    data: {
+                        duplicate_fbid: isAttachedToAnother
+                    }
+                });
+                response.end();
+                throw new BreakPromiseChainError();
+            }
+        })
+        .then(function () {
             return userprofileutils.loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl);
+        })
+        .then(function (result) {
+            return utils.commitTransaction(connection, result);
+        }, function (err) {
+            //Even if the error is of type BreakPromiseChainError, transaction rollback won't do any damage
+            //since nothing is changed in the database
+            return utils.rollbackTransaction(connection, undefined, err);
         })
         .then(function (result) {
             console.log("result is " + JSON.stringify(result, null, 3));
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
+
+            result.duplicate_fbid = false;
 
             if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
                 response.status(304).send().end();
