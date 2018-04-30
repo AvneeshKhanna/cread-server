@@ -559,6 +559,34 @@ function putEntityToExplore(connection, entityid) {
 }
 
 /**
+ * Function to check if this is the first post by the user
+ * */
+function checkForFirstPost(connection, uuid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT COUNT(DISTINCT E.entityid) AS postcount, U.firstname AS name ' +
+            'FROM Entity E ' +
+            'LEFT JOIN Short S ' +
+            'USING(entityid) ' +
+            'LEFT JOIN Capture C ' +
+            'USING(entityid) ' +
+            'JOIN User U ' +
+            'ON(U.uuid = S.uuid OR U.uuid = C.uuid) ' +
+            'WHERE U.uuid = ? ' +
+            'AND E.status = "ACTIVE"', [uuid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve({
+                    firstpost: rows[0].postcount === 1,
+                    name: rows[0].name
+                });
+            }
+        });
+    });
+}
+
+/**
  * Updates the last_event_time in Entity table to current time if the creator of the entityid is not the same
  * performing the event
  * */
@@ -623,5 +651,6 @@ module.exports = {
     removeEntityFromExplore: removeEntityFromExplore,
     putEntityToExplore: putEntityToExplore,
     updateLastEventTimestamp: updateLastEventTimestamp,
-    updateLastEventTimestampViaType: updateLastEventTimestampViaType
+    updateLastEventTimestampViaType: updateLastEventTimestampViaType,
+    checkForFirstPost: checkForFirstPost
 };

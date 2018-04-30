@@ -7,8 +7,6 @@ var config = require('../../../Config');
 
 var jobqueue = config.getKueJobQueue();
 var kue = config.getKueClient();
-var cacheutils = require('../cache/CacheUtils');
-var REDIS_KEYS = cacheutils.REDIS_KEYS;
 
 function scheduleJob(jobKey, jobData, options) {
     return new Promise(function (resolve, reject) {
