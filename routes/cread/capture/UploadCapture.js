@@ -25,6 +25,7 @@ var notify = require('../../notification-system/notificationFramework');
 var shortutils = require('../short/ShortUtils');
 var hashtagutils = require('../hashtag/HashTagUtils');
 var entityutils = require('../entity/EntityUtils');
+var commentutils = require('../comment/CommentUtils');
 
 var filebasepath = './images/uploads/capture/'; 
 
@@ -49,7 +50,9 @@ router.post('/', upload.single('captured-image'), function (request, response) {
     }
 
     var captureparams = {
-        filtername: request.body.filtername ? request.body.filtername : 'original'
+        filtername: request.body.filtername ? request.body.filtername : 'original',
+        img_height: request.body.img_height,
+        img_width: request.body.img_width
     };
 
     var captureid = uuidgen.v4();
@@ -117,6 +120,14 @@ router.post('/', upload.single('captured-image'), function (request, response) {
                 }
             });
             response.end();
+        })
+        .then(function () {
+            return entityutils.checkForFirstPost(connection, uuid);
+        })
+        .then(function (result) {
+            if(result.firstpost){
+                commentutils.scheduleFirstPostCommentJob(uuid, result.name, entityid);
+            }
         })
         .then(function () {
             if(mentioneduuids.length > 0  ){
@@ -292,6 +303,14 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
                     captureurl: utils.createSmallCaptureUrl(uuid, captureid)
                 }
             }).end();
+        })
+        .then(function () {
+            return entityutils.checkForFirstPost(connection, uuid);
+        })
+        .then(function (result) {
+            if(result.firstpost){
+                commentutils.scheduleFirstPostCommentJob(uuid, result.name, entityid);
+            }
         })
         .then(function () { //Send notification to user
             var select = [

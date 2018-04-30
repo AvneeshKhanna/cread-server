@@ -7,10 +7,16 @@ var uuidGen = require('uuid');
 var moment = require('moment');
 var async = require('async');
 
+var config = require('../../Config');
 var utils = require('../utils/Utils');
+var entityutils = require('../entity/EntityUtils');
 var updatesutils = require('../updates/UpdatesUtils');
 var cacheutils = require('../utils/cache/CacheUtils');
 var cachemanager = require('../utils/cache/CacheManager');
+
+var jobqueuehandler = require('../utils/long-tasks/JobQueueHandler');
+var notify = require('../../notification-system/notificationFramework');
+var REDIS_KEYS = cacheutils.REDIS_KEYS;
 
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
@@ -43,7 +49,7 @@ function loadCommentsLegacy(connection, entityid, limit, page, loadAll) {
                 reject(err);
             }
             else {
-                var totalcount = data[0].totalcount; 
+                var totalcount = data[0].totalcount;
 
                 connection.query(query, [entityid, limit, offset], function (err, rows) {
                     if (err) {
@@ -105,10 +111,10 @@ function loadComments(connection, entityid, limit, lastindexkey, loadAll) {
 
                 //Sort comments in chronological order
                 rows.sort(function (a, b) {
-                    if(a.regdate < b.regdate){
+                    if (a.regdate < b.regdate) {
                         return -1;
                     }
-                    else{
+                    else {
                         return 1;
                     }
                 });
@@ -117,11 +123,11 @@ function loadComments(connection, entityid, limit, lastindexkey, loadAll) {
                 result.comments = rows;
 
                 if (loadAll) {
-                    if(rows.length > 0){
+                    if (rows.length > 0) {
                         result.requestmore = rows.length >= limit;
                         result.lastindexkey = moment.utc(rows[0/*rows.length - 1*/].regdate).format('YYYY-MM-DD HH:mm:ss');
                     }
-                    else{
+                    else {
                         result.requestmore = rows.length >= limit;
                         result.lastindexkey = null
                     }
@@ -198,9 +204,9 @@ function getEntityFromComment(connection, commid) {
     });
 }
 
-function updateCommentDataForUpdates(connection, uuid, actor_uuid, entityid, category, other_collaborator){
+function updateCommentDataForUpdates(connection, uuid, actor_uuid, entityid, category, other_collaborator) {
     return new Promise(function (resolve, reject) {
-        if(true){   //Case: Comment added TODO: Change condition during deletion from Updates table
+        if (true) {   //Case: Comment added TODO: Change condition during deletion from Updates table
             var updateparams = {
                 uuid: uuid,
                 actor_uuid: actor_uuid,
@@ -211,7 +217,7 @@ function updateCommentDataForUpdates(connection, uuid, actor_uuid, entityid, cat
             updatesutils.addToUpdatesTable(connection, updateparams)
                 .then(resolve, reject);
         }
-        else{   //Case: Comment deleted TODO: Find a mechanism to locate a particular comment's row in Updates table
+        else {   //Case: Comment deleted TODO: Find a mechanism to locate a particular comment's row in Updates table
             /*var where_col_names = [
                 "actor_uuid",
                 "entityid",
@@ -254,6 +260,79 @@ function getAllCommentCounts(connection, entities) {
 }
 
 /**
+ * Function to schedule a Kue Job to add a comment on behalf of Cread Kalakaar if it is a first post
+ *
+ * @param uuid ID of the post creator
+ * @param name First name of the post creator
+ * @param entityid ID of the post
+ * */
+function scheduleFirstPostCommentJob(uuid, name, entityid) {
+    var jData = {
+        uuid: uuid, //Creator uuid
+        name: name, //Creator name
+        entityid: entityid  //Post id
+    };
+
+    jobqueuehandler.scheduleJob(REDIS_KEYS.KUE_CK_FIRST_CMNT, jData, {
+        delay: 9 * 60 * 1000,
+        removeOnComplete: true
+    });
+}
+
+/**
+ * Function to process the scheduled job for comment by CK on a user's first post
+ * */
+(function () {
+    var connection;
+
+    jobqueuehandler.processJob(REDIS_KEYS.KUE_CK_FIRST_CMNT, function (jobData) {
+        config.getNewConnection()
+            .then(function (conn) {
+                connection = conn;
+                return utils.beginTransaction(connection);
+            })
+            .then(function () {
+                return entityutils.updateLastEventTimestamp(connection, jobData.entityid, jobData.uuid);
+            })
+            .then(function () {
+                return addComment(connection, jobData.entityid, utils.getRandomFirstPostComment(jobData.name), config.getCreadKalakaarUUID());
+            })
+            .then(function () {
+                return utils.commitTransaction(connection);
+            }, function (err) {
+                return utils.rollbackTransaction(connection, undefined, err)
+            })
+            .then(function () {
+                return updateCommentDataForUpdates(connection, jobData.uuid, config.getCreadKalakaarUUID(), jobData.entityid, "comment", false);
+            })
+            .then(function () {   //Send a notification to the creator of this post
+                var notifData = {
+                    message: "Cread Kalakaar has commented on your post",
+                    category: "comment",
+                    entityid: jobData.entityid,
+                    persistable: "Yes",
+                    other_collaborator: false,
+                    actorimage: utils.createSmallProfilePicUrl(config.getCreadKalakaarUUID())
+                };
+                return notify.notificationPromise(new Array(jobData.uuid), notifData);
+            })
+            .then(function () {
+                throw new BreakPromiseChainError();
+            })
+            .catch(function (err) {
+                config.disconnect(connection);
+                if(err instanceof BreakPromiseChainError){
+                    //Do nothing
+                }
+                else{
+                    console.error(err);
+                }
+            });
+    });
+
+})();
+
+/**
  * entities Entities whose comments counts are to be cached. Should be of the structure: [{entityid: *string*}]
  * */
 function updateCommentCountCacheFromDB(connection, entities) {
@@ -275,10 +354,10 @@ function updateCommentCountsCache(entities) {
 
             var ent_cmtcnt_cache_key = cacheutils.getEntityCommentCntCacheKey(entity.entityid);
 
-            if(typeof entity.commentcount !== "number"){
+            if (typeof entity.commentcount !== "number") {
                 callback(new Error("Value to store for comments count in cache should be a number"));
             }
-            else{
+            else {
                 cachemanager.setCacheString(ent_cmtcnt_cache_key, String(entity.commentcount))
                     .then(function () {
                         callback();
@@ -289,10 +368,10 @@ function updateCommentCountsCache(entities) {
             }
 
         }, function (err) {
-            if(err){
+            if (err) {
                 reject(err);
             }
-            else{
+            else {
                 resolve();
             }
         });
@@ -315,17 +394,17 @@ function getAllCommentCountsCache(entities) {
 
                     (commentcount === "null" || commentcount === "undefined") ? console.log('Incorrect values are being stored in cache for comments count') : //Do nothig;
 
-                    callback();
+                        callback();
                 })
                 .catch(function (err) {
                     callback(err);
                 });
 
         }, function (err) {
-            if(err){
+            if (err) {
                 reject(err);
             }
-            else{
+            else {
                 resolve(entities);
             }
         });
@@ -343,10 +422,10 @@ function loadCommentCountsFast(connection, master_rows) {
                     return r.commentcount === null;
                 });
 
-                if(entities_no_commentcnt.length > 0){
+                if (entities_no_commentcnt.length > 0) {
                     return getAllCommentCounts(connection, entities_no_commentcnt);
                 }
-                else{
+                else {
                     resolve(master_rows);
                     throw new BreakPromiseChainError();
                 }
@@ -366,10 +445,10 @@ function loadCommentCountsFast(connection, master_rows) {
                 throw new BreakPromiseChainError();
             })
             .catch(function (err) {
-                if(err instanceof BreakPromiseChainError){
+                if (err instanceof BreakPromiseChainError) {
                     //Do nothing
                 }
-                else{
+                else {
                     reject(err);
                 }
             });
@@ -385,5 +464,6 @@ module.exports = {
     getEntityFromComment: getEntityFromComment,
     updateCommentDataForUpdates: updateCommentDataForUpdates,
     loadCommentCountsFast: loadCommentCountsFast,
-    updateCommentCountCacheFromDB: updateCommentCountCacheFromDB
+    updateCommentCountCacheFromDB: updateCommentCountCacheFromDB,
+    scheduleFirstPostCommentJob: scheduleFirstPostCommentJob
 };

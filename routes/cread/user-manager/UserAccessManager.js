@@ -102,6 +102,8 @@ router.post('/sign-up', function (request, response) {
     var google_access_token = request.body.google_access_token;
     var referral_code = request.body.referral_code;
 
+    //TODO: Make 'firstname' and 'lastname' to proper case, especially for Google
+
     try {
         var userdata = request.body.userdata;
 

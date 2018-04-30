@@ -32,7 +32,7 @@ router.get('/load', function (request, response) {
     var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : null;
     var platform = request.query.platform;
 
-    var limit = (config.envtype === 'PRODUCTION') ? 16 : 8; //Keep the value even for cross pattern in grid view
+    var limit = (config.isProduction()) ? 16 : 8; //Keep the value even for cross pattern in grid view
     var connection;
 
     _auth.authValid(uuid, authkey)
@@ -305,6 +305,8 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
             'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
             '(CASE WHEN(EA.impact_score IS NULL) THEN ? ELSE EA.impact_score END) AS impact_weight, ' +
             'CASE WHEN(EA.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
+            'CASE WHEN(EA.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
+            'CASE WHEN(EA.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +
             'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
             'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +

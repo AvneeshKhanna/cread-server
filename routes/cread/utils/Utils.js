@@ -15,7 +15,28 @@ var profilepicfilename = 'display-pic.jpg';
 var profilepicfilename_small = 'display-pic-small.jpg';
 var urlprotocol = 'https://';
 
-var BreakPromiseChainError = require('./BreakPromiseChainError');
+var firstPostCommentsCK = [
+    {
+        prefix: "Beautiful first post, ",
+        suffix: ". Cheers to you! Welcome to Cread community. :)"
+    },
+    {
+        prefix: "Beautiful work and this is the first post! Congratulations, ",
+        suffix: "! Welcome to Cread community. :)"
+    },
+    {
+        prefix: "Sweet post, and this is the first! Congratulations on joining Cread community, ",
+        suffix: ". Cheers to you! :)"
+    },
+    {
+        prefix: "First post and it's beautiful! Cheers to you, ",
+        suffix: "! Congratulations on joining Cread community. :)"
+    },
+    {
+        prefix: "Welcome to Cread community, ",
+        suffix: "! Your first post is beautiful! Cheers to you! :)"
+    }
+];
 
 /**
  * Function to add/update the given key value as query parameter to the uri
@@ -199,19 +220,19 @@ function changePropertyName(object, from, to) {
 }
 
 function createSmallCaptureUrl(uuid, captureid) {
-    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Capture/' + captureid + '-small.jpg';
+    return urlprotocol + /*'d2vvojd6jjmi1r.cloudfront.net'*/ s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Capture/' + captureid + '-small.jpg';
 }
 
 function createCaptureUrl(uuid, captureid) {
-    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Capture/' + captureid + '.jpg';
+    return urlprotocol + /*'d2vvojd6jjmi1r.cloudfront.net'*/ s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Capture/' + captureid + '.jpg';
 }
 
 function createSmallShortUrl(uuid, shoid) {
-    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Short/' + shoid + '-small.jpg';
+    return urlprotocol + /*'d2vvojd6jjmi1r.cloudfront.net'*/ s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Short/' + shoid + '-small.jpg';
 }
 
 function createShortUrl(uuid, shoid) {
-    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Short/' + shoid + '.jpg';
+    return urlprotocol + /*'d2vvojd6jjmi1r.cloudfront.net'*/ s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Short/' + shoid + '.jpg';
 }
 
 function commitTransaction(connection, resultfromprev) {
@@ -323,6 +344,11 @@ function extractProfileMentionUUIDs(text) {
     return getUniqueValues(uniqueuuids);
 }
 
+function getRandomFirstPostComment(name) {
+    var comment_data = firstPostCommentsCK[Math.floor(Math.random() * firstPostCommentsCK.length)];
+    return comment_data.prefix + name +  comment_data.suffix;
+}
+
 module.exports = {
     updateQueryStringParameter: updateQueryStringParameter,
     sendAWSSMS: sendAWSSMS,
@@ -342,5 +368,6 @@ module.exports = {
     filterProfileMentions: filterProfileMentions,
     extractProfileMentionUUIDs: extractProfileMentionUUIDs,
     shuffle: shuffle,
-    getUniqueValues: getUniqueValues
+    getUniqueValues: getUniqueValues,
+    getRandomFirstPostComment: getRandomFirstPostComment
 };

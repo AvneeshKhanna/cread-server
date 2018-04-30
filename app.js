@@ -184,6 +184,7 @@ app.use('/downvote', require('./routes/cread/downvote/DownvoteManager'));
 app.use('/user-referral', require('./routes/cread/user-manager/refer/UserReferralManager'));
 app.use('/recommend-users', require('./routes/cread/recommendations/UserRecommendManager'));
 app.use('/recommend-posts', require('./routes/cread/recommendations/PostsRecommendManager'));
+app.use('/popular-feed-buy', require('./routes/cread/feed/popular-feed-buy/PopularFeedBuyManager'));
 app.use('/redis', require('./routes/dev-utils/RedisExample'));  //TODO: Remove
 // app.use('/job-queue', require('./routes/cread/utils/long-tasks/JobQueueHandler'));  //TODO: Remove
 
