@@ -199,19 +199,19 @@ function changePropertyName(object, from, to) {
 }
 
 function createSmallCaptureUrl(uuid, captureid) {
-    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Capture/' + captureid + '-small.jpg';
+    return urlprotocol + 'd2vvojd6jjmi1r.cloudfront.net' /*s3bucketheader + '/' + s3bucket*/ + '/Users/' + uuid + '/Capture/' + captureid + '-small.jpg';
 }
 
 function createCaptureUrl(uuid, captureid) {
-    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Capture/' + captureid + '.jpg';
+    return urlprotocol + 'd2vvojd6jjmi1r.cloudfront.net' /*s3bucketheader + '/' + s3bucket */+ '/Users/' + uuid + '/Capture/' + captureid + '.jpg';
 }
 
 function createSmallShortUrl(uuid, shoid) {
-    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Short/' + shoid + '-small.jpg';
+    return urlprotocol + 'd2vvojd6jjmi1r.cloudfront.net' /*s3bucketheader + '/' + s3bucket*/ + '/Users/' + uuid + '/Short/' + shoid + '-small.jpg';
 }
 
 function createShortUrl(uuid, shoid) {
-    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Short/' + shoid + '.jpg';
+    return urlprotocol + 'd2vvojd6jjmi1r.cloudfront.net' /*s3bucketheader + '/' + s3bucket*/ + '/Users/' + uuid + '/Short/' + shoid + '.jpg';
 }
 
 function commitTransaction(connection, resultfromprev) {
