@@ -155,22 +155,108 @@ function performSearchUsers(connection, keyword) {
     });
 }
 
+function getRadiusOfCurvature(img_width, curve_bent_fraction){
+    return parseFloat(img_width * (1 + 4 * Math.pow(curve_bent_fraction, 2))/parseFloat(8 * curve_bent_fraction));
+}
+
+function getOffsetAtX(x, radius, img_width) {
+    return Math.abs(Math.sqrt(parseFloat(Math.pow(radius, 2) - Math.pow(x, 2)))) - Math.abs(Math.sqrt(parseFloat(Math.pow(radius, 2) - (Math.pow(img_width, 2)/4))));
+}
+
+var img_path_arr = [];
+
+for(var i=0; i<384; i++){
+    img_path_arr.push('./images/downloads/tile-' + i + '.png');
+}
+
 router.post('/gm-test', function (request, response) {
+
+    var img_width = 1152;
+    var img_height = 1152;
+    var curve_bent_center_fraction = 0.095;
+
+    var img_split_step_size = 3;    //In pixels
+
+    var radius = getRadiusOfCurvature(img_width, curve_bent_fraction);
+    console.log('radius is ' + radius);
 
     try{
 
         gm('./images/downloads/gm.jpg')
             .command('convert')
             .out('-crop')
-            .out('3x387')
+            .out(img_split_step_size + 'x' + img_height)
             .out('+adjoin') //Used to split images into multiple
-            .write('./images/downloads/tile-%03d.jpg', function(error) {
+            .write('./images/downloads/tile-%d.png', function(error) {
             if (error) {
                 console.error(error);
                 response.send(error).end();
             }
             else{
-                response.send('done').end();
+
+                var cntr = 0;
+                var x = -(img_width/2.0);
+                (function r() {
+                    gm(img_path_arr[cntr])
+                        .background('transparent')
+                        // .resize(imageWidth, imageHeight)
+                        // .gravity('Center')
+                        .extent(img_split_step_size, img_height + (curve_bent_fraction * img_width), '-0-' + getOffsetAtX(x, radius, img_width))
+                        .write('./images/downloads/tile-' + cntr +'.png', function(error) {
+                            if (error) {
+                                console.error(error);
+                                response.send(error).end();
+                            } else {
+                                console.log('offset x is ' + getOffsetAtX(x, radius, img_width));
+                                console.log('x is ' + x);
+                                cntr += 1;
+                                x += img_split_step_size;
+                                if(cntr < (img_width/parseFloat(img_split_step_size))){
+                                    console.log("cntr is " + cntr);
+                                    r();
+                                }
+                                else{
+                                    var gmstate = gm(img_path_arr[0]);
+                                    for (var i = 1; i < img_path_arr.length; i++) {
+                                        gmstate.append(img_path_arr[i], true);
+                                    }
+                                    gmstate.write('./images/downloads/appended.png', function (err) {
+                                        if (err) {
+                                            console.error(err);
+                                            response.send(err).end();
+                                        }
+                                        else {
+                                            response.send('done').end();
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                })();
+
+                // finally write out the file asynchronously
+                /*gmstate.write('./images/downloads/appended.jpg', function (err) {
+                    if (err) {
+                        console.error(err);
+                        response.send(err).end();
+                    }
+                    else{
+
+                        gm('./images/downloads/appended.jpg')
+                            .background('transparent')
+                            // .resize(imageWidth, imageHeight)
+                            // .gravity('Center')
+                            .extent(1152, (1152 + ((1152 * Math.sqrt(3))/2)))
+                            .write('./images/downloads/extended.png', function(error) {
+                                if (error) {
+                                    console.error(error);
+                                    response.send(error).end();
+                                } else {
+                                    response.send('done').end();
+                                }
+                            });
+                    }
+                });*/
             }
         });
 
