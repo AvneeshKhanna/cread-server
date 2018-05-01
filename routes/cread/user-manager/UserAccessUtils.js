@@ -256,8 +256,8 @@ function getUserDetailsFromGoogle(access_token) {
                 resolve({
                     ggl_userid: payload['sub'],
                     email: payload['email'],
-                    firstname: payload['given_name'],
-                    lastname: payload['family_name'],
+                    firstname: utils.firstLetterToUpper(['given_name']),
+                    lastname: utils.firstLetterToUpper(payload['family_name']),
                     locale: payload['locale']
                 });
 

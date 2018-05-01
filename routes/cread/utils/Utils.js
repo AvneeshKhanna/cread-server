@@ -349,6 +349,11 @@ function getRandomFirstPostComment(name) {
     return comment_data.prefix + name +  comment_data.suffix;
 }
 
+function firstLetterToUpper(word) {
+    word = word.trim();
+    return word.charAt(0).toUpperCase() + word.substr(1);
+}
+
 module.exports = {
     updateQueryStringParameter: updateQueryStringParameter,
     sendAWSSMS: sendAWSSMS,
@@ -369,5 +374,6 @@ module.exports = {
     extractProfileMentionUUIDs: extractProfileMentionUUIDs,
     shuffle: shuffle,
     getUniqueValues: getUniqueValues,
-    getRandomFirstPostComment: getRandomFirstPostComment
+    getRandomFirstPostComment: getRandomFirstPostComment,
+    firstLetterToUpper: firstLetterToUpper
 };
