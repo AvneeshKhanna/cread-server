@@ -25,6 +25,7 @@ var notify = require('../../notification-system/notificationFramework');
 var shortutils = require('../short/ShortUtils');
 var hashtagutils = require('../hashtag/HashTagUtils');
 var entityutils = require('../entity/EntityUtils');
+var entityimgutils = require('../entity/EntityImageUtils');
 
 var filebasepath = './images/uploads/capture/'; 
 
@@ -58,6 +59,7 @@ router.post('/', upload.single('captured-image'), function (request, response) {
     var connection;
     var requesterdetails;
     var toresize;
+    var filename_to_upload;
 
     _auth.authValid(uuid, authkey)
         .then(function (details) {
@@ -95,14 +97,13 @@ router.post('/', upload.single('captured-image'), function (request, response) {
             return userprofileutils.uploadImageToS3(filebasepath + captureid + '.jpg', uuid, 'Capture', captureid + '.jpg');
         })
         .then(function () {
-            var filename;
             if (toresize) {
-                filename = captureid + '-small' + '.jpg';
+                filename_to_upload = captureid + '-small' + '.jpg';
             }
             else {
-                filename = captureid + '.jpg';
+                filename_to_upload = captureid + '.jpg';
             }
-            return userprofileutils.uploadImageToS3(filebasepath + filename, uuid, 'Capture', captureid + '-small' + '.jpg');
+            return userprofileutils.uploadImageToS3(filebasepath + filename_to_upload, uuid, 'Capture', captureid + '-small' + '.jpg');
         })
         .then(function () {
             return utils.commitTransaction(connection);
@@ -141,6 +142,11 @@ router.post('/', upload.single('captured-image'), function (request, response) {
         })
         .then(function () {
             return userprofileutils.addToLatestPostsCache(connection, uuid, utils.createSmallCaptureUrl(uuid, captureid));
+        })
+        .then(function () {
+            if(merchantable === 1){
+                return entityimgutils.createOverlayedImageCoffeeMug(captureid, uuid, "Capture", filebasepath + filename_to_upload);
+            }
         })
         .then(function () {
             throw new BreakPromiseChainError();

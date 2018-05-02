@@ -8,6 +8,7 @@ var AWS = config.AWS;
 var envconfig = require('config');
 var request_client = require('request');
 var fs = require('fs');
+var async = require('async');
 
 var s3bucket = envconfig.get('s3.bucket');
 var s3bucketheader = 's3-ap-northeast-1.amazonaws.com';
@@ -214,6 +215,14 @@ function createShortUrl(uuid, shoid) {
     return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Short/' + shoid + '.jpg';
 }
 
+function getShortCoffeeMugOverlayUrl(uuid, shoid) {
+    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Short/' + shoid + '.jpg';
+}
+
+function getCaptureCoffeeMugOverlayUrl(uuid, capid) {
+    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Capture/' + capid + '.jpg';
+}
+
 function commitTransaction(connection, resultfromprev) {
     return new Promise(function (resolve, reject) {
         connection.commit(function (err) {
@@ -323,6 +332,32 @@ function extractProfileMentionUUIDs(text) {
     return getUniqueValues(uniqueuuids);
 }
 
+function deleteUnrequiredFiles(files) {
+    return new Promise(function (resolve, reject) {
+        async.each(files, function (file, callback) {
+
+            fs.unlink(file, function (err) {
+                if(err){
+                    callback(err);
+                }
+                else {
+                    callback();
+                }
+            });
+
+        }, function (err) {
+            if(err){
+                console.error(err);
+                reject(err);
+            }
+            else {
+                console.log('Files Deleted');
+                resolve();
+            }
+        });
+    })
+}
+
 module.exports = {
     updateQueryStringParameter: updateQueryStringParameter,
     sendAWSSMS: sendAWSSMS,
@@ -334,6 +369,8 @@ module.exports = {
     createCaptureUrl: createCaptureUrl,
     createSmallShortUrl: createSmallShortUrl,
     createShortUrl: createShortUrl,
+    getCaptureCoffeeMugOverlayUrl: getCaptureCoffeeMugOverlayUrl,
+    getShortCoffeeMugOverlayUrl: getShortCoffeeMugOverlayUrl,
     commitTransaction: commitTransaction,
     beginTransaction: beginTransaction,
     rollbackTransaction: rollbackTransaction,
@@ -342,5 +379,6 @@ module.exports = {
     filterProfileMentions: filterProfileMentions,
     extractProfileMentionUUIDs: extractProfileMentionUUIDs,
     shuffle: shuffle,
-    getUniqueValues: getUniqueValues
+    getUniqueValues: getUniqueValues,
+    deleteUnrequiredFiles: deleteUnrequiredFiles
 };

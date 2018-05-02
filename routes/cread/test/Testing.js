@@ -163,21 +163,21 @@ function getOffsetAtX(x, radius, img_width) {
     return Math.abs(Math.sqrt(parseFloat(Math.pow(radius, 2) - Math.pow(x, 2)))) - Math.abs(Math.sqrt(parseFloat(Math.pow(radius, 2) - (Math.pow(img_width, 2)/4))));
 }
 
+var img_width = 1152;
+var img_height = 1152;
+var curve_bent_center_fraction = 0.0675;    //Calculated from Coffee Mug photo and some iterations
+
+var img_split_step_size = Math.floor(img_width * 0.008);    //In pixels
+
 var img_path_arr = [];
 
-for(var i=0; i<384; i++){
+for(var i=0; i<(img_width/img_split_step_size); i++){
     img_path_arr.push('./images/downloads/tile-' + i + '.png');
 }
 
 router.post('/gm-test', function (request, response) {
 
-    var img_width = 1152;
-    var img_height = 1152;
-    var curve_bent_center_fraction = 0.095;
-
-    var img_split_step_size = 3;    //In pixels
-
-    var radius = getRadiusOfCurvature(img_width, curve_bent_fraction);
+    var radius = getRadiusOfCurvature(img_width, curve_bent_center_fraction);
     console.log('radius is ' + radius);
 
     try{
@@ -201,7 +201,7 @@ router.post('/gm-test', function (request, response) {
                         .background('transparent')
                         // .resize(imageWidth, imageHeight)
                         // .gravity('Center')
-                        .extent(img_split_step_size, img_height + (curve_bent_fraction * img_width), '-0-' + getOffsetAtX(x, radius, img_width))
+                        .extent(img_split_step_size, img_height + (curve_bent_center_fraction * img_width), '-0-' + getOffsetAtX(x, radius, img_width))
                         .write('./images/downloads/tile-' + cntr +'.png', function(error) {
                             if (error) {
                                 console.error(error);
@@ -220,7 +220,9 @@ router.post('/gm-test', function (request, response) {
                                     for (var i = 1; i < img_path_arr.length; i++) {
                                         gmstate.append(img_path_arr[i], true);
                                     }
-                                    gmstate.write('./images/downloads/appended.png', function (err) {
+                                    gmstate.
+                                        resize(400, 400)
+                                        .write('./images/downloads/appended.png', function (err) {
                                         if (err) {
                                             console.error(err);
                                             response.send(err).end();
@@ -277,6 +279,25 @@ router.post('/gm-test', function (request, response) {
         console.error(err);
         response.send(err).end();
     }
+
+});
+
+router.post('/gm-merge', function (request, response) {
+
+    gm()
+        .command('composite')
+        .in('./images/downloads/appended.png')
+        .in('-geometry', '+228+102')    // location of overlaying img is x,y
+        .in('./images/downloads/coffee-mug.png')
+        .write('./images/downloads/appended-composite.png', function (err) {
+            if (err) {
+                console.error(err);
+                response.send(err).end();
+            }
+            else{
+                response.send('done').end();
+            }
+        });
 
 });
 
