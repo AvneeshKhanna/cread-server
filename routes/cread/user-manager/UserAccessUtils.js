@@ -296,7 +296,7 @@ function addDefaultCreadKalakaarActions(connection, user_uuid) {
                 };
 
                 return jobqueuehandler.scheduleJob(REDIS_KEYS.KUE_DEFAULT_CK_CHAT_MSG, default_ck_chat_job_data, {
-                    delay: 10 * 60 * 1000,
+                    delay: 5 * 60 * 1000,
                     removeOnComplete: true
                 });
             })

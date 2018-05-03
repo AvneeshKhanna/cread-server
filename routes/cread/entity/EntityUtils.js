@@ -637,6 +637,19 @@ function updateLastEventTimestampViaType(connection, typeid, uuid) {
     });
 }
 
+function isEntityActive(connection, entityid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT entityid FROM Entity WHERE entityid = ? AND status = "ACTIVE"', [entityid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(!!rows[0]);
+            }
+        });
+    });
+}
+
 module.exports = {
     updateEntityCollabDataForUpdates: updateEntityCollabDataForUpdates,
     loadEntityData: loadEntityData,
@@ -652,5 +665,6 @@ module.exports = {
     putEntityToExplore: putEntityToExplore,
     updateLastEventTimestamp: updateLastEventTimestamp,
     updateLastEventTimestampViaType: updateLastEventTimestampViaType,
-    checkForFirstPost: checkForFirstPost
+    checkForFirstPost: checkForFirstPost,
+    isEntityActive: isEntityActive
 };

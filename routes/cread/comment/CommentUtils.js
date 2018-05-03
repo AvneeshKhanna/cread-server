@@ -13,6 +13,7 @@ var entityutils = require('../entity/EntityUtils');
 var updatesutils = require('../updates/UpdatesUtils');
 var cacheutils = require('../utils/cache/CacheUtils');
 var cachemanager = require('../utils/cache/CacheManager');
+var hatsoffutils = require('../hats-off/HatsOffUtils');
 
 var jobqueuehandler = require('../utils/long-tasks/JobQueueHandler');
 var notify = require('../../notification-system/notificationFramework');
@@ -273,7 +274,7 @@ function scheduleFirstPostCommentJob(uuid, name, entityid) {
         entityid: entityid  //Post id
     };
 
-    jobqueuehandler.scheduleJob(REDIS_KEYS.KUE_CK_FIRST_CMNT, jData, {
+    jobqueuehandler.scheduleJob(REDIS_KEYS.KUE_CK_FIRST_CMNT_HTSOFF, jData, {
         delay: 9 * 60 * 1000,
         removeOnComplete: true
     });
@@ -285,14 +286,26 @@ function scheduleFirstPostCommentJob(uuid, name, entityid) {
 (function () {
     var connection;
 
-    jobqueuehandler.processJob(REDIS_KEYS.KUE_CK_FIRST_CMNT, function (jobData) {
+    jobqueuehandler.processJob(REDIS_KEYS.KUE_CK_FIRST_CMNT_HTSOFF, function (jobData) {
         config.getNewConnection()
             .then(function (conn) {
                 connection = conn;
-                return utils.beginTransaction(connection);
+                return entityutils.isEntityActive(connection, jobData.entityid);
+            })
+            .then(function (isPostActive) {
+                if(isPostActive){
+                    return utils.beginTransaction(connection);
+                }
+                else {
+                    console.log("Post deleted. First Comment from CK rollbacked");
+                    throw new BreakPromiseChainError();
+                }
             })
             .then(function () {
                 return entityutils.updateLastEventTimestamp(connection, jobData.entityid, jobData.uuid);
+            })
+            .then(function () {
+                return hatsoffutils.registerHatsOff(connection, true, config.getCreadKalakaarUUID(), jobData.entityid);
             })
             .then(function () {
                 return addComment(connection, jobData.entityid, utils.getRandomFirstPostComment(jobData.name), config.getCreadKalakaarUUID());
