@@ -131,6 +131,8 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
             'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
             'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
             'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
+            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
+            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount ' +
@@ -281,9 +283,12 @@ function loadHTagOfTheDay(connection) {
                     });
                 }
             });*/
-        connection.query('SELECT hashtag AS htag ' +
+        connection.query('SELECT HOTD.hashtag AS htag, COUNT(HTD.entityid) AS hpostcount ' +
             'FROM HTagOfTheDay HOTD ' +
-            'WHERE for_date = DATE(NOW())', [], function (err, rows) {
+            'LEFT JOIN HashTagDistribution HTD ' +
+            'ON(LCASE(HOTD.hashtag) = HTD.hashtag) ' +
+            'WHERE for_date = DATE(NOW()) ' +
+            'GROUP BY htag', [], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -293,7 +298,8 @@ function loadHTagOfTheDay(connection) {
 
                 if(!rows[0]){
                     result = {
-                        htag: null
+                        htag: null,
+                        hpostcount: 0
                     }
                 }
                 else{

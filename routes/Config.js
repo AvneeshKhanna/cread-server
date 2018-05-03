@@ -25,6 +25,10 @@ const REDIS = {
     host: getRedisClusterEndpoint()
 };
 
+const CREAD_GOOGLE = {
+    CLIENTID: "381917870916-vet9ejb07fqipbuok5kj0pgraf3nfrr4.apps.googleusercontent.com"
+};
+
 var connection = mysql.createConnection({
     host: dbConfig.host,
     user: dbConfig.user,
@@ -171,6 +175,11 @@ function isProduction() {
     return envtype === 'PRODUCTION';
 }
 
+function getGoogleOAuthClient() {
+    const oauth2Client = require('google-auth-library').OAuth2Client;
+    return new oauth2Client(CREAD_GOOGLE.CLIENTID);
+}
+
 module.exports = {
     'secretKey': '12345-67890-09876-54321',
     'createConnection': connection,
@@ -195,5 +204,7 @@ module.exports = {
     isProduction: isProduction,
     getRedisClient: getRedisClient,
     getKueJobQueue: getKueJobQueue,
-    getKueClient: getKueClient
+    getKueClient: getKueClient,
+    CREAD_GOOGLE: CREAD_GOOGLE,
+    getGoogleOAuthClient: getGoogleOAuthClient
 };

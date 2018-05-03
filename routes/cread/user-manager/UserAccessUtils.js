@@ -22,7 +22,10 @@ var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
 var cache_utils = require('../utils/cache/CacheUtils');
 var REDIS_KEYS = cache_utils.REDIS_KEYS;
+var CREAD_GOOGLE = config.CREAD_GOOGLE;
 var jobqueuehandler = require('../utils/long-tasks/JobQueueHandler');
+
+const googleOAuthClient = config.getGoogleOAuthClient();
 
 function checkIfPhoneExists(connection, phone) {
     return new Promise(function (resolve, reject) {
@@ -35,7 +38,7 @@ function checkIfPhoneExists(connection, phone) {
                 if (rows[0]) {
                     resolve(true);
                 }
-                else{
+                else {
                     resolve(false);
                 }
             }
@@ -43,9 +46,11 @@ function checkIfPhoneExists(connection, phone) {
     });
 }
 
-function checkIfUserExists(connection, fbid){
+function checkIfUserExists(connection, fbid, ggl_userid) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT firstname, lastname, uuid, authkey FROM User WHERE fbid = ?', [fbid], function (err, rows) {
+        connection.query('SELECT firstname, lastname, uuid, authkey ' +
+            'FROM User ' +
+            'WHERE ' + (fbid ? 'fbid' : 'ggl_userid') +  ' = ?', [(fbid ? fbid : ggl_userid)], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -60,7 +65,7 @@ function registerUserData(connection, userdetails, fcmtoken) {
 
     var uuid = uuidGen.v4();
     var authkey = _auth.generateToken({
-        fbid: userdetails.fbid
+        id: userdetails.fbid ? userdetails.fbid : userdetails.ggl_userid
     });
 
     userdetails.uuid = uuid;
@@ -68,30 +73,30 @@ function registerUserData(connection, userdetails, fcmtoken) {
 
     return new Promise(function (resolve, reject) {
         connection.beginTransaction(function (err) {
-            if(err){
+            if (err) {
                 connection.rollback(function () {
                     reject(err);
                 });
             }
-            else{
+            else {
                 connection.query('INSERT INTO User SET ?', [userdetails], function (err, rows) {
                     if (err) {
                         connection.rollback(function () {
                             reject(err);
                         });
                     }
-                    else if(fcmtoken){
+                    else if (fcmtoken) {
 
                         addUserToDynamoDB({
                             'UUID': uuid,
                             'Fcm_token': [fcmtoken]
                         }, function (err) {
-                            if(err){
+                            if (err) {
                                 connection.rollback(function () {
                                     reject(err);
                                 });
                             }
-                            else{
+                            else {
                                 resolve({
                                     uuid: uuid,
                                     authkey: authkey
@@ -99,7 +104,7 @@ function registerUserData(connection, userdetails, fcmtoken) {
                             }
                         });
                     }
-                    else{
+                    else {
                         resolve({
                             uuid: uuid,
                             authkey: authkey
@@ -111,7 +116,7 @@ function registerUserData(connection, userdetails, fcmtoken) {
     });
 }
 
-function addUserToDynamoDB(item, callback){
+function addUserToDynamoDB(item, callback) {
     var params = {
         TableName: userstbl_ddb,
         Item: /*{
@@ -125,10 +130,10 @@ function addUserToDynamoDB(item, callback){
     };
 
     ddbClient.put(params, function (err, data) {
-        if (err){
+        if (err) {
             callback(err);
         }
-        else{
+        else {
             callback();
         }
     });
@@ -170,7 +175,7 @@ function addUserFcmToken(uuid, fcmtoken, resultfromprev) {
                     if (error) {
                         reject(error);
                     }
-                    else{
+                    else {
                         resolve(resultfromprev);
                     }
                 });
@@ -195,7 +200,7 @@ function removeUserFcmToken(uuid, fcmtoken) {
             if (error) {
                 reject(error);
             }
-            else{
+            else {
                 var fcmtokens = data.Item.Fcm_token;
 
                 if (fcmtokens.indexOf(fcmtoken) !== -1) {    //Fcm Token exists, remove it
@@ -218,7 +223,7 @@ function removeUserFcmToken(uuid, fcmtoken) {
                         if (error) {
                             reject(error);
                         }
-                        else{
+                        else {
                             resolve();
                         }
                     });
@@ -232,7 +237,38 @@ function removeUserFcmToken(uuid, fcmtoken) {
     });
 }
 
-function updateNewFacebookUserDataForUpdates(connection, uuid, actor_uuid, category){
+function getUserDetailsFromGoogle(access_token) {
+    return new Promise(function (resolve, reject) {
+        googleOAuthClient
+            .verifyIdToken({
+                idToken: access_token,
+                audience: CREAD_GOOGLE.CLIENTID // Specify the CLIENT_ID of the app that accesses the backend
+                // Or, if multiple clients access the backend:
+                //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
+            })
+            .then(function (ticket) {
+
+                const payload = ticket.getPayload();
+
+                // If request specified a G Suite domain:
+                //const domain = payload['hd'];
+
+                resolve({
+                    ggl_userid: payload['sub'],
+                    email: payload['email'],
+                    firstname: utils.firstLetterToUpper(payload['given_name']),
+                    lastname: utils.firstLetterToUpper(payload['family_name']),
+                    locale: payload['locale']
+                });
+
+            })
+            .catch(function (err) {
+                reject(err);
+            });
+    });
+}
+
+function updateNewFacebookUserDataForUpdates(connection, uuid, actor_uuid, category) {
     return new Promise(function (resolve, reject) {
         var updateparams = {
             uuid: uuid,
@@ -302,10 +338,10 @@ function addDefaultCreadKalakaarActions(connection, user_uuid) {
             })
             .catch(function (err) {
                 config.disconnect(connection);
-                if(err instanceof BreakPromiseChainError){
+                if (err instanceof BreakPromiseChainError) {
                     //Do nothing
                 }
-                else{
+                else {
                     console.error(err);
                 }
             });
@@ -319,6 +355,7 @@ module.exports = {
     addUserToDynamoDB: addUserToDynamoDB,
     registerUserData: registerUserData,
     checkIfUserExists: checkIfUserExists,
+    getUserDetailsFromGoogle: getUserDetailsFromGoogle,
     updateNewFacebookUserDataForUpdates: updateNewFacebookUserDataForUpdates,
     addDefaultCreadKalakaarActions: addDefaultCreadKalakaarActions
 };

@@ -12,7 +12,8 @@ const REDIS_KEYS = {
 
     //Kue Job Keys
     KUE_JOB: addKeyPrefix("kue-job"),
-    KUE_DEFAULT_CK_CHAT_MSG: addKeyPrefix("kue-default-ck-chat-msg")    //For the welcome chat message from C. Kalakar to a new user
+    KUE_DEFAULT_CK_CHAT_MSG: addKeyPrefix("kue-default-ck-chat-msg"),    //For the welcome chat message from C. Kalakar to a new user
+    KUE_CK_FIRST_CMNT: addKeyPrefix("kue-ck-first-post-comment")
 };
 
 function getEntityCommentCntCacheKey(entityid) {
