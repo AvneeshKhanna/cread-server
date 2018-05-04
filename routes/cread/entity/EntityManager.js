@@ -69,11 +69,9 @@ router.get('/load-captureid', function (request, response) {
 
 function loadCaptureid(connection, entityid){
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT C.capid, C.uuid ' +
-            'FROM Entity E ' +
-            'JOIN Capture C ' +
-            'USING(entityid) ' +
-            'WHERE E.entityid = ?', [entityid], function (err, rows) {
+        connection.query('SELECT capid, uuid, img_width, img_height ' +
+            'FROM Capture ' +
+            'WHERE entityid = ?', [entityid], function (err, rows) {
             if (err) {
                 reject(err);
             }
