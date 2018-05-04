@@ -153,7 +153,8 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
             'ON Comment.entityid = Entity.entityid ' +
             'LEFT JOIN Follow ' +
             'ON User.uuid = Follow.followee ' +
-            'WHERE Entity.status = "ACTIVE" ' +
+            'WHERE Entity.for_explore = "1" ' +
+            'AND Entity.status = "ACTIVE" ' +
             'AND Entity.regdate < ? ' +
             'AND MATCH(Entity.caption) ' +
             'AGAINST (? IN BOOLEAN MODE) ' +
