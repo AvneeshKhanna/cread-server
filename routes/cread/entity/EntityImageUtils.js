@@ -5,6 +5,7 @@
 
 var gm = require('gm');
 var sizeOf = require('image-size');
+var color_extract = require('colour-extractor');
 
 var utils = require('../utils/Utils');
 var userprofileutils = require('../user-manager/UserProfileUtils');
