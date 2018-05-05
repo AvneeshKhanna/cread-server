@@ -160,6 +160,11 @@ router.post('/', upload.single('captured-image'), function (request, response) {
             }
         })
         .then(function () {
+            if(merchantable === 1){
+                return entityimgutils.createOverlayedImageJournal(captureid, "Capture", uuid, filebasepath + filename_to_upload);
+            }
+        })
+        .then(function () {
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
