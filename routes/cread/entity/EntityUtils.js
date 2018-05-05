@@ -481,6 +481,38 @@ function getEntityUrl(connection, entityid) {
     });
 }
 
+function getEntityCoffeeMugNJournalUrls(connection, entityid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT U.uuid, C.capid, S.shoid, E.type ' +
+            'FROM Entity E ' +
+            'LEFT JOIN Short S ' +
+            'USING(entityid) ' +
+            'LEFT JOIN Capture C ' +
+            'USING(entityid) ' +
+            'JOIN User U ' +
+            'ON(U.uuid = S.uuid OR U.uuid = C.uuid) ' +
+            'WHERE E.entityid = ?', [entityid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                rows.map(function (element) {
+                    if(element.type === 'SHORT'){
+                        element.coffeemugurl = utils.getShortCoffeeMugOverlayUrl(element.uuid, element.shoid);
+                        element.journalurl = utils.getShortJournalOverlayUrl(element.uuid, element.shoid);
+                    }
+                    else if(element.type === 'CAPTURE'){
+                        element.coffeemugurl = utils.getCaptureCoffeeMugOverlayUrl(element.uuid, element.capid);
+                        element.journalurl = utils.getCaptureJournalOverlayUrl(element.uuid, element.capid);
+                    }
+                });
+
+                resolve(rows[0]);
+            }
+        });
+    });
+}
+
 function deactivateEntity(connection, entityid, uuid) {
     return new Promise(function (resolve, reject) {
         connection.query('UPDATE Entity ' +
@@ -647,6 +679,7 @@ module.exports = {
     getEntityDetailsForPrint: getEntityDetailsForPrint,
     getEntityUsrDetailsForNotif: getEntityUsrDetailsForNotif,
     getEntityUrl: getEntityUrl,
+    getEntityCoffeeMugNJournalUrls: getEntityCoffeeMugNJournalUrls,
     deactivateEntity: deactivateEntity,
     removeEntityFromExplore: removeEntityFromExplore,
     putEntityToExplore: putEntityToExplore,

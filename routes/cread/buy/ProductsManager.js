@@ -46,7 +46,7 @@ router.post('/load', function (request, response) {
             return buyutils.loadAllProducts(connection);
         })
         .then(function (products) {
-            return structureProductDetails(products);
+            return structureProductDetails(connection, products, entityid);
         })
         .then(function (prdcts) {
             products = prdcts;
@@ -129,7 +129,7 @@ router.get('/load/:product_id', function (request, response) {
             return buyutils.loadProduct(connection, productid);
         })
         .then(function (products) {
-            return structureProductDetails(products);
+            return structureProductDetails(connection, products, entityid);
         })
         .then(function (prducts) {
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
@@ -183,112 +183,121 @@ function retrieveLastPlacedDetails(connection, uuid) {
     });
 }
 
-function structureProductDetails(products) {
+function structureProductDetails(connection, products, entityid) {
     return new Promise(function (resolve, reject) {
-        products.forEach(function (product) {
-            if(product.type === 'SHIRT'){
-                product.sizes = [
-                    'small',
-                    'medium',
-                    'large'
-                ];
-                product.colors = [
-                    'black',
-                    'white'
-                ];
-                product.price = [
-                    399,
-                    399,
-                    399
-                ];
-                product.quantity = [
-                    1,
-                    2,
-                    3,
-                    4,
-                    5
-                ];
-                product.deliverycharge = 1/*80*/;
-            }
-            else if(product.type === 'POSTER'){
-                product.sizes = [
-                    '11 x 11 inches'
-                ];
-                product.colors = [
-                    'white'
-                ];
-                product.price = [
-                    199
-                ];
-                product.quantity = [
-                    1,
-                    2,
-                    3,
-                    4,
-                    5
-                ];
-                product.deliverycharge = 1/*80*/;
-            }
-            else if(product.type === 'FRAME'){
-                product.sizes = [
-                    '11 x 11 inches'
-                ];
-                product.colors = [
-                    'black'
-                ];
-                product.price = [
-                    299
-                ];
-                product.quantity = [
-                    1,
-                    2,
-                    3,
-                    4,
-                    5
-                ];
-                product.deliverycharge = 1/*80*/;
-            }
-            else if(product.type === 'JOURNAL'){
-                product.sizes = [
-                    'medium'
-                ];
-                product.colors = [
-                    'white',
-                    'black'
-                ];
-                product.price = [
-                    299
-                ];
-                product.quantity = [
-                    1,
-                    2,
-                    3,
-                    4,
-                    5
-                ];
-                product.deliverycharge = 1/*80*/;
-            }
-            else{   //COFFEE_MUG
-                product.sizes = [
-                    'medium'
-                ];
-                product.colors = [
-                    'white'
-                ];
-                product.price = [
-                    199
-                ];
-                product.quantity = [
-                    1,
-                    2,
-                    3,
-                    4,
-                    5
-                ];
-                product.deliverycharge = 1/*80*/;
-            }
-        });
-        resolve(products);
+        entityutils.getEntityCoffeeMugNJournalUrls(connection, entityid)
+            .then(function (urls) {
+                products.forEach(function (product) {
+                    if(product.type === 'SHIRT'){
+                        product.sizes = [
+                            'small',
+                            'medium',
+                            'large'
+                        ];
+                        product.colors = [
+                            'black',
+                            'white'
+                        ];
+                        product.price = [
+                            399,
+                            399,
+                            399
+                        ];
+                        product.quantity = [
+                            1,
+                            2,
+                            3,
+                            4,
+                            5
+                        ];
+                        product.deliverycharge = 1/*80*/;
+                        product.productentityurl = null;
+                    }
+                    else if(product.type === 'POSTER'){
+                        product.sizes = [
+                            '11 x 11 inches'
+                        ];
+                        product.colors = [
+                            'white'
+                        ];
+                        product.price = [
+                            199
+                        ];
+                        product.quantity = [
+                            1,
+                            2,
+                            3,
+                            4,
+                            5
+                        ];
+                        product.deliverycharge = 1/*80*/;
+                        product.productentityurl = null;
+                    }
+                    else if(product.type === 'FRAME'){
+                        product.sizes = [
+                            '11 x 11 inches'
+                        ];
+                        product.colors = [
+                            'black'
+                        ];
+                        product.price = [
+                            299
+                        ];
+                        product.quantity = [
+                            1,
+                            2,
+                            3,
+                            4,
+                            5
+                        ];
+                        product.deliverycharge = 1/*80*/;
+                        product.productentityurl = null;
+                    }
+                    else if(product.type === 'JOURNAL'){
+                        product.sizes = [
+                            'medium'
+                        ];
+                        product.colors = [
+                            'white',
+                            'black'
+                        ];
+                        product.price = [
+                            299
+                        ];
+                        product.quantity = [
+                            1,
+                            2,
+                            3,
+                            4,
+                            5
+                        ];
+                        product.deliverycharge = 1/*80*/;
+                        product.productentityurl = urls.journalurl;
+                    }
+                    else{   //COFFEE_MUG
+                        product.sizes = [
+                            'medium'
+                        ];
+                        product.colors = [
+                            'white'
+                        ];
+                        product.price = [
+                            199
+                        ];
+                        product.quantity = [
+                            1,
+                            2,
+                            3,
+                            4,
+                            5
+                        ];
+                        product.deliverycharge = 1/*80*/;
+                        product.productentityurl = urls.coffeemugurl;
+                    }
+                });
+                resolve(products);
+            })
+            .catch(reject);
     });
 }
 

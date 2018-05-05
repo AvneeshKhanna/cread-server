@@ -181,7 +181,7 @@ function createOverlayedImageJournal(typeid, type, uuid, img_path) {
                                         .command('composite')
                                         .in(base_products_file_path + '/journal_layer_1.png')
                                         .in(base_buffer_file_path  + '/' + typeid + '-journal-base-layer.png')
-                                        .write(base_uploads_file_path  + '/' + typeid + '-journal-overlayed.png', function (err) {
+                                        .write(base_uploads_file_path  + '/' + typeid + '-overlay-journal.png', function (err) {
                                             if (err) {
                                                 reject(err);
                                             }
@@ -193,10 +193,10 @@ function createOverlayedImageJournal(typeid, type, uuid, img_path) {
                                                 files_to_delete.push(
                                                     base_buffer_file_path  + '/' + typeid + '-journal-extent.jpg',
                                                     base_buffer_file_path  + '/' + typeid + '-journal-base-layer.png',
-                                                    base_uploads_file_path  + '/' + typeid + '-journal-overlayed.png'
+                                                    base_uploads_file_path  + '/' + typeid + '-overlay-journal.png'
                                                 );
 
-                                                uploadOverlayedImage(uuid, type, base_uploads_file_path, typeid + '-journal-overlayed.png', files_to_delete)
+                                                uploadOverlayedImage(uuid, type, base_uploads_file_path, typeid + '-overlay-journal.png', files_to_delete)
                                                     .then(resolve, reject);
                                             }
                                         });

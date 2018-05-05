@@ -237,11 +237,19 @@ function createShortUrl(uuid, shoid) {
 }
 
 function getShortCoffeeMugOverlayUrl(uuid, shoid) {
-    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Short/' + shoid + '.jpg';
+    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Short/' + shoid + '-overlay-coffee-mug.png';
 }
 
 function getCaptureCoffeeMugOverlayUrl(uuid, capid) {
-    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Capture/' + capid + '.jpg';
+    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Capture/' + capid + '-overlay-coffee-mug.png';
+}
+
+function getShortJournalOverlayUrl(uuid, shoid) {
+    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Short/' + shoid + '-overlay-journal.png';
+}
+
+function getCaptureJournalOverlayUrl(uuid, capid) {
+    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Capture/' + capid + '-overlay-journal.png';
 }
 
 function commitTransaction(connection, resultfromprev) {
@@ -402,6 +410,8 @@ module.exports = {
     createShortUrl: createShortUrl,
     getCaptureCoffeeMugOverlayUrl: getCaptureCoffeeMugOverlayUrl,
     getShortCoffeeMugOverlayUrl: getShortCoffeeMugOverlayUrl,
+    getShortJournalOverlayUrl: getShortJournalOverlayUrl,
+    getCaptureJournalOverlayUrl: getCaptureJournalOverlayUrl,
     commitTransaction: commitTransaction,
     beginTransaction: beginTransaction,
     rollbackTransaction: rollbackTransaction,
