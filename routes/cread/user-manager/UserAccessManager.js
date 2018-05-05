@@ -117,7 +117,7 @@ router.post('/sign-up', function (request, response) {
 
         var userdetails = userdata;
 
-        if(!google_access_token){
+        if(!google_access_token && userdata.hasOwnProperty('age_range')){
             userdetails.age_yrs_min = userdata.age_range.min;
             userdetails.age_yrs_max = userdata.age_range.max;
 
