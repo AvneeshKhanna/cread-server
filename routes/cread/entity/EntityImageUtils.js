@@ -26,6 +26,16 @@ const journal_cover = {
     height: 733
 };
 
+const coffee_mug_base = {
+    width: 673,
+    height: 613
+};
+
+const coffee_mug_overlay = {
+    overlay_x_crdnte: 400,
+    overlay_y_crdnte: 400
+};
+
 function getRadiusOfCurvature(img_width, curve_bent_fraction){
     return parseFloat(img_width * (1 + 4 * Math.pow(curve_bent_fraction, 2))/parseFloat(8 * curve_bent_fraction));
 }
@@ -98,7 +108,7 @@ function createOverlayedImageCoffeeMug(typeid, uuid, type, img_path) {
                                             gmstate.append(img_path_arr[i], true);
                                         }
                                         gmstate
-                                            .resize(400, 400)   //Calculated in accordance with coffe mug image
+                                            .resize(coffee_mug_overlay.overlay_x_crdnte, coffee_mug_overlay.overlay_y_crdnte)   //Calculated in accordance with coffe mug image
                                             .write(base_buffer_file_path + '/' + typeid + '-transformed.png', function (err) {
                                                 if(err){
                                                     reject(err);
@@ -117,19 +127,32 @@ function createOverlayedImageCoffeeMug(typeid, uuid, type, img_path) {
                                                                 reject(err);
                                                             }
                                                             else{
-                                                                console.log('Image overlayed to coffee mug');
 
-                                                                type = type.charAt(0) + type.substr(1).toLowerCase();   //In case, 'type' arg is supplied as SHORT or CAPTURE
+                                                                //Making the image square for UI
+                                                                gm(base_uploads_file_path + '/' + typeid + '-overlay-coffee-mug.png')
+                                                                    .background('transparent')
+                                                                    .gravity('Center')
+                                                                    .extent(coffee_mug_base.width, coffee_mug_base.width)
+                                                                    .write(base_uploads_file_path + '/' + typeid + '-overlay-coffee-mug.png', function (err) {
+                                                                        if(err){
+                                                                            reject(err);
+                                                                        }
+                                                                        else {
+                                                                            console.log('Image overlayed to coffee mug');
 
-                                                                var files_to_delete = [];
-                                                                files_to_delete = files_to_delete.concat(img_path_arr);
-                                                                files_to_delete = files_to_delete.concat([
-                                                                    base_buffer_file_path + '/' + typeid + '-transformed.png',
-                                                                    base_uploads_file_path + '/' + typeid + '-overlay-coffee-mug.png'
-                                                                ]);
+                                                                            type = type.charAt(0) + type.substr(1).toLowerCase();   //In case, 'type' arg is supplied as SHORT or CAPTURE
 
-                                                                uploadOverlayedImage(uuid, type, base_uploads_file_path, typeid + '-overlay-coffee-mug.png', files_to_delete)
-                                                                    .then(resolve, reject);
+                                                                            var files_to_delete = [];
+                                                                            files_to_delete = files_to_delete.concat(img_path_arr);
+                                                                            files_to_delete = files_to_delete.concat([
+                                                                                base_buffer_file_path + '/' + typeid + '-transformed.png',
+                                                                                base_uploads_file_path + '/' + typeid + '-overlay-coffee-mug.png'
+                                                                            ]);
+
+                                                                            uploadOverlayedImage(uuid, type, base_uploads_file_path, typeid + '-overlay-coffee-mug.png', files_to_delete)
+                                                                                .then(resolve, reject);
+                                                                        }
+                                                                    })
                                                             }
                                                         });
 
@@ -187,17 +210,29 @@ function createOverlayedImageJournal(typeid, type, uuid, img_path) {
                                             }
                                             else{
 
-                                                type = type.charAt(0) + type.substr(1).toLowerCase();   //In case, 'type' arg is supplied as SHORT or CAPTURE
+                                                //Making the image square for webstore UI
+                                                gm(base_uploads_file_path  + '/' + typeid + '-overlay-journal.png')
+                                                    .background('#FFFFFF')
+                                                    .gravity('Center')
+                                                    .extent(journal_canvas.height, journal_canvas.height)
+                                                    .write(base_uploads_file_path  + '/' + typeid + '-overlay-journal.png', function (err) {
+                                                        if(err){
+                                                            reject(err);
+                                                        }
+                                                        else {
+                                                            type = type.charAt(0) + type.substr(1).toLowerCase();   //In case, 'type' arg is supplied as SHORT or CAPTURE
 
-                                                var files_to_delete = [];
-                                                files_to_delete.push(
-                                                    base_buffer_file_path  + '/' + typeid + '-journal-extent.jpg',
-                                                    base_buffer_file_path  + '/' + typeid + '-journal-base-layer.png',
-                                                    base_uploads_file_path  + '/' + typeid + '-overlay-journal.png'
-                                                );
+                                                            var files_to_delete = [];
+                                                            files_to_delete.push(
+                                                                base_buffer_file_path  + '/' + typeid + '-journal-extent.jpg',
+                                                                base_buffer_file_path  + '/' + typeid + '-journal-base-layer.png',
+                                                                base_uploads_file_path  + '/' + typeid + '-overlay-journal.png'
+                                                            );
 
-                                                uploadOverlayedImage(uuid, type, base_uploads_file_path, typeid + '-overlay-journal.png', files_to_delete)
-                                                    .then(resolve, reject);
+                                                            uploadOverlayedImage(uuid, type, base_uploads_file_path, typeid + '-overlay-journal.png', files_to_delete)
+                                                                .then(resolve, reject);
+                                                        }
+                                                    })
                                             }
                                         });
                                 }
