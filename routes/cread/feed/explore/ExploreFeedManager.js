@@ -429,7 +429,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                                 requestmore: rows.length >= limit,
                                 candownvote: candownvote,
                                 lastindexkey: lastindexkey,
-                                feed: rows
+                                feed: utils.shuffle(rows)
                             });
                         })
                         .catch(function (err) {

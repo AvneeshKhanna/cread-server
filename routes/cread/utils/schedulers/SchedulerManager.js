@@ -141,41 +141,46 @@ var reminder_hotd_job = new CronJob({
 
         var connection;
 
-        config.getNewConnection()
-            .then(function (conn) {
-                connection = conn;
-                return checkForScheduledHOTD(connection);
-            })
-            .then(function (isScheduled) {
+        if(config.isProduction()){
+            config.getNewConnection()
+                .then(function (conn) {
+                    connection = conn;
+                    return checkForScheduledHOTD(connection);
+                })
+                .then(function (isScheduled) {
 
-                if(isScheduled){
-                    console.log("HOTD scheduled for tomorrow");
-                }
-                else{
-                    var toAddresses  = [
-                        "admin@thetestament.com",
-                        "nishantmittal2410@gmail.com",
-                        "avneesh.khanna92@gmail.com"
-                    ];
-                    return utils.sendAWSTextEmail("Hashtag-Of-The-Day Not Scheduled",
-                        "Hi,\nThis is to remind you that Hashtag-Of-The-Day is not scheduled for tomorrow on Cread. Please look into it",
-                        toAddresses);
-                }
+                    if(isScheduled){
+                        console.log("HOTD scheduled for tomorrow");
+                    }
+                    else{
+                        var toAddresses  = [
+                            "admin@thetestament.com",
+                            "nishantmittal2410@gmail.com",
+                            "avneesh.khanna92@gmail.com"
+                        ];
+                        return utils.sendAWSTextEmail("Hashtag-Of-The-Day Not Scheduled",
+                            "Hi,\nThis is to remind you that Hashtag-Of-The-Day is not scheduled for tomorrow on Cread. Please look into it",
+                            toAddresses);
+                    }
 
-            })
-            .then(function () {
-                console.log("reminder_hotd_job complete");
-                throw new BreakPromiseChainError();
-            })
-            .catch(function (err) {
-                config.disconnect(connection);
-                if (err instanceof BreakPromiseChainError) {
-                    //Do nothing
-                }
-                else {
-                    console.error(err);
-                }
-            });
+                })
+                .then(function () {
+                    console.log("reminder_hotd_job complete");
+                    throw new BreakPromiseChainError();
+                })
+                .catch(function (err) {
+                    config.disconnect(connection);
+                    if (err instanceof BreakPromiseChainError) {
+                        //Do nothing
+                    }
+                    else {
+                        console.error(err);
+                    }
+                });
+        }
+        else {
+            //Development Mode. Do nothing
+        }
 
     },
     start: false,   //Whether to start just now
