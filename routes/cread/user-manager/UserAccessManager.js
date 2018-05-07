@@ -102,8 +102,6 @@ router.post('/sign-up', function (request, response) {
     var google_access_token = request.body.google_access_token;
     var referral_code = request.body.referral_code;
 
-    //TODO: Make 'firstname' and 'lastname' to proper case, especially for Google
-
     try {
         var userdata = request.body.userdata;
 
@@ -117,7 +115,7 @@ router.post('/sign-up', function (request, response) {
 
         var userdetails = userdata;
 
-        if(!google_access_token){
+        if(!google_access_token && userdata.hasOwnProperty('age_range')){
             userdetails.age_yrs_min = userdata.age_range.min;
             userdetails.age_yrs_max = userdata.age_range.max;
 

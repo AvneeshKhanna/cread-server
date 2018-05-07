@@ -56,6 +56,9 @@ router.post('/', upload.single('captured-image'), function (request, response) {
         img_width: request.body.img_width
     };
 
+    var img_aspect_ratio = parseFloat(captureparams.img_width/captureparams.img_height);
+    var width_to_resize, height_to_resize;
+
     var captureid = uuidgen.v4();
     var entityid = uuidgen.v4();
 
@@ -77,12 +80,7 @@ router.post('/', upload.single('captured-image'), function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return updateCaptureDB(connection, captureid, uuid, watermark, merchantable, caption, entityid, undefined, captureparams);
-        })
-        .then(function () {
-            if(uniquehashtags && uniquehashtags.length > 0){
-                return hashtagutils.addHashtagsForEntity(connection, uniquehashtags, entityid);
-            }
+            return utils.beginTransaction(connection);
         })
         .then(function () {
             return userprofileutils.renameFile(filebasepath, capture, captureid);
@@ -93,7 +91,23 @@ router.post('/', upload.single('captured-image'), function (request, response) {
         .then(function (resize) {
             toresize = resize;
             if (toresize) {
-                return userprofileutils.createSmallImage(filebasepath + captureid + '.jpg', filebasepath, captureid, 750, 750);
+
+                width_to_resize = img_aspect_ratio >= 1 /* Case when width > height */ ? 800*img_aspect_ratio : 800;
+                height_to_resize = img_aspect_ratio <= 1 /* Case when height > width */ ? 800/img_aspect_ratio : 800;
+
+                //To save in the database
+                captureparams.img_height = height_to_resize;
+                captureparams.img_width = width_to_resize;
+
+                return userprofileutils.createSmallImage(filebasepath + captureid + '.jpg', filebasepath, captureid, height_to_resize, width_to_resize);
+            }
+        })
+        .then(function () {
+            return updateCaptureDB(connection, captureid, uuid, watermark, merchantable, caption, entityid, undefined, captureparams);
+        })
+        .then(function () {
+            if(uniquehashtags && uniquehashtags.length > 0){
+                return hashtagutils.addHashtagsForEntity(connection, uniquehashtags, entityid);
             }
         })
         .then(function () {
@@ -110,6 +124,13 @@ router.post('/', upload.single('captured-image'), function (request, response) {
         })
         .then(function () {
             return utils.commitTransaction(connection);
+        }, function (err) {
+            if(!(err instanceof BreakPromiseChainError)) {
+                return utils.rollbackTransaction(connection, undefined, err);
+            }
+            else {
+                throw new BreakPromiseChainError();
+            }
         })
         .then(function () {
             response.send({
@@ -145,10 +166,6 @@ router.post('/', upload.single('captured-image'), function (request, response) {
                     actorimage: utils.createSmallProfilePicUrl(uuid)
                 };
                 return notify.notificationPromise(mentioneduuids, notifData);
-            }
-        }, function (err) {
-            if(!(err instanceof BreakPromiseChainError)) {
-                return utils.rollbackTransaction(connection, undefined, err);
             }
         })
         .then(function () {
@@ -388,7 +405,16 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
 
 function updateCaptureDB(connection, captureid, uuid, watermark, merchantable, caption, entityid, shoid, captureparams) {
     return new Promise(function (resolve, reject) {
-        connection.beginTransaction(function (err) {
+        var entityparams = {
+            entityid: entityid,
+            type: 'CAPTURE',
+            merchantable: (merchantable === 1),
+            caption: caption
+        };
+
+        console.log("entityparams" + JSON.stringify(entityparams, null, 3));
+
+        connection.query('INSERT INTO Entity SET ?', [entityparams], function (err, data) {
             if (err) {
                 /*connection.rollback(function () {
                     reject(err);
@@ -397,16 +423,15 @@ function updateCaptureDB(connection, captureid, uuid, watermark, merchantable, c
             }
             else {
 
-                var entityparams = {
-                    entityid: entityid,
-                    type: 'CAPTURE',
-                    merchantable: (merchantable === 1),
-                    caption: caption
-                };
+                captureparams.capid = captureid;
+                captureparams.entityid = entityparams.entityid;
+                captureparams.uuid = uuid;
 
-                console.log("entityparams" + JSON.stringify(entityparams, null, 3));
+                if (shoid) {
+                    captureparams.shoid = shoid;
+                }
 
-                connection.query('INSERT INTO Entity SET ?', [entityparams], function (err, data) {
+                connection.query('INSERT INTO Capture SET ?', [captureparams], function (err, rows) {
                     if (err) {
                         /*connection.rollback(function () {
                             reject(err);
@@ -415,42 +440,22 @@ function updateCaptureDB(connection, captureid, uuid, watermark, merchantable, c
                     }
                     else {
 
-                        captureparams.capid = captureid;
-                        captureparams.entityid = entityparams.entityid;
-                        captureparams.uuid = uuid;
-
-                        if (shoid) {
-                            captureparams.shoid = shoid;
-                        }
-
-                        connection.query('INSERT INTO Capture SET ?', [captureparams], function (err, rows) {
-                            if (err) {
-                                /*connection.rollback(function () {
+                        if (watermark) {
+                            connection.query('UPDATE User SET watermark = ? WHERE uuid = ?', [watermark, uuid], function (err, rows) {
+                                if (err) {
+                                    /*connection.rollback(function () {
+                                        reject(err);
+                                    });*/
                                     reject(err);
-                                });*/
-                                reject(err);
-                            }
-                            else {
-
-                                if (watermark) {
-                                    connection.query('UPDATE User SET watermark = ? WHERE uuid = ?', [watermark, uuid], function (err, rows) {
-                                        if (err) {
-                                            /*connection.rollback(function () {
-                                                reject(err);
-                                            });*/
-                                            reject(err);
-                                        }
-                                        else {
-                                            resolve();
-                                        }
-                                    });
                                 }
                                 else {
                                     resolve();
                                 }
-                            }
-                        });
-
+                            });
+                        }
+                        else {
+                            resolve();
+                        }
                     }
                 });
             }

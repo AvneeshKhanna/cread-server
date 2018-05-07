@@ -84,7 +84,7 @@ function addHashtagsForEntity(connection, uniquehashtags, entityid) {
 /**
  * Delete hashtags for 'entityid' from HashTagDistribution
  * */
-function deleteHashtagsForEntity(connection, entityid){
+function deleteHashtagsForEntity(connection, entityid) {
     return new Promise(function (resolve, reject) {
         connection.query('DELETE FROM HashTagDistribution ' +
             'WHERE entityid = ?', [entityid], function (err, rows) {
@@ -153,7 +153,8 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
             'ON Comment.entityid = Entity.entityid ' +
             'LEFT JOIN Follow ' +
             'ON User.uuid = Follow.followee ' +
-            'WHERE Entity.status = "ACTIVE" ' +
+            'WHERE Entity.for_explore = "1" ' +
+            'AND Entity.status = "ACTIVE" ' +
             'AND Entity.regdate < ? ' +
             'AND MATCH(Entity.caption) ' +
             'AGAINST (? IN BOOLEAN MODE) ' +
@@ -174,7 +175,7 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
                         if (element.type === 'CAPTURE') {
                             element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
                         }
-                        else if (element.type === 'SHORT'){
+                        else if (element.type === 'SHORT') {
                             element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
                         }
 
@@ -195,7 +196,7 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
                             delete element.hbinarycount;
                         }
 
-                        if(element.hasOwnProperty('dbinarycount')) {
+                        if (element.hasOwnProperty('dbinarycount')) {
                             delete element.dbinarycount;
                         }
 
@@ -296,13 +297,13 @@ function loadHTagOfTheDay(connection) {
 
                 var result = {};
 
-                if(!rows[0]){
+                if (!rows[0]) {
                     result = {
                         htag: null,
                         hpostcount: 0
                     }
                 }
-                else{
+                else {
                     result = rows[0];
                 }
 

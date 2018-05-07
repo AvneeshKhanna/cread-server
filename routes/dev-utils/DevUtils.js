@@ -21,6 +21,7 @@ var hrkuappname = 'cread-dev-remote';
 
 var notify = require('../notification-system/notificationFramework');
 var utils = require('../cread/utils/Utils');
+var entityutils = require('../cread/entity/EntityUtils');
 
 var AWS = require('aws-sdk');
 
@@ -361,5 +362,43 @@ function sendSMSToAllUsers(users, message) {
         });
     });
 }
+
+router.get('/load-entity-url', function (request, response) {
+    var entityid = request.query.entityid;
+
+    if(!entityid){
+        response.status(500).send({
+            error: config.isProduction() ? "entityid cannot be null" : "request parameters incomplete"
+        }).end();
+        return;
+    }
+
+    var connection;
+
+    config.getNewConnection()
+        .then(function (conn) {
+            connection = conn;
+            return entityutils.getEntityUrl(connection, entityid);
+        })
+        .then(function (result) {
+            response.send({
+                data: result
+            }).end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
 
 module.exports = router;

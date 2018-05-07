@@ -45,6 +45,7 @@ router.get('/load-specific', function (request, response) {
                 'dx',
                 'dy',
                 'img_width',
+                'img_height',
                 'txt_width',
                 'txt_height',
                 'imgtintcolor',

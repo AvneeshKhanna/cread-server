@@ -749,7 +749,7 @@ function createSmallImage(readingpath, writingbasepath, guid, height, width) {
                 reject(err);
             }
             else {
-                resized.resize(height, width)            // resize
+                resized.resize(width, height)            // resize
                     .quality(80)                    // set JPEG quality
                     .write(/*"./images/uploads/profile_picture/"*/writingbasepath + guid + "-small.jpg", function (err) {
                         if (err) {

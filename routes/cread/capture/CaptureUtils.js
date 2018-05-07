@@ -48,7 +48,7 @@ function addWatermarkToCapture(captureimg, watermark, captureid) {
     return new Promise(function (resolve, reject) {
 
         var image_dimen = sizeOf(captureimg);
-        var toresize = /*size.width */ image_dimen.width > 800;
+        var toresize = /*size.width */ Math.min(image_dimen.width , image_dimen.height) > 800;
         resolve(toresize);
 
         /*var img_gm = gm(captureimg);
