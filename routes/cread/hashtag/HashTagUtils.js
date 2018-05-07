@@ -84,7 +84,7 @@ function addHashtagsForEntity(connection, uniquehashtags, entityid) {
 /**
  * Delete hashtags for 'entityid' from HashTagDistribution
  * */
-function deleteHashtagsForEntity(connection, entityid){
+function deleteHashtagsForEntity(connection, entityid) {
     return new Promise(function (resolve, reject) {
         connection.query('DELETE FROM HashTagDistribution ' +
             'WHERE entityid = ?', [entityid], function (err, rows) {
@@ -131,6 +131,8 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
             'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
             'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
             'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
+            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
+            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount ' +
@@ -151,7 +153,8 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
             'ON Comment.entityid = Entity.entityid ' +
             'LEFT JOIN Follow ' +
             'ON User.uuid = Follow.followee ' +
-            'WHERE Entity.status = "ACTIVE" ' +
+            'WHERE Entity.for_explore = "1" ' +
+            'AND Entity.status = "ACTIVE" ' +
             'AND Entity.regdate < ? ' +
             'AND MATCH(Entity.caption) ' +
             'AGAINST (? IN BOOLEAN MODE) ' +
@@ -172,7 +175,7 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
                         if (element.type === 'CAPTURE') {
                             element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
                         }
-                        else if (element.type === 'SHORT'){
+                        else if (element.type === 'SHORT') {
                             element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
                         }
 
@@ -193,7 +196,7 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
                             delete element.hbinarycount;
                         }
 
-                        if(element.hasOwnProperty('dbinarycount')) {
+                        if (element.hasOwnProperty('dbinarycount')) {
                             delete element.dbinarycount;
                         }
 
@@ -281,9 +284,12 @@ function loadHTagOfTheDay(connection) {
                     });
                 }
             });*/
-        connection.query('SELECT hashtag AS htag ' +
+        connection.query('SELECT HOTD.hashtag AS htag, COUNT(HTD.entityid) AS hpostcount ' +
             'FROM HTagOfTheDay HOTD ' +
-            'WHERE for_date = DATE(NOW())', [], function (err, rows) {
+            'LEFT JOIN HashTagDistribution HTD ' +
+            'ON(LCASE(HOTD.hashtag) = HTD.hashtag) ' +
+            'WHERE for_date = DATE(NOW()) ' +
+            'GROUP BY htag', [], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -291,12 +297,13 @@ function loadHTagOfTheDay(connection) {
 
                 var result = {};
 
-                if(!rows[0]){
+                if (!rows[0]) {
                     result = {
-                        htag: null
+                        htag: null,
+                        hpostcount: 0
                     }
                 }
-                else{
+                else {
                     result = rows[0];
                 }
 

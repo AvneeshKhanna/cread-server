@@ -119,9 +119,19 @@ function clientAuthValid(clientid, authkey) {
 
 }
 
+/**
+ * TODO: Define
+ * */
+function verifyWebAccessToken(connection, token) {
+    return new Promise(function (resolve, reject) {
+       resolve();
+    });
+}
+
 module.exports = router;
 module.exports.checkToken = tokenValidation;
 module.exports.authValid = authValid; //Promise version of tokenValidation
 module.exports.clientAuthValid = clientAuthValid;
 module.exports.generateToken = generateToken;
 module.exports.validateToken = validateToken;
+module.exports.verifyWebAccessToken = verifyWebAccessToken;

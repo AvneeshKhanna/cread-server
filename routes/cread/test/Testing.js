@@ -12,6 +12,7 @@ var async = require('async');
 var uuidgen = require('uuid');
 
 var gm = require('gm');
+var color_extract = require('colour-extractor');
 
 //--------------
 
@@ -300,6 +301,63 @@ router.post('/gm-merge', function (request, response) {
         });
 
 });
+
+router.post('/gm-journal', function (request, response) {
+
+    var journal_aspect_ratio = parseFloat(512/733);
+    var img_aspect_ratio = parseFloat(1000/1000);
+
+    var journal_width = 512;
+    var img_width = 1000;
+
+    getDominantImgColorHex(function (dcolor) {
+        gm('./images/downloads/gm2.jpg')
+            .resize(journal_width, journal_width)
+            .background(dcolor)
+            .gravity('Center')
+            .extent(journal_width + 5, (journal_width + 5)/journal_aspect_ratio)
+            .write('./images/downloads/gm_extent.jpg', function (err) {
+                if(err){
+                    console.error(err);
+                    response.send(err).end();
+                }
+                else{
+                    gm('./images/downloads/gm_extent.jpg')
+                        .background('transparent')
+                        //.gravity('Center')
+                        .extent(750, 875, '-135-64')
+                        .write('./images/downloads/base_layer.png', function (err) {
+                            if(err){
+                                console.error(err);
+                                response.send(err).end();
+                            }
+                            else{
+                                gm()
+                                    .command('composite')
+                                    .in('./images/products/journal_layer_1.png')
+                                    // .in('-geometry', '+228+102')    // location of overlaying img is x,y
+                                    .in('./images/downloads/base_layer.png')
+                                    .write('./images/downloads/j-overlayed.jpg', function (err) {
+                                        if (err) {
+                                            console.error(err);
+                                            response.send(err).end();
+                                        }
+                                        else{
+                                            response.send('done').end();
+                                        }
+                                    });
+                            }
+                        })
+                }
+            });
+    });
+});
+
+function getDominantImgColorHex(callback) {
+    color_extract.topColours('./images/downloads/gm2.jpg', true, function (colours) {
+        callback(color_extract.rgb2hex(colours[0][1]));
+    });
+}
 
 router.post('/upload-interests', function (request, response) {
 

@@ -12,9 +12,10 @@ var router = express.Router();
 
 var config = require('../../Config');
 
-var envconfig = require('config');
+/*var envconfig = require('config');
 var uuidGen = require('uuid');
-var request_client = require('request');
+var request_client = require('request');*/
+
 var CryptoJS = require('crypto-js');
 
 var _auth = require('../../auth-token-management/AuthTokenManager');
@@ -29,6 +30,7 @@ router.post('/sign-in', function (request, response) {
     console.log("request is " + JSON.stringify(request.body, null, 3));
 
     var fbid = request.body.fbid;
+    var google_access_token = request.body.google_access_token;
     var fcmtoken = request.body.fcmtoken;
 
     var connection;
@@ -36,10 +38,23 @@ router.post('/sign-in', function (request, response) {
     config.getNewConnection()
         .then(function (conn) {
             connection = conn;
-            return useraccessutils.checkIfUserExists(connection, fbid);
+            if(google_access_token){
+                return useraccessutils.getUserDetailsFromGoogle(google_access_token);
+            }
+            else {
+                //Do Nothing
+            }
         })
         .then(function (result) {
-            if (result && fcmtoken) { //Case of existing user and non-null fcmtoken
+            if(result){ //Case where google_access_token exists in request
+                return useraccessutils.checkIfUserExists(connection, undefined, result.ggl_userid);
+            }
+            else {  //Case where google_access_token is undefined in request
+                return useraccessutils.checkIfUserExists(connection, fbid, undefined);
+            }
+        })
+        .then(function (result) {
+            if (result && fcmtoken) { //Case of existing user in DB and non-null fcmtoken in request
                 return useraccessutils.addUserFcmToken(result.uuid, fcmtoken, result);
             }
             else {   //Case of new user
@@ -57,8 +72,6 @@ router.post('/sign-in', function (request, response) {
                     status: "new-user"
                 };
             }
-
-            console.log("result is " + JSON.stringify(result, null, 3));
 
             response.send({
                 data: result
@@ -86,26 +99,35 @@ router.post('/sign-up', function (request, response) {
     console.log("request is " + JSON.stringify(request.body, null, 3));
 
     var fcmtoken = request.body.fcmtoken;
+    var google_access_token = request.body.google_access_token;
     var referral_code = request.body.referral_code;
 
     try {
         var userdata = request.body.userdata;
 
-        utils.changePropertyName(userdata, "id", "fbid");
-        utils.changePropertyName(userdata, "first_name", "firstname");
-        utils.changePropertyName(userdata, "last_name", "lastname");
-        utils.changePropertyName(userdata, "link", "fbtimelineurl");
-        utils.changePropertyName(userdata, "picture", "profilepicurl");
+        if(!google_access_token){
+            utils.changePropertyName(userdata, "id", "fbid");
+            utils.changePropertyName(userdata, "first_name", "firstname");
+            utils.changePropertyName(userdata, "last_name", "lastname");
+            utils.changePropertyName(userdata, "link", "fbtimelineurl");
+            utils.changePropertyName(userdata, "picture", "profilepicurl");
+        }
 
         var userdetails = userdata;
 
-        userdetails.age_yrs_min = userdata.age_range.min;
-        userdetails.age_yrs_max = userdata.age_range.max;
+        if(!google_access_token && userdata.hasOwnProperty('age_range')){
+            userdetails.age_yrs_min = userdata.age_range.min;
+            userdetails.age_yrs_max = userdata.age_range.max;
 
-        delete userdata.age_range;
+            delete userdata.age_range;
+        }
     }
     catch (ex) {
         console.error(ex);
+        response.status(500).send({
+            message: 'Some error occurred at the server'
+        }).end();
+        return;
     }
 
     if (referral_code) {
@@ -124,6 +146,20 @@ router.post('/sign-up', function (request, response) {
     config.getNewConnection()
         .then(function (conn) {
             connection = conn;
+            if(google_access_token){
+                return useraccessutils.getUserDetailsFromGoogle(google_access_token);
+            }
+        })
+        .then(function (result) {
+            if(result){
+                userdetails.ggl_userid = result.ggl_userid;
+                userdetails.firstname = result.firstname;
+                userdetails.lastname = result.lastname;
+                userdetails.locale = result.locale;
+                userdetails.email = result.email;
+            }
+        })
+        .then(function () {
             return useraccessutils.checkIfPhoneExists(connection, userdetails.phone);
         })
         .then(function (result) {
@@ -156,28 +192,37 @@ router.post('/sign-up', function (request, response) {
             });
         })
         .then(function (result) {
-            return userprofileutils.copyFacebookProfilePic(userdetails.profilepicurl, result.uuid);
+            new_user_uuid = result.uuid;
+            if(!google_access_token){
+                return userprofileutils.copyFacebookProfilePic(userdetails.profilepicurl, result.uuid);
+            }
         })
         .then(function (uuid) { //Sending a notification to the new user's Facebook friends who are on Cread
-            new_user_uuid = uuid;
-            return userprofileutils.getUserFbFriendsViaAppToken(connection, userdetails.fbid, new_user_uuid)
+            /*new_user_uuid = uuid;*/
+            if(!google_access_token){
+                return userprofileutils.getUserFbFriendsViaAppToken(connection, userdetails.fbid, new_user_uuid);
+            }
         })
         .then(function (fuuids) {
-            fb_friends_uuids = fuuids;
-            if (fb_friends_uuids.length > 0) {
-                return useraccessutils.updateNewFacebookUserDataForUpdates(connection, fb_friends_uuids, new_user_uuid, "fb-friend-new");
+            if(!google_access_token){
+                fb_friends_uuids = fuuids;
+                if (fb_friends_uuids.length > 0) {
+                    return useraccessutils.updateNewFacebookUserDataForUpdates(connection, fb_friends_uuids, new_user_uuid, "fb-friend-new");
+                }
             }
         })
         .then(function () {
-            if (fb_friends_uuids.length > 0) {
-                var notifData = {
-                    persistable: "Yes",
-                    message: "Your Facebook friend " + userdetails.firstname + " " + userdetails.lastname + " is now on Cread",
-                    category: "fb-friend-new",
-                    actorid: new_user_uuid,
-                    actorimage: utils.createSmallProfilePicUrl(new_user_uuid)
-                };
-                return notify.notificationPromise(fb_friends_uuids, notifData);
+            if(!google_access_token){
+                if (fb_friends_uuids.length > 0) {
+                    var notifData = {
+                        persistable: "Yes",
+                        message: "Your Facebook friend " + userdetails.firstname + " " + userdetails.lastname + " is now on Cread",
+                        category: "fb-friend-new",
+                        actorid: new_user_uuid,
+                        actorimage: utils.createSmallProfilePicUrl(new_user_uuid)
+                    };
+                    return notify.notificationPromise(fb_friends_uuids, notifData);
+                }
             }
         })
         .then(function () {

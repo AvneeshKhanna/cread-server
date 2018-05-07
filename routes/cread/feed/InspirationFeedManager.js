@@ -207,7 +207,7 @@ function loadInspirationFeed(connection, limit, lastindexkey) {
         connection.query('SELECT (@rownr := @rownr + 1) AS row_no, Master.* ' +
             'FROM ' +
             '(SELECT Entity.entityid, Entity.regdate, Entity.merchantable, Capture.capid AS captureid, ' +
-            'Capture.uuid, Capture.shoid, User.firstname, User.lastname, ' +
+            'Capture.img_width, Capture.img_height, Capture.uuid, Capture.shoid, User.firstname, User.lastname, ' +
             '(CASE WHEN(EA.impact_score IS NULL) THEN ? ELSE EA.impact_score END) AS impact_weight ' +
             'FROM Entity ' +
             'JOIN Capture ' +

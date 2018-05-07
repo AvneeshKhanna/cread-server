@@ -238,6 +238,8 @@ function loadEntityData(connection, requesteruuid, entityid) {
         connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, Short.shoid, Capture.capid AS captureid, ' +
             'Capture.shoid AS cpshortid, Short.capid AS shcaptureid, ' +
             'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
+            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
+            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
@@ -479,6 +481,38 @@ function getEntityUrl(connection, entityid) {
     });
 }
 
+function getEntityCoffeeMugNJournalUrls(connection, entityid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT U.uuid, C.capid, S.shoid, E.type ' +
+            'FROM Entity E ' +
+            'LEFT JOIN Short S ' +
+            'USING(entityid) ' +
+            'LEFT JOIN Capture C ' +
+            'USING(entityid) ' +
+            'JOIN User U ' +
+            'ON(U.uuid = S.uuid OR U.uuid = C.uuid) ' +
+            'WHERE E.entityid = ?', [entityid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                rows.map(function (element) {
+                    if(element.type === 'SHORT'){
+                        element.coffeemugurl = utils.getShortCoffeeMugOverlayUrl(element.uuid, element.shoid);
+                        element.journalurl = utils.getShortJournalOverlayUrl(element.uuid, element.shoid);
+                    }
+                    else if(element.type === 'CAPTURE'){
+                        element.coffeemugurl = utils.getCaptureCoffeeMugOverlayUrl(element.uuid, element.capid);
+                        element.journalurl = utils.getCaptureJournalOverlayUrl(element.uuid, element.capid);
+                    }
+                });
+
+                resolve(rows[0]);
+            }
+        });
+    });
+}
+
 function deactivateEntity(connection, entityid, uuid) {
     return new Promise(function (resolve, reject) {
         connection.query('UPDATE Entity ' +
@@ -557,6 +591,34 @@ function putEntityToExplore(connection, entityid) {
 }
 
 /**
+ * Function to check if this is the first post by the user
+ * */
+function checkForFirstPost(connection, uuid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT COUNT(DISTINCT E.entityid) AS postcount, U.firstname AS name ' +
+            'FROM Entity E ' +
+            'LEFT JOIN Short S ' +
+            'USING(entityid) ' +
+            'LEFT JOIN Capture C ' +
+            'USING(entityid) ' +
+            'JOIN User U ' +
+            'ON(U.uuid = S.uuid OR U.uuid = C.uuid) ' +
+            'WHERE U.uuid = ? ' +
+            'AND E.status = "ACTIVE"', [uuid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve({
+                    firstpost: rows[0].postcount === 1,
+                    name: rows[0].name
+                });
+            }
+        });
+    });
+}
+
+/**
  * Updates the last_event_time in Entity table to current time if the creator of the entityid is not the same
  * performing the event
  * */
@@ -607,6 +669,19 @@ function updateLastEventTimestampViaType(connection, typeid, uuid) {
     });
 }
 
+function isEntityActive(connection, entityid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT entityid FROM Entity WHERE entityid = ? AND status = "ACTIVE"', [entityid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(!!rows[0]);
+            }
+        });
+    });
+}
+
 module.exports = {
     updateEntityCollabDataForUpdates: updateEntityCollabDataForUpdates,
     loadEntityData: loadEntityData,
@@ -617,9 +692,12 @@ module.exports = {
     getEntityDetailsForPrint: getEntityDetailsForPrint,
     getEntityUsrDetailsForNotif: getEntityUsrDetailsForNotif,
     getEntityUrl: getEntityUrl,
+    getEntityCoffeeMugNJournalUrls: getEntityCoffeeMugNJournalUrls,
     deactivateEntity: deactivateEntity,
     removeEntityFromExplore: removeEntityFromExplore,
     putEntityToExplore: putEntityToExplore,
     updateLastEventTimestamp: updateLastEventTimestamp,
-    updateLastEventTimestampViaType: updateLastEventTimestampViaType
+    updateLastEventTimestampViaType: updateLastEventTimestampViaType,
+    checkForFirstPost: checkForFirstPost,
+    isEntityActive: isEntityActive
 };

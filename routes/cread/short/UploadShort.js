@@ -20,6 +20,7 @@ var fs = require('fs');
 
 var utils = require('../utils/Utils');
 var entityutils = require('../entity/EntityUtils');
+var commentutils = require('../comment/CommentUtils');
 var shortutils = require('./ShortUtils');
 var hashtagutils = require('../hashtag/HashTagUtils');
 var notify = require('../../notification-system/notificationFramework');
@@ -144,6 +145,14 @@ router.post('/', upload.single('short-image'), function (request, response) {
             }
             else {
                 return utils.rollbackTransaction(connection, undefined, err);
+            }
+        })
+        .then(function () {
+            return entityutils.checkForFirstPost(connection, uuid);
+        })
+        .then(function (result) {
+            if(result.firstpost){
+                commentutils.scheduleFirstPostCommentJob(uuid, result.name, entityid);
             }
         })
         .then(function () {

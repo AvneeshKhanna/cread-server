@@ -146,6 +146,8 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
             'User.firstname, User.lastname, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
             'Capture.capid AS captureid, ' +
             'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
+            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
+            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
@@ -374,6 +376,8 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                     'User.firstname, User.lastname, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
                     'Capture.capid AS captureid, CShort.entityid AS csentityid, SCapture.entityid AS scentityid, ' +
                     'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
+                    'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
+                    'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +
                     'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
                     'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
                     'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
@@ -635,6 +639,35 @@ function loadAllFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl) 
     });
 }
 
+/**
+ * This function checks if the given fbid is attached to a user's record other than the given uuid
+ * */
+function checkIfFbIdAttachedToAnother(connection, fbid, uuid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT uuid FROM User WHERE fbid = ? AND uuid <> ?', [fbid, uuid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(!!rows[0])
+            }
+        });
+    });
+}
+
+function saveFbIdUser(connection, fbid, uuid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('UPDATE User SET fbid = ? WHERE fbid IS NULL AND uuid = ?', [fbid, uuid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
 function getFbAppAccessToken() {
     return new Promise(function (resolve, reject) {
 
@@ -716,7 +749,7 @@ function createSmallImage(readingpath, writingbasepath, guid, height, width) {
                 reject(err);
             }
             else {
-                resized.resize(height, width)            // resize
+                resized.resize(width, height)            // resize
                     .quality(80)                    // set JPEG quality
                     .write(/*"./images/uploads/profile_picture/"*/writingbasepath + guid + "-small.jpg", function (err) {
                         if (err) {
@@ -1041,6 +1074,8 @@ module.exports = {
     loadProfileInformation: loadProfileInformation,
     loadFacebookFriends: loadFacebookFriends,
     loadAllFacebookFriends: loadAllFacebookFriends,
+    checkIfFbIdAttachedToAnother: checkIfFbIdAttachedToAnother,
+    saveFbIdUser: saveFbIdUser,
     getUserFbFriendsViaAppToken: getUserFbFriendsViaAppToken,
     updateProfile: updateProfile,
     renameFile: renameFile,

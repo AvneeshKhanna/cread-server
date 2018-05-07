@@ -22,7 +22,7 @@ notifscheduler.engagement_notification_job.start();
 notifscheduler.featured_artist_notification.start();
 
 //To initiate the cron job for new-users-no-post notification
-notifscheduler.newusers_no_post_notification.start();
+//notifscheduler.newusers_no_post_notification.start(); //TODO: Correct logic
 
 var scheduler = require('./routes/cread/utils/schedulers/SchedulerManager');
 scheduler.update_latestposts_cache_job.start();
@@ -184,6 +184,7 @@ app.use('/downvote', require('./routes/cread/downvote/DownvoteManager'));
 app.use('/user-referral', require('./routes/cread/user-manager/refer/UserReferralManager'));
 app.use('/recommend-users', require('./routes/cread/recommendations/UserRecommendManager'));
 app.use('/recommend-posts', require('./routes/cread/recommendations/PostsRecommendManager'));
+app.use('/popular-feed-buy', require('./routes/cread/feed/popular-feed-buy/PopularFeedBuyManager'));
 app.use('/redis', require('./routes/dev-utils/RedisExample'));  //TODO: Remove
 // app.use('/job-queue', require('./routes/cread/utils/long-tasks/JobQueueHandler'));  //TODO: Remove
 
