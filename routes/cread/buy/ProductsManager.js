@@ -12,6 +12,7 @@ var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var buyutils = require('./BuyUtils');
 var entityutils = require('../entity/EntityUtils');
+var utils = require('../utils/Utils');
 var consts = require('../utils/Constants');
 var cache_time = consts.cache_time;
 
@@ -299,6 +300,110 @@ function structureProductDetails(connection, products, entityid) {
             })
             .catch(reject);
     });
+}
+
+router.post('/load-multi-posts', function (request, response) {
+    
+    var entity_data = request.body.entity_data;
+    
+    var connection;
+    
+    config.getNewConnection()
+        .then(function (conn) {
+            connection = conn;
+            return getProductDetailsForEntities(connection, entity_data);
+        })
+        .then(function (entity_data) {
+            var result = entity_data.map(function (edata) {
+                return {
+                    entityid: edata.entityid,
+                    products: edata.products
+                }
+            });
+
+            response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
+
+            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+                response.status(304).send().end();
+            }
+            else {
+                response.status(200).send({
+                    tokenstatus: 'valid',
+                    data: {
+                        items: result
+                    }
+                });
+                response.end();
+            }
+
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+});
+
+function getProductDetailsForEntities(connection, entity_data) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT productid, type, imageurl AS productimgurl ' +
+            'FROM Product', [null], function (err, products) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                try{    //getProductEntityUrl() can throw an error
+                    entity_data.map(function (edata) {
+                        edata.products = products.map(function (p) {
+                            return {
+                                url: ["COFFEE_MUG", "JOURNAL"].includes(p.type) ? getProductEntityUrl(p.type, edata.uuid, edata.captureid, edata.shoid) : edata.entityurl,
+                                pid: p.productid
+                            }
+                        });
+                    });
+
+                    resolve(entity_data);
+                }
+                catch (ex){
+                    reject(ex);
+                }
+            }
+        });
+    });
+}
+
+function getProductEntityUrl(ptype, uuid, capid, shoid) {
+    var url;
+
+    if(ptype === 'COFFEE_MUG'){
+        if(capid){
+            url = utils.getCaptureCoffeeMugOverlayUrl(uuid, capid);
+        }
+        else {
+            url = utils.getShortCoffeeMugOverlayUrl(uuid, shoid);
+        }
+    }
+    else if(ptype === 'JOURNAL'){
+        if(capid){
+            url = utils.getCaptureJournalOverlayUrl(uuid, capid);
+        }
+        else{
+            url = utils.getShortJournalOverlayUrl(uuid, shoid);
+        }
+    }
+    else {
+        throw new TypeError('Invalid argument value for "ptype"');
+    }
+
+    return url;
 }
 
 module.exports = router;
