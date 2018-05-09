@@ -26,6 +26,7 @@ var shortutils = require('../short/ShortUtils');
 var hashtagutils = require('../hashtag/HashTagUtils');
 var entityutils = require('../entity/EntityUtils');
 var entityimgutils = require('../entity/EntityImageUtils');
+var entityintrstutils = require('../interests/EntityInterestsUtils');
 var commentutils = require('../comment/CommentUtils');
 
 var filebasepath = './images/uploads/capture/'; 
@@ -41,6 +42,7 @@ router.post('/', upload.single('captured-image'), function (request, response) {
     var capture = request.file;
     var merchantable = Number(request.body.merchantable);
     var caption = request.body.caption.trim() ? request.body.caption.trim() : null;
+    var interests = request.body.interests;
 
     var uniquehashtags;
     var mentioneduuids = [];
@@ -108,6 +110,11 @@ router.post('/', upload.single('captured-image'), function (request, response) {
         .then(function () {
             if(uniquehashtags && uniquehashtags.length > 0){
                 return hashtagutils.addHashtagsForEntity(connection, uniquehashtags, entityid);
+            }
+        })
+        .then(function () {
+            if(interests && interests.length > 0){
+                return entityintrstutils.saveEntityInterests(connection, entityid, interests);
             }
         })
         .then(function () {

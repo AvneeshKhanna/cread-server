@@ -6,10 +6,10 @@
 var express = require('express');
 var router = express.Router();
 
-var config = require('../../../Config');
+var config = require('../../Config');
 
-var _auth = require('../../../auth-token-management/AuthTokenManager');
-var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
+var _auth = require('../../auth-token-management/AuthTokenManager');
+var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
 var userintrstutils = require('./UserInterestsUtils');
 
@@ -167,6 +167,15 @@ router.post('/remove', function (request, response) {
 
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
+    var interests = request.body.interests;
+
+    if(!(interests instanceof Array)){
+        console.error(new Error('"interests" body parameter should be of type array'));
+        response.status(500).send({
+            message: '"interests" body parameter should be of type array'
+        });
+        return;
+    }
 
     var connection;
 
@@ -182,9 +191,17 @@ router.post('/remove', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
+            return userintrstutils.removeUserInterests(connection, uuid, interests);
         })
         .then(function (result) {
-
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    status: 'done'
+                }
+            });
+            response.end();
+            throw new BreakPromiseChainError();
         })
         .catch(function (err) {
             config.disconnect(connection);

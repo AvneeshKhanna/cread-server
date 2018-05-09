@@ -3,9 +3,11 @@
  */
 'use-strict';
 
+var uuidGen = require('uuid');
+
 function loadAllInterestsForUser(connection, uuid) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT I.*, (UI.uintid IS NOT NULL) AS interested ' +
+        connection.query('SELECT I.intid, I.intname, I.intimgurl, (UI.uintid IS NOT NULL) AS selected ' +
             'FROM Interests I ' +
             'LEFT JOIN UserInterests UI ' +
             'ON(I.intid = UI.intid AND UI.uuid = ?) ' +
@@ -16,7 +18,7 @@ function loadAllInterestsForUser(connection, uuid) {
             else {
 
                 rows.map(function (row) {
-                    row.interested = row.interested === 1;
+                    row.selected = row.selected === 1;
                     return row;
                 });
 
@@ -35,12 +37,26 @@ function saveUserInterests(connection, uuid, interests) {
 
         interests.map(function (i) {
             sqlParamArr.push([
+                uuidGen.v4(),
                 i,
                 uuid
             ])
         });
 
-        connection.query('INSERT INTO UserInterests UI (intid, uuid) VALUES ?', [sqlParamArr], function (err, rows) {
+        connection.query('INSERT INTO UserInterests (uintid, intid, uuid) VALUES ?', [sqlParamArr], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
+function removeUserInterests(connection, uuid, interests) {
+    return new Promise(function (resolve, reject) {
+        connection.query('DELETE FROM UserInterests WHERE intid IN (?) AND uuid = ?', [interests, uuid], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -53,5 +69,6 @@ function saveUserInterests(connection, uuid, interests) {
 
 module.exports = {
     loadAllInterestsForUser: loadAllInterestsForUser,
-    saveUserInterests: saveUserInterests
+    saveUserInterests: saveUserInterests,
+    removeUserInterests: removeUserInterests
 };
