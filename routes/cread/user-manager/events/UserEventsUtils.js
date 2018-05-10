@@ -71,7 +71,7 @@ function restructureForBulkInsert(user_events) {
 /**
  * Initiates the process of engagement notifications for all users on the app
  * */
-function sendEngagementNotificationsForUsers(){
+function sendEngagementNotificationsForUsers() {
 
     var connection;
     var allUsers = [];
@@ -121,10 +121,10 @@ function sendEngagementNotificationsForUsers(){
                     });
                 });
 
-                if(allUsers.length > 0){
+                if (allUsers.length > 0) {
                     return assignNotificationDataToUsers(connection, allUsers);
                 }
-                else{
+                else {
                     console.log('No users to send notification to');
                     throw new BreakPromiseChainError();
                 }
@@ -147,7 +147,7 @@ function sendEngagementNotificationsForUsers(){
                 }
             })*/
             .then(function (notif_data_users) {
-                if(notif_data_users.length > 0){
+                if (notif_data_users.length > 0) {
                     return sendCustomNotificationEachUser(notif_data_users);
                 }
                 else {
@@ -157,11 +157,11 @@ function sendEngagementNotificationsForUsers(){
             })
             .catch(function (err) {
                 config.disconnect(connection);
-                if(err instanceof BreakPromiseChainError){
+                if (err instanceof BreakPromiseChainError) {
                     //Do nothing
                     resolve();
                 }
-                else{
+                else {
                     reject(err);
                 }
             });
@@ -191,7 +191,7 @@ function getRecentPosters(connection, recentCollaborators) {
         time_range.min
     ];
 
-    if(recentCollaborators && recentCollaborators.length > 0){
+    if (recentCollaborators && recentCollaborators.length > 0) {
         sql += "AND U.uuid NOT IN (?)";
         sqlparams.push(recentCollaborators);
     }
@@ -261,7 +261,7 @@ function getRecentInactiveUsers(connection, previousUsers) {
         time_range.min
     ];
 
-    if(previousUsers && previousUsers.length > 0){
+    if (previousUsers && previousUsers.length > 0) {
         sql += 'AND actor_uuid NOT IN (?)';
         sqlparams.push(previousUsers);
     }
@@ -384,7 +384,7 @@ function getUserSpecificDataForNotification(connection, user) {
             friends_activity_cutoff_time
         ]
     }
-    else if(user.notif_category === NOTIFICATION_CATEGORY_ENTITY_VIEW){
+    else if (user.notif_category === NOTIFICATION_CATEGORY_ENTITY_VIEW) {
         sql = 'SELECT U.uuid, U.firstname ' +
             'FROM Entity E ' +
             'LEFT JOIN Short S ' +
@@ -423,7 +423,7 @@ function getUserSpecificDataForNotification(connection, user) {
                     else if (user.notif_category === NOTIFICATION_CATEGORY_COLLABORATE) {
                         notifData.message = "You have not collaborated with anyone recently. You might want to check out the recent artwork on Cread!";
                     }
-                    else if (user.notif_category === NOTIFICATION_CATEGORY_ENTITY_VIEW){
+                    else if (user.notif_category === NOTIFICATION_CATEGORY_ENTITY_VIEW) {
                         notifData.message = "Some interesting new content is available on Cread. You might want to check out!";
                     }
                 }
@@ -436,7 +436,7 @@ function getUserSpecificDataForNotification(connection, user) {
                         console.log("notification collaborate rows are " + JSON.stringify(rows, null, 3));
                         notifData.message = rows[0].firstname + (rows[1] ? ", " + rows[1].firstname : "") + " and " + rows.length + " others posted on Cread recently. You might want to check it out!";
                     }
-                    else if (user.notif_category === NOTIFICATION_CATEGORY_ENTITY_VIEW){
+                    else if (user.notif_category === NOTIFICATION_CATEGORY_ENTITY_VIEW) {
                         console.log("notification entity-view rows are " + JSON.stringify(rows, null, 3));
                         notifData.message = rows[0].firstname + (rows[1] ? ", " + rows[1].firstname : "") + " and " + rows.length + " others have posted something new on Cread recently. You might want to check it out!";
                     }
@@ -474,7 +474,7 @@ function sendCustomNotificationEachUser(notif_data_users) {
 }
 
 module.exports = {
-    saveUserEvents: saveUserEvents,/*
+    saveUserEvents: saveUserEvents, /*
     getRecentPosters: getRecentPosters,
     getRecentCollaborators: getRecentCollaborators,
     getRecentInactiveUsers: getRecentInactiveUsers,
