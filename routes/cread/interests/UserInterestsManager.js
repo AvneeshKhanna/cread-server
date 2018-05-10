@@ -37,57 +37,7 @@ router.get('/load', function (request, response) {
         .then(function (result) {
             response.send({
                 tokenstatus: "valid",
-                data: {
-                    requestmore: false,
-                    lastindexkey: 30,
-                    interests: result/*[
-                        {
-                            intid: 1,
-                            intname: "Writing",
-                            intimgurl: "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg"
-                        },
-                        {
-                            intid: 2,
-                            intname: "Photography",
-                            intimgurl: "https://static.bhphotovideo.com/explora/sites/default/files/styles/top_shot/public/TS-Night-Photography.jpg?itok=VO6dxBNS"
-                        },
-                        {
-                            intid: 3,
-                            intname: "Doodling",
-                            intimgurl: "https://image.freepik.com/free-photo/hand-of-businesswoman-writing-on-paper-in-office_1262-2119.jpg"
-                        },
-                        {
-                            intid: 4,
-                            intname: "Writing",
-                            intimgurl: "https://image.freepik.com/free-photo/hand-of-businesswoman-writing-on-paper-in-office_1262-2119.jpg"
-                        },
-                        {
-                            intid: 5,
-                            intname: "Photography",
-                            intimgurl: "https://static.bhphotovideo.com/explora/sites/default/files/styles/top_shot/public/TS-Night-Photography.jpg?itok=VO6dxBNS"
-                        },
-                        {
-                            intid: 6,
-                            intname: "Doodling",
-                            intimgurl: "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg"
-                        },
-                        {
-                            intid: 7,
-                            intname: "Writing",
-                            intimgurl: "https://image.freepik.com/free-photo/hand-of-businesswoman-writing-on-paper-in-office_1262-2119.jpg"
-                        },
-                        {
-                            intid: 8,
-                            intname: "Photography",
-                            intimgurl: "https://static.bhphotovideo.com/explora/sites/default/files/styles/top_shot/public/TS-Night-Photography.jpg?itok=VO6dxBNS"
-                        },
-                        {
-                            intid: 9,
-                            intname: "Doodling",
-                            intimgurl: "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg"
-                        }
-                    ]*/
-                }
+                data: result
             });
             response.end();
             throw new BreakPromiseChainError();
@@ -107,16 +57,17 @@ router.get('/load', function (request, response) {
 
 });
 
-router.post('/save', function (request, response) {
+router.post('/update', function (request, response) {
 
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var interests = request.body.interests; //array of interest ids
+    var register = request.body.register;
 
     if(!(interests instanceof Array)){
         console.error(new Error('"interests" body parameter should be of type array'));
         response.status(500).send({
-            message: '"interests" body parameter should be of type array'
+            message: config.isProduction() ? '' : '"interests" body parameter should be of type array'
         });
         return;
     }
@@ -137,7 +88,7 @@ router.post('/save', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return userintrstutils.saveUserInterests(connection, uuid, interests);
+            return userintrstutils.updateUserInterests(connection, uuid, interests, register);
         })
         .then(function () {
             response.send({
@@ -157,61 +108,6 @@ router.post('/save', function (request, response) {
                 console.error(err);
                 response.status(500).send({
                     error: 'Some error occurred at the server'
-                }).end();
-            }
-        });
-});
-
-//TODO: Complete
-router.post('/remove', function (request, response) {
-
-    var uuid = request.body.uuid;
-    var authkey = request.body.authkey;
-    var interests = request.body.interests;
-
-    if(!(interests instanceof Array)){
-        console.error(new Error('"interests" body parameter should be of type array'));
-        response.status(500).send({
-            message: '"interests" body parameter should be of type array'
-        });
-        return;
-    }
-
-    var connection;
-
-    _auth.authValid(uuid, authkey)
-        .then(function () {
-            return config.getNewConnection()
-        }, function () {
-            response.send({
-                tokenstatus: 'invalid'
-            });
-            response.end();
-            throw new BreakPromiseChainError();
-        })
-        .then(function (conn) {
-            connection = conn;
-            return userintrstutils.removeUserInterests(connection, uuid, interests);
-        })
-        .then(function (result) {
-            response.send({
-                tokenstatus: 'valid',
-                data: {
-                    status: 'done'
-                }
-            });
-            response.end();
-            throw new BreakPromiseChainError();
-        })
-        .catch(function (err) {
-            config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
-                //Do nothing
-            }
-            else{
-                console.error(err);
-                response.status(500).send({
-                    message: 'Some error occurred at the server'
                 }).end();
             }
         });

@@ -42,7 +42,7 @@ router.post('/', upload.single('captured-image'), function (request, response) {
     var capture = request.file;
     var merchantable = Number(request.body.merchantable);
     var caption = request.body.caption.trim() ? request.body.caption.trim() : null;
-    var interests = request.body.interests;
+    var interests = request.body.interests ? JSON.parse(request.body.interests) : null;
 
     var uniquehashtags;
     var mentioneduuids = [];
@@ -217,6 +217,7 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
     var capture_img_low = request.files['capture-img-low'][0];
     var merchantable = Number(request.body.merchantable);
     var caption = request.body.caption.trim() ? request.body.caption.trim() : null;
+    var interests = request.body.interests ? JSON.parse(request.body.interests) : null;
 
     var uniquehashtags;
     var mentioneduuids = [];
@@ -311,6 +312,11 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
         .then(function () {
             if(uniquehashtags && uniquehashtags.length > 0){
                 return hashtagutils.addHashtagsForEntity(connection, uniquehashtags, entityid);
+            }
+        })
+        .then(function () {
+            if(interests && interests.length > 0){
+                return entityintrstutils.saveEntityInterests(connection, entityid, interests);
             }
         })
         .then(function () {

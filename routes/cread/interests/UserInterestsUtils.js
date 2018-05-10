@@ -23,11 +23,26 @@ function loadAllInterestsForUser(connection, uuid) {
                 });
 
                 resolve({
+                    requestmore: false, //Key not contributing to functionality
+                    lastindexkey: 30,   //Key not contributing to functionality
                     interests: rows
                 });
             }
         });
     });
+}
+
+function updateUserInterests(connection, uuid, interests, register) {
+    return new Promise(function (resolve, reject) {
+        if(register){
+            saveUserInterests(connection, uuid, interests)
+                .then(resolve, reject);
+        }
+        else{
+            removeUserInterests(connection, uuid, interests)
+                .then(resolve, reject);
+        }
+    })
 }
 
 function saveUserInterests(connection, uuid, interests) {
@@ -69,6 +84,5 @@ function removeUserInterests(connection, uuid, interests) {
 
 module.exports = {
     loadAllInterestsForUser: loadAllInterestsForUser,
-    saveUserInterests: saveUserInterests,
-    removeUserInterests: removeUserInterests
+    updateUserInterests: updateUserInterests
 };
