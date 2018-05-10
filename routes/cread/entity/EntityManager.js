@@ -111,7 +111,7 @@ router.get('/load-specific', function (request, response) {
         })
         .then(function (result) {
 
-            if(platform !== "android"){
+            if(platform !== "android" && platform !== "web"){
                 result.entity = utils.filterProfileMentions(new Array(result.entity), "caption")[0];
             }
 

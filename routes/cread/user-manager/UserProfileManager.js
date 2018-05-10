@@ -511,7 +511,7 @@ router.get('/load-timeline', function (request, response) {
         })
         .then(function (result) {
 
-            if(platform !== "android"){
+            if(platform !== "android" && platform !== "web"){
                 result.items = utils.filterProfileMentions(result.items, "caption")
             }
 
@@ -745,7 +745,7 @@ router.get('/load-collab-timeline', function (request, response) {
         })
         .then(function (result) {
 
-            if(platform !== "android"){
+            if(platform !== "android" && platform !== "web"){
                 result.items = utils.filterProfileMentions(result.items, "caption")
             }
 
@@ -1156,45 +1156,5 @@ function uploadProfilePicToS3(filepath, uuid, filename) {
         });
     });
 }
-
-/*router.post('/update-client-bio', function (request, response) {
-
-    var uuid = request.body.uuid;
-    var authkey = request.body.authkey;
-    var clientid = request.body.clientid;
-    var bio = request.body.bio;
-
-    var connection;
-
-    _auth.authValid(uuid, authkey)
-        .then(function () {
-            return config.getNewConnection();
-        }, function () {
-            response.send({
-                tokenstatus: 'invalid'
-            });
-            response.end();
-            throw new BreakPromiseChainError();
-        })
-        .then(function (conn) {
-            connection = conn;
-
-            var sqlparams = {
-                bio: bio
-            };
-
-            return clientprofile_utils.updateClientProfile(clientid, sqlparams, connection);
-        })
-        .then(function () {
-            response.send({
-                tokenstatus: 'valid',
-                data: {
-                    status: 'done'
-                }
-            })
-        })
-        .catch()
-
-})*/
 
 module.exports = router;

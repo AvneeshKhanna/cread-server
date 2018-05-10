@@ -12,6 +12,7 @@ var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 var consts = require('../../utils/Constants');
 var cache_time = consts.cache_time;
 
+var utils = require('../../utils/Utils');
 var popularfeedbuyutils = require('./PopularFeedBuyUtils');
 
 router.get('/load', function (request, response) {
@@ -19,6 +20,7 @@ router.get('/load', function (request, response) {
     var uuid = request.headers.uuid;
     var authkey = request.headers.authkey;
     var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : null;
+    var platform = request.query.platform;
 
     //TODO: Code web access token validation system
     var web_access_token = request.headers.web_access_token;
@@ -33,6 +35,11 @@ router.get('/load', function (request, response) {
             return popularfeedbuyutils.loadFeed(connection, limit, lastindexkey);
         })
         .then(function (result) {
+
+            if(platform !== "android" && platform !== "web"){
+                result.items = utils.filterProfileMentions(result.items, "caption")
+            }
+
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 
             if (request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')) {

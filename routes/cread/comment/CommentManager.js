@@ -49,7 +49,7 @@ router.get('/load', function (request, response) {
         })
         .then(function (result) {
 
-            if (platform !== "android") {
+            if (platform !== "android" && platform !== "web") {
                 result.comments = utils.filterProfileMentions(result.comments, "comment");
             }
 
