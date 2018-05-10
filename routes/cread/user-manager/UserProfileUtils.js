@@ -276,7 +276,7 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
 
     return new Promise(function (resolve, reject) {
         connection.query('SELECT User.uuid, User.firstname, User.lastname, User.bio, User.watermarkstatus, ' +
-            'User.email, User.phone, Follow.followee, Follow.follower, FA.featured_id ' +
+            'User.email, User.phone, Follow.followee, Follow.follower, FA.featured_id, I.intname ' +
             'FROM User ' +
             'LEFT JOIN ' +
             '(SELECT uuid, featured_id ' +
@@ -288,11 +288,31 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
             'ON (FA.uuid = User.uuid) ' +
             'LEFT JOIN Follow ' +
             'ON (Follow.followee = User.uuid OR Follow.follower = User.uuid) ' +
+            'LEFT JOIN UserInterests UI ' +
+            'ON(User.uuid = UI.uuid) ' +
+            'LEFT JOIN Interests I ' +
+            'ON(UI.intid = I.intid) ' +
             'WHERE User.uuid = ?', [today, config.getCreadKalakaarUUID(), requesteduuid], function (err, rows) {
             if (err) {
-                reject(err)
+                reject(err);
             }
             else {
+
+                var topinterests = [];
+
+                var interests_arr = utils.getUniqueValues(rows.map(function (r) {
+                    return r.intname
+                })).filter(function (r) {
+                    return !!r;
+                });
+
+                if(interests_arr[0]){
+                    topinterests.push(interests_arr[0])
+                }
+
+                if(interests_arr[1]){
+                    topinterests.push(interests_arr[1])
+                }
 
                 //People who follow the requesteduuid
                 var followers = rows.filter(function (elem) {
@@ -316,6 +336,10 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
                     delete userdata.featured_id;
                 }
 
+                if (userdata.hasOwnProperty('intname')) {
+                    delete userdata.intname;
+                }
+
                 //Follow status of the requester w.r.t. the requested
                 userdata.followstatus = (followers.filter(function (elem) {
                     return (elem.follower === requesteruuid)
@@ -323,6 +347,8 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
 
                 userdata.followercount = followercount;
                 userdata.followingcount = followingcount;
+                userdata.topinterests = topinterests;
+                userdata.interestcount = interests_arr.length;
 
                 connection.query('SELECT COUNT(DISTINCT E.entityid) AS postcount, ' +
                     'COUNT(DISTINCT CASE WHEN(E.type = "SHORT") THEN SC.capid ' +
