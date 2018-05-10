@@ -14,6 +14,7 @@ var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var consts = require('../utils/Constants');
 var utils = require('../utils/Utils');
 var entityutils = require('./EntityUtils');
+var entityintrstutils = require('../interests/EntityInterestsUtils');
 var captureutils = require('../capture/CaptureUtils');
 var hashtagutils = require('../hashtag/HashTagUtils');
 var profilementionutils = require('../profile-mention/ProfileMentionUtils');
@@ -397,6 +398,8 @@ router.post('/edit-caption', function (request, response) {
         mentioneduuids = utils.extractProfileMentionUUIDs(caption);
     }
 
+    var interests = request.body.interests ? JSON.parse(request.body.interests) : null;
+
     var connection;
     var requesterdetails;
 
@@ -420,6 +423,16 @@ router.post('/edit-caption', function (request, response) {
             //Adding new hashtags for entity
             if(uniquehashtags && uniquehashtags.length > 0){
                 return hashtagutils.addHashtagsForEntity(connection, uniquehashtags, entityid);
+            }
+        })
+        .then(function () {
+            if(interests && interests.length > 0){
+                return entityintrstutils.deleteAllEntityInterests(connection, entityid);
+            }
+        })
+        .then(function () {
+            if(interests && interests.length > 0){
+                return entityintrstutils.saveEntityInterests(connection, entityid, interests);
             }
         })
         .then(function () {

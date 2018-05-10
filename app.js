@@ -153,7 +153,8 @@ app.use('/user-access', require('./routes/cread/user-manager/UserAccessManager')
 app.use('/user-events', require('./routes/cread/user-manager/events/UserEventsManager'));
 app.use('/redeem-from-wallet', require('./routes/cread/user-manager/payments/RedeemFromWallet'));
 app.use('/givers-manager', require('./routes/cread/givers/GiversManager'));
-app.use('/user-interests', require('./routes/cread/user-manager/interests/InterestsManager'));
+app.use('/user-interests', require('./routes/cread/interests/UserInterestsManager'));
+app.use('/entity-interests', require('./routes/cread/interests/EntityInterestsManager'));
 app.use('/user-campaigns', require('./routes/cread/track/campaigns/UserCampaignManager'));
 app.use('/explore-feed', require('./routes/cread/feed/explore/ExploreFeedManager'));
 app.use('/inspiration-feed', require('./routes/cread/feed/InspirationFeedManager'));

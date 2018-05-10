@@ -21,6 +21,7 @@ var fs = require('fs');
 var utils = require('../utils/Utils');
 var entityutils = require('../entity/EntityUtils');
 var entityimgutils = require('../entity/EntityImageUtils');
+var entityintrstutils = require('../interests/EntityInterestsUtils');
 var commentutils = require('../comment/CommentUtils');
 var shortutils = require('./ShortUtils');
 var hashtagutils = require('../hashtag/HashTagUtils');
@@ -83,6 +84,8 @@ router.post('/', upload.single('short-image'), function (request, response) {
             mentioneduuids = utils
                 .extractProfileMentionUUIDs(caption);
         }
+
+        var interests = request.body.interests ? JSON.parse(request.body.interests) : null;
     }
     catch (ex) {
         console.error(ex);
@@ -120,6 +123,11 @@ router.post('/', upload.single('short-image'), function (request, response) {
         .then(function () {
             if (uniquehashtags && uniquehashtags.length > 0) {
                 return hashtagutils.addHashtagsForEntity(connection, uniquehashtags, entityid);
+            }
+        })
+        .then(function () {
+            if(interests && interests.length > 0){
+                return entityintrstutils.saveEntityInterests(connection, entityid, interests);
             }
         })
         .then(function () {
@@ -276,6 +284,8 @@ router.post('/edit', upload.single('short-image'), function (request, response) 
             uniquehashtags = hashtagutils.extractUniqueHashtags(caption);
             mentioneduuids = utils.extractProfileMentionUUIDs(caption);
         }
+
+        var interests = request.body.interests ? JSON.parse(request.body.interests) : null;
     }
     catch (ex) {
         console.error(ex);
@@ -311,6 +321,16 @@ router.post('/edit', upload.single('short-image'), function (request, response) 
             //Deleting new hashtags for entity
             if (uniquehashtags && uniquehashtags.length > 0) {
                 return hashtagutils.addHashtagsForEntity(connection, uniquehashtags, entityid);
+            }
+        })
+        .then(function () {
+            if(interests && interests.length > 0){
+                return entityintrstutils.deleteAllEntityInterests(connection, entityid);
+            }
+        })
+        .then(function () {
+            if(interests && interests.length > 0){
+                return entityintrstutils.saveEntityInterests(connection, entityid, interests);
             }
         })
         .then(function () {
