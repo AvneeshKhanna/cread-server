@@ -157,6 +157,7 @@ router.post('/sign-up', function (request, response) {
                 userdetails.lastname = result.lastname;
                 userdetails.locale = result.locale;
                 userdetails.email = result.email;
+                userdetails.profilepicurl = result.profilepicurl;
             }
         })
         .then(function () {
@@ -193,9 +194,7 @@ router.post('/sign-up', function (request, response) {
         })
         .then(function (result) {
             new_user_uuid = result.uuid;
-            if(!google_access_token){
-                return userprofileutils.copyFacebookProfilePic(userdetails.profilepicurl, result.uuid);
-            }
+            return userprofileutils.copySocialMediaProfilePic(userdetails.profilepicurl, result.uuid);
         })
         .then(function (uuid) { //Sending a notification to the new user's Facebook friends who are on Cread
             /*new_user_uuid = uuid;*/

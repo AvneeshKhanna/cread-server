@@ -260,7 +260,8 @@ function getUserDetailsFromGoogle(access_token) {
                     email: payload['email'],
                     firstname: utils.firstLetterToUpper(payload['given_name']),
                     lastname: utils.firstLetterToUpper(payload['family_name']),
-                    locale: payload['locale']
+                    locale: payload['locale'],
+                    profilepicurl: payload['picture'] + "?sz=500"   //Adding query parameter for high res pic
                 });
 
             })
