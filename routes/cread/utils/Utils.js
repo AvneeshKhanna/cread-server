@@ -16,6 +16,8 @@ var profilepicfilename = 'display-pic.jpg';
 var profilepicfilename_small = 'display-pic-small.jpg';
 var urlprotocol = 'https://';
 
+var downloads_file_basepath = './downloads';
+
 var firstPostCommentsCK = [
     {
         prefix: "Beautiful first post, ",
@@ -303,6 +305,62 @@ function downloadFile(filebasepath, filename, downloadurl) {
     });
 }
 
+function uploadFileToS3(sourcefilepath, destFileKey) {
+    return new Promise(function (resolve, reject) {
+        var params = {
+            Body: fs.createReadStream(sourcefilepath),
+            Bucket: s3bucket,
+            Key: destFileKey,
+            ACL: "public-read"
+        };
+
+        var s3 = new AWS.S3();
+        s3.putObject(params, function (err, data) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    })
+}
+
+function getS3ConfigFileUrl() {
+    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Config/config.json';
+}
+
+function changeS3ConfigFile(token) {
+    return new Promise(function (resolve, reject) {
+
+        var data = {
+            web_access_token: token
+        };
+
+        fs.writeFile(downloads_file_basepath + '/config.json', JSON.stringify(data, null, 3), function (err) {
+            if(err){
+                reject(err);
+            }
+            else{
+                resolve();
+            }
+        });
+    });
+}
+
+function updateS3ConfigFile(token) {
+    return new Promise(function (resolve, reject) {
+        downloadFile(downloads_file_basepath, "config.json", getS3ConfigFileUrl())
+            .then(function () {
+                return changeS3ConfigFile(token);
+            })
+            .then(function () {
+                return uploadFileToS3(downloads_file_basepath + '/config.json', "Config/config.json");
+            })
+            .then(resolve, reject);
+    });
+}
+
 /**
  * This function is used to convert the profile mention formatted parts to simply names in texts for backward compatibility with
  * profile mention
@@ -363,7 +421,7 @@ function extractProfileMentionUUIDs(text) {
 
 function getRandomFirstPostComment(name) {
     var comment_data = firstPostCommentsCK[Math.floor(Math.random() * firstPostCommentsCK.length)];
-    return comment_data.prefix + name +  comment_data.suffix;
+    return comment_data.prefix + name + comment_data.suffix;
 }
 
 function firstLetterToUpper(word) {
@@ -376,7 +434,7 @@ function deleteUnrequiredFiles(files) {
         async.each(files, function (file, callback) {
 
             fs.unlink(file, function (err) {
-                if(err){
+                if (err) {
                     callback(err);
                 }
                 else {
@@ -385,7 +443,7 @@ function deleteUnrequiredFiles(files) {
             });
 
         }, function (err) {
-            if(err){
+            if (err) {
                 console.error(err);
                 reject(err);
             }
@@ -416,6 +474,7 @@ module.exports = {
     beginTransaction: beginTransaction,
     rollbackTransaction: rollbackTransaction,
     downloadFile: downloadFile,
+    updateS3ConfigFile: updateS3ConfigFile,
     getAllIndexes: getAllIndexes,
     filterProfileMentions: filterProfileMentions,
     extractProfileMentionUUIDs: extractProfileMentionUUIDs,

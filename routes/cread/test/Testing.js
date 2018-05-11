@@ -29,6 +29,7 @@ var AWS = require('aws-sdk');
 
 var transEmail = require('../dsbrd/wallet-management/TransactionEmailer');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
+var utils = require('../utils/Utils');
 
 /*AWS.config.region = 'eu-west-1';
  AWS.config.credentials = new AWS.CognitoIdentityCredentials({
@@ -556,6 +557,33 @@ router.get('/get-all-data', function (request, response) {
                 }
             });
         });
+
+});
+
+router.post('/download-config', function (request, response) {
+    utils.downloadS3ConfigFile()
+        .then(function () {
+            response.send('done').end();
+        })
+        .catch(function (err) {
+            console.error(err);
+            response.send(err).end();
+        })
+
+});
+
+router.post('/update-config', function (request, response) {
+
+    var token = request.query.token;
+
+    utils.updateS3ConfigFile(token)
+        .then(function () {
+            response.send('done').end();
+        })
+        .catch(function (err) {
+            console.error(err);
+            response.send(err).end();
+        })
 
 });
 

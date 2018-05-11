@@ -490,12 +490,23 @@ router.get('/load-timeline', function (request, response) {
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
     var requesteduuid = decodeURIComponent(request.query.requesteduuid);
     var platform = request.query.platform;
+    var web_access_token = request.headers.web_access_token;
 
     var limit = (config.envtype === 'PRODUCTION') ? 10 : 6;  //TODO: Change to 10
 
     var connection;
 
-    _auth.authValid(uuid, authkey)
+    _auth.authValidWeb(web_access_token)
+        .then(function (payload) {
+            if (web_access_token) {
+                uuid = payload.uuid;
+            }
+        })
+        .then(function () {
+            if(!web_access_token){
+                return _auth.authValid(uuid, authkey);
+            }
+        })
         .then(function () {
             return config.getNewConnection();
         }, function () {
@@ -511,14 +522,14 @@ router.get('/load-timeline', function (request, response) {
         })
         .then(function (result) {
 
-            if(platform !== "android" && platform !== "web"){
+            if (platform !== "android" && platform !== "web") {
                 result.items = utils.filterProfileMentions(result.items, "caption")
             }
 
             //console.log("result is " + JSON.stringify(result, null, 3));
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 
-            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+            if (request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')) {
                 response.status(304).send().end();
             }
             else {
@@ -572,16 +583,16 @@ router.post('/load-timeline', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            if(page === 0 || page){
+            if (page === 0 || page) {
                 return userprofileutils.loadTimelineLegacy(connection, requesteduuid, uuid, limit, page);
             }
-            else{
+            else {
                 return userprofileutils.loadTimeline(connection, requesteduuid, uuid, limit, lastindexkey);
             }
         })
         .then(function (result) {
 
-            if(platform !== "android"){
+            if (platform !== "android") {
                 result.items = utils.filterProfileMentions(result.items, "caption")
             }
 
@@ -618,10 +629,21 @@ router.get('/load-profile', function (request, response) {
     var uuid = request.headers.uuid;
     var authkey = request.headers.authkey;
     var requesteduuid = decodeURIComponent(request.query.requesteduuid); //The "uuid" of the profile that is requested
+    var web_access_token = request.headers.web_access_token;
 
     var connection;
 
-    _auth.authValid(uuid, authkey)
+    _auth.authValidWeb(web_access_token)
+        .then(function (payload) {
+            if(web_access_token){
+                uuid = payload.uuid;
+            }
+        })
+        .then(function () {
+            if(!web_access_token){
+                return _auth.authValid(uuid, authkey)
+            }
+        })
         .then(function () {
             return config.getNewConnection();
         }, function () {
@@ -639,7 +661,7 @@ router.get('/load-profile', function (request, response) {
             console.log("result is " + JSON.stringify(result, null, 3));
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 
-            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+            if (request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')) {
                 response.status(304).send().end();
             }
             else {
@@ -725,12 +747,23 @@ router.get('/load-collab-timeline', function (request, response) {
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
     var requesteduuid = decodeURIComponent(request.query.requesteduuid);
     var platform = request.query.platform;
+    var web_access_token = request.headers.web_access_token;
 
     var limit = (config.envtype === 'PRODUCTION') ? 10 : 5;
     var connection;
 
-    _auth.authValid(uuid, authkey)
-        .then(function (details) {
+    _auth.authValidWeb(web_access_token)
+        .then(function (payload) {
+            if(web_access_token){
+                uuid = payload.uuid;
+            }
+        })
+        .then(function () {
+            if(!web_access_token){
+                return _auth.authValid(uuid, authkey);
+            }
+        })
+        .then(function () {
             return config.getNewConnection();
         }, function () {
             response.send({
@@ -745,14 +778,14 @@ router.get('/load-collab-timeline', function (request, response) {
         })
         .then(function (result) {
 
-            if(platform !== "android" && platform !== "web"){
+            if (platform !== "android" && platform !== "web") {
                 result.items = utils.filterProfileMentions(result.items, "caption")
             }
 
             console.log("result is " + JSON.stringify(result, null, 3));
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 
-            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+            if (request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')) {
                 response.status(304).send().end();
             }
             else {
@@ -767,10 +800,10 @@ router.get('/load-collab-timeline', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     message: 'Some error occurred at the server'
@@ -811,10 +844,10 @@ router.get('/load-fb-friends', function (request, response) {
             return userprofileutils.checkIfFbIdAttachedToAnother(connection, fbid, uuid);
         })
         .then(function (isAttachedToAnother) {
-            if(!isAttachedToAnother){
+            if (!isAttachedToAnother) {
                 return userprofileutils.saveFbIdUser(connection, fbid, uuid);
             }
-            else{
+            else {
                 response.status(200).send({
                     tokenstatus: 'valid',
                     data: {
@@ -841,7 +874,7 @@ router.get('/load-fb-friends', function (request, response) {
 
             result.duplicate_fbid = false;
 
-            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+            if (request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')) {
                 response.status(304).send().end();
             }
             else {
@@ -928,19 +961,19 @@ router.post('/update-profile', function (request, response) {
     var authkey = request.body.authkey;
     var userdata = request.body.userdata;
 
-    if(!userdata.bio){
+    if (!userdata.bio) {
         delete userdata.bio;
     }
-    if(!userdata.watermark){
+    if (!userdata.watermark) {
         delete userdata.watermark;
     }
-    if(!userdata.firstname){
+    if (!userdata.firstname) {
         delete userdata.firstname;
     }
     /*if(!userdata.lastname){
         delete userdata.lastname;
     }*/
-    if(!userdata.email){
+    if (!userdata.email) {
         delete userdata.email;
     }
 
@@ -1011,7 +1044,7 @@ router.post('/update-phone', function (request, response) {
             return useraccessutils.checkIfPhoneExists(connection, phone);
         })
         .then(function (result) {
-            if(result){
+            if (result) {
                 response.send({
                     tokenstatus: 'valid',
                     data: {
@@ -1021,7 +1054,7 @@ router.post('/update-phone', function (request, response) {
                 response.end();
                 throw new BreakPromiseChainError();
             }
-            else{
+            else {
                 return userprofileutils.updateProfile(connection, uuid, details);
             }
         })
@@ -1037,10 +1070,10 @@ router.post('/update-phone', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     message: 'Some error occurred at the server'

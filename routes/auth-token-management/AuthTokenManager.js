@@ -9,6 +9,7 @@ var jwt = require('jsonwebtoken');
 
 var config = require('./../Config');
 var _connection = config.createConnection;
+var authtokenutils = require('./AuthTokenUtils');
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -119,12 +120,21 @@ function clientAuthValid(clientid, authkey) {
 
 }
 
-/**
- * TODO: Define
- * */
-function verifyWebAccessToken(connection, token) {
+function authValidWeb(web_access_token) {
     return new Promise(function (resolve, reject) {
-       resolve();
+        if(!web_access_token){  //Since this authValidWeb is always called for endpoints that are also used for web, web_access_token could be undefined
+            resolve();
+        }
+        else{
+            authtokenutils.decryptPayloadAuth(web_access_token)
+                .then(resolve, reject);
+        }
+    });
+}
+
+function generateWebAccessToken(payload) {
+    return new Promise(function (resolve, reject) {
+        resolve(authtokenutils.encryptPayloadForAuth(payload));
     });
 }
 
@@ -134,4 +144,5 @@ module.exports.authValid = authValid; //Promise version of tokenValidation
 module.exports.clientAuthValid = clientAuthValid;
 module.exports.generateToken = generateToken;
 module.exports.validateToken = validateToken;
-module.exports.verifyWebAccessToken = verifyWebAccessToken;
+module.exports.authValidWeb = authValidWeb;
+module.exports.generateWebAccessToken = generateWebAccessToken;
