@@ -22,7 +22,7 @@ router.post('/load', function (request, response) {
 
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
-    var web_access_token = request.headers.web_access_token;
+    var web_access_token = request.body.web_access_token;
     var entityid = request.body.entityid;
 
     var connection;
@@ -329,7 +329,7 @@ function structureProductDetails(connection, products, entityid) {
 router.post('/load-multi-posts', function (request, response) {
     
     var entity_data = request.body.entity_data;
-    var web_access_token = request.headers.web_access_token;
+    var web_access_token = request.body.web_access_token;
     
     var connection;
 
@@ -344,7 +344,7 @@ router.post('/load-multi-posts', function (request, response) {
             }
         })
         .then(function () {
-            config.getNewConnection()
+            return config.getNewConnection()
         })
         .then(function (conn) {
             connection = conn;
