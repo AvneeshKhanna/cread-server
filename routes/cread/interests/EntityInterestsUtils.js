@@ -4,6 +4,7 @@
 'use-strict';
 
 var uuidGen = require('uuid');
+var consts = require('../utils/Constants');
 
 function loadInterestsByType(connection, entityid, type) {
     return new Promise(function (resolve, reject) {
@@ -12,23 +13,36 @@ function loadInterestsByType(connection, entityid, type) {
         var sqlparams;
 
         if(entityid){
-            sql = 'SELECT I.intid, I.intname, (EI.eintid IS NOT NULL) AS selected ' +
-                'FROM Interests I ' +
-                'LEFT JOIN EntityInterests EI ' +
-                'ON(I.intid = EI.intid AND EI.entityid = ?) ' +
-                'WHERE I.superset = ?';
+            if(type === 'ALL'){
+                sql = 'SELECT I.intid, I.intname, (EI.eintid IS NOT NULL) AS selected ' +
+                    'FROM Interests I ' +
+                    'LEFT JOIN EntityInterests EI ' +
+                    'ON(I.intid = EI.intid AND EI.entityid = ?) ' +
+                    'WHERE I.superset IS NOT NULL';
+            }
+            else{
+                sql = 'SELECT I.intid, I.intname, (EI.eintid IS NOT NULL) AS selected ' +
+                    'FROM Interests I ' +
+                    'LEFT JOIN EntityInterests EI ' +
+                    'ON(I.intid = EI.intid AND EI.entityid = ?) ' +
+                    'WHERE I.superset = ' + type;
+            }
             sqlparams = [
-                entityid,
-                type
+                entityid
             ]
         }
         else {
-            sql = 'SELECT I.*, 0 AS selected ' +
-                'FROM Interests I ' +
-                'WHERE superset = ?';
-            sqlparams = [
-                type
-            ]
+            if(type === 'ALL'){
+                sql = 'SELECT I.*, 0 AS selected ' +
+                    'FROM Interests I ' +
+                    'WHERE superset IS NOT NULL';
+            }
+            else{
+                sql = 'SELECT I.*, 0 AS selected ' +
+                    'FROM Interests I ' +
+                    'WHERE superset = ' + type;
+            }
+            sqlparams = []
         }
 
         connection.query(sql, sqlparams, function (err, rows) {
@@ -42,6 +56,7 @@ function loadInterestsByType(connection, entityid, type) {
                 });
 
                 resolve({
+                    max_selection: consts.max_interest_selection,   //max permitted selections by a user to categorise a post
                     interests: rows
                 });
             }
