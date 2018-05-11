@@ -77,7 +77,7 @@ function saveEntityInterests(connection, entityid, interests) {
             ])
         });
 
-        connection.query('INSERT INTO EntityInterests (eintid, intid, entityid) VALUES ?', [sqlParamArr], function (err, rows) {
+        connection.query('INSERT IGNORE INTO EntityInterests (eintid, intid, entityid) VALUES ?', [sqlParamArr], function (err, rows) {
             if (err) {
                 reject(err);
             }
