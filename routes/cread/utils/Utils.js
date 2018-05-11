@@ -334,7 +334,7 @@ function changeS3ConfigFile(token) {
     return new Promise(function (resolve, reject) {
 
         var data = {
-            web_access_token: token
+            web_access_token: encodeURIComponent(token)
         };
 
         fs.writeFile(downloads_file_basepath + '/config.json', JSON.stringify(data, null, 3), function (err) {

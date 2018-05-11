@@ -126,7 +126,7 @@ function authValidWeb(web_access_token) {
             resolve();
         }
         else{
-            authtokenutils.decryptPayloadAuth(web_access_token)
+            authtokenutils.decryptPayloadAuth(decodeURIComponent(web_access_token))
                 .then(resolve, reject);
         }
     });
