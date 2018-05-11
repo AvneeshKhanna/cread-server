@@ -19,6 +19,8 @@ const minCashInAmt = (config_type === 'PRODUCTION') ? 10 : 2;    //TODO: Can cha
 
 const explore_algo_base_score = 5;  //Base score for each entity
 
+const max_interest_selection = 5;
+
 const min_percentile_quality_user_downvote = 90;
 const min_qpercentile_user_recommendation = 70;
 
@@ -68,5 +70,6 @@ module.exports = {
     cache_time: cache_time,
     explore_algo_base_score: explore_algo_base_score,
     min_percentile_quality_user_downvote: min_percentile_quality_user_downvote,
-    min_qpercentile_user_recommendation: min_qpercentile_user_recommendation
+    min_qpercentile_user_recommendation: min_qpercentile_user_recommendation,
+    max_interest_selection: max_interest_selection
 };
