@@ -23,7 +23,8 @@ const journal_cover = {
     x_offset: 135,
     y_offset: 64,
     width: 512,
-    height: 733
+    height: 733,
+    img_allowance: 3
 };
 
 const coffee_mug_base = {
@@ -179,18 +180,22 @@ function createOverlayedImageJournal(typeid, type, uuid, img_path) {
     return new Promise(function (resolve, reject) {
 
         var journal_aspect_ratio = parseFloat(journal_cover.width/journal_cover.height);
+        var image_dimen = sizeOf(img_path);
+        var entity_img_aspect_ratio = parseFloat(image_dimen.width/image_dimen.height);
 
+        //Get dominant image color to put in background
         getDominantImgColorHex(img_path, function (dcolor) {
             gm(img_path)
-                .resize(journal_cover.width, journal_cover.width)   //The dimensions width  x width are given because gm adjusts height automatically according to aspect ratio
+                .resize(journal_cover.width, journal_cover.width/entity_img_aspect_ratio)   //The dimensions 'Width X Width' are given because gm adjusts height automatically according to aspect ratio
                 .background(dcolor)
                 .gravity('Center')
-                .extent(journal_cover.width + 5, (journal_cover.width + 5)/journal_aspect_ratio)
+                .extent(journal_cover.width + journal_cover.img_allowance, (journal_cover.width + journal_cover.img_allowance)/journal_aspect_ratio)
                 .write(base_buffer_file_path  + '/' + typeid + '-journal-extent.jpg', function (err) {
                     if(err){
                         reject(err);
                     }
                     else{
+                        //Extend the entity image to make it the shape of journal cover (vetically rectangular)
                         gm(base_buffer_file_path  + '/' + typeid + '-journal-extent.jpg')
                             .background('transparent')
                             //.gravity('Center')
@@ -200,6 +205,7 @@ function createOverlayedImageJournal(typeid, type, uuid, img_path) {
                                     reject(err);
                                 }
                                 else{
+                                    //Overlay extended entity image over journal product photograph
                                     gm()
                                         .command('composite')
                                         .in(base_products_file_path + '/journal_layer_1.png')
