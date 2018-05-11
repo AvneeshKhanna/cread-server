@@ -85,11 +85,13 @@ function registerUserData(connection, userdetails, fcmtoken) {
                             reject(err);
                         });
                     }
-                    else if (fcmtoken) {
+                    else /*if (fcmtoken) */{
 
                         addUserToDynamoDB({
                             'UUID': uuid,
-                            'Fcm_token': [fcmtoken]
+                            'Fcm_token': [
+                                fcmtoken
+                            ]
                         }, function (err) {
                             if (err) {
                                 connection.rollback(function () {
@@ -104,12 +106,12 @@ function registerUserData(connection, userdetails, fcmtoken) {
                             }
                         });
                     }
-                    else {
+                    /*else {
                         resolve({
                             uuid: uuid,
                             authkey: authkey
                         });
-                    }
+                    }*/
                 });
             }
         });
