@@ -25,7 +25,7 @@ function loadInterestsByType(connection, entityid, type) {
                     'FROM Interests I ' +
                     'LEFT JOIN EntityInterests EI ' +
                     'ON(I.intid = EI.intid AND EI.entityid = ?) ' +
-                    'WHERE I.superset = ' + type;
+                    'WHERE I.superset = "' + type + '"';
             }
             sqlparams = [
                 entityid
@@ -40,7 +40,7 @@ function loadInterestsByType(connection, entityid, type) {
             else{
                 sql = 'SELECT I.*, 0 AS selected ' +
                     'FROM Interests I ' +
-                    'WHERE superset = ' + type;
+                    'WHERE superset = "' + type + '"';
             }
             sqlparams = []
         }

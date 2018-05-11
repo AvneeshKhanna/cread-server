@@ -2,8 +2,7 @@
  * Created by avnee on 06-08-2017.
  */
 
-var envconfig = require('config');
-var config_type = envconfig.get("type");
+var config = require('../../Config');
 
 const sharerate = 10;
 const checkrate_verified = 1;
@@ -15,32 +14,32 @@ const restrict_find_frequency = 25; //Measured in 'clicks per minute'
 const royalty_percentage = 10;
 
 const markup = 33; //in percentage TODO: Update markup
-const minCashInAmt = (config_type === 'PRODUCTION') ? 10 : 2;    //TODO: Can change the amount based on team discussion
+const minCashInAmt = config.isProduction() ? 10 : 2;    //TODO: Can change the amount based on team discussion
 
 const explore_algo_base_score = 5;  //Base score for each entity
 
-const max_interest_selection = 5;
+const max_interest_selection = config.isProduction() ? 5 : 2;
 
 const min_percentile_quality_user_downvote = 90;
 const min_qpercentile_user_recommendation = 70;
 
 const share_time_interval = {
     same_share : {
-        time_diff: config_type === 'PRODUCTION' ? 24 : 2,
-        time_diff_unit: config_type === 'PRODUCTION' ? "hours" : "minutes"
+        time_diff: config.isProduction() ? 24 : 2,
+        time_diff_unit: config.isProduction() ? "hours" : "minutes"
     },
     diff_share: {
-        time_diff: config_type === 'PRODUCTION' ? 12 : 1,
-        time_diff_unit: config_type === 'PRODUCTION' ? "hours" : "minutes"
+        time_diff: config.isProduction() ? 12 : 1,
+        time_diff_unit: config.isProduction() ? "hours" : "minutes"
     }
 };
 
 const cache_time = {
-    small: config_type === 'DEVELOPMENT' ? 20 : 60,
-    medium: config_type === 'DEVELOPMENT' ? 20 : 120,
-    high: config_type === 'DEVELOPMENT' ? 20 : 300,
-    xhigh: config_type === 'DEVELOPMENT' ? 20 : 900,
-    xxhigh: config_type === 'DEVELOPMENT' ? 20 : 3600
+    small: !(config.isProduction()) ? 20 : 60,
+    medium: !(config.isProduction()) ? 20 : 120,
+    high: !(config.isProduction()) ? 20 : 300,
+    xhigh: !(config.isProduction()) ? 20 : 900,
+    xxhigh: !(config.isProduction()) ? 20 : 3600
 };
 
 function getMarkup(markup) {
