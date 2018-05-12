@@ -36,7 +36,7 @@ router.post('/load', function (request, response) {
             }
         })
         .then(function () {
-            if(web_access_token){
+            if(!web_access_token){
                 return _auth.authValid(uuid, authkey)
             }
         })
@@ -401,8 +401,10 @@ function getProductDetailsForEntities(connection, entity_data) {
                     entity_data.map(function (edata) {
                         edata.products = products.map(function (p) {
                             return {
-                                url: ["COFFEE_MUG", "JOURNAL"].includes(p.type) ? getProductEntityUrl(p.type, edata.uuid, edata.captureid, edata.shoid) : edata.entityurl,
-                                pid: p.productid
+                                productentityurl: ["COFFEE_MUG", "JOURNAL"].includes(p.type) ? getProductEntityUrl(p.type, edata.uuid, edata.captureid, edata.shoid) : null,
+                                productimgurl: ["COFFEE_MUG", "JOURNAL"].includes(p.type) ? null : p.productimgurl,
+                                productid: p.productid,
+                                type: p.type
                             }
                         });
                     });
