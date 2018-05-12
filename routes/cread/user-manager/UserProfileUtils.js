@@ -813,12 +813,12 @@ function uploadImageToS3(sourcefilepath, uuid, type, destfilename /* ,filekey*/)
 }
 
 /**
- * Method to copy Facebook's profile picture to S3
+ * Method to copy Facebook or Google's profile picture to S3
  * */
-function copyFacebookProfilePic(fbpicurl, uuid) {
+function copySocialMediaProfilePic(picurl, uuid) {
     var downloadpath;
     return new Promise(function (resolve, reject) {
-        utils.downloadFile('./images/downloads/profilepic', uuid + '.jpg', fbpicurl)
+        utils.downloadFile('./images/downloads/profilepic', uuid + '.jpg', picurl)
             .then(function (downldpath) {
                 downloadpath = downldpath;
 
@@ -1107,7 +1107,7 @@ module.exports = {
     renameFile: renameFile,
     createSmallImage: createSmallImage,
     uploadImageToS3: uploadImageToS3,
-    copyFacebookProfilePic: copyFacebookProfilePic,
+    copySocialMediaProfilePic: copySocialMediaProfilePic,
     createSmallProfilePic: createSmallProfilePic,
     getUserQualityPercentile: getUserQualityPercentile,
     getLatestPostsCache: getLatestPostsCache,

@@ -58,7 +58,7 @@ function saveUserInterests(connection, uuid, interests) {
             ])
         });
 
-        connection.query('INSERT INTO UserInterests (uintid, intid, uuid) VALUES ?', [sqlParamArr], function (err, rows) {
+        connection.query('INSERT IGNORE INTO UserInterests (uintid, intid, uuid) VALUES ?', [sqlParamArr], function (err, rows) {
             if (err) {
                 reject(err);
             }

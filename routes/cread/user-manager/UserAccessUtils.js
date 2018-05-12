@@ -85,11 +85,13 @@ function registerUserData(connection, userdetails, fcmtoken) {
                             reject(err);
                         });
                     }
-                    else if (fcmtoken) {
+                    else /*if (fcmtoken) */{
 
                         addUserToDynamoDB({
                             'UUID': uuid,
-                            'Fcm_token': [fcmtoken]
+                            'Fcm_token': [
+                                fcmtoken
+                            ]
                         }, function (err) {
                             if (err) {
                                 connection.rollback(function () {
@@ -104,12 +106,12 @@ function registerUserData(connection, userdetails, fcmtoken) {
                             }
                         });
                     }
-                    else {
+                    /*else {
                         resolve({
                             uuid: uuid,
                             authkey: authkey
                         });
-                    }
+                    }*/
                 });
             }
         });
@@ -258,7 +260,8 @@ function getUserDetailsFromGoogle(access_token) {
                     email: payload['email'],
                     firstname: utils.firstLetterToUpper(payload['given_name']),
                     lastname: utils.firstLetterToUpper(payload['family_name']),
-                    locale: payload['locale']
+                    locale: payload['locale'],
+                    profilepicurl: payload['picture'] + "?sz=500"   //Adding query parameter for high res pic
                 });
 
             })
