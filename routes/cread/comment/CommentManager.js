@@ -41,7 +41,7 @@ router.get('/load', function (request, response) {
             }
         })
         .then(function () {
-            if(web_access_token){
+            if(!web_access_token){
                 return _auth.authValid(uuid, authkey)
             }
         })

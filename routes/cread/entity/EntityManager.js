@@ -148,7 +148,7 @@ router.get('/load-specific', function (request, response) {
             }
             else{
                 console.error(err);
-                response.status(500).send({
+                response.status(err.status === 404 ? err.status : 500).send({
                     message: 'Some error occurred at the server'
                 }).end();
             }

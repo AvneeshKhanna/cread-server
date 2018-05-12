@@ -492,7 +492,7 @@ router.get('/load-timeline', function (request, response) {
     var platform = request.query.platform;
     var web_access_token = request.headers.web_access_token;
 
-    var limit = (config.envtype === 'PRODUCTION') ? 10 : 6;  //TODO: Change to 10
+    var limit = config.isProduction() ? 10 : 6;  //TODO: Change to 10
 
     var connection;
 
@@ -549,7 +549,7 @@ router.get('/load-timeline', function (request, response) {
             }
             else {
                 console.error(err);
-                response.status(500).send({
+                response.status(err.status === 404 ? err.status : 500).send({
                     error: 'Some error occurred at the server'
                 }).end();
             }
@@ -681,7 +681,7 @@ router.get('/load-profile', function (request, response) {
             }
             else {
                 console.error(err);
-                response.status(500).send({
+                response.status(err.status === 404 ? err.status : 500).send({
                     message: 'Some error occurred at the server'
                 }).end();
             }
@@ -805,7 +805,7 @@ router.get('/load-collab-timeline', function (request, response) {
             }
             else {
                 console.error(err);
-                response.status(500).send({
+                response.status(err.status === 404  ? err.status : 500).send({
                     message: 'Some error occurred at the server'
                 }).end();
             }

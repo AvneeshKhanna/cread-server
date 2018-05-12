@@ -14,6 +14,8 @@ var utils = require('../utils/Utils');
 var entityutils = require('../entity/EntityUtils');
 var updatesutils = require('../updates/UpdatesUtils');
 
+var NotFoundError = require('../utils/NotFoundError');
+
 var rzrinstance = new Razorpay({
     key_id: razorpay_creds.key_id,
     key_secret: razorpay_creds.key_secret
@@ -134,6 +136,12 @@ function loadProduct(connection, productid) {
                 reject(err);
             }
             else {
+
+                if(rows.length === 0){
+                    reject(new NotFoundError("Invalid 'productid'"));
+                    return;
+                }
+
                 resolve(rows);
             }
         });

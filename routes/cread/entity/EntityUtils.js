@@ -11,6 +11,8 @@ var updatesutils = require('../updates/UpdatesUtils');
 var userprofileutils = require('../user-manager/UserProfileUtils');
 var consts = require('../utils/Constants');
 
+var NotFoundError = require('../utils/NotFoundError');
+
 function retrieveShortDetails(connection, entityid) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT Short.shoid, Short.uuid AS shortuuid, Short.capid, Short.entityid, Short.txt, Short.textsize, Short.textcolor, Short.textgravity, Short.dx, Short.dy, Short.txt_width, Short.txt_height, Short.img_height, Short.img_width, Capture.uuid AS captureuuid ' +
@@ -266,6 +268,12 @@ function loadEntityData(connection, requesteruuid, entityid) {
                 reject(err);
             }
             else {
+
+                if(!row[0].entityid){   //Because even in case of invalid entityid, user related data is returned
+                    reject(new NotFoundError('Invalid "entityid"'));
+                    return;
+                }
+
                 row.map(function (element) {
                     element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
 
@@ -465,6 +473,11 @@ function getEntityUrl(connection, entityid) {
                 reject(err);
             }
             else {
+
+                if(rows.length === 0){
+                    reject(new NotFoundError('Invalid "entityid"'));
+                    return;
+                }
 
                 var entityurl;
 
