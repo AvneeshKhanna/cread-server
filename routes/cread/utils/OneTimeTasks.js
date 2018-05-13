@@ -353,8 +353,9 @@ router.post('/add-product-images', function (request, response) {
                     'FROM Entity ' +
                     'WHERE product_overlay = 0 ' +
                     'AND merchantable = 1 ' +
+                    'AND status = "ACTIVE" ' +
                     'ORDER BY regdate DESC ' +
-                    'LIMIT 30', [false], function (err, rows) {
+                    'LIMIT 7', [false], function (err, rows) {
                     if (err) {
                         reject(err);
                     }
@@ -365,12 +366,12 @@ router.post('/add-product-images', function (request, response) {
             });
         })
         .then(function (entities) {
-            //response.send("Process Initiated").end(); //TODO: Uncomment
+            response.send("Process Initiated").end();
             return createMultipleEntityProductImages(entities);
         })
         .then(function () {
             console.log("PROCESS OVER");
-            response.send("Process Initiated").end();   //TODO: Comment
+            //response.send("Process Initiated").end();
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
@@ -414,7 +415,9 @@ function createMultipleEntityProductImages(entities) {
                     callback();
                 })
                 .catch(function (err) {
-                    callback(err);
+                    console.error(err);
+                    console.log("createMultipleEntityProductImages() -> " + entity.entityid + " created an error");
+                    callback();
                 })
 
         },function (err) {
