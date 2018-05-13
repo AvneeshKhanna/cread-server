@@ -340,10 +340,10 @@ function changeS3ConfigFile(token) {
         };
 
         fs.writeFile(downloads_file_basepath + '/config.json', JSON.stringify(data, null, 3), function (err) {
-            if(err){
+            if (err) {
                 reject(err);
             }
-            else{
+            else {
                 resolve();
             }
         });
@@ -460,22 +460,26 @@ function deleteUnrequiredFiles(files) {
 function getShortBitlyLink(longUrl) {
     return new Promise(function (resolve, reject) {
         request_client(bitly.api_base_url + "/v3/link/lookup?url=" +
-            decodeURIComponent(longUrl) +
+            encodeURIComponent(longUrl) +
             "&access_token=" +
             bitly.generic_access_token, function (err, res, body) {
             if (err) {
                 reject(err);
             }
-            else if(res.statusCode !== 200){
+            else if (res.statusCode !== 200) {
                 console.log(body);
                 reject(new Error('Short link from Bitly could not be generated due to an error'));
             }
             else {  //res.statusCode === 200
                 body = JSON.parse(body);
-                resolve(body.data.link_lookup.aggregdate_link).end();
+                resolve(body.data.link_lookup[0].aggregdate_link); //TODO: test
             }
         })
     });
+}
+
+function getProfileWebstoreLink(uuid) {
+    return config.getWebstoreDomain() + '/profile/' + uuid + '/timeline';
 }
 
 module.exports = {
@@ -506,5 +510,6 @@ module.exports = {
     getRandomFirstPostComment: getRandomFirstPostComment,
     firstLetterToUpper: firstLetterToUpper,
     deleteUnrequiredFiles: deleteUnrequiredFiles,
-    getShortBitlyLink: getShortBitlyLink
+    getShortBitlyLink: getShortBitlyLink,
+    getProfileWebstoreLink: getProfileWebstoreLink
 };

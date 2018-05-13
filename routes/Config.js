@@ -146,6 +146,15 @@ function getBitlyClient() {
     }
 }
 
+function getWebstoreDomain() {
+    if(isProduction()){
+        return 'http://www.cread.in';
+    }
+    else {
+        return 'http://408ea2d2.ngrok.io';
+    }
+}
+
 function getCreadKalakaarUUID() {
     if (isProduction()) {
         return '6732bb8e-cffd-4e1b-906f-dc75873a5d92';
@@ -214,5 +223,6 @@ module.exports = {
     getKueClient: getKueClient,
     CREAD_GOOGLE: CREAD_GOOGLE,
     getGoogleOAuthClient: getGoogleOAuthClient,
-    getBitlyClient: getBitlyClient
+    getBitlyClient: getBitlyClient,
+    getWebstoreDomain: getWebstoreDomain
 };

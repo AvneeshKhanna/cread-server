@@ -1138,6 +1138,53 @@ router.post('/update-profile-picture', upload.single('display-pic'), function (r
 
 });
 
+router.get('/short-link', function (request, response) {
+
+    var uuid = request.headers.uuid;
+    var authkey = request.headers.authkey;
+    var requesteduuid = request.query.requesteduuid;
+
+    _auth.authValid(uuid, authkey)
+        .then(function (details) {
+            return userprofileutils.getShortProfileLink(requesteduuid);
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (link) {
+
+            response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
+
+            if (request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')) {
+                response.status(304).send().end();
+            }
+            else {
+                response.send({
+                    tokenstatus: 'valid',
+                    data: {
+                        link: link
+                    }
+                });
+                response.end();
+            }
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+});
+
 /**
  * npm package multer uploads an image to the server with a randomly generated guid without an extension. Hence,
  * the uploaded file needs to be renamed

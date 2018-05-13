@@ -1103,6 +1103,18 @@ function getLatestPostsCache(uuids) {
     });
 }
 
+function getShortProfileLink(uuid) {
+    return new Promise(function (resolve, reject) {
+        utils.getShortBitlyLink(utils.getProfileWebstoreLink(uuid))
+            .then(function (link) {
+                resolve(link);
+            })
+            .catch(function (err) {
+                reject(err);
+            });
+    });
+}
+
 module.exports = {
     loadTimelineLegacy: loadTimelineLegacy,
     loadTimeline: loadTimeline,
@@ -1122,5 +1134,6 @@ module.exports = {
     getUserQualityPercentile: getUserQualityPercentile,
     getLatestPostsCache: getLatestPostsCache,
     addToLatestPostsCache: addToLatestPostsCache,
-    updateLatestPostsCache: updateLatestPostsCache
+    updateLatestPostsCache: updateLatestPostsCache,
+    getShortProfileLink: getShortProfileLink
 };
