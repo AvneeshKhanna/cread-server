@@ -18,6 +18,8 @@ var urlprotocol = 'https://';
 
 var downloads_file_basepath = './downloads';
 
+const bitly = config.getBitlyClient();
+
 var firstPostCommentsCK = [
     {
         prefix: "Beautiful first post, ",
@@ -455,6 +457,27 @@ function deleteUnrequiredFiles(files) {
     })
 }
 
+function getShortBitlyLink(longUrl) {
+    return new Promise(function (resolve, reject) {
+        request_client(bitly.api_base_url + "/v3/link/lookup?url=" +
+            decodeURIComponent(longUrl) +
+            "&access_token=" +
+            bitly.generic_access_token, function (err, res, body) {
+            if (err) {
+                reject(err);
+            }
+            else if(res.statusCode !== 200){
+                console.log(body);
+                reject(new Error('Short link from Bitly could not be generated due to an error'));
+            }
+            else {  //res.statusCode === 200
+                body = JSON.parse(body);
+                resolve(body.data.link_lookup.aggregdate_link).end();
+            }
+        })
+    });
+}
+
 module.exports = {
     updateQueryStringParameter: updateQueryStringParameter,
     sendAWSSMS: sendAWSSMS,
@@ -482,5 +505,6 @@ module.exports = {
     getUniqueValues: getUniqueValues,
     getRandomFirstPostComment: getRandomFirstPostComment,
     firstLetterToUpper: firstLetterToUpper,
-    deleteUnrequiredFiles: deleteUnrequiredFiles
+    deleteUnrequiredFiles: deleteUnrequiredFiles,
+    getShortBitlyLink: getShortBitlyLink
 };
