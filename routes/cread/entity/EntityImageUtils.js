@@ -53,9 +53,11 @@ function createOverlayedImageCoffeeMug(typeid, uuid, type, img_path) {
         var img_width = image_dimen.width,
             img_height = image_dimen.height;
 
+        var img_aspect_ratio = parseFloat(img_width/img_height);
+
         console.log("img width & height are " + img_width + " " + img_height);
 
-        var curve_bent_center_fraction = 0.0675;    //Calculated from Coffee Mug photo and some iterations
+        const curve_bent_center_fraction = 0.0675;    //Calculated from Coffee Mug photo and some iterations
         var img_split_step_size = Math.floor(img_width * 0.008);    //In pixels
 
         var img_path_arr = [];
@@ -108,8 +110,20 @@ function createOverlayedImageCoffeeMug(typeid, uuid, type, img_path) {
                                         for (var i = 1; i < img_path_arr.length; i++) {
                                             gmstate.append(img_path_arr[i], true);
                                         }
+
+                                        var overlay_resize_width, overlay_resize_height;
+
+                                        if(img_aspect_ratio >= 1){  //Width >= Height
+                                            overlay_resize_width = coffee_mug_overlay.overlay_x_crdnte;
+                                            overlay_resize_height = parseFloat(overlay_resize_width/img_aspect_ratio);
+                                        }
+                                        else{   //Width < Height
+                                            overlay_resize_height = coffee_mug_overlay.overlay_y_crdnte;
+                                            overlay_resize_width = overlay_resize_height * img_aspect_ratio;
+                                        }
+
                                         gmstate
-                                            .resize(coffee_mug_overlay.overlay_x_crdnte, coffee_mug_overlay.overlay_y_crdnte)   //Calculated in accordance with coffe mug image
+                                            .resize(overlay_resize_width, overlay_resize_height)   //Calculated in accordance with coffe mug image
                                             .write(base_buffer_file_path + '/' + typeid + '-transformed.png', function (err) {
                                                 if(err){
                                                     reject(err);
