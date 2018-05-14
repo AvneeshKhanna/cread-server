@@ -436,7 +436,7 @@ function deleteUnrequiredFiles(files) {
         async.each(files, function (file, callback) {
 
             fs.unlink(file, function (err) {
-                if (err) {
+                if(err){
                     callback(err);
                 }
                 else {
@@ -445,7 +445,7 @@ function deleteUnrequiredFiles(files) {
             });
 
         }, function (err) {
-            if (err) {
+            if(err){
                 console.error(err);
                 reject(err);
             }
@@ -455,6 +455,10 @@ function deleteUnrequiredFiles(files) {
             }
         });
     })
+}
+
+function getInterestBgImgUrl(intname) {
+    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Interests/' + intname.trim().toLowerCase().replace(new RegExp(' ', 'g'), "-") + ".jpg";
 }
 
 function getShortBitlyLink(longUrl) {
@@ -510,6 +514,7 @@ module.exports = {
     getRandomFirstPostComment: getRandomFirstPostComment,
     firstLetterToUpper: firstLetterToUpper,
     deleteUnrequiredFiles: deleteUnrequiredFiles,
+    getInterestBgImgUrl: getInterestBgImgUrl,
     getShortBitlyLink: getShortBitlyLink,
     getProfileWebstoreLink: getProfileWebstoreLink
 };

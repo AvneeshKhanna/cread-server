@@ -3,9 +3,11 @@
  */
 'use-strict';
 
+var moment = require('moment');
+var async = require('async');
+
 var utils = require('../utils/Utils');
 
-var moment = require('moment');
 var feedutils = require('../feed/FeedUtils');
 var updatesutils = require('../updates/UpdatesUtils');
 var userprofileutils = require('../user-manager/UserProfileUtils');
@@ -356,6 +358,31 @@ function loadEntityData(connection, requesteruuid, entityid) {
     });
 }
 
+function loadEntityDatMultiple(connection, requesteruuid, entityids) {
+    return new Promise(function (resolve, reject) {
+
+        var items = [];
+
+        async.each(entityids, function (entityid, callback) {
+            loadEntityData(connection, requesteruuid, entityid)
+                .then(function (result) {
+                    items.push(result.entity);
+                    callback();
+                })
+                .catch(function (err) {
+                    callback(err);
+                });
+        }, function (err) {
+            if(err){
+                reject(err);
+            }
+            else {
+                resolve(items);
+            }
+        })
+    });
+}
+
 /**
  * Load textual data and image's url separately from a collaborated post using 'entityid'
  * */
@@ -698,6 +725,7 @@ function isEntityActive(connection, entityid) {
 module.exports = {
     updateEntityCollabDataForUpdates: updateEntityCollabDataForUpdates,
     loadEntityData: loadEntityData,
+    loadEntityDatMultiple: loadEntityDatMultiple,
     loadEntityDataSeparate: loadEntityDataSeparate,
     retrieveShortDetails: retrieveShortDetails,
     loadCollabDetails: loadCollabDetails,

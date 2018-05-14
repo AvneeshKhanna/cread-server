@@ -18,7 +18,7 @@ const minCashInAmt = config.isProduction() ? 10 : 2;    //TODO: Can change the a
 
 const explore_algo_base_score = 5;  //Base score for each entity
 
-const max_interest_selection = config.isProduction() ? 5 : 2;
+const max_intrst_selectn_div = config.isProduction() ? 4 : 4;   //Divisor to divide the number of items
 
 const min_percentile_quality_user_downvote = 90;
 const min_qpercentile_user_recommendation = 70;
@@ -35,11 +35,13 @@ const share_time_interval = {
 };
 
 const cache_time = {
-    small: !(config.isProduction()) ? 20 : 60,
-    medium: !(config.isProduction()) ? 20 : 120,
-    high: !(config.isProduction()) ? 20 : 300,
-    xhigh: !(config.isProduction()) ? 20 : 900,
-    xxhigh: !(config.isProduction()) ? 20 : 3600
+    small: !(config.isProduction()) ? 20 : 60,          //1 minute
+    medium: !(config.isProduction()) ? 20 : 120,        //2 minutes
+    high: !(config.isProduction()) ? 20 : 300,          //5 minutes
+    xhigh: !(config.isProduction()) ? 20 : 900,         //15 minutes
+    xxhigh: !(config.isProduction()) ? 20 : 3600,       //1 hour
+    xxxhigh: !(config.isProduction()) ? 20 : 21600,     //6 hours
+    ultrahigh: !(config.isProduction()) ? 20 : 86400    //24 hours
 };
 
 function getMarkup(markup) {
@@ -70,5 +72,5 @@ module.exports = {
     explore_algo_base_score: explore_algo_base_score,
     min_percentile_quality_user_downvote: min_percentile_quality_user_downvote,
     min_qpercentile_user_recommendation: min_qpercentile_user_recommendation,
-    max_interest_selection: max_interest_selection
+    max_intrst_selectn_div: max_intrst_selectn_div
 };
