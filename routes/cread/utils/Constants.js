@@ -18,7 +18,7 @@ const minCashInAmt = config.isProduction() ? 10 : 2;    //TODO: Can change the a
 
 const explore_algo_base_score = 5;  //Base score for each entity
 
-const max_interest_selection = config.isProduction() ? 5 : 2;
+const max_intrst_selectn_div = config.isProduction() ? 4 : 4;   //Divisor to divide the number of items
 
 const min_percentile_quality_user_downvote = 90;
 const min_qpercentile_user_recommendation = 70;
@@ -72,5 +72,5 @@ module.exports = {
     explore_algo_base_score: explore_algo_base_score,
     min_percentile_quality_user_downvote: min_percentile_quality_user_downvote,
     min_qpercentile_user_recommendation: min_qpercentile_user_recommendation,
-    max_interest_selection: max_interest_selection
+    max_intrst_selectn_div: max_intrst_selectn_div
 };

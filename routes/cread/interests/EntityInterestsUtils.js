@@ -17,36 +17,45 @@ function loadInterestsByType(connection, entityid, type) {
         var sqlparams;
 
         if(entityid){
-            if(type === 'ALL'){
+            if(type === 'ALL'){ //Case of collaboration post
                 sql = 'SELECT I.intid, I.intname, (EI.eintid IS NOT NULL) AS selected ' +
                     'FROM Interests I ' +
                     'LEFT JOIN EntityInterests EI ' +
                     'ON(I.intid = EI.intid AND EI.entityid = ?) ' +
                     'WHERE I.superset IS NOT NULL';
+                sqlparams = [
+                    entityid
+                ]
             }
-            else{
+            else{   //Case of solo post
                 sql = 'SELECT I.intid, I.intname, (EI.eintid IS NOT NULL) AS selected ' +
                     'FROM Interests I ' +
                     'LEFT JOIN EntityInterests EI ' +
                     'ON(I.intid = EI.intid AND EI.entityid = ?) ' +
-                    'WHERE I.superset = "' + type + '"';
+                    'WHERE I.superset = ? OR I.superset = "ALL"';
+                sqlparams = [
+                    entityid,
+                    type
+                ]
             }
-            sqlparams = [
-                entityid
-            ]
+
         }
         else {
-            if(type === 'ALL'){
+            if(type === 'ALL'){ //Case of collaboration post
                 sql = 'SELECT I.*, 0 AS selected ' +
                     'FROM Interests I ' +
                     'WHERE superset IS NOT NULL';
+                sqlparams = []
             }
-            else{
+            else{   //Case of solo post
                 sql = 'SELECT I.*, 0 AS selected ' +
                     'FROM Interests I ' +
-                    'WHERE superset = "' + type + '"';
+                    'WHERE superset = ? OR superset = "ALL"';
+                sqlparams = [
+                    type
+                ]
             }
-            sqlparams = []
+
         }
 
         connection.query(sql, sqlparams, function (err, rows) {
@@ -60,7 +69,7 @@ function loadInterestsByType(connection, entityid, type) {
                 });
 
                 resolve({
-                    max_selection: consts.max_interest_selection,   //max permitted selections by a user to categorise a post
+                    max_selection: Math.ceil(rows.length/consts.max_intrst_selectn_div),   //max permitted selections by a user to categorise a post
                     interests: rows
                 });
             }
@@ -140,6 +149,7 @@ function loadPostsForInterestTag(connection, limit, lastindexkey) {
                             resolve({
                                 requestmore: rows.length >= limit,
                                 lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
+                                candownvote: false,
                                 items: items
                             });
                         })
@@ -150,6 +160,7 @@ function loadPostsForInterestTag(connection, limit, lastindexkey) {
                 else {
                     resolve({
                         requestmore: rows.length >= limit,
+                        candownvote: false,
                         lastindexkey: null,
                         items: []
                     });

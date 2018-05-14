@@ -11,6 +11,13 @@ function loadMacroInterests(connection) {
                 reject(err);
             }
             else {
+
+                rows.push({ //For explore feed filters
+                    mintid: null,
+                    mintname: "All",
+                    type: "DEFAULT"
+                });
+
                 resolve({
                     items: rows
                 });
