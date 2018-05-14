@@ -30,6 +30,7 @@ scheduler.delete_stale_hotds_job.start();
 scheduler.reminder_hotd_job.start();
 scheduler.generate_new_web_token_job.start();
 scheduler.unlock_entities_job.start();
+scheduler.add_product_images_job.start();
 
 var routes = require('./routes/index');
 var users = require('./routes/users');

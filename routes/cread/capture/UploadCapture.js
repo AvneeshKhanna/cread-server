@@ -432,6 +432,7 @@ function updateCaptureDB(connection, captureid, uuid, watermark, merchantable, c
             entityid: entityid,
             type: 'CAPTURE',
             merchantable: (merchantable === 1),
+            product_overlay: (merchantable === 1),
             caption: caption
         };
 

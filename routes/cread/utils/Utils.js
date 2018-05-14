@@ -90,6 +90,13 @@ function shuffle(arr) {
     return arr;
 }
 
+function swap(arr, pos1, pos2) {
+    var temp = arr[pos1];
+    arr[pos1] = arr[pos2];
+    arr[pos2] = temp;
+    return arr;
+}
+
 /**
  * Sends an AWS Transactional SMS to the given phonenumber
  * */
@@ -507,6 +514,7 @@ module.exports = {
     downloadFile: downloadFile,
     updateS3ConfigFile: updateS3ConfigFile,
     getAllIndexes: getAllIndexes,
+    swap: swap,
     filterProfileMentions: filterProfileMentions,
     extractProfileMentionUUIDs: extractProfileMentionUUIDs,
     shuffle: shuffle,

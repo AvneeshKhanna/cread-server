@@ -4,10 +4,11 @@
 'use-strict';
 
 var uuidGen = require('uuid');
+var utils = require('../utils/Utils');
 
 function loadAllInterestsForUser(connection, uuid) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT I.intid, I.intname, I.intimgurl, (UI.uintid IS NOT NULL) AS selected ' +
+        connection.query('SELECT I.intid, I.intname, (UI.uintid IS NOT NULL) AS selected ' +
             'FROM Interests I ' +
             'LEFT JOIN UserInterests UI ' +
             'ON(I.intid = UI.intid AND UI.uuid = ?) ' +
@@ -18,6 +19,7 @@ function loadAllInterestsForUser(connection, uuid) {
             else {
 
                 rows.map(function (row) {
+                    row.intimgurl = utils.getInterestBgImgUrl(row.intname);
                     row.selected = row.selected === 1;
                     return row;
                 });

@@ -13,7 +13,11 @@ var utils = require('../Utils');
 var BreakPromiseChainError = require('../BreakPromiseChainError');
 var userprofileutils = require('../../user-manager/UserProfileUtils');
 var entityintrstutils = require('../../interests/EntityInterestsUtils');
+var entityutils = require('../../entity/EntityUtils');
+var entityimgutils = require('../../entity/EntityImageUtils');
 var _auth = require('../../../auth-token-management/AuthTokenManager');
+
+var download_base_path = './images/downloads';
 
 var update_latestposts_cache_job = new CronJob({
     cronTime: '00 00 01 * * *', //second | minute | hour | day-of-month | month | day-of-week
@@ -267,11 +271,138 @@ var unlock_entities_job = new CronJob({
     timeZone: 'Asia/Kolkata'
 });
 
+var add_product_images_job = new CronJob({
+    //Runs at 04:00 am
+    cronTime: '00 00 04 * * *', //second | minute | hour | day-of-month | month | day-of-week
+    onTick: function () {
+
+        var connection;
+
+        config.getNewConnection()
+            .then(function (conn) {
+                connection = conn;
+                return new Promise(function (resolve, reject) {
+                    connection.query('SELECT entityid ' +
+                        'FROM Entity ' +
+                        'WHERE product_overlay = 0 ' +
+                        'AND merchantable = 1 ' +
+                        'AND status = "ACTIVE" ' +
+                        'ORDER BY regdate DESC ' +
+                        'LIMIT 200', [false], function (err, rows) {
+                        if (err) {
+                            reject(err);
+                        }
+                        else {
+                            resolve(rows);
+                        }
+                    });
+                });
+            })
+            .then(function (entities) {
+                console.log("Process Initiated");
+                return createMultipleEntityProductImages(entities);
+            })
+            .then(function () {
+                console.log("add_product_images_job complete");
+                throw new BreakPromiseChainError();
+            })
+            .catch(function (err) {
+                config.disconnect(connection);
+                if (err instanceof BreakPromiseChainError) {
+                    //Do nothing
+                }
+                else {
+                    console.error(err);
+                }
+            });
+
+    },
+    start: false,   //Whether to start just now
+    timeZone: 'Asia/Kolkata'
+});
+
+function createMultipleEntityProductImages(entities) {
+    return new Promise(function (resolve, reject) {
+        async.eachOf(entities, function (entity, index, callback) {
+
+            var connection;
+
+            config.getNewConnection()
+                .then(function (conn) {
+                    connection = conn;
+                    return utils.beginTransaction(connection);
+                })
+                .then(function () {
+                    return createEntityProductImage(connection, entity.entityid);
+                })
+                .then(function () {
+                    return utils.commitTransaction(connection);
+                }, function (err) {
+                    return utils.rollbackTransaction(connection, undefined, err);
+                })
+                .then(function () {
+                    callback();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    console.log("createMultipleEntityProductImages() -> " + entity.entityid + " created an error");
+                    callback();
+                })
+
+        },function (err) {
+            if(err){
+                console.log('All data could not be processed');
+                reject(err);
+            }
+            else {
+                console.log('All data processed');
+                resolve();
+            }
+        })
+    });
+}
+
+function createEntityProductImage(connection, entityid) {
+    return new Promise(function (resolve, reject) {
+
+        var edata;
+        var download_file_name;
+
+        entityutils.loadEntityData(connection, config.getCreadKalakaarUUID(), entityid)
+            .then(function (ed) {
+                edata = ed.entity;
+                download_file_name = entityid + '-product-process.jpg';
+                return utils.downloadFile(download_base_path, download_file_name, edata.entityurl);
+            })
+            .then(function (downloadpath) {
+                return entityimgutils.createOverlayedImageJournal(edata.type === 'SHORT' ? edata.shoid : edata.captureid, edata.type, edata.uuid, download_base_path + '/' + download_file_name);
+            })
+            .then(function () {
+                return entityimgutils.createOverlayedImageCoffeeMug(edata.type === 'SHORT' ? edata.shoid : edata.captureid, edata.uuid, edata.type, download_base_path + '/' + download_file_name)
+            })
+            .then(function () {
+                return new Promise(function (resolve, reject) {
+                    connection.query('UPDATE Entity ' +
+                        'SET product_overlay = ? ' +
+                        'WHERE entityid = ?', [true, entityid], function (err, rows) {
+                        if (err) {
+                            reject(err);
+                        }
+                        else {
+                            resolve();
+                        }
+                    });
+                });
+            })
+            .then(resolve, reject);
+    });
+}
+
 module.exports = {
     update_latestposts_cache_job: update_latestposts_cache_job,
     delete_stale_hotds_job: delete_stale_hotds_job,
     reminder_hotd_job: reminder_hotd_job,
     generate_new_web_token_job: generate_new_web_token_job,
-    unlock_entities_job: unlock_entities_job
-
+    unlock_entities_job: unlock_entities_job,
+    add_product_images_job: add_product_images_job
 };

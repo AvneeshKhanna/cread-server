@@ -397,7 +397,27 @@ function getProductDetailsForEntities(connection, entity_data) {
                 reject(err);
             }
             else {
-                try{    //getProductEntityUrl() can throw an error
+                try{
+
+                    //Placing Coffee Mug at position 1
+                    var coffee_mug_index = products.indexOf(products.filter(function (p) {
+                        return p.type === 'COFFEE_MUG'
+                    })[0]);
+
+                    if(coffee_mug_index !== 0){
+                        products = utils.swap(products, 0, coffee_mug_index);
+                    }
+
+                    //Placing Journal at position 2
+                    var journal_index = products.indexOf(products.filter(function (p) {
+                        return p.type === 'JOURNAL'
+                    })[0]);
+
+                    if(journal_index !== 1){
+                        products = utils.swap(products, 1, journal_index);
+                    }
+
+                    //getProductEntityUrl() can throw an error
                     entity_data.map(function (edata) {
                         edata.products = products.map(function (p) {
                             return {
