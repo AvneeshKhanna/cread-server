@@ -120,7 +120,10 @@ router.get('/load-macro', function (request, response) {
 /**
  * Router to load an entity data for tagging interests/labels manually
  * */
-router.get('/load-entity-for-tag', function (request, response) {
+router.get('/load-posts-for-tag', function (request, response) {
+
+    var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : null;
+    var limit = config.isProduction() ? 8 : 8;
 
     var connection;
     var result;
@@ -131,11 +134,18 @@ router.get('/load-entity-for-tag', function (request, response) {
             return utils.beginTransaction(connection);
         })
         .then(function () {
-            return entityintrstutils.loadEntityForInterestTag(connection);
+            return entityintrstutils.loadPostsForInterestTag(connection, limit, lastindexkey);
         })
         .then(function (res) {
             result = res;
-            return entityintrstutils.lockEntity(connection, result.entity.entityid);
+
+            var entityids = result.items.map(function (item) {
+                return item.entityid;
+            });
+
+            if(entityids.length > 0){
+                return entityintrstutils.lockEntityMultiple(connection, entityids);
+            }
         })
         .then(function () {
             return utils.commitTransaction(connection);
@@ -167,7 +177,7 @@ router.get('/load-entity-for-tag', function (request, response) {
 /**
  * Router to unlock an entity after tagging interests/labels manually
  * */
-router.post('/unlock-entity', function (request, response) {
+/*router.post('/unlock-entity', function (request, response) {
     var entityid = request.body.entityid;
     var connection;
 
@@ -195,6 +205,6 @@ router.post('/unlock-entity', function (request, response) {
                 }).end();
             }
         });
-});
+});*/
 
 module.exports = router;

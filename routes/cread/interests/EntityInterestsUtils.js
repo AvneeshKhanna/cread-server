@@ -4,6 +4,9 @@
 'use-strict';
 
 var uuidGen = require('uuid');
+var moment = require('moment');
+
+var config = require('../../Config');
 var consts = require('../utils/Constants');
 var entityutils = require('../entity/EntityUtils');
 
@@ -105,7 +108,10 @@ function deleteAllEntityInterests(connection, entityid) {
 /**
  * Function to load an entity data for tagging interests/labels manually
  * */
-function loadEntityForInterestTag(connection) {
+function loadPostsForInterestTag(connection, limit, lastindexkey) {
+
+    lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
+
     return new Promise(function (resolve, reject) {
         connection.query('SELECT E.entityid ' +
             'FROM Entity E ' +
@@ -114,20 +120,40 @@ function loadEntityForInterestTag(connection) {
             'WHERE EI.eintid IS NULL ' +
             'AND E.locked = 0 ' +
             'AND E.status = "ACTIVE" ' +
+            'AND E.regdate < ? ' +
             'GROUP BY E.entityid ' +
             'ORDER BY E.regdate DESC ' +
-            'LIMIT 1', [], function (err, rows) {
+            'LIMIT ?', [lastindexkey, limit], function (err, rows) {
             if (err) {
                 reject(err);
             }
             else {
-                entityutils.loadEntityData(connection, rows[0].entityid)
-                    .then(function (edata) {
-                        resolve(edata);
-                    })
-                    .catch(function (err) {
-                        reject(err);
+
+                if(rows.length > 0){
+
+                    var entityids = rows.map(function (r) {
+                        return r.entityid;
                     });
+
+                    entityutils.loadEntityDatMultiple(connection, config.getCreadKalakaarUUID(), entityids)
+                        .then(function (items) {
+                            resolve({
+                                requestmore: rows.length >= limit,
+                                lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
+                                items: items
+                            });
+                        })
+                        .catch(function (err) {
+                            reject(err);
+                        });
+                }
+                else {
+                    resolve({
+                        requestmore: rows.length >= limit,
+                        lastindexkey: null,
+                        items: []
+                    });
+                }
             }
         });
     });
@@ -136,11 +162,11 @@ function loadEntityForInterestTag(connection) {
 /**
  * Function to lock an entity while tagging interests/labels manually
  * */
-function lockEntity(connection, entityid) {
+function lockEntityMultiple(connection, entityids) {
     return new Promise(function (resolve, reject) {
         connection.query('UPDATE Entity ' +
             'SET locked = 1, lock_time = NOW() ' +
-            'WHERE entityid = ?', [entityid], function (err, rows) {
+            'WHERE entityid IN (?)', [entityids], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -152,13 +178,13 @@ function lockEntity(connection, entityid) {
 }
 
 /**
- * Function to unlock an entity after tagging interests/labels manually
+ * Function to unlock entities after a regular interval of time after tagging interests/labels manually
  * */
-function unlockEntity(connection, entityid) {
+function unlockEntityMultiple(connection) {
     return new Promise(function (resolve, reject) {
         connection.query('UPDATE Entity ' +
             'SET locked = 0, lock_time = ? ' +
-            'WHERE entityid = ?', [null, entityid], function (err, rows) {
+            'WHERE lock_time < DATE_SUB(NOW(), INTERVAL 1 HOUR)', [null], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -173,7 +199,7 @@ module.exports = {
     saveEntityInterests: saveEntityInterests,
     loadInterestsByType: loadInterestsByType,
     deleteAllEntityInterests: deleteAllEntityInterests,
-    loadEntityForInterestTag: loadEntityForInterestTag,
-    lockEntity: lockEntity,
-    unlockEntity: unlockEntity
+    loadPostsForInterestTag: loadPostsForInterestTag,
+    lockEntityMultiple: lockEntityMultiple,
+    unlockEntityMultiple: unlockEntityMultiple
 };

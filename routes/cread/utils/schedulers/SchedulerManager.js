@@ -12,6 +12,7 @@ var consts = require('../Constants');
 var utils = require('../Utils');
 var BreakPromiseChainError = require('../BreakPromiseChainError');
 var userprofileutils = require('../../user-manager/UserProfileUtils');
+var entityintrstutils = require('../../interests/EntityInterestsUtils');
 var _auth = require('../../../auth-token-management/AuthTokenManager');
 
 var update_latestposts_cache_job = new CronJob({
@@ -232,9 +233,45 @@ var generate_new_web_token_job = new CronJob({
     timeZone: 'Asia/Kolkata'
 });
 
+/**
+ * Cron job to unlock entities that may have locked due to manual post categorising process using Cread Ops
+ * */
+var unlock_entities_job = new CronJob({
+    //Runs every 1 hour
+    cronTime: '00 00 * * * *', //second | minute | hour | day-of-month | month | day-of-week
+    onTick: function () {
+
+        var connection;
+
+        config.getNewConnection()
+            .then(function (conn) {
+                connection = conn;
+                return entityintrstutils.unlockEntityMultiple(connection);
+            })
+            .then(function () {
+                console.log("unlock_entities_job complete");
+                throw new BreakPromiseChainError();
+            })
+            .catch(function (err) {
+                config.disconnect(connection);
+                if (err instanceof BreakPromiseChainError) {
+                    //Do nothing
+                }
+                else {
+                    console.error(err);
+                }
+            });
+
+    },
+    start: false,   //Whether to start just now
+    timeZone: 'Asia/Kolkata'
+});
+
 module.exports = {
     update_latestposts_cache_job: update_latestposts_cache_job,
     delete_stale_hotds_job: delete_stale_hotds_job,
     reminder_hotd_job: reminder_hotd_job,
-    generate_new_web_token_job: generate_new_web_token_job
+    generate_new_web_token_job: generate_new_web_token_job,
+    unlock_entities_job: unlock_entities_job
+
 };
