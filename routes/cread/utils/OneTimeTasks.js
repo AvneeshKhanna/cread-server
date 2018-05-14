@@ -470,146 +470,71 @@ function createEntityProductImage(connection, entityid) {
 }
 
 router.post('/populate-interests', function (request, response) {
-    var sqldata = [
-        [
-            uuidGen.v4(),
-            "Painting",
-            "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg",
-            "GRAPHIC"
-        ],
-        [
-            uuidGen.v4(),
-            "Painting",
-            "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg",
-            "GRAPHIC"
-        ],
-        [
-            uuidGen.v4(),
-            "Painting",
-            "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg",
-            "GRAPHIC"
-        ],
-        [
-            uuidGen.v4(),
-            "Painting",
-            "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg",
-            "GRAPHIC"
-        ],
-        [
-            uuidGen.v4(),
-            "Painting",
-            "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg",
-            "GRAPHIC"
-        ],
-        [
-            uuidGen.v4(),
-            "Painting",
-            "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg",
-            "GRAPHIC"
-        ],
-        [
-            uuidGen.v4(),
-            "Painting",
-            "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg",
-            "GRAPHIC"
-        ],
-        [
-            uuidGen.v4(),
-            "Painting",
-            "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg",
-            "GRAPHIC"
-        ],
-        [
-            uuidGen.v4(),
-            "Painting",
-            "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg",
-            "GRAPHIC"
-        ],
-        [
-            uuidGen.v4(),
-            "Painting",
-            "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg",
-            "GRAPHIC"
-        ],
-        [
-            uuidGen.v4(),
-            "Painting",
-            "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg",
-            "GRAPHIC"
-        ],
-        [
-            uuidGen.v4(),
-            "Painting",
-            "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg",
-            "GRAPHIC"
-        ],
-        [
-            uuidGen.v4(),
-            "Painting",
-            "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg",
-            "GRAPHIC"
-        ],
-        [
-            uuidGen.v4(),
-            "Painting",
-            "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg",
-            "GRAPHIC"
-        ],
-        [
-            uuidGen.v4(),
-            "Painting",
-            "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg",
-            "GRAPHIC"
-        ],
-        [
-            uuidGen.v4(),
-            "Painting",
-            "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg",
-            "GRAPHIC"
-        ],
-        [
-            uuidGen.v4(),
-            "Painting",
-            "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg",
-            "GRAPHIC"
-        ],
-        [
-            uuidGen.v4(),
-            "Painting",
-            "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg",
-            "GRAPHIC"
-        ],
-        [
-            uuidGen.v4(),
-            "Painting",
-            "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg",
-            "GRAPHIC"
-        ],
-        [
-            uuidGen.v4(),
-            "Painting",
-            "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg",
-            "GRAPHIC"
-        ],
-        [
-            uuidGen.v4(),
-            "Painting",
-            "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg",
-            "GRAPHIC"
-        ],
-        [
-            uuidGen.v4(),
-            "Painting",
-            "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg",
-            "GRAPHIC"
-        ],
-        [
-            uuidGen.v4(),
-            "Painting",
-            "https://i.pinimg.com/736x/f8/1e/7c/f81e7c1d9b47b0da8aa7a80abae77a92.jpg",
-            "GRAPHIC"
-        ]
+
+    var intnames = [
+        'Painting',
+        'Drawing',
+        'Nature Photography',
+        'Street Photography',
+        'Travel Photography',
+        'Food Photography',
+        'Background Art',
+        'Abstract Art',
+        'Doodling',
+        'Calligraphy',
+        'Cartoon',
+        'Craft',
+        'Story',
+        'Poetry',
+        'Blog',
+        'Quote',
+        'Humour',
+        'Dark',
+        'Inspiring',
+        'Deep',
+        'Happy',
+        'Sad',
+        'Emotional'
     ];
+
+    //Values should be corresponding to indexes in intnames array
+    var intsuperset = [
+        'GRAPHIC',
+        'GRAPHIC',
+        'GRAPHIC',
+        'GRAPHIC',
+        'GRAPHIC',
+        'GRAPHIC',
+        'GRAPHIC',
+        'GRAPHIC',
+        'GRAPHIC',
+        'GRAPHIC',
+        'GRAPHIC',
+        'GRAPHIC',
+        'WRITING',
+        'WRITING',
+        'WRITING',
+        'WRITING',
+        'ALL',
+        'ALL',
+        'ALL',
+        'ALL',
+        'ALL',
+        'ALL',
+        'ALL'
+    ];
+
+    var sqldata = [];
+
+    for (var i = 0; i < intnames.length; i++) {
+        var name = intnames[i];
+        sqldata.push([
+            uuidGen.v4(),
+            name,
+            utils.getInterestBgImgUrl(name),
+            intsuperset[i]
+        ]);
+    }
 
     var connection;
 

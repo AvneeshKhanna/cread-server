@@ -35,11 +35,13 @@ const share_time_interval = {
 };
 
 const cache_time = {
-    small: !(config.isProduction()) ? 20 : 60,
-    medium: !(config.isProduction()) ? 20 : 120,
-    high: !(config.isProduction()) ? 20 : 300,
-    xhigh: !(config.isProduction()) ? 20 : 900,
-    xxhigh: !(config.isProduction()) ? 20 : 3600
+    small: !(config.isProduction()) ? 20 : 60,          //1 minute
+    medium: !(config.isProduction()) ? 20 : 120,        //2 minutes
+    high: !(config.isProduction()) ? 20 : 300,          //5 minutes
+    xhigh: !(config.isProduction()) ? 20 : 900,         //15 minutes
+    xxhigh: !(config.isProduction()) ? 20 : 3600,       //1 hour
+    xxxhigh: !(config.isProduction()) ? 20 : 21600,     //6 hours
+    ultrahigh: !(config.isProduction()) ? 20 : 86400    //24 hours
 };
 
 function getMarkup(markup) {

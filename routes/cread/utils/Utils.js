@@ -397,6 +397,10 @@ function deleteUnrequiredFiles(files) {
     })
 }
 
+function getInterestBgImgUrl(intname) {
+    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Interests/' + intname.trim().toLowerCase().replace(new RegExp(' ', 'g'), "-") + ".jpg";
+}
+
 module.exports = {
     updateQueryStringParameter: updateQueryStringParameter,
     sendAWSSMS: sendAWSSMS,
@@ -423,5 +427,6 @@ module.exports = {
     getUniqueValues: getUniqueValues,
     getRandomFirstPostComment: getRandomFirstPostComment,
     firstLetterToUpper: firstLetterToUpper,
-    deleteUnrequiredFiles: deleteUnrequiredFiles
+    deleteUnrequiredFiles: deleteUnrequiredFiles,
+    getInterestBgImgUrl: getInterestBgImgUrl
 };
