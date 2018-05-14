@@ -22,13 +22,24 @@ router.post('/load', function (request, response) {
 
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
+    var web_access_token = request.body.web_access_token;
     var entityid = request.body.entityid;
 
     var connection;
     var products;
     var entityurl;
 
-    _auth.authValid(uuid, authkey)
+    _auth.authValidWeb(web_access_token)
+        .then(function (payload) {
+            if(web_access_token){
+                uuid = payload.uuid;
+            }
+        })
+        .then(function () {
+            if(!web_access_token){
+                return _auth.authValid(uuid, authkey)
+            }
+        })
         .then(function () {
             return config.getNewConnection();
         }, function () {
@@ -102,7 +113,7 @@ router.post('/load', function (request, response) {
             }
             else{
                 console.error(err);
-                response.status(500).send({
+                response.status(err.status === 404  ? err.status : 500).send({
                     message: 'Some error occurred at the server'
                 }).end();
             }
@@ -116,11 +127,24 @@ router.get('/load/:product_id', function (request, response) {
 
     var productid = request.params.product_id;
     var entityid = decodeURIComponent(request.query.entityid);
+    var web_access_token = request.headers.web_access_token;
 
     var connection;
     var entityurl;
 
-    config.getNewConnection()
+    _auth.authValidWeb(web_access_token)
+        .then(function (payload) {
+            if(!payload){   //Since this endpoint is only accessed by web
+                response.send({
+                    tokenstatus: 'invalid'
+                });
+                response.end();
+                throw new BreakPromiseChainError();
+            }
+        })
+        .then(function () {
+           return config.getNewConnection()
+        })
         .then(function (conn) {
             connection = conn;
             return entityutils.getEntityUrl(connection, entityid);
@@ -157,7 +181,7 @@ router.get('/load/:product_id', function (request, response) {
             }
             else{
                 console.error(err);
-                response.status(500).send({
+                response.status(err.status === 404  ? err.status : 500).send({
                     message: 'Some error occurred at the server'
                 }).end();
             }
@@ -305,10 +329,23 @@ function structureProductDetails(connection, products, entityid) {
 router.post('/load-multi-posts', function (request, response) {
     
     var entity_data = request.body.entity_data;
+    var web_access_token = request.body.web_access_token;
     
     var connection;
-    
-    config.getNewConnection()
+
+    _auth.authValidWeb(web_access_token)
+        .then(function (payload) {
+            if(!payload){   //Since this endpoint is only accessed by web
+                response.send({
+                    tokenstatus: 'invalid'
+                });
+                response.end();
+                throw new BreakPromiseChainError();
+            }
+        })
+        .then(function () {
+            return config.getNewConnection()
+        })
         .then(function (conn) {
             connection = conn;
             return getProductDetailsForEntities(connection, entity_data);
@@ -364,8 +401,10 @@ function getProductDetailsForEntities(connection, entity_data) {
                     entity_data.map(function (edata) {
                         edata.products = products.map(function (p) {
                             return {
-                                url: ["COFFEE_MUG", "JOURNAL"].includes(p.type) ? getProductEntityUrl(p.type, edata.uuid, edata.captureid, edata.shoid) : edata.entityurl,
-                                pid: p.productid
+                                productentityurl: ["COFFEE_MUG", "JOURNAL"].includes(p.type) ? getProductEntityUrl(p.type, edata.uuid, edata.captureid, edata.shoid) : null,
+                                productimgurl: ["COFFEE_MUG", "JOURNAL"].includes(p.type) ? null : p.productimgurl,
+                                productid: p.productid,
+                                type: p.type
                             }
                         });
                     });

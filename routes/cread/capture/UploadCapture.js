@@ -179,12 +179,12 @@ router.post('/', upload.single('captured-image'), function (request, response) {
             return userprofileutils.addToLatestPostsCache(connection, uuid, utils.createSmallCaptureUrl(uuid, captureid));
         })
         .then(function () {
-            if(merchantable === 1){
+            if(Number(merchantable) === 1){
                 return entityimgutils.createOverlayedImageCoffeeMug(captureid, uuid, "Capture", filebasepath + filename_to_upload);
             }
         })
         .then(function () {
-            if(merchantable === 1){
+            if(Number(merchantable) === 1){
                 return entityimgutils.createOverlayedImageJournal(captureid, "Capture", uuid, filebasepath + filename_to_upload);
             }
         })
@@ -397,6 +397,16 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
         })
         .then(function () {
             return userprofileutils.addToLatestPostsCache(connection, uuid, utils.createSmallCaptureUrl(uuid, captureid));
+        })
+        .then(function () {
+            if(Number(merchantable) === 1){
+                return entityimgutils.createOverlayedImageCoffeeMug(captureid, uuid, "Capture", filebasepath + capture_img_low.filename);
+            }
+        })
+        .then(function () {
+            if(Number(merchantable) === 1){
+                return entityimgutils.createOverlayedImageJournal(captureid, "Capture", uuid, filebasepath + capture_img_low.filename);
+            }
         })
         .then(function () {
             throw new BreakPromiseChainError(); //To disconnect server connection

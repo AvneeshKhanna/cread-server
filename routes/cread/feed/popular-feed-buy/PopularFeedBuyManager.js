@@ -12,6 +12,8 @@ var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 var consts = require('../../utils/Constants');
 var cache_time = consts.cache_time;
 
+var utils = require('../../utils/Utils');
+var _auth = require('../../../auth-token-management/AuthTokenManager');
 var popularfeedbuyutils = require('./PopularFeedBuyUtils');
 
 router.get('/load', function (request, response) {
@@ -19,20 +21,33 @@ router.get('/load', function (request, response) {
     var uuid = request.headers.uuid;
     var authkey = request.headers.authkey;
     var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : null;
+    var platform = request.query.platform;
 
-    //TODO: Code web access token validation system
     var web_access_token = request.headers.web_access_token;
 
     var limit = config.isProduction() ? 15 : 8;
 
     var connection;
 
-    config.getNewConnection()
+    _auth.authValidWeb(web_access_token)
+        .then(function (payload) {
+            if(web_access_token){
+                uuid = payload.uuid;
+            }
+        })
+        .then(function () {
+            return config.getNewConnection();
+        })
         .then(function (conn) {
             connection = conn;
             return popularfeedbuyutils.loadFeed(connection, limit, lastindexkey);
         })
         .then(function (result) {
+
+            if(platform !== "android" && platform !== "web"){
+                result.items = utils.filterProfileMentions(result.items, "caption")
+            }
+
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 
             if (request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')) {

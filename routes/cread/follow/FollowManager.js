@@ -187,11 +187,22 @@ router.get('/load-followers', function (request, response) {
     var authkey = request.headers.authkey;
     var requesteduuid = decodeURIComponent(request.query.requesteduuid);
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
+    var web_access_token = request.headers.web_access_token;
 
-    var limit = (config.envtype === 'PRODUCTION') ? 25 : 10;
+    var limit = config.isProduction() ? 25 : 10;
     var connection;
 
-    _auth.authValid(uuid, authkey)
+    _auth.authValidWeb(web_access_token)
+        .then(function (payload) {
+            if(web_access_token){
+                uuid = payload.uuid;
+            }
+        })
+        .then(function () {
+            if(!web_access_token){
+                return _auth.authValid(uuid, authkey)
+            }
+        })
         .then(function () {
             return config.getNewConnection();
         }, function () {
@@ -295,11 +306,22 @@ router.get('/load-following', function (request, response) {
     var authkey = request.headers.authkey;
     var requesteduuid = decodeURIComponent(request.query.requesteduuid);
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
+    var web_access_token = request.headers.web_access_token;
 
-    var limit = (config.envtype === 'PRODUCTION') ? 25 : 2;
+    var limit = config.isProduction() ? 25 : 2;
     var connection;
 
-    _auth.authValid(uuid, authkey)
+    _auth.authValidWeb(web_access_token)
+        .then(function (payload) {
+            if(web_access_token){
+                uuid = payload.uuid;
+            }
+        })
+        .then(function () {
+            if(!web_access_token){
+                return _auth.authValid(uuid, authkey)
+            }
+        })
         .then(function () {
             return config.getNewConnection();
         }, function () {

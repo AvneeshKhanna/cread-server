@@ -19,6 +19,8 @@ var s3bucket = envconfig.get('s3.bucket');
 
 var imagesize = require('image-size');
 
+var NotFoundError = require('../utils/NotFoundError');
+
 var feedutils = require('../feed/FeedUtils');
 var consts = require('../utils/Constants');
 
@@ -298,6 +300,11 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
             }
             else {
 
+                if(rows.length === 0){  //Case when requesteduuid is invalid (could be possible for web)
+                    reject(new NotFoundError('Invalid query parameter: "requesteduuid"'));
+                    return;
+                }
+
                 var topinterests = [];
 
                 var interests_arr = utils.getUniqueValues(rows.map(function (r) {
@@ -396,6 +403,9 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
             'WHERE uuid = ?', [requesteduuid], function (err, requesteduuiddetails) {
             if (err) {
                 reject(err);
+            }
+            else if(requesteduuiddetails.length === 0){
+                reject(new NotFoundError("Invalid 'requesteduuid'"));
             }
             else {
                 connection.query('SELECT Entity.caption, Entity.entityid, Entity.regdate, Entity.merchantable, Entity.type, User.uuid, ' +
@@ -1093,6 +1103,18 @@ function getLatestPostsCache(uuids) {
     });
 }
 
+function getShortProfileLink(uuid) {
+    return new Promise(function (resolve, reject) {
+        utils.getShortBitlyLink(utils.getProfileWebstoreLink(uuid))
+            .then(function (link) {
+                resolve(link);
+            })
+            .catch(function (err) {
+                reject(err);
+            });
+    });
+}
+
 module.exports = {
     loadTimelineLegacy: loadTimelineLegacy,
     loadTimeline: loadTimeline,
@@ -1112,5 +1134,6 @@ module.exports = {
     getUserQualityPercentile: getUserQualityPercentile,
     getLatestPostsCache: getLatestPostsCache,
     addToLatestPostsCache: addToLatestPostsCache,
-    updateLatestPostsCache: updateLatestPostsCache
+    updateLatestPostsCache: updateLatestPostsCache,
+    getShortProfileLink: getShortProfileLink
 };

@@ -29,11 +29,22 @@ router.get('/load', function (request, response) {
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
     var loadAll = (decodeURIComponent(request.query.loadall) === "true"); //Whether to load all comments or top comments [true | false]
     var platform = request.query.platform;
+    var web_access_token = request.headers.web_access_token;
 
     var limit = (config.envtype === 'PRODUCTION') ? 20 : 12;
     var connection;
 
-    _auth.authValid(uuid, authkey)
+    _auth.authValidWeb(web_access_token)
+        .then(function (payload) {
+            if(web_access_token){
+                uuid = payload.uuid;
+            }
+        })
+        .then(function () {
+            if(!web_access_token){
+                return _auth.authValid(uuid, authkey)
+            }
+        })
         .then(function () {
             return config.getNewConnection();
         }, function () {
@@ -49,7 +60,7 @@ router.get('/load', function (request, response) {
         })
         .then(function (result) {
 
-            if (platform !== "android") {
+            if (platform !== "android" && platform !== "web") {
                 result.comments = utils.filterProfileMentions(result.comments, "comment");
             }
 

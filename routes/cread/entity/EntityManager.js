@@ -92,10 +92,21 @@ router.get('/load-specific', function (request, response) {
     var authkey = request.headers.authkey;
     var entityid = decodeURIComponent(request.query.entityid);
     var platform = request.query.platform;
+    var web_access_token = request.headers.web_access_token;
 
     var connection;
 
-    _auth.authValid(uuid, authkey)
+    _auth.authValidWeb(web_access_token)
+        .then(function (payload) {
+            if(web_access_token){
+                uuid = payload.uuid;
+            }
+        })
+        .then(function () {
+            if(!web_access_token){
+                return _auth.authValid(uuid, authkey);
+            }
+        })
         .then(function () {
             return config.getNewConnection();
         }, function () {
@@ -111,7 +122,7 @@ router.get('/load-specific', function (request, response) {
         })
         .then(function (result) {
 
-            if(platform !== "android"){
+            if(platform !== "android" && platform !== "web"){
                 result.entity = utils.filterProfileMentions(new Array(result.entity), "caption")[0];
             }
 
@@ -137,7 +148,7 @@ router.get('/load-specific', function (request, response) {
             }
             else{
                 console.error(err);
-                response.status(500).send({
+                response.status(err.status === 404 ? err.status : 500).send({
                     message: 'Some error occurred at the server'
                 }).end();
             }

@@ -20,6 +20,7 @@ var fs = require('fs');
 
 var utils = require('../utils/Utils');
 var entityutils = require('../entity/EntityUtils');
+var entityimgutils = require('../entity/EntityImageUtils');
 var entityintrstutils = require('../interests/EntityInterestsUtils');
 var commentutils = require('../comment/CommentUtils');
 var shortutils = require('./ShortUtils');
@@ -94,6 +95,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
     var connection;
     var requesterdetails;
     var captureuseruuid;
+    var filepath_to_upload;
 
     _auth.authValid(uuid, authkey)
         .then(function (details) {
@@ -132,7 +134,8 @@ router.post('/', upload.single('short-image'), function (request, response) {
             return userprofileutils.renameFile(filebasepath, short, shoid);
         })
         .then(function (renamedpath) {
-            return userprofileutils.uploadImageToS3(renamedpath, uuid, 'Short', shoid + '-small.jpg');
+            filepath_to_upload = renamedpath;
+            return userprofileutils.uploadImageToS3(filepath_to_upload, uuid, 'Short', shoid + '-small.jpg');
         })
         .then(function () {
             return utils.commitTransaction(connection);
@@ -184,18 +187,15 @@ router.post('/', upload.single('short-image'), function (request, response) {
             if (shortsqlparams.capid) { //Send notification to user
                 return retreiveCaptureUserDetails(connection, shortsqlparams.capid);
             }
-            else {
-                throw new BreakPromiseChainError();
-            }
         })
         .then(function (capuseruuid) {
             captureuseruuid = capuseruuid;
-            if (captureuseruuid !== uuid) {
+            if (captureuseruuid && captureuseruuid !== uuid) {
                 return entityutils.updateEntityCollabDataForUpdates(connection, entityid, captureuseruuid, uuid);
             }
         })
         .then(function () {
-            if (captureuseruuid !== uuid) {   //Send notification only when the two users involved are different
+            if (captureuseruuid && captureuseruuid !== uuid) {   //Send notification only when the two users involved are different
                 var notifData = {
                     message: requesterdetails.firstname + ' ' + requesterdetails.lastname + " wrote on your graphic art",
                     category: "collaborate",
@@ -208,6 +208,16 @@ router.post('/', upload.single('short-image'), function (request, response) {
         })
         .then(function () {
             return userprofileutils.addToLatestPostsCache(connection, uuid, utils.createSmallShortUrl(uuid, shoid));
+        })
+        .then(function () {
+            if(entityparams.merchantable){
+                return entityimgutils.createOverlayedImageCoffeeMug(shoid, uuid, "Short", filepath_to_upload);
+            }
+        })
+        .then(function () {
+            if(entityparams.merchantable){
+                return entityimgutils.createOverlayedImageJournal(shoid, "Short", uuid, filepath_to_upload);
+            }
         })
         .then(function () {
             throw new BreakPromiseChainError(); //To disconnect server connection

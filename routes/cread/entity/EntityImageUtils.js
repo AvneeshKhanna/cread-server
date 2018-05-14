@@ -23,7 +23,18 @@ const journal_cover = {
     x_offset: 135,
     y_offset: 64,
     width: 512,
-    height: 733
+    height: 733,
+    img_allowance: 3
+};
+
+const coffee_mug_base = {
+    width: 673,
+    height: 613
+};
+
+const coffee_mug_overlay = {
+    overlay_x_crdnte: 400,
+    overlay_y_crdnte: 400
 };
 
 function getRadiusOfCurvature(img_width, curve_bent_fraction){
@@ -42,9 +53,11 @@ function createOverlayedImageCoffeeMug(typeid, uuid, type, img_path) {
         var img_width = image_dimen.width,
             img_height = image_dimen.height;
 
+        var img_aspect_ratio = parseFloat(img_width/img_height);
+
         console.log("img width & height are " + img_width + " " + img_height);
 
-        var curve_bent_center_fraction = 0.0675;    //Calculated from Coffee Mug photo and some iterations
+        const curve_bent_center_fraction = 0.0675;    //Calculated from Coffee Mug photo and some iterations
         var img_split_step_size = Math.floor(img_width * 0.008);    //In pixels
 
         var img_path_arr = [];
@@ -97,8 +110,20 @@ function createOverlayedImageCoffeeMug(typeid, uuid, type, img_path) {
                                         for (var i = 1; i < img_path_arr.length; i++) {
                                             gmstate.append(img_path_arr[i], true);
                                         }
+
+                                        var overlay_resize_width, overlay_resize_height;
+
+                                        if(img_aspect_ratio >= 1){  //Width >= Height
+                                            overlay_resize_width = coffee_mug_overlay.overlay_x_crdnte;
+                                            overlay_resize_height = parseFloat(overlay_resize_width/img_aspect_ratio);
+                                        }
+                                        else{   //Width < Height
+                                            overlay_resize_height = coffee_mug_overlay.overlay_y_crdnte;
+                                            overlay_resize_width = overlay_resize_height * img_aspect_ratio;
+                                        }
+
                                         gmstate
-                                            .resize(400, 400)   //Calculated in accordance with coffe mug image
+                                            .resize(overlay_resize_width, overlay_resize_height)   //Calculated in accordance with coffe mug image
                                             .write(base_buffer_file_path + '/' + typeid + '-transformed.png', function (err) {
                                                 if(err){
                                                     reject(err);
@@ -117,19 +142,32 @@ function createOverlayedImageCoffeeMug(typeid, uuid, type, img_path) {
                                                                 reject(err);
                                                             }
                                                             else{
-                                                                console.log('Image overlayed to coffee mug');
 
-                                                                type = type.charAt(0) + type.substr(1).toLowerCase();   //In case, 'type' arg is supplied as SHORT or CAPTURE
+                                                                //Making the image square for UI
+                                                                gm(base_uploads_file_path + '/' + typeid + '-overlay-coffee-mug.png')
+                                                                    .background('transparent')
+                                                                    .gravity('Center')
+                                                                    .extent(coffee_mug_base.width, coffee_mug_base.width)
+                                                                    .write(base_uploads_file_path + '/' + typeid + '-overlay-coffee-mug.png', function (err) {
+                                                                        if(err){
+                                                                            reject(err);
+                                                                        }
+                                                                        else {
+                                                                            console.log('Image overlayed to coffee mug');
 
-                                                                var files_to_delete = [];
-                                                                files_to_delete = files_to_delete.concat(img_path_arr);
-                                                                files_to_delete = files_to_delete.concat([
-                                                                    base_buffer_file_path + '/' + typeid + '-transformed.png',
-                                                                    base_uploads_file_path + '/' + typeid + '-overlay-coffee-mug.png'
-                                                                ]);
+                                                                            type = type.charAt(0) + type.substr(1).toLowerCase();   //In case, 'type' arg is supplied as SHORT or CAPTURE
 
-                                                                uploadOverlayedImage(uuid, type, base_uploads_file_path, typeid + '-overlay-coffee-mug.png', files_to_delete)
-                                                                    .then(resolve, reject);
+                                                                            var files_to_delete = [];
+                                                                            files_to_delete = files_to_delete.concat(img_path_arr);
+                                                                            files_to_delete = files_to_delete.concat([
+                                                                                base_buffer_file_path + '/' + typeid + '-transformed.png',
+                                                                                base_uploads_file_path + '/' + typeid + '-overlay-coffee-mug.png'
+                                                                            ]);
+
+                                                                            uploadOverlayedImage(uuid, type, base_uploads_file_path, typeid + '-overlay-coffee-mug.png', files_to_delete)
+                                                                                .then(resolve, reject);
+                                                                        }
+                                                                    })
                                                             }
                                                         });
 
@@ -156,18 +194,22 @@ function createOverlayedImageJournal(typeid, type, uuid, img_path) {
     return new Promise(function (resolve, reject) {
 
         var journal_aspect_ratio = parseFloat(journal_cover.width/journal_cover.height);
+        var image_dimen = sizeOf(img_path);
+        var entity_img_aspect_ratio = parseFloat(image_dimen.width/image_dimen.height);
 
+        //Get dominant image color to put in background
         getDominantImgColorHex(img_path, function (dcolor) {
             gm(img_path)
-                .resize(journal_cover.width, journal_cover.width)   //The dimensions width  x width are given because gm adjusts height automatically according to aspect ratio
+                .resize(journal_cover.width, journal_cover.width/entity_img_aspect_ratio)   //The dimensions 'Width X Width' are given because gm adjusts height automatically according to aspect ratio
                 .background(dcolor)
                 .gravity('Center')
-                .extent(journal_cover.width + 5, (journal_cover.width + 5)/journal_aspect_ratio)
+                .extent(journal_cover.width + journal_cover.img_allowance, (journal_cover.width + journal_cover.img_allowance)/journal_aspect_ratio)
                 .write(base_buffer_file_path  + '/' + typeid + '-journal-extent.jpg', function (err) {
                     if(err){
                         reject(err);
                     }
                     else{
+                        //Extend the entity image to make it the shape of journal cover (vetically rectangular)
                         gm(base_buffer_file_path  + '/' + typeid + '-journal-extent.jpg')
                             .background('transparent')
                             //.gravity('Center')
@@ -177,6 +219,7 @@ function createOverlayedImageJournal(typeid, type, uuid, img_path) {
                                     reject(err);
                                 }
                                 else{
+                                    //Overlay extended entity image over journal product photograph
                                     gm()
                                         .command('composite')
                                         .in(base_products_file_path + '/journal_layer_1.png')
@@ -187,17 +230,29 @@ function createOverlayedImageJournal(typeid, type, uuid, img_path) {
                                             }
                                             else{
 
-                                                type = type.charAt(0) + type.substr(1).toLowerCase();   //In case, 'type' arg is supplied as SHORT or CAPTURE
+                                                //Making the image square for webstore UI
+                                                gm(base_uploads_file_path  + '/' + typeid + '-overlay-journal.png')
+                                                    .background('#FFFFFF')
+                                                    .gravity('Center')
+                                                    .extent(journal_canvas.height, journal_canvas.height)
+                                                    .write(base_uploads_file_path  + '/' + typeid + '-overlay-journal.png', function (err) {
+                                                        if(err){
+                                                            reject(err);
+                                                        }
+                                                        else {
+                                                            type = type.charAt(0) + type.substr(1).toLowerCase();   //In case, 'type' arg is supplied as SHORT or CAPTURE
 
-                                                var files_to_delete = [];
-                                                files_to_delete.push(
-                                                    base_buffer_file_path  + '/' + typeid + '-journal-extent.jpg',
-                                                    base_buffer_file_path  + '/' + typeid + '-journal-base-layer.png',
-                                                    base_uploads_file_path  + '/' + typeid + '-overlay-journal.png'
-                                                );
+                                                            var files_to_delete = [];
+                                                            files_to_delete.push(
+                                                                base_buffer_file_path  + '/' + typeid + '-journal-extent.jpg',
+                                                                base_buffer_file_path  + '/' + typeid + '-journal-base-layer.png',
+                                                                base_uploads_file_path  + '/' + typeid + '-overlay-journal.png'
+                                                            );
 
-                                                uploadOverlayedImage(uuid, type, base_uploads_file_path, typeid + '-overlay-journal.png', files_to_delete)
-                                                    .then(resolve, reject);
+                                                            uploadOverlayedImage(uuid, type, base_uploads_file_path, typeid + '-overlay-journal.png', files_to_delete)
+                                                                .then(resolve, reject);
+                                                        }
+                                                    })
                                             }
                                         });
                                 }
