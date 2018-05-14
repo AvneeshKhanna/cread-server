@@ -29,7 +29,7 @@ router.get('/load', function (request, response) {
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
     var loadAll = (decodeURIComponent(request.query.loadall) === "true"); //Whether to load all comments or top comments [true | false]
     var platform = request.query.platform;
-    var web_access_token = request.headers.web_access_token;
+    var web_access_token = request.headers.wat;
 
     var limit = (config.envtype === 'PRODUCTION') ? 20 : 12;
     var connection;

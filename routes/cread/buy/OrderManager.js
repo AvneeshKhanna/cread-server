@@ -49,7 +49,7 @@ router.post('/place', function (request, response) {
     var shortuuid = request.body.shortuuid;
     var captureuuid = request.body.captureuuid;
 
-    var web_access_token = request.body.web_access_token;
+    var web_access_token = request.body.wat;
 
     var connection;
     var requesterdetails;

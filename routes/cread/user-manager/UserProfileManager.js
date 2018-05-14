@@ -490,7 +490,7 @@ router.get('/load-timeline', function (request, response) {
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
     var requesteduuid = decodeURIComponent(request.query.requesteduuid);
     var platform = request.query.platform;
-    var web_access_token = request.headers.web_access_token;
+    var web_access_token = request.headers.wat;
 
     var limit = config.isProduction() ? 10 : 6;  //TODO: Change to 10
 
@@ -624,12 +624,12 @@ router.post('/load-timeline', function (request, response) {
  * */
 router.get('/load-profile', function (request, response) {
 
-    console.log("request is " + JSON.stringify(request.body, null, 3));
-
     var uuid = request.headers.uuid;
     var authkey = request.headers.authkey;
     var requesteduuid = decodeURIComponent(request.query.requesteduuid); //The "uuid" of the profile that is requested
-    var web_access_token = request.headers.web_access_token;
+    var web_access_token = request.headers.wat;
+
+    console.log("request headers are  " + JSON.stringify(request.headers, null, 3));
 
     var connection;
 
@@ -747,7 +747,7 @@ router.get('/load-collab-timeline', function (request, response) {
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
     var requesteduuid = decodeURIComponent(request.query.requesteduuid);
     var platform = request.query.platform;
-    var web_access_token = request.headers.web_access_token;
+    var web_access_token = request.headers.wat;
 
     var limit = (config.envtype === 'PRODUCTION') ? 10 : 5;
     var connection;

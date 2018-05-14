@@ -92,7 +92,7 @@ router.get('/load-specific', function (request, response) {
     var authkey = request.headers.authkey;
     var entityid = decodeURIComponent(request.query.entityid);
     var platform = request.query.platform;
-    var web_access_token = request.headers.web_access_token;
+    var web_access_token = request.headers.wat;
 
     var connection;
 

@@ -23,7 +23,7 @@ router.get('/load', function (request, response) {
     var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : null;
     var platform = request.query.platform;
 
-    var web_access_token = request.headers.web_access_token;
+    var web_access_token = request.headers.wat;
 
     var limit = config.isProduction() ? 15 : 8;
 

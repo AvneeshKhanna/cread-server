@@ -22,7 +22,7 @@ router.post('/load', function (request, response) {
 
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
-    var web_access_token = request.body.web_access_token;
+    var web_access_token = request.body.wat;
     var entityid = request.body.entityid;
 
     var connection;
@@ -127,7 +127,7 @@ router.get('/load/:product_id', function (request, response) {
 
     var productid = request.params.product_id;
     var entityid = decodeURIComponent(request.query.entityid);
-    var web_access_token = request.headers.web_access_token;
+    var web_access_token = request.headers.wat;
 
     var connection;
     var entityurl;
@@ -329,7 +329,7 @@ function structureProductDetails(connection, products, entityid) {
 router.post('/load-multi-posts', function (request, response) {
     
     var entity_data = request.body.entity_data;
-    var web_access_token = request.body.web_access_token;
+    var web_access_token = request.body.wat;
     
     var connection;
 

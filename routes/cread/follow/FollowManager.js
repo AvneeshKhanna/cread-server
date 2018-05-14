@@ -187,7 +187,7 @@ router.get('/load-followers', function (request, response) {
     var authkey = request.headers.authkey;
     var requesteduuid = decodeURIComponent(request.query.requesteduuid);
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
-    var web_access_token = request.headers.web_access_token;
+    var web_access_token = request.headers.wat;
 
     var limit = config.isProduction() ? 25 : 10;
     var connection;
@@ -306,7 +306,7 @@ router.get('/load-following', function (request, response) {
     var authkey = request.headers.authkey;
     var requesteduuid = decodeURIComponent(request.query.requesteduuid);
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
-    var web_access_token = request.headers.web_access_token;
+    var web_access_token = request.headers.wat;
 
     var limit = config.isProduction() ? 25 : 2;
     var connection;

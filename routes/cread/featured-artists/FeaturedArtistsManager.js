@@ -19,7 +19,7 @@ router.get('/load', function (request, response) {
 
     var uuid = request.headers.uuid;
     var authkey = request.headers.authkey;
-    var web_access_token = request.headers.web_access_token;
+    var web_access_token = request.headers.wat;
 
     var connection;
 
