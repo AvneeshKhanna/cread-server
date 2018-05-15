@@ -101,6 +101,7 @@ router.post('/update', function (request, response) {
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
+            config.disconnect(connection);
             if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }

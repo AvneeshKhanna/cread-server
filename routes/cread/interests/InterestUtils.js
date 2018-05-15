@@ -13,7 +13,7 @@ function loadMacroInterests(connection) {
             else {
 
                 rows.push({ //For explore feed filters
-                    mintid: null,
+                    mintid: "",
                     mintname: "All",
                     type: "DEFAULT"
                 });
