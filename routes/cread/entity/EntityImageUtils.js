@@ -58,7 +58,13 @@ function createOverlayedImageCoffeeMug(typeid, uuid, type, img_path) {
         console.log("img width & height are " + img_width + " " + img_height);
 
         const curve_bent_center_fraction = 0.0675;    //Calculated from Coffee Mug photo and some iterations
-        var img_split_step_size = Math.floor(img_width * 0.008);    //In pixels
+        var img_split_step_size; //In pixels
+        if(img_width < 126){
+            img_split_step_size = 1;    //If calculated acc to Math.floor(img_width * 0.008), img_split_step_size would be 0 causing Javascript heap out of memory errors
+        }
+        else{
+            img_split_step_size = Math.floor(img_width * 0.008);
+        }
 
         var img_path_arr = [];
 
@@ -95,12 +101,9 @@ function createOverlayedImageCoffeeMug(typeid, uuid, type, img_path) {
                                 if (error) {
                                     reject(error);
                                 } else {
-                                    console.log('offset x is ' + getOffsetAtX(x, radius, img_width));
-                                    console.log('x is ' + x);
                                     cntr += 1;
                                     x += img_split_step_size;
                                     if(cntr < (img_width/parseFloat(img_split_step_size))){
-                                        console.log("cntr is " + cntr);
                                         r();
                                     }
                                     else{
@@ -186,7 +189,13 @@ function createOverlayedImageCoffeeMug(typeid, uuid, type, img_path) {
 
 function getDominantImgColorHex(imgpath, callback) {
     color_extract.topColours(imgpath, true, function (colours) {
-        callback(color_extract.rgb2hex(colours[0][1]));
+        try{
+            var dcolor = color_extract.rgb2hex(colours[0][1]);
+            callback(null, dcolor);
+        }
+        catch (err){
+            callback(err, null);
+        }
     });
 }
 
@@ -198,67 +207,73 @@ function createOverlayedImageJournal(typeid, type, uuid, img_path) {
         var entity_img_aspect_ratio = parseFloat(image_dimen.width/image_dimen.height);
 
         //Get dominant image color to put in background
-        getDominantImgColorHex(img_path, function (dcolor) {
-            gm(img_path)
-                .resize(journal_cover.width, journal_cover.width/entity_img_aspect_ratio)   //The dimensions 'Width X Width' are given because gm adjusts height automatically according to aspect ratio
-                .background(dcolor)
-                .gravity('Center')
-                .extent(journal_cover.width + journal_cover.img_allowance, (journal_cover.width + journal_cover.img_allowance)/journal_aspect_ratio)
-                .write(base_buffer_file_path  + '/' + typeid + '-journal-extent.jpg', function (err) {
-                    if(err){
-                        reject(err);
-                    }
-                    else{
-                        //Extend the entity image to make it the shape of journal cover (vetically rectangular)
-                        gm(base_buffer_file_path  + '/' + typeid + '-journal-extent.jpg')
-                            .background('transparent')
-                            //.gravity('Center')
-                            .extent(journal_canvas.width, journal_canvas.height, '-' + journal_cover.x_offset + '-' + journal_cover.y_offset)
-                            .write(base_buffer_file_path  + '/' + typeid + '-journal-base-layer.png', function (err) {
-                                if(err){
-                                    reject(err);
-                                }
-                                else{
-                                    //Overlay extended entity image over journal product photograph
-                                    gm()
-                                        .command('composite')
-                                        .in(base_products_file_path + '/journal_layer_1.png')
-                                        .in(base_buffer_file_path  + '/' + typeid + '-journal-base-layer.png')
-                                        .write(base_uploads_file_path  + '/' + typeid + '-overlay-journal.png', function (err) {
-                                            if (err) {
-                                                reject(err);
-                                            }
-                                            else{
+        getDominantImgColorHex(img_path, function (err, dcolor) {
+            if(err){
+                reject(err);
+            }
+            else{
+                gm(img_path)
+                    .resize(journal_cover.width, journal_cover.width/entity_img_aspect_ratio)   //The dimensions 'Width X Width' are given because gm adjusts height automatically according to aspect ratio
+                    .background(dcolor)
+                    .gravity('Center')
+                    .extent(journal_cover.width + journal_cover.img_allowance, (journal_cover.width + journal_cover.img_allowance)/journal_aspect_ratio)
+                    .write(base_buffer_file_path  + '/' + typeid + '-journal-extent.jpg', function (err) {
+                        if(err){
+                            reject(err);
+                        }
+                        else{
+                            //Extend the entity image to make it the shape of journal cover (vetically rectangular)
+                            gm(base_buffer_file_path  + '/' + typeid + '-journal-extent.jpg')
+                                .background('transparent')
+                                //.gravity('Center')
+                                .extent(journal_canvas.width, journal_canvas.height, '-' + journal_cover.x_offset + '-' + journal_cover.y_offset)
+                                .write(base_buffer_file_path  + '/' + typeid + '-journal-base-layer.png', function (err) {
+                                    if(err){
+                                        reject(err);
+                                    }
+                                    else{
+                                        //Overlay extended entity image over journal product photograph
+                                        gm()
+                                            .command('composite')
+                                            .in(base_products_file_path + '/journal_layer_1.png')
+                                            .in(base_buffer_file_path  + '/' + typeid + '-journal-base-layer.png')
+                                            .write(base_uploads_file_path  + '/' + typeid + '-overlay-journal.png', function (err) {
+                                                if (err) {
+                                                    reject(err);
+                                                }
+                                                else{
 
-                                                //Making the image square for webstore UI
-                                                gm(base_uploads_file_path  + '/' + typeid + '-overlay-journal.png')
-                                                    .background('#FFFFFF')
-                                                    .gravity('Center')
-                                                    .extent(journal_canvas.height, journal_canvas.height)
-                                                    .write(base_uploads_file_path  + '/' + typeid + '-overlay-journal.png', function (err) {
-                                                        if(err){
-                                                            reject(err);
-                                                        }
-                                                        else {
-                                                            type = type.charAt(0) + type.substr(1).toLowerCase();   //In case, 'type' arg is supplied as SHORT or CAPTURE
+                                                    //Making the image square for webstore UI
+                                                    gm(base_uploads_file_path  + '/' + typeid + '-overlay-journal.png')
+                                                        .background('#FFFFFF')
+                                                        .gravity('Center')
+                                                        .extent(journal_canvas.height, journal_canvas.height)
+                                                        .write(base_uploads_file_path  + '/' + typeid + '-overlay-journal.png', function (err) {
+                                                            if(err){
+                                                                reject(err);
+                                                            }
+                                                            else {
+                                                                type = type.charAt(0) + type.substr(1).toLowerCase();   //In case, 'type' arg is supplied as SHORT or CAPTURE
 
-                                                            var files_to_delete = [];
-                                                            files_to_delete.push(
-                                                                base_buffer_file_path  + '/' + typeid + '-journal-extent.jpg',
-                                                                base_buffer_file_path  + '/' + typeid + '-journal-base-layer.png',
-                                                                base_uploads_file_path  + '/' + typeid + '-overlay-journal.png'
-                                                            );
+                                                                var files_to_delete = [];
+                                                                files_to_delete.push(
+                                                                    base_buffer_file_path  + '/' + typeid + '-journal-extent.jpg',
+                                                                    base_buffer_file_path  + '/' + typeid + '-journal-base-layer.png',
+                                                                    base_uploads_file_path  + '/' + typeid + '-overlay-journal.png'
+                                                                );
 
-                                                            uploadOverlayedImage(uuid, type, base_uploads_file_path, typeid + '-overlay-journal.png', files_to_delete)
-                                                                .then(resolve, reject);
-                                                        }
-                                                    })
-                                            }
-                                        });
-                                }
-                            });
-                    }
-                });
+                                                                uploadOverlayedImage(uuid, type, base_uploads_file_path, typeid + '-overlay-journal.png', files_to_delete)
+                                                                    .then(resolve, reject);
+                                                            }
+                                                        })
+                                                }
+                                            });
+                                    }
+                                });
+                        }
+                    });
+            }
+
         });
     })
 }

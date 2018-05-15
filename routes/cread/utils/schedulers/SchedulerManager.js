@@ -271,50 +271,56 @@ var unlock_entities_job = new CronJob({
     timeZone: 'Asia/Kolkata'
 });
 
+/**
+ * Cron job to add product overlay images
+ * */
 var add_product_images_job = new CronJob({
-    //Runs at 04:00 am
-    cronTime: '00 00 04 * * *', //second | minute | hour | day-of-month | month | day-of-week
+    //Runs at 06:00 am
+    cronTime: '00 00 06 * * *', //second | minute | hour | day-of-month | month | day-of-week
     onTick: function () {
 
         var connection;
 
-        config.getNewConnection()
-            .then(function (conn) {
-                connection = conn;
-                return new Promise(function (resolve, reject) {
-                    connection.query('SELECT entityid ' +
-                        'FROM Entity ' +
-                        'WHERE product_overlay = 0 ' +
-                        'AND merchantable = 1 ' +
-                        'AND status = "ACTIVE" ' +
-                        'ORDER BY regdate DESC ' +
-                        'LIMIT 200', [false], function (err, rows) {
-                        if (err) {
-                            reject(err);
-                        }
-                        else {
-                            resolve(rows);
-                        }
+        if(config.isProduction()){
+            config.getNewConnection()
+                .then(function (conn) {
+                    connection = conn;
+                    return new Promise(function (resolve, reject) {
+                        connection.query('SELECT entityid ' +
+                            'FROM Entity ' +
+                            'WHERE product_overlay = 0 ' +
+                            'AND merchantable = 1 ' +
+                            'AND status = "ACTIVE" ' +
+                            'ORDER BY regdate DESC ' +
+                            'LIMIT 300', [false], function (err, rows) {
+                            if (err) {
+                                reject(err);
+                            }
+                            else {
+                                resolve(rows);
+                            }
+                        });
                     });
+                })
+                .then(function (entities) {
+                    console.log("Process Initiated");
+                    //config.disconnect(connection);  //Disconnecting connection early since createMultipleEntityProductImages() can be an hour long process
+                    return createMultipleEntityProductImages(entities);
+                })
+                .then(function () {
+                    console.log("add_product_images_job complete");
+                    throw new BreakPromiseChainError();
+                })
+                .catch(function (err) {
+                    config.disconnect(connection);
+                    if (err instanceof BreakPromiseChainError) {
+                        //Do nothing
+                    }
+                    else {
+                        console.error(err);
+                    }
                 });
-            })
-            .then(function (entities) {
-                console.log("Process Initiated");
-                return createMultipleEntityProductImages(entities);
-            })
-            .then(function () {
-                console.log("add_product_images_job complete");
-                throw new BreakPromiseChainError();
-            })
-            .catch(function (err) {
-                config.disconnect(connection);
-                if (err instanceof BreakPromiseChainError) {
-                    //Do nothing
-                }
-                else {
-                    console.error(err);
-                }
-            });
+        }
 
     },
     start: false,   //Whether to start just now
@@ -323,7 +329,8 @@ var add_product_images_job = new CronJob({
 
 function createMultipleEntityProductImages(entities) {
     return new Promise(function (resolve, reject) {
-        async.eachOf(entities, function (entity, index, callback) {
+        //Limit async operations to 20 at a time as multiple SQL connections would be opened parallely
+        async.eachOfLimit(entities, 20, function (entity, index, callback) {
 
             var connection;
 
@@ -341,10 +348,12 @@ function createMultipleEntityProductImages(entities) {
                     return utils.rollbackTransaction(connection, undefined, err);
                 })
                 .then(function () {
+                    config.disconnect(connection);
                     callback();
                 })
                 .catch(function (err) {
                     console.error(err);
+                    config.disconnect(connection);
                     console.log("createMultipleEntityProductImages() -> " + entity.entityid + " created an error");
                     callback();
                 })
