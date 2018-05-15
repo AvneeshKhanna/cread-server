@@ -31,12 +31,12 @@ router.post('/load', function (request, response) {
 
     _auth.authValidWeb(web_access_token)
         .then(function (payload) {
-            if(web_access_token){
+            if (web_access_token) {
                 uuid = payload.uuid;
             }
         })
         .then(function () {
-            if(!web_access_token){
+            if (!web_access_token) {
                 return _auth.authValid(uuid, authkey)
             }
         })
@@ -65,27 +65,27 @@ router.post('/load', function (request, response) {
             return retrieveLastPlacedDetails(connection, uuid);
         })
         .then(function (details) {
-            try{
+            try {
                 var billing_contact = details.billing_contact;
                 var detailsexist = false;
 
                 delete details.billing_contact;
 
-                if(!details.ship_addr_2){
+                if (!details.ship_addr_2) {
                     details.ship_addr_2 = "";
                 }
 
-                if(!details.billing_alt_contact){
+                if (!details.billing_alt_contact) {
                     details.billing_alt_contact = "";
                 }
 
-                for(var key in details){
-                    if(details[key]){
+                for (var key in details) {
+                    if (details[key]) {
                         detailsexist = true;
                     }
                 }
             }
-            catch(err){
+            catch (err) {
                 throw err;
             }
 
@@ -108,12 +108,12 @@ router.post('/load', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
-                response.status(err.status === 404  ? err.status : 500).send({
+                response.status(err.status === 404 ? err.status : 500).send({
                     message: 'Some error occurred at the server'
                 }).end();
             }
@@ -134,7 +134,7 @@ router.get('/load/:product_id', function (request, response) {
 
     _auth.authValidWeb(web_access_token)
         .then(function (payload) {
-            if(!payload){   //Since this endpoint is only accessed by web
+            if (!payload) {   //Since this endpoint is only accessed by web
                 response.send({
                     tokenstatus: 'invalid'
                 });
@@ -143,7 +143,7 @@ router.get('/load/:product_id', function (request, response) {
             }
         })
         .then(function () {
-           return config.getNewConnection()
+            return config.getNewConnection()
         })
         .then(function (conn) {
             connection = conn;
@@ -159,7 +159,7 @@ router.get('/load/:product_id', function (request, response) {
         .then(function (prducts) {
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 
-            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+            if (request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')) {
                 response.status(304).send().end();
             }
             else {
@@ -176,12 +176,12 @@ router.get('/load/:product_id', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
-                response.status(err.status === 404  ? err.status : 500).send({
+                response.status(err.status === 404 ? err.status : 500).send({
                     message: 'Some error occurred at the server'
                 }).end();
             }
@@ -213,7 +213,7 @@ function structureProductDetails(connection, products, entityid) {
         entityutils.getEntityCoffeeMugNJournalUrls(connection, entityid)
             .then(function (urls) {
                 products.forEach(function (product) {
-                    if(product.type === 'SHIRT'){
+                    if (product.type === 'SHIRT') {
                         product.sizes = [
                             'small',
                             'medium',
@@ -238,7 +238,7 @@ function structureProductDetails(connection, products, entityid) {
                         product.deliverycharge = 1/*80*/;
                         product.productentityurl = null;
                     }
-                    else if(product.type === 'POSTER'){
+                    else if (product.type === 'POSTER') {
                         product.sizes = [
                             '11 x 11 inches'
                         ];
@@ -258,7 +258,7 @@ function structureProductDetails(connection, products, entityid) {
                         product.deliverycharge = 1/*80*/;
                         product.productentityurl = null;
                     }
-                    else if(product.type === 'FRAME'){
+                    else if (product.type === 'FRAME') {
                         product.sizes = [
                             '11 x 11 inches'
                         ];
@@ -278,7 +278,7 @@ function structureProductDetails(connection, products, entityid) {
                         product.deliverycharge = 1/*80*/;
                         product.productentityurl = null;
                     }
-                    else if(product.type === 'JOURNAL'){
+                    else if (product.type === 'JOURNAL') {
                         product.sizes = [
                             'medium'
                         ];
@@ -299,7 +299,7 @@ function structureProductDetails(connection, products, entityid) {
                         product.deliverycharge = 1/*80*/;
                         product.productentityurl = urls.journalurl;
                     }
-                    else{   //COFFEE_MUG
+                    else {   //COFFEE_MUG
                         product.sizes = [
                             'medium'
                         ];
@@ -327,15 +327,15 @@ function structureProductDetails(connection, products, entityid) {
 }
 
 router.post('/load-multi-posts', function (request, response) {
-    
+
     var entity_data = request.body.entity_data;
     var web_access_token = request.body.wat;
-    
+
     var connection;
 
     _auth.authValidWeb(web_access_token)
         .then(function (payload) {
-            if(!payload){   //Since this endpoint is only accessed by web
+            if (!payload) {   //Since this endpoint is only accessed by web
                 response.send({
                     tokenstatus: 'invalid'
                 });
@@ -360,7 +360,7 @@ router.post('/load-multi-posts', function (request, response) {
 
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 
-            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+            if (request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')) {
                 response.status(304).send().end();
             }
             else {
@@ -377,10 +377,10 @@ router.post('/load-multi-posts', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     message: 'Some error occurred at the server'
@@ -397,14 +397,14 @@ function getProductDetailsForEntities(connection, entity_data) {
                 reject(err);
             }
             else {
-                try{
+                try {
 
                     //Placing Coffee Mug at position 1
                     var coffee_mug_index = products.indexOf(products.filter(function (p) {
                         return p.type === 'COFFEE_MUG'
                     })[0]);
 
-                    if(coffee_mug_index !== 0){
+                    if (coffee_mug_index !== 0) {
                         products = utils.swap(products, 0, coffee_mug_index);
                     }
 
@@ -413,7 +413,7 @@ function getProductDetailsForEntities(connection, entity_data) {
                         return p.type === 'JOURNAL'
                     })[0]);
 
-                    if(journal_index !== 1){
+                    if (journal_index !== 1) {
                         products = utils.swap(products, 1, journal_index);
                     }
 
@@ -431,7 +431,7 @@ function getProductDetailsForEntities(connection, entity_data) {
 
                     resolve(entity_data);
                 }
-                catch (ex){
+                catch (ex) {
                     reject(ex);
                 }
             }
@@ -442,19 +442,19 @@ function getProductDetailsForEntities(connection, entity_data) {
 function getProductEntityUrl(ptype, uuid, capid, shoid) {
     var url;
 
-    if(ptype === 'COFFEE_MUG'){
-        if(capid){
+    if (ptype === 'COFFEE_MUG') {
+        if (capid) {
             url = utils.getCaptureCoffeeMugOverlayUrl(uuid, capid);
         }
         else {
             url = utils.getShortCoffeeMugOverlayUrl(uuid, shoid);
         }
     }
-    else if(ptype === 'JOURNAL'){
-        if(capid){
+    else if (ptype === 'JOURNAL') {
+        if (capid) {
             url = utils.getCaptureJournalOverlayUrl(uuid, capid);
         }
-        else{
+        else {
             url = utils.getShortJournalOverlayUrl(uuid, shoid);
         }
     }
