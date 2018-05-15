@@ -23,7 +23,7 @@ router.get('/', function (request, response) {
     var creatorname = request.query.creatorname;
 
     var render_params = {
-        meta_tag_og_title: "Experience and buy " + creatorname + "'s art on Cread",
+        meta_tag_og_title: "Experience  " + creatorname + "'s art on Cread",
         meta_tag_og_image: entityurl,
         meta_tag_og_url: config.server_url
     };

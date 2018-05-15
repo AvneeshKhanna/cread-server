@@ -3,13 +3,17 @@
  */
 'use-strict';
 
+var moment = require('moment');
+var async = require('async');
+
 var utils = require('../utils/Utils');
 
-var moment = require('moment');
 var feedutils = require('../feed/FeedUtils');
 var updatesutils = require('../updates/UpdatesUtils');
 var userprofileutils = require('../user-manager/UserProfileUtils');
 var consts = require('../utils/Constants');
+
+var NotFoundError = require('../utils/NotFoundError');
 
 function retrieveShortDetails(connection, entityid) {
     return new Promise(function (resolve, reject) {
@@ -266,6 +270,12 @@ function loadEntityData(connection, requesteruuid, entityid) {
                 reject(err);
             }
             else {
+
+                if(!row[0].entityid){   //Because even in case of invalid entityid, user related data is returned
+                    reject(new NotFoundError('Invalid "entityid"'));
+                    return;
+                }
+
                 row.map(function (element) {
                     element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
 
@@ -345,6 +355,31 @@ function loadEntityData(connection, requesteruuid, entityid) {
                 });*/
             }
         });
+    });
+}
+
+function loadEntityDatMultiple(connection, requesteruuid, entityids) {
+    return new Promise(function (resolve, reject) {
+
+        var items = [];
+
+        async.each(entityids, function (entityid, callback) {
+            loadEntityData(connection, requesteruuid, entityid)
+                .then(function (result) {
+                    items.push(result.entity);
+                    callback();
+                })
+                .catch(function (err) {
+                    callback(err);
+                });
+        }, function (err) {
+            if(err){
+                reject(err);
+            }
+            else {
+                resolve(items);
+            }
+        })
     });
 }
 
@@ -466,6 +501,11 @@ function getEntityUrl(connection, entityid) {
             }
             else {
 
+                if(rows.length === 0){
+                    reject(new NotFoundError('Invalid "entityid"'));
+                    return;
+                }
+
                 var entityurl;
 
                 if(rows[0].type === 'SHORT'){
@@ -476,6 +516,38 @@ function getEntityUrl(connection, entityid) {
                 }
 
                 resolve(entityurl);
+            }
+        });
+    });
+}
+
+function getEntityCoffeeMugNJournalUrls(connection, entityid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT U.uuid, C.capid, S.shoid, E.type ' +
+            'FROM Entity E ' +
+            'LEFT JOIN Short S ' +
+            'USING(entityid) ' +
+            'LEFT JOIN Capture C ' +
+            'USING(entityid) ' +
+            'JOIN User U ' +
+            'ON(U.uuid = S.uuid OR U.uuid = C.uuid) ' +
+            'WHERE E.entityid = ?', [entityid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                rows.map(function (element) {
+                    if(element.type === 'SHORT'){
+                        element.coffeemugurl = utils.getShortCoffeeMugOverlayUrl(element.uuid, element.shoid);
+                        element.journalurl = utils.getShortJournalOverlayUrl(element.uuid, element.shoid);
+                    }
+                    else if(element.type === 'CAPTURE'){
+                        element.coffeemugurl = utils.getCaptureCoffeeMugOverlayUrl(element.uuid, element.capid);
+                        element.journalurl = utils.getCaptureJournalOverlayUrl(element.uuid, element.capid);
+                    }
+                });
+
+                resolve(rows[0]);
             }
         });
     });
@@ -653,6 +725,7 @@ function isEntityActive(connection, entityid) {
 module.exports = {
     updateEntityCollabDataForUpdates: updateEntityCollabDataForUpdates,
     loadEntityData: loadEntityData,
+    loadEntityDatMultiple: loadEntityDatMultiple,
     loadEntityDataSeparate: loadEntityDataSeparate,
     retrieveShortDetails: retrieveShortDetails,
     loadCollabDetails: loadCollabDetails,
@@ -660,6 +733,7 @@ module.exports = {
     getEntityDetailsForPrint: getEntityDetailsForPrint,
     getEntityUsrDetailsForNotif: getEntityUsrDetailsForNotif,
     getEntityUrl: getEntityUrl,
+    getEntityCoffeeMugNJournalUrls: getEntityCoffeeMugNJournalUrls,
     deactivateEntity: deactivateEntity,
     removeEntityFromExplore: removeEntityFromExplore,
     putEntityToExplore: putEntityToExplore,

@@ -2,8 +2,7 @@
  * Created by avnee on 06-08-2017.
  */
 
-var envconfig = require('config');
-var config_type = envconfig.get("type");
+var config = require('../../Config');
 
 const sharerate = 10;
 const checkrate_verified = 1;
@@ -15,30 +14,34 @@ const restrict_find_frequency = 25; //Measured in 'clicks per minute'
 const royalty_percentage = 10;
 
 const markup = 33; //in percentage TODO: Update markup
-const minCashInAmt = (config_type === 'PRODUCTION') ? 10 : 2;    //TODO: Can change the amount based on team discussion
+const minCashInAmt = config.isProduction() ? 10 : 2;    //TODO: Can change the amount based on team discussion
 
 const explore_algo_base_score = 5;  //Base score for each entity
+
+const max_intrst_selectn_div = config.isProduction() ? 4 : 4;   //Divisor to divide the number of items
 
 const min_percentile_quality_user_downvote = 90;
 const min_qpercentile_user_recommendation = 70;
 
 const share_time_interval = {
     same_share : {
-        time_diff: config_type === 'PRODUCTION' ? 24 : 2,
-        time_diff_unit: config_type === 'PRODUCTION' ? "hours" : "minutes"
+        time_diff: config.isProduction() ? 24 : 2,
+        time_diff_unit: config.isProduction() ? "hours" : "minutes"
     },
     diff_share: {
-        time_diff: config_type === 'PRODUCTION' ? 12 : 1,
-        time_diff_unit: config_type === 'PRODUCTION' ? "hours" : "minutes"
+        time_diff: config.isProduction() ? 12 : 1,
+        time_diff_unit: config.isProduction() ? "hours" : "minutes"
     }
 };
 
 const cache_time = {
-    small: config_type === 'DEVELOPMENT' ? 20 : 60,
-    medium: config_type === 'DEVELOPMENT' ? 20 : 120,
-    high: config_type === 'DEVELOPMENT' ? 20 : 300,
-    xhigh: config_type === 'DEVELOPMENT' ? 20 : 900,
-    xxhigh: config_type === 'DEVELOPMENT' ? 20 : 3600
+    small: !(config.isProduction()) ? 20 : 60,          //1 minute
+    medium: !(config.isProduction()) ? 20 : 120,        //2 minutes
+    high: !(config.isProduction()) ? 20 : 300,          //5 minutes
+    xhigh: !(config.isProduction()) ? 20 : 900,         //15 minutes
+    xxhigh: !(config.isProduction()) ? 20 : 3600,       //1 hour
+    xxxhigh: !(config.isProduction()) ? 20 : 21600,     //6 hours
+    ultrahigh: !(config.isProduction()) ? 20 : 86400    //24 hours
 };
 
 function getMarkup(markup) {
@@ -68,5 +71,6 @@ module.exports = {
     cache_time: cache_time,
     explore_algo_base_score: explore_algo_base_score,
     min_percentile_quality_user_downvote: min_percentile_quality_user_downvote,
-    min_qpercentile_user_recommendation: min_qpercentile_user_recommendation
+    min_qpercentile_user_recommendation: min_qpercentile_user_recommendation,
+    max_intrst_selectn_div: max_intrst_selectn_div
 };

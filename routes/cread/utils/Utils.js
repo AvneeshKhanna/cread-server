@@ -8,12 +8,17 @@ var AWS = config.AWS;
 var envconfig = require('config');
 var request_client = require('request');
 var fs = require('fs');
+var async = require('async');
 
 var s3bucket = envconfig.get('s3.bucket');
 var s3bucketheader = 's3-ap-northeast-1.amazonaws.com';
 var profilepicfilename = 'display-pic.jpg';
 var profilepicfilename_small = 'display-pic-small.jpg';
 var urlprotocol = 'https://';
+
+var downloads_file_basepath = './downloads';
+
+const bitly = config.getBitlyClient();
 
 var firstPostCommentsCK = [
     {
@@ -82,6 +87,13 @@ function shuffle(arr) {
         arr[randomIndex] = arr[i];
         arr[i] = itemAtIndex;
     }
+    return arr;
+}
+
+function swap(arr, pos1, pos2) {
+    var temp = arr[pos1];
+    arr[pos1] = arr[pos2];
+    arr[pos2] = temp;
     return arr;
 }
 
@@ -235,6 +247,22 @@ function createShortUrl(uuid, shoid) {
     return urlprotocol + /*'d2vvojd6jjmi1r.cloudfront.net'*/ s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Short/' + shoid + '.jpg';
 }
 
+function getShortCoffeeMugOverlayUrl(uuid, shoid) {
+    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Short/' + shoid + '-overlay-coffee-mug.png';
+}
+
+function getCaptureCoffeeMugOverlayUrl(uuid, capid) {
+    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Capture/' + capid + '-overlay-coffee-mug.png';
+}
+
+function getShortJournalOverlayUrl(uuid, shoid) {
+    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Short/' + shoid + '-overlay-journal.png';
+}
+
+function getCaptureJournalOverlayUrl(uuid, capid) {
+    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Capture/' + capid + '-overlay-journal.png';
+}
+
 function commitTransaction(connection, resultfromprev) {
     return new Promise(function (resolve, reject) {
         connection.commit(function (err) {
@@ -283,6 +311,62 @@ function downloadFile(filebasepath, filename, downloadurl) {
             .on('error', function (err) {
                 reject(err);
             });
+    });
+}
+
+function uploadFileToS3(sourcefilepath, destFileKey) {
+    return new Promise(function (resolve, reject) {
+        var params = {
+            Body: fs.createReadStream(sourcefilepath),
+            Bucket: s3bucket,
+            Key: destFileKey,
+            ACL: "public-read"
+        };
+
+        var s3 = new AWS.S3();
+        s3.putObject(params, function (err, data) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    })
+}
+
+function getS3ConfigFileUrl() {
+    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Config/config.json';
+}
+
+function changeS3ConfigFile(token) {
+    return new Promise(function (resolve, reject) {
+
+        var data = {
+            web_access_token: encodeURIComponent(token)
+        };
+
+        fs.writeFile(downloads_file_basepath + '/config.json', JSON.stringify(data, null, 3), function (err) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
+function updateS3ConfigFile(token) {
+    return new Promise(function (resolve, reject) {
+        downloadFile(downloads_file_basepath, "config.json", getS3ConfigFileUrl())
+            .then(function () {
+                return changeS3ConfigFile(token);
+            })
+            .then(function () {
+                return uploadFileToS3(downloads_file_basepath + '/config.json', "Config/config.json");
+            })
+            .then(resolve, reject);
     });
 }
 
@@ -346,12 +430,67 @@ function extractProfileMentionUUIDs(text) {
 
 function getRandomFirstPostComment(name) {
     var comment_data = firstPostCommentsCK[Math.floor(Math.random() * firstPostCommentsCK.length)];
-    return comment_data.prefix + name +  comment_data.suffix;
+    return comment_data.prefix + name + comment_data.suffix;
 }
 
 function firstLetterToUpper(word) {
     word = word.trim();
     return word.charAt(0).toUpperCase() + word.substr(1);
+}
+
+function deleteUnrequiredFiles(files) {
+    return new Promise(function (resolve, reject) {
+        async.each(files, function (file, callback) {
+
+            fs.unlink(file, function (err) {
+                if(err){
+                    callback(err);
+                }
+                else {
+                    callback();
+                }
+            });
+
+        }, function (err) {
+            if(err){
+                console.error(err);
+                reject(err);
+            }
+            else {
+                console.log('Files Deleted');
+                resolve();
+            }
+        });
+    })
+}
+
+function getInterestBgImgUrl(intname) {
+    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Interests/' + intname.trim().toLowerCase().replace(new RegExp(' ', 'g'), "-") + ".jpg";
+}
+
+function getShortBitlyLink(longUrl) {
+    return new Promise(function (resolve, reject) {
+        request_client(bitly.api_base_url + "/v3/link/lookup?url=" +
+            encodeURIComponent(longUrl) +
+            "&access_token=" +
+            bitly.generic_access_token, function (err, res, body) {
+            if (err) {
+                reject(err);
+            }
+            else if (res.statusCode !== 200) {
+                console.log(body);
+                reject(new Error('Short link from Bitly could not be generated due to an error'));
+            }
+            else {  //res.statusCode === 200
+                body = JSON.parse(body);
+                resolve(body.data.link_lookup[0].aggregdate_link); //TODO: test
+            }
+        })
+    });
+}
+
+function getProfileWebstoreLink(uuid) {
+    return config.getWebstoreDomain() + '/profile/' + uuid + '/timeline';
 }
 
 module.exports = {
@@ -365,15 +504,25 @@ module.exports = {
     createCaptureUrl: createCaptureUrl,
     createSmallShortUrl: createSmallShortUrl,
     createShortUrl: createShortUrl,
+    getCaptureCoffeeMugOverlayUrl: getCaptureCoffeeMugOverlayUrl,
+    getShortCoffeeMugOverlayUrl: getShortCoffeeMugOverlayUrl,
+    getShortJournalOverlayUrl: getShortJournalOverlayUrl,
+    getCaptureJournalOverlayUrl: getCaptureJournalOverlayUrl,
     commitTransaction: commitTransaction,
     beginTransaction: beginTransaction,
     rollbackTransaction: rollbackTransaction,
     downloadFile: downloadFile,
+    updateS3ConfigFile: updateS3ConfigFile,
     getAllIndexes: getAllIndexes,
+    swap: swap,
     filterProfileMentions: filterProfileMentions,
     extractProfileMentionUUIDs: extractProfileMentionUUIDs,
     shuffle: shuffle,
     getUniqueValues: getUniqueValues,
     getRandomFirstPostComment: getRandomFirstPostComment,
-    firstLetterToUpper: firstLetterToUpper
+    firstLetterToUpper: firstLetterToUpper,
+    deleteUnrequiredFiles: deleteUnrequiredFiles,
+    getInterestBgImgUrl: getInterestBgImgUrl,
+    getShortBitlyLink: getShortBitlyLink,
+    getProfileWebstoreLink: getProfileWebstoreLink
 };

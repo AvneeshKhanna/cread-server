@@ -13,21 +13,6 @@ var envtype = envconfig.get('type');
 
 var config = require('../../../Config');
 var AWS = config.AWS;
-/*
- var renderdata = {
- clientname: 1,//clientdetails.clientname,
- paymentid: 1,//paymentdetails.paymentid,
- billingname: 1,//billingdetails.billingname,
- billingcontact: 1,//billingdetails.billingcontact,
- amount: 1,//paymentdetails.amount
- };
-
- ejs.renderFile(projectpath + "/views/email/client-wallet-transaction/success.ejs", renderdata, function (err, strhtml) {
-
- console.log(err);
- console.log(strhtml)
-
- });*/
 
 function sendTransactionEmail(type, clientdetails, subject, paymentdetails, billingdetails, callback) {
 
@@ -177,12 +162,14 @@ function sendOrderTransactionEmail(type, customerdetails, subject, paymentdetail
                 Source: "Cread Support. <help@cread.in>"
             };
 
-            if(envtype === 'PRODUCTION'){
+            if(config.isProduction()){
                 params.Destination.BccAddresses = [
                     'admin@thetestament.com',
                     'nishantmittal2410@gmail.com',
                     'avneesh.khanna92@gmail.com'
-                ]
+                ];
+
+                params.Destination.ToAddresses.push('admin@cread.in');  //This is done in case, customer's email address is invalid, a mandatory mail is sent to Cread's account
             }
 
             setAWSConfigForSES(AWS);

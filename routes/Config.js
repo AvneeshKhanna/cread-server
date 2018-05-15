@@ -139,6 +139,22 @@ function getKueClient() {
     return kue;
 }
 
+function getBitlyClient() {
+    return {    //From Bitly Dashboard. Free account version
+        api_base_url: 'https://api-ssl.bitly.com',
+        generic_access_token: 'fffb828cb132ed59852d28037a202de57fbc1ddc'
+    }
+}
+
+function getWebstoreDomain() {
+    if(isProduction()){
+        return 'http://www.cread.in';
+    }
+    else {
+        return 'http://408ea2d2.ngrok.io';
+    }
+}
+
 function getCreadKalakaarUUID() {
     if (isProduction()) {
         return '6732bb8e-cffd-4e1b-906f-dc75873a5d92';
@@ -206,5 +222,7 @@ module.exports = {
     getKueJobQueue: getKueJobQueue,
     getKueClient: getKueClient,
     CREAD_GOOGLE: CREAD_GOOGLE,
-    getGoogleOAuthClient: getGoogleOAuthClient
+    getGoogleOAuthClient: getGoogleOAuthClient,
+    getBitlyClient: getBitlyClient,
+    getWebstoreDomain: getWebstoreDomain
 };

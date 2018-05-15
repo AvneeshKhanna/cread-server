@@ -14,6 +14,7 @@ var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var consts = require('../utils/Constants');
 var utils = require('../utils/Utils');
 var entityutils = require('./EntityUtils');
+var entityintrstutils = require('../interests/EntityInterestsUtils');
 var captureutils = require('../capture/CaptureUtils');
 var hashtagutils = require('../hashtag/HashTagUtils');
 var profilementionutils = require('../profile-mention/ProfileMentionUtils');
@@ -91,10 +92,21 @@ router.get('/load-specific', function (request, response) {
     var authkey = request.headers.authkey;
     var entityid = decodeURIComponent(request.query.entityid);
     var platform = request.query.platform;
+    var web_access_token = request.headers.wat;
 
     var connection;
 
-    _auth.authValid(uuid, authkey)
+    _auth.authValidWeb(web_access_token)
+        .then(function (payload) {
+            if(web_access_token){
+                uuid = payload.uuid;
+            }
+        })
+        .then(function () {
+            if(!web_access_token){
+                return _auth.authValid(uuid, authkey);
+            }
+        })
         .then(function () {
             return config.getNewConnection();
         }, function () {
@@ -110,7 +122,7 @@ router.get('/load-specific', function (request, response) {
         })
         .then(function (result) {
 
-            if(platform !== "android"){
+            if(platform !== "android" && platform !== "web"){
                 result.entity = utils.filterProfileMentions(new Array(result.entity), "caption")[0];
             }
 
@@ -136,7 +148,7 @@ router.get('/load-specific', function (request, response) {
             }
             else{
                 console.error(err);
-                response.status(500).send({
+                response.status(err.status === 404 ? err.status : 500).send({
                     message: 'Some error occurred at the server'
                 }).end();
             }
@@ -397,6 +409,8 @@ router.post('/edit-caption', function (request, response) {
         mentioneduuids = utils.extractProfileMentionUUIDs(caption);
     }
 
+    var interests = request.body.interests ? JSON.parse(request.body.interests) : null;
+
     var connection;
     var requesterdetails;
 
@@ -420,6 +434,16 @@ router.post('/edit-caption', function (request, response) {
             //Adding new hashtags for entity
             if(uniquehashtags && uniquehashtags.length > 0){
                 return hashtagutils.addHashtagsForEntity(connection, uniquehashtags, entityid);
+            }
+        })
+        .then(function () {
+            if(interests && interests.length > 0){
+                return entityintrstutils.deleteAllEntityInterests(connection, entityid);
+            }
+        })
+        .then(function () {
+            if(interests && interests.length > 0){
+                return entityintrstutils.saveEntityInterests(connection, entityid, interests);
             }
         })
         .then(function () {

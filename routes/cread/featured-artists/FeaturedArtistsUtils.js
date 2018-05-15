@@ -17,7 +17,7 @@ function getFeaturedArtists(connection) {
     var today = moment().format('YYYY-MM-DD 00:00:00');
 
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT U.uuid, U.firstname AS name, FA.regdate ' +
+        connection.query('SELECT U.uuid, U.firstname AS name, U.lastname, FA.regdate ' +
             'FROM FeaturedArtists FA ' +
             'JOIN User U ' +
             'ON (FA.uuid = U.uuid) ' +

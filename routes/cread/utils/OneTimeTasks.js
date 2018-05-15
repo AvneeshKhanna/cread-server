@@ -16,11 +16,15 @@ var config = require('../../Config');
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var utils = require('./Utils');
+var entityutils = require('../entity/EntityUtils');
+var entityimgutils = require('../entity/EntityImageUtils');
 var followutils = require('../follow/FollowUtils');
 var chatconvoutils = require('../chat/ChatConversationUtils');
 
 var async = require('async');
 var uuidGen = require('uuid');
+
+var download_base_path = './images/downloads';
 
 router.post('/add-entity-data', function (request, response) {
 
@@ -334,6 +338,134 @@ function addAllDefaultMessageFromCreadKalakaar(connection, user_uuids) {
                     });
             }
         })
+    });
+}
+
+router.post('/add-product-images', function (request, response) {
+
+    var connection;
+
+    config.getNewConnection()
+        .then(function (conn) {
+            connection = conn;
+            return new Promise(function (resolve, reject) {
+                connection.query('SELECT entityid ' +
+                    'FROM Entity ' +
+                    'WHERE product_overlay = 0 ' +
+                    'AND merchantable = 1 ' +
+                    'AND status = "ACTIVE" ' +
+                    'ORDER BY regdate DESC ' +
+                    'LIMIT 7', [false], function (err, rows) {
+                    if (err) {
+                        reject(err);
+                    }
+                    else {
+                        resolve(rows);
+                    }
+                });
+            });
+        })
+        .then(function (entities) {
+            response.send("Process Initiated").end();
+            return createMultipleEntityProductImages(entities);
+        })
+        .then(function () {
+            console.log("PROCESS OVER");
+            //response.send("Process Initiated").end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                if(!response.headerSent){
+                    response.status(500).send({
+                        message: 'Some error occurred at the server'
+                    });
+                    response.end();
+                }
+            }
+        });
+
+});
+
+function createMultipleEntityProductImages(entities) {
+    return new Promise(function (resolve, reject) {
+        async.eachOf(entities, function (entity, index, callback) {
+
+            var connection;
+
+            config.getNewConnection()
+                .then(function (conn) {
+                    connection = conn;
+                    return utils.beginTransaction(connection);
+                })
+                .then(function () {
+                    return createEntityProductImage(connection, entity.entityid);
+                })
+                .then(function () {
+                    return utils.commitTransaction(connection);
+                }, function (err) {
+                    return utils.rollbackTransaction(connection, undefined, err);
+                })
+                .then(function () {
+                    callback();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    console.log("createMultipleEntityProductImages() -> " + entity.entityid + " created an error");
+                    callback();
+                })
+
+        },function (err) {
+            if(err){
+                console.log('All data could not be processed');
+                reject(err);
+            }
+            else {
+                console.log('All data processed');
+                resolve();
+            }
+        })
+    });
+}
+
+function createEntityProductImage(connection, entityid) {
+    return new Promise(function (resolve, reject) {
+
+        var edata;
+        var download_file_name;
+
+        entityutils.loadEntityData(connection, config.getCreadKalakaarUUID(), entityid)
+            .then(function (ed) {
+                edata = ed.entity;
+                download_file_name = entityid + '-product-process.jpg';
+                return utils.downloadFile(download_base_path, download_file_name, edata.entityurl);
+            })
+            .then(function (downloadpath) {
+                return entityimgutils.createOverlayedImageJournal(edata.type === 'SHORT' ? edata.shoid : edata.captureid, edata.type, edata.uuid, download_base_path + '/' + download_file_name);
+            })
+            .then(function () {
+                return entityimgutils.createOverlayedImageCoffeeMug(edata.type === 'SHORT' ? edata.shoid : edata.captureid, edata.uuid, edata.type, download_base_path + '/' + download_file_name)
+            })
+            .then(function () {
+                return new Promise(function (resolve, reject) {
+                    connection.query('UPDATE Entity ' +
+                        'SET product_overlay = ? ' +
+                        'WHERE entityid = ?', [true, entityid], function (err, rows) {
+                        if (err) {
+                            reject(err);
+                        }
+                        else {
+                            resolve();
+                        }
+                    });
+                });
+            })
+            .then(resolve, reject);
     });
 }
 

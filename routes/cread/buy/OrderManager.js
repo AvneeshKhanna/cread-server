@@ -35,7 +35,8 @@ router.post('/place', function (request, response) {
     var shipmentdetails = request.body.shipmentdetails;
     var price = request.body.price; //Price of one item
     var qty = request.body.quantity;
-    var billing_name = request.body.billing_name;
+    var billing_email = request.body.billing_email; //Will be NULL when requested from app
+    var billing_name = request.body.billing_name.trim();
     var billing_alt_contact = request.body.billing_alt_contact;
     var color = request.body.color;
     var size = request.body.size;
@@ -48,37 +49,35 @@ router.post('/place', function (request, response) {
     var shortuuid = request.body.shortuuid;
     var captureuuid = request.body.captureuuid;
 
-    var sqlparams = {
-        orderid: uuidgen.v4(),
-        uuid: uuid,
-        entityid: entityid,
-        productid: productid,
-        paymentid: paymentid,
-        payment_mode: payment_mode,
-        amount: amount,
-        shortuuid: shortuuid,
-        captureuuid: captureuuid,
-        royalty_percentage: royalty_percentage,
-        ship_addr_1: shipmentdetails.ship_addr_1,
-        ship_addr_2: shipmentdetails.ship_addr_2,
-        ship_city: shipmentdetails.ship_city,
-        ship_state: shipmentdetails.ship_state,
-        ship_pincode: shipmentdetails.ship_pincode,
-        billing_name: billing_name,
-        billing_alt_contact: billing_alt_contact,
-        color: color,
-        size: size,
-        price: price,
-        qty: qty
-    };
+    var web_access_token = request.body.wat;
 
     var connection;
     var requesterdetails;
     var notifuuids;
 
-    _auth.authValid(uuid, authkey)
+    _auth.authValidWeb(web_access_token)
+        .then(function (payload) {
+            if(web_access_token){   //Since this endpoint is only accessed by web
+                uuid = payload.uuid;
+            }
+        })
+        .then(function () {
+            if(!web_access_token){
+                return _auth.authValid(uuid, authkey)
+            }
+        })
         .then(function (details) {
-            requesterdetails = details;
+            if(!web_access_token){
+                requesterdetails = details;
+            }
+            else{   //Case where someone has purchased an order from web and their account with us does not exist
+                requesterdetails = {
+                    firstname: billing_name.split(" ")[0],
+                    lastname: billing_name.split(" ")[billing_name.split(" ").length - 1],
+                    email: billing_email,
+                    phone: billing_alt_contact
+                }
+            }
             return config.getNewConnection();
         }, function () {
             response.send({
@@ -92,6 +91,31 @@ router.post('/place', function (request, response) {
             return utils.beginTransaction(connection);
         })
         .then(function () {
+
+            var sqlparams = {
+                orderid: uuidgen.v4(),
+                uuid: uuid,
+                entityid: entityid,
+                productid: productid,
+                paymentid: paymentid,
+                payment_mode: payment_mode,
+                amount: amount,
+                shortuuid: shortuuid,
+                captureuuid: captureuuid,
+                royalty_percentage: royalty_percentage,
+                ship_addr_1: shipmentdetails.ship_addr_1,
+                ship_addr_2: shipmentdetails.ship_addr_2,
+                ship_city: shipmentdetails.ship_city,
+                ship_state: shipmentdetails.ship_state,
+                ship_pincode: shipmentdetails.ship_pincode,
+                billing_name: billing_name,
+                billing_alt_contact: billing_alt_contact,
+                color: color,
+                size: size,
+                price: price,
+                qty: qty
+            };
+
             return buyutils.saveOrderDetails(connection, sqlparams);
         })
         .then(function () {

@@ -31,6 +31,7 @@ router.get('/load', function (request, response) {
     var authkey = request.headers.authkey;
     var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : null;
     var platform = request.query.platform;
+    var mintid = request.query.mintid;
 
     var limit = (config.isProduction()) ? 16 : 8; //Keep the value even for cross pattern in grid view
     var connection;
@@ -50,7 +51,7 @@ router.get('/load', function (request, response) {
             //return exploredatahandler.getEntityDataFromCache();
         })
         .then(function (/*edata*/) {
-            return loadFeed(connection, uuid, limit, /*edata, */lastindexkey);
+            return loadFeed(connection, uuid, mintid, limit, /*edata, */lastindexkey);
         })
         .then(function (result) {
 
@@ -118,7 +119,7 @@ router.post('/load', function (request, response) {
                 return loadFeedLegacy(connection, uuid, limit, page);
             }
             else {
-                return loadFeed(connection, uuid, limit, edata, lastindexkey);
+                return loadFeed(connection, uuid, undefined, limit, edata, lastindexkey);
             }
         })
         .then(function (result) {
@@ -294,11 +295,23 @@ function loadFeedLegacy(connection, uuid, limit, page) {
     });
 }
 
-function loadFeed(connection, uuid, limit, lastindexkey) {
+function loadFeed(connection, uuid, mintid, limit, lastindexkey) {
     return new Promise(function (resolve, reject) {
 
         //lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
         lastindexkey = (lastindexkey) ? Number(lastindexkey) : 0;
+
+        var sql_mintid_where;
+        var sqlparams = [];
+
+        if(mintid){
+            sql_mintid_where = 'AND I.mintid = ? ';
+            sqlparams = [explore_algo_base_score, uuid, uuid, uuid, mintid, limit, lastindexkey];
+        }
+        else{
+            sql_mintid_where = '';
+            sqlparams = [explore_algo_base_score, uuid, uuid, uuid, limit, lastindexkey];
+        }
 
         connection.query('SELECT EA.caption, EA.entityid, EA.merchantable, EA.type, EA.regdate, ' +
             'User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, ' +
@@ -317,8 +330,14 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                 'FROM EntityAnalytics ' +
                 'JOIN Entity E ' +
                 'USING(entityid) ' +
+                'LEFT JOIN EntityInterests EI ' +
+                'USING(entityid) ' +
+                'LEFT JOIN Interests I ' +
+                'ON(EI.intid = I.intid) ' +
                 'WHERE E.status = "ACTIVE" ' +
                 'AND E.for_explore = 1 ' +
+                sql_mintid_where +
+                'GROUP BY E.entityid ' +
                 'ORDER BY impact_score DESC ' +
                 'LIMIT ? ' +
                 'OFFSET ?) EA ' +
@@ -342,7 +361,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
             'GROUP BY EA.entityid ' +
             'ORDER BY impact_weight DESC '/* +
             'LIMIT ? ' +
-            'OFFSET ?;'*/, [explore_algo_base_score, uuid, uuid, uuid, limit, lastindexkey], function (err, rows) {
+            'OFFSET ?;'*/, sqlparams, function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -441,7 +460,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                     resolve({
                         requestmore: rows.length >= limit,
                         candownvote: false,
-                        lastindexkey: null,
+                        lastindexkey: "",
                         feed: []
                     });
                 }

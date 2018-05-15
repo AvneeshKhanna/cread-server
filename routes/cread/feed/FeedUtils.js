@@ -18,15 +18,11 @@ function getCollaborationData(connection, rows) {
             return element.shcaptureid;
         });
 
-        console.log("shcaptureids are " + JSON.stringify(shcaptureids, null, 3));
-
         var cpshortids = rows.filter(function (element) {
             return !!(element.cpshortid);
         }).map(function (element) {
             return element.cpshortid;
         });
-
-        console.log("cpshortids are " + JSON.stringify(cpshortids, null, 3));
 
         var collabdataquery;
         var collabsqlparams;
@@ -91,7 +87,6 @@ function getCollaborationData(connection, rows) {
                 }
                 else {
 
-                    console.log("collab_rows are " + JSON.stringify(collab_rows, null, 3));
                     collab_rows.forEach(function (collab) {
 
                         // var row_element;

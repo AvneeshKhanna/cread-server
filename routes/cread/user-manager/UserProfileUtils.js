@@ -19,6 +19,8 @@ var s3bucket = envconfig.get('s3.bucket');
 
 var imagesize = require('image-size');
 
+var NotFoundError = require('../utils/NotFoundError');
+
 var feedutils = require('../feed/FeedUtils');
 var consts = require('../utils/Constants');
 
@@ -276,7 +278,7 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
 
     return new Promise(function (resolve, reject) {
         connection.query('SELECT User.uuid, User.firstname, User.lastname, User.bio, User.watermarkstatus, ' +
-            'User.email, User.phone, Follow.followee, Follow.follower, FA.featured_id ' +
+            'User.email, User.phone, Follow.followee, Follow.follower, FA.featured_id, I.intname ' +
             'FROM User ' +
             'LEFT JOIN ' +
             '(SELECT uuid, featured_id ' +
@@ -288,11 +290,36 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
             'ON (FA.uuid = User.uuid) ' +
             'LEFT JOIN Follow ' +
             'ON (Follow.followee = User.uuid OR Follow.follower = User.uuid) ' +
+            'LEFT JOIN UserInterests UI ' +
+            'ON(User.uuid = UI.uuid) ' +
+            'LEFT JOIN Interests I ' +
+            'ON(UI.intid = I.intid) ' +
             'WHERE User.uuid = ?', [today, config.getCreadKalakaarUUID(), requesteduuid], function (err, rows) {
             if (err) {
-                reject(err)
+                reject(err);
             }
             else {
+
+                if(rows.length === 0){  //Case when requesteduuid is invalid (could be possible for web)
+                    reject(new NotFoundError('Invalid query parameter: "requesteduuid"'));
+                    return;
+                }
+
+                var topinterests = [];
+
+                var interests_arr = utils.getUniqueValues(rows.map(function (r) {
+                    return r.intname
+                })).filter(function (r) {
+                    return !!r;
+                });
+
+                if(interests_arr[0]){
+                    topinterests.push(interests_arr[0])
+                }
+
+                if(interests_arr[1]){
+                    topinterests.push(interests_arr[1])
+                }
 
                 //People who follow the requesteduuid
                 var followers = rows.filter(function (elem) {
@@ -316,6 +343,10 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
                     delete userdata.featured_id;
                 }
 
+                if (userdata.hasOwnProperty('intname')) {
+                    delete userdata.intname;
+                }
+
                 //Follow status of the requester w.r.t. the requested
                 userdata.followstatus = (followers.filter(function (elem) {
                     return (elem.follower === requesteruuid)
@@ -323,6 +354,8 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
 
                 userdata.followercount = followercount;
                 userdata.followingcount = followingcount;
+                userdata.topinterests = topinterests;
+                userdata.interestcount = interests_arr.length;
 
                 connection.query('SELECT COUNT(DISTINCT E.entityid) AS postcount, ' +
                     'COUNT(DISTINCT CASE WHEN(E.type = "SHORT") THEN SC.capid ' +
@@ -370,6 +403,9 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
             'WHERE uuid = ?', [requesteduuid], function (err, requesteduuiddetails) {
             if (err) {
                 reject(err);
+            }
+            else if(requesteduuiddetails.length === 0){
+                reject(new NotFoundError("Invalid 'requesteduuid'"));
             }
             else {
                 connection.query('SELECT Entity.caption, Entity.entityid, Entity.regdate, Entity.merchantable, Entity.type, User.uuid, ' +
@@ -787,12 +823,12 @@ function uploadImageToS3(sourcefilepath, uuid, type, destfilename /* ,filekey*/)
 }
 
 /**
- * Method to copy Facebook's profile picture to S3
+ * Method to copy Facebook or Google's profile picture to S3
  * */
-function copyFacebookProfilePic(fbpicurl, uuid) {
+function copySocialMediaProfilePic(picurl, uuid) {
     var downloadpath;
     return new Promise(function (resolve, reject) {
-        utils.downloadFile('./images/downloads/profilepic', uuid + '.jpg', fbpicurl)
+        utils.downloadFile('./images/downloads/profilepic', uuid + '.jpg', picurl)
             .then(function (downldpath) {
                 downloadpath = downldpath;
 
@@ -1067,6 +1103,18 @@ function getLatestPostsCache(uuids) {
     });
 }
 
+function getShortProfileLink(uuid) {
+    return new Promise(function (resolve, reject) {
+        utils.getShortBitlyLink(utils.getProfileWebstoreLink(uuid))
+            .then(function (link) {
+                resolve(link);
+            })
+            .catch(function (err) {
+                reject(err);
+            });
+    });
+}
+
 module.exports = {
     loadTimelineLegacy: loadTimelineLegacy,
     loadTimeline: loadTimeline,
@@ -1081,10 +1129,11 @@ module.exports = {
     renameFile: renameFile,
     createSmallImage: createSmallImage,
     uploadImageToS3: uploadImageToS3,
-    copyFacebookProfilePic: copyFacebookProfilePic,
+    copySocialMediaProfilePic: copySocialMediaProfilePic,
     createSmallProfilePic: createSmallProfilePic,
     getUserQualityPercentile: getUserQualityPercentile,
     getLatestPostsCache: getLatestPostsCache,
     addToLatestPostsCache: addToLatestPostsCache,
-    updateLatestPostsCache: updateLatestPostsCache
+    updateLatestPostsCache: updateLatestPostsCache,
+    getShortProfileLink: getShortProfileLink
 };

@@ -25,6 +25,8 @@ var notify = require('../../notification-system/notificationFramework');
 var shortutils = require('../short/ShortUtils');
 var hashtagutils = require('../hashtag/HashTagUtils');
 var entityutils = require('../entity/EntityUtils');
+var entityimgutils = require('../entity/EntityImageUtils');
+var entityintrstutils = require('../interests/EntityInterestsUtils');
 var commentutils = require('../comment/CommentUtils');
 
 var filebasepath = './images/uploads/capture/'; 
@@ -40,6 +42,7 @@ router.post('/', upload.single('captured-image'), function (request, response) {
     var capture = request.file;
     var merchantable = Number(request.body.merchantable);
     var caption = request.body.caption.trim() ? request.body.caption.trim() : null;
+    var interests = request.body.interests ? JSON.parse(request.body.interests) : null;
 
     var uniquehashtags;
     var mentioneduuids = [];
@@ -64,6 +67,7 @@ router.post('/', upload.single('captured-image'), function (request, response) {
     var connection;
     var requesterdetails;
     var toresize;
+    var filename_to_upload;
 
     _auth.authValid(uuid, authkey)
         .then(function (details) {
@@ -109,17 +113,21 @@ router.post('/', upload.single('captured-image'), function (request, response) {
             }
         })
         .then(function () {
+            if(interests && interests.length > 0){
+                return entityintrstutils.saveEntityInterests(connection, entityid, interests);
+            }
+        })
+        .then(function () {
             return userprofileutils.uploadImageToS3(filebasepath + captureid + '.jpg', uuid, 'Capture', captureid + '.jpg');
         })
         .then(function () {
-            var filename;
             if (toresize) {
-                filename = captureid + '-small' + '.jpg';
+                filename_to_upload = captureid + '-small' + '.jpg';
             }
             else {
-                filename = captureid + '.jpg';
+                filename_to_upload = captureid + '.jpg';
             }
-            return userprofileutils.uploadImageToS3(filebasepath + filename, uuid, 'Capture', captureid + '-small' + '.jpg');
+            return userprofileutils.uploadImageToS3(filebasepath + filename_to_upload, uuid, 'Capture', captureid + '-small' + '.jpg');
         })
         .then(function () {
             return utils.commitTransaction(connection);
@@ -171,6 +179,16 @@ router.post('/', upload.single('captured-image'), function (request, response) {
             return userprofileutils.addToLatestPostsCache(connection, uuid, utils.createSmallCaptureUrl(uuid, captureid));
         })
         .then(function () {
+            if(Number(merchantable) === 1){
+                return entityimgutils.createOverlayedImageCoffeeMug(captureid, uuid, "Capture", filebasepath + filename_to_upload);
+            }
+        })
+        .then(function () {
+            if(Number(merchantable) === 1){
+                return entityimgutils.createOverlayedImageJournal(captureid, "Capture", uuid, filebasepath + filename_to_upload);
+            }
+        })
+        .then(function () {
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {
@@ -199,6 +217,7 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
     var capture_img_low = request.files['capture-img-low'][0];
     var merchantable = Number(request.body.merchantable);
     var caption = request.body.caption.trim() ? request.body.caption.trim() : null;
+    var interests = request.body.interests ? JSON.parse(request.body.interests) : null;
 
     var uniquehashtags;
     var mentioneduuids = [];
@@ -296,6 +315,11 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
             }
         })
         .then(function () {
+            if(interests && interests.length > 0){
+                return entityintrstutils.saveEntityInterests(connection, entityid, interests);
+            }
+        })
+        .then(function () {
             return profilepicutils.uploadImageToS3(filebasepath + capture_img_high.filename, uuid, 'Capture', captureid + '.jpg');
         })
         .then(function () {
@@ -375,6 +399,16 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
             return userprofileutils.addToLatestPostsCache(connection, uuid, utils.createSmallCaptureUrl(uuid, captureid));
         })
         .then(function () {
+            if(Number(merchantable) === 1){
+                return entityimgutils.createOverlayedImageCoffeeMug(captureid, uuid, "Capture", filebasepath + capture_img_low.filename);
+            }
+        })
+        .then(function () {
+            if(Number(merchantable) === 1){
+                return entityimgutils.createOverlayedImageJournal(captureid, "Capture", uuid, filebasepath + capture_img_low.filename);
+            }
+        })
+        .then(function () {
             throw new BreakPromiseChainError(); //To disconnect server connection
         })
         .catch(function (err) {
@@ -398,6 +432,7 @@ function updateCaptureDB(connection, captureid, uuid, watermark, merchantable, c
             entityid: entityid,
             type: 'CAPTURE',
             merchantable: (merchantable === 1),
+            product_overlay: (merchantable === 1),
             caption: caption
         };
 

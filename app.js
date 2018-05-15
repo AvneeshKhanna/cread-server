@@ -28,6 +28,9 @@ var scheduler = require('./routes/cread/utils/schedulers/SchedulerManager');
 scheduler.update_latestposts_cache_job.start();
 scheduler.delete_stale_hotds_job.start();
 scheduler.reminder_hotd_job.start();
+scheduler.generate_new_web_token_job.start();
+scheduler.unlock_entities_job.start();
+scheduler.add_product_images_job.start();
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
@@ -153,7 +156,8 @@ app.use('/user-access', require('./routes/cread/user-manager/UserAccessManager')
 app.use('/user-events', require('./routes/cread/user-manager/events/UserEventsManager'));
 app.use('/redeem-from-wallet', require('./routes/cread/user-manager/payments/RedeemFromWallet'));
 app.use('/givers-manager', require('./routes/cread/givers/GiversManager'));
-app.use('/user-interests', require('./routes/cread/user-manager/interests/InterestsManager'));
+app.use('/user-interests', require('./routes/cread/interests/UserInterestsManager'));
+app.use('/entity-interests', require('./routes/cread/interests/EntityInterestsManager'));
 app.use('/user-campaigns', require('./routes/cread/track/campaigns/UserCampaignManager'));
 app.use('/explore-feed', require('./routes/cread/feed/explore/ExploreFeedManager'));
 app.use('/inspiration-feed', require('./routes/cread/feed/InspirationFeedManager'));

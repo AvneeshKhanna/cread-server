@@ -12,6 +12,12 @@ var consts = require('../Constants');
 var utils = require('../Utils');
 var BreakPromiseChainError = require('../BreakPromiseChainError');
 var userprofileutils = require('../../user-manager/UserProfileUtils');
+var entityintrstutils = require('../../interests/EntityInterestsUtils');
+var entityutils = require('../../entity/EntityUtils');
+var entityimgutils = require('../../entity/EntityImageUtils');
+var _auth = require('../../../auth-token-management/AuthTokenManager');
+
+var download_base_path = './images/downloads';
 
 var update_latestposts_cache_job = new CronJob({
     cronTime: '00 00 01 * * *', //second | minute | hour | day-of-month | month | day-of-week
@@ -200,8 +206,217 @@ function checkForScheduledHOTD(connection) {
     });
 }
 
+var generate_new_web_token_job = new CronJob({
+    //Runs at 12:05 am
+    cronTime: '00 05 00 * * *', //second | minute | hour | day-of-month | month | day-of-week
+    onTick: function () {
+
+        var connection;
+
+        config.getNewConnection()
+            .then(function (conn) {
+                connection = conn;
+                return _auth.generateWebAccessToken({
+                    uuid: config.getCreadKalakaarUUID()
+                });
+            })
+            .then(function (token) {
+                return utils.updateS3ConfigFile(token);
+            })
+            .then(function () {
+                console.log("generate_new_web_token_job complete");
+                throw new BreakPromiseChainError();
+            })
+            .catch(function (err) {
+                config.disconnect(connection);
+                if (err instanceof BreakPromiseChainError) {
+                    //Do nothing
+                }
+                else {
+                    console.error(err);
+                }
+            });
+
+    },
+    start: false,   //Whether to start just now
+    timeZone: 'Asia/Kolkata'
+});
+
+/**
+ * Cron job to unlock entities that may have locked due to manual post categorising process using Cread Ops
+ * */
+var unlock_entities_job = new CronJob({
+    //Runs every 1 hour
+    cronTime: '00 00 * * * *', //second | minute | hour | day-of-month | month | day-of-week
+    onTick: function () {
+
+        var connection;
+
+        config.getNewConnection()
+            .then(function (conn) {
+                connection = conn;
+                return entityintrstutils.unlockEntityMultiple(connection);
+            })
+            .then(function () {
+                console.log("unlock_entities_job complete");
+                throw new BreakPromiseChainError();
+            })
+            .catch(function (err) {
+                config.disconnect(connection);
+                if (err instanceof BreakPromiseChainError) {
+                    //Do nothing
+                }
+                else {
+                    console.error(err);
+                }
+            });
+
+    },
+    start: false,   //Whether to start just now
+    timeZone: 'Asia/Kolkata'
+});
+
+/**
+ * Cron job to add product overlay images
+ * */
+var add_product_images_job = new CronJob({
+    //Runs at 06:00 am
+    cronTime: '00 00 06 * * *', //second | minute | hour | day-of-month | month | day-of-week
+    onTick: function () {
+
+        var connection;
+
+        if(config.isProduction()){
+            config.getNewConnection()
+                .then(function (conn) {
+                    connection = conn;
+                    return new Promise(function (resolve, reject) {
+                        connection.query('SELECT entityid ' +
+                            'FROM Entity ' +
+                            'WHERE product_overlay = 0 ' +
+                            'AND merchantable = 1 ' +
+                            'AND status = "ACTIVE" ' +
+                            'ORDER BY regdate DESC ' +
+                            'LIMIT 300', [false], function (err, rows) {
+                            if (err) {
+                                reject(err);
+                            }
+                            else {
+                                resolve(rows);
+                            }
+                        });
+                    });
+                })
+                .then(function (entities) {
+                    console.log("Process Initiated");
+                    //config.disconnect(connection);  //Disconnecting connection early since createMultipleEntityProductImages() can be an hour long process
+                    return createMultipleEntityProductImages(entities);
+                })
+                .then(function () {
+                    console.log("add_product_images_job complete");
+                    throw new BreakPromiseChainError();
+                })
+                .catch(function (err) {
+                    config.disconnect(connection);
+                    if (err instanceof BreakPromiseChainError) {
+                        //Do nothing
+                    }
+                    else {
+                        console.error(err);
+                    }
+                });
+        }
+
+    },
+    start: false,   //Whether to start just now
+    timeZone: 'Asia/Kolkata'
+});
+
+function createMultipleEntityProductImages(entities) {
+    return new Promise(function (resolve, reject) {
+        //Limit async operations to 20 at a time as multiple SQL connections would be opened parallely
+        async.eachOfLimit(entities, 20, function (entity, index, callback) {
+
+            var connection;
+
+            config.getNewConnection()
+                .then(function (conn) {
+                    connection = conn;
+                    return utils.beginTransaction(connection);
+                })
+                .then(function () {
+                    return createEntityProductImage(connection, entity.entityid);
+                })
+                .then(function () {
+                    return utils.commitTransaction(connection);
+                }, function (err) {
+                    return utils.rollbackTransaction(connection, undefined, err);
+                })
+                .then(function () {
+                    config.disconnect(connection);
+                    callback();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    config.disconnect(connection);
+                    console.log("createMultipleEntityProductImages() -> " + entity.entityid + " created an error");
+                    callback();
+                })
+
+        },function (err) {
+            if(err){
+                console.log('All data could not be processed');
+                reject(err);
+            }
+            else {
+                console.log('All data processed');
+                resolve();
+            }
+        })
+    });
+}
+
+function createEntityProductImage(connection, entityid) {
+    return new Promise(function (resolve, reject) {
+
+        var edata;
+        var download_file_name;
+
+        entityutils.loadEntityData(connection, config.getCreadKalakaarUUID(), entityid)
+            .then(function (ed) {
+                edata = ed.entity;
+                download_file_name = entityid + '-product-process.jpg';
+                return utils.downloadFile(download_base_path, download_file_name, edata.entityurl);
+            })
+            .then(function (downloadpath) {
+                return entityimgutils.createOverlayedImageJournal(edata.type === 'SHORT' ? edata.shoid : edata.captureid, edata.type, edata.uuid, download_base_path + '/' + download_file_name);
+            })
+            .then(function () {
+                return entityimgutils.createOverlayedImageCoffeeMug(edata.type === 'SHORT' ? edata.shoid : edata.captureid, edata.uuid, edata.type, download_base_path + '/' + download_file_name)
+            })
+            .then(function () {
+                return new Promise(function (resolve, reject) {
+                    connection.query('UPDATE Entity ' +
+                        'SET product_overlay = ? ' +
+                        'WHERE entityid = ?', [true, entityid], function (err, rows) {
+                        if (err) {
+                            reject(err);
+                        }
+                        else {
+                            resolve();
+                        }
+                    });
+                });
+            })
+            .then(resolve, reject);
+    });
+}
+
 module.exports = {
     update_latestposts_cache_job: update_latestposts_cache_job,
     delete_stale_hotds_job: delete_stale_hotds_job,
-    reminder_hotd_job: reminder_hotd_job
+    reminder_hotd_job: reminder_hotd_job,
+    generate_new_web_token_job: generate_new_web_token_job,
+    unlock_entities_job: unlock_entities_job,
+    add_product_images_job: add_product_images_job
 };

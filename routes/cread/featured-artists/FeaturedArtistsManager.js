@@ -19,11 +19,22 @@ router.get('/load', function (request, response) {
 
     var uuid = request.headers.uuid;
     var authkey = request.headers.authkey;
+    var web_access_token = request.headers.wat;
 
     var connection;
 
-    _auth.authValid(uuid, authkey)
-        .then(function (details) {
+    _auth.authValidWeb(web_access_token)
+        .then(function (payload) {
+            if(web_access_token){
+                uuid = payload.uuid;
+            }
+        })
+        .then(function () {
+            if(!web_access_token){
+                return _auth.authValid(uuid, authkey);
+            }
+        })
+        .then(function () {
             return config.getNewConnection();
         }, function () {
             response.send({

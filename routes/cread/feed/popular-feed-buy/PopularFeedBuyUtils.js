@@ -13,7 +13,7 @@ function loadFeed(connection, limit, lastindexkey) {
 
         lastindexkey = (lastindexkey) ? Number(lastindexkey) : 0;
 
-        connection.query('SELECT EA.caption, EA.entityid, EA.type, EA.regdate, ' +
+        connection.query('SELECT EA.caption, EA.entityid, EA.merchantable, EA.type, EA.regdate, ' +
             'User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, ' +
             'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
             '(CASE WHEN(EA.impact_score IS NULL) THEN ? ELSE EA.impact_score END) AS impact_weight, ' +
@@ -26,7 +26,7 @@ function loadFeed(connection, limit, lastindexkey) {
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +*/
             'FROM ' +
-                '(SELECT E.caption, E.entityid, E.type, E.regdate, EntityAnalytics.impact_score ' +
+                '(SELECT E.caption, E.entityid, E.type, E.merchantable, E.regdate, EntityAnalytics.impact_score ' +
                 'FROM EntityAnalytics ' +
                 'JOIN Entity E ' +
                 'USING(entityid) ' +
@@ -76,8 +76,8 @@ function loadFeed(connection, limit, lastindexkey) {
                         element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
                         /*element.hatsoffstatus = element.hbinarycount > 0;
                         element.downvotestatus = element.dbinarycount > 0;
-                        element.followstatus = element.binarycount > 0;
-                        element.merchantable = (element.merchantable !== 0);*/
+                        element.followstatus = element.binarycount > 0;*/
+                        element.merchantable = (element.merchantable !== 0);
                         element.long_form = (element.long_form === 1);
 
                         if (element.hasOwnProperty('binarycount')) {
