@@ -174,6 +174,67 @@ router.get('/load-posts-for-tag', function (request, response) {
 
 });
 
+router.post('/update', function (request, response) {
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
+    var entityid = request.body.entityid;
+    var interests = request.body.interests;
+    var register = request.body.register;
+
+    if(!(interests instanceof Array)){
+        console.error(new Error('"interests" body parameter should be of type array'));
+        response.status(500).send({
+            message: config.isProduction() ? '' : '"interests" body parameter should be of type array'
+        });
+        return;
+    }
+
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function () {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            if(register){
+                return entityintrstutils.saveEntityInterests(connection, entityid, interests);
+            }
+            else{
+                return entityintrstutils.deleteEntityInterests(connection, entityid, interests);
+            }
+        })
+        .then(function () {
+            response.send({
+                tokenstatus: 'valid',
+                data: {
+                    status: 'done'
+                }
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if (err instanceof BreakPromiseChainError) {
+                //Do nothing
+            }
+            else {
+                console.error(err);
+                response.status(500).send({
+                    error: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
+
 /**
  * Router to unlock an entity after tagging interests/labels manually
  * */
