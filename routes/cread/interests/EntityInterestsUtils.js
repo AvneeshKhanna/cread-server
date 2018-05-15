@@ -101,6 +101,21 @@ function saveEntityInterests(connection, entityid, interests) {
     });
 }
 
+function deleteEntityInterests(connection, entityid, interests) {
+    return new Promise(function (resolve, reject) {
+        connection.query('DELETE FROM EntityInterests ' +
+            'WHERE entityid = ? ' +
+            'AND intid = (?)', [entityid, interests], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
 function deleteAllEntityInterests(connection, entityid) {
     return new Promise(function (resolve, reject) {
         connection.query('DELETE FROM EntityInterests WHERE entityid = ?', [entityid], function (err, rows) {
@@ -210,6 +225,7 @@ module.exports = {
     saveEntityInterests: saveEntityInterests,
     loadInterestsByType: loadInterestsByType,
     deleteAllEntityInterests: deleteAllEntityInterests,
+    deleteEntityInterests: deleteEntityInterests,
     loadPostsForInterestTag: loadPostsForInterestTag,
     lockEntityMultiple: lockEntityMultiple,
     unlockEntityMultiple: unlockEntityMultiple
