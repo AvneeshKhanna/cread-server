@@ -278,7 +278,7 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
 
     return new Promise(function (resolve, reject) {
         connection.query('SELECT User.uuid, User.firstname, User.lastname, User.bio, User.watermarkstatus, ' +
-            'User.email, User.phone, Follow.followee, Follow.follower, FA.featured_id, I.intname ' +
+            'User.email, User.phone, Follow.followid, Follow.followee, Follow.follower, FA.featured_id, I.intname ' +
             'FROM User ' +
             'LEFT JOIN ' +
             '(SELECT uuid, featured_id ' +
@@ -307,6 +307,7 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
 
                 var topinterests = [];
 
+                //Interests selected by the user
                 var interests_arr = utils.getUniqueValues(rows.map(function (r) {
                     return r.intname
                 })).filter(function (r) {
@@ -331,8 +332,13 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
                     return (elem.follower === requesteduuid);
                 });
 
-                var followercount = followers.length;
-                var followingcount = following.length;
+                var followercount = utils.getUniqueValues(followers.map(function (f) {
+                    return f.followid;
+                })).length;
+
+                var followingcount = utils.getUniqueValues(following.map(function (f) {
+                    return f.followid;
+                })).length;
 
                 var userdata = rows[0];
 
