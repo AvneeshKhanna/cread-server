@@ -31,6 +31,7 @@ var AWS = require('aws-sdk');
 var transEmail = require('../dsbrd/wallet-management/TransactionEmailer');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var utils = require('../utils/Utils');
+var imgutils = require('../utils/images/ImageUtils');
 
 /*AWS.config.region = 'eu-west-1';
  AWS.config.credentials = new AWS.CognitoIdentityCredentials({
@@ -607,6 +608,22 @@ router.get('/bitly-link', function (request, response) {
             }).end();
         }
     })
+});
+
+router.post('/invalidate-cfrnt', function (request, response) {
+
+    imgutils.invalidateCloudfrontObject([
+        '/Users/5919758c-d32a-4294-9ee9-deabbe0a9d06/Capture/14214d36-a438-4eae-8795-d15de116b4a7-small.jpg'
+    ], {
+        Quantity: 1
+    })
+        .then(function (res) {
+            response.send(res).end();
+        })
+        .catch(function (err) {
+            response.status(500).send(err).end();
+        });
+
 });
 
 module.exports = router;

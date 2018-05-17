@@ -29,6 +29,15 @@ const CREAD_GOOGLE = {
     CLIENTID: "381917870916-vet9ejb07fqipbuok5kj0pgraf3nfrr4.apps.googleusercontent.com"
 };
 
+/**
+ * AWS Content Delivery Network
+ * */
+const CLOUDFRONT = {
+    /*TODO: Update Production Values*/
+    distributionid: isProduction() ? 'E3DFSY5SI61EJ5' : 'E3DFSY5SI61EJ5',
+    domain: isProduction() ? 'd2vvojd6jjmi1r.cloudfront.net' : 'd2vvojd6jjmi1r.cloudfront.net'
+};
+
 var connection = mysql.createConnection({
     host: dbConfig.host,
     user: dbConfig.user,
@@ -219,6 +228,7 @@ module.exports = {
     getCreadKalakaarDefaultMessage: getCreadKalakaarDefaultMessage,
     isProduction: isProduction,
     getRedisClient: getRedisClient,
+    CLOUDFRONT: CLOUDFRONT,
     getKueJobQueue: getKueJobQueue,
     getKueClient: getKueClient,
     CREAD_GOOGLE: CREAD_GOOGLE,
