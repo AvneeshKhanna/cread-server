@@ -566,7 +566,8 @@ function getEntitiesInfoFast(connection, master_rows) {
                     return getEntitiesInfoDB(connection, rows_no_info);
                 }
                 else{
-                    resolve(mergeAndFlattenRows(master_rows, 'info'));
+                    console.log("fetched from cache");
+                    resolve(sortByDateDesc(mergeAndFlattenRows(master_rows, 'info')));
                     throw new BreakPromiseChainError();
                 }
             })
@@ -579,7 +580,7 @@ function getEntitiesInfoFast(connection, master_rows) {
                     master_rows[master_entityids.indexOf(r.info.entityid)].info =  r.info;
                 });
 
-                resolve(mergeAndFlattenRows(master_rows, 'info'));
+                resolve(sortByDateDesc(mergeAndFlattenRows(master_rows, 'info')));
                 //TODO: Uncomment
                 /*updateEntitiesInfoCache(rows.map(function (r) {
                     return r.info;
@@ -607,6 +608,18 @@ function mergeAndFlattenRows(rows, key) {
             delete row[key];
         }
         return row;
+    });
+    return rows;
+}
+
+function sortByDateDesc(rows) {
+    rows.sort(function (a, b) {
+        if (a.regdate < b.regdate) {
+            return 1;
+        }
+        else {
+            return -1;
+        }
     });
     return rows;
 }
