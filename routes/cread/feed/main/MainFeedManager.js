@@ -277,22 +277,23 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
         console.log("TIME before start: " + moment().format('YYYY-MM-DD HH:mm:ss'));
 
         connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, ' +
-            'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, Capture.capid AS captureid, ' +
+            /*'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, Capture.capid AS captureid, ' +
             'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
             'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
-            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +
+            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +*/
             'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
             /*'COUNT(DISTINCT Comment.commid) AS commentcount, ' +*/
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
             'User.uuid, User.firstname, User.lastname ' +
             'FROM Entity ' +
-            'LEFT JOIN Short ' +
+            /*'LEFT JOIN Short ' +
             'ON Short.entityid = Entity.entityid ' +
             'LEFT JOIN Capture ' +
-            'ON Capture.entityid = Entity.entityid ' +
+            'ON Capture.entityid = Entity.entityid ' +*/
             'JOIN User ' +
-            'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
+            // 'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
+            'ON(User.uuid = Entity.uuid) ' +
             /*'LEFT JOIN Comment ' +
             'ON Comment.entityid = Entity.entityid ' +*/
             'LEFT JOIN HatsOff ' +
@@ -327,12 +328,12 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
 
                         element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
 
-                        if(element.type === 'CAPTURE'){
+                        /*if(element.type === 'CAPTURE'){
                             element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
                         }
                         else{
                             element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
-                        }
+                        }*/
 
                         element.hatsoffstatus = element.hbinarycount > 0;
                         element.downvotestatus = element.dbinarycount > 0;
@@ -340,7 +341,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
 
                         element.creatorname = element.firstname + ' ' + element.lastname;
                         element.merchantable = (element.merchantable !== 0);
-                        element.long_form = (element.long_form === 1);
+                        /*element.long_form = (element.long_form === 1);*/
 
                         /*if(element.capid) {
                             delete element.capid;
@@ -350,11 +351,11 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                             delete element.shoid;
                         }*/
 
-                        if(element.firstname) {
+                        if(element.hasOwnProperty('firstname')) {
                             delete element.firstname;
                         }
 
-                        if(element.lastname) {
+                        if(element.hasOwnProperty('lastname')) {
                             delete element.lastname;
                         }
 
@@ -375,7 +376,11 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
 
                     var candownvote;
 
-                    commentutils.loadCommentCountsFast(connection, rows)
+                    feedutils.getEntitiesInfoFast(connection, rows)
+                        .then(function (updated_rows) {
+                            rows = updated_rows;
+                            return commentutils.loadCommentCountsFast(connection, rows);
+                        })
                         .then(function (updated_rows) {
                             rows = updated_rows;
                             return userprofileutils.getUserQualityPercentile(connection, uuid)

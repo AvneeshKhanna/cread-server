@@ -40,6 +40,8 @@ var imgutils = require('../utils/images/ImageUtils');
 
 var monitor = require('../security/UserActivityMonitor');
 var feedutils = require('../feed/FeedUtils');
+var cachemanager = require('../utils/cache/CacheManager');
+var cacheutils = require('../utils/cache/CacheUtils');
 
 var interestTableData = {
     'Arts & Entertainment': [
@@ -623,6 +625,16 @@ router.post('/invalidate-cfrnt', function (request, response) {
         .catch(function (err) {
             response.status(500).send(err).end();
         });
+
+});
+
+router.get('/get-keys', function (request, response) {
+    cachemanager.getAllCacheKeys("d:*")
+        .then(function (res) {
+            response.send(res)
+            //return cachemanager.deleteCacheKeys([res[0]]);
+        })
+        .then(response.send, response.send);
 
 });
 

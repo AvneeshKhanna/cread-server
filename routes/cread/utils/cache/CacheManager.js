@@ -36,6 +36,11 @@ function getCacheString(key){
 
 function setCacheHMap(key, value){
     return new Promise(function (resolve, reject) {
+
+        for (var key in value) {
+            value[key] = JSON.stringify(value[key]);
+        }
+
         config.getRedisClient()
             .then(function (redis_client) {
                 redis_client.hmset(cache_utils.addKeyPrefix(key), value);
@@ -54,6 +59,16 @@ function getCacheHMap(key){
                         reject(err);
                     }
                     else {
+
+                        try{
+                            for(var key in value){
+                                value[key] = JSON.parse(value[key]);
+                            }
+                        }
+                        catch(ex){
+                            console.error(ex);
+                        }
+
                         resolve(value);
                     }
                     redis_client.quit();
@@ -130,11 +145,11 @@ function deleteCacheKey(key) {
     });
 }
 
-function getAllCacheKeys() {
+function getAllCacheKeys(pattern) {
     return new Promise(function (resolve, reject) {
         config.getRedisClient()
             .then(function (redis_client) {
-                redis_client.keys("*", function (err, response) {
+                redis_client.keys(pattern ? pattern : "*", function (err, response) {
                     if(err){
                         reject(err);
                     }
@@ -147,6 +162,28 @@ function getAllCacheKeys() {
     });
 }
 
+function deleteCacheKeys(keys) {
+    return new Promise(function (resolve, reject) {
+        if(!config.isProduction()){
+            config.getRedisClient()
+                .then(function (redis_client) {
+                    redis_client.del(keys, function (err, response) {
+                        if(err){
+                            reject(err);
+                        }
+                        else{
+                            resolve(response);
+                        }
+                        redis_client.quit();
+                    });
+                })
+        }
+        else{
+            reject(new Error('Cannot delete multiple REDIS keys in PRODUCTION'));
+        }
+    });
+}
+
 module.exports = {
     setCacheHMap: setCacheHMap,
     getCacheHMap: getCacheHMap,
@@ -155,5 +192,6 @@ module.exports = {
     deleteCacheKey: deleteCacheKey,
     getAllCacheKeys: getAllCacheKeys,
     setCacheString: setCacheString,
-    getCacheString: getCacheString
+    getCacheString: getCacheString,
+    deleteCacheKeys: deleteCacheKeys
 };

@@ -458,10 +458,164 @@ function getCollaborationCountsFast(connection, master_rows, feedEntities) {
     });
 }
 
+function updateEntitiesInfoCache(entities) {
+    return new Promise(function (resolve, reject) {
+        async.each(entities, function (entity, callback) {
+
+            var ent_info_cache_key = cacheutils.getEntityInfoCacheKey(entity.entityid);
+
+            cachemanager.setCacheHMap(ent_info_cache_key, entity)
+                .then(function () {
+                    callback();
+                })
+                .catch(function (err) {
+                    callback(err);
+                });
+
+        }, function (err) {
+            if (err) {
+                console.error(err);
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    })
+}
+
+function getEntitiesInfoDB(connection, entities) {
+    return new Promise(function (resolve, reject) {
+
+        var entityids = entities.map(function (e) {
+            return e.entityid;
+        });
+
+        connection.query('SELECT Entity.entityid, Entity.type, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
+            'Capture.capid AS captureid, ' +
+            'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
+            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
+            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height ' +
+            'FROM Entity ' +
+            'LEFT JOIN Short ' +
+            'ON Short.entityid = Entity.entityid ' +
+            'LEFT JOIN Capture ' +
+            'ON Capture.entityid = Entity.entityid ' +
+            'WHERE Entity.entityid IN (?) ' +
+            'GROUP BY Entity.entityid', [entityids], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+
+                rows = rows.map(function (element) {
+                    if(element.type === 'CAPTURE'){
+                        element.entityurl = utils.createSmallCaptureUrl(entities[entityids.indexOf(element.entityid)].uuid, element.captureid);
+                    }
+                    else{
+                        element.entityurl = utils.createSmallShortUrl(entities[entityids.indexOf(element.entityid)].uuid, element.shoid);
+                    }
+
+                    element.long_form = (element.long_form === 1);
+
+                    return {
+                        info: element
+                    };
+                });
+
+                resolve(rows);
+            }
+        });
+    });
+}
+
+function getAllEntitiesInfo(entities) {
+    return new Promise(function (resolve, reject) {
+        async.eachOf(entities, function (entity, index, callback) {
+            cachemanager.getCacheHMap(cacheutils.getEntityInfoCacheKey(entity.entityid))
+                .then(function (info) {
+                    entities[index].info = info;
+                    callback();
+                })
+                .catch(function (err) {
+                    callback(err);
+                });
+        }, function (err) {
+            if(err){
+                reject(err);
+            }
+            else {
+                resolve(entities);
+            }
+        });
+    });
+}
+
+function getEntitiesInfoFast(connection, master_rows) {
+    return new Promise(function (resolve, reject) {
+        getAllEntitiesInfo(master_rows)
+            .then(function (rows) {
+
+                master_rows = rows;
+
+                var rows_no_info = master_rows.filter(function (mrow) {
+                    return mrow.info === null;
+                });
+
+                if(rows_no_info.length > 0){
+                    return getEntitiesInfoDB(connection, rows_no_info);
+                }
+                else{
+                    resolve(mergeAndFlattenRows(master_rows, 'info'));
+                    throw new BreakPromiseChainError();
+                }
+            })
+            .then(function (rows) {
+                var master_entityids = master_rows.map(function (mr) {
+                    return mr.entityid;
+                });
+
+                rows.forEach(function (r) {
+                    master_rows[master_entityids.indexOf(r.info.entityid)].info =  r.info;
+                });
+
+                resolve(mergeAndFlattenRows(master_rows, 'info'));
+                //TODO: Uncomment
+                /*updateEntitiesInfoCache(rows.map(function (r) {
+                    return r.info;
+                }));*/
+                throw new BreakPromiseChainError();
+            })
+            .catch(function (err) {
+                if (err instanceof BreakPromiseChainError) {
+                    //Do nothing
+                }
+                else {
+                    reject(err);
+                }
+            });
+    });
+}
+
+/**
+ * Converts {outer: 1, key: {inner: 2}} -> {outer: 1, inner: 2}
+ * */
+function mergeAndFlattenRows(rows, key) {
+    rows = rows.map(function (row) {
+        row = Object.assign(row, row[key]);
+        if(row.hasOwnProperty(key)){
+            delete row[key];
+        }
+        return row;
+    });
+    return rows;
+}
+
 module.exports = {
     getCollaborationData: getCollaborationData,
     getCollaborationCounts: getCollaborationCounts,
     structureDataCrossPattern: structureDataCrossPattern,
     structureDataCrossPatternTopNew: structureDataCrossPatternTopNew,
-    getCollaborationCountsFast: getCollaborationCountsFast
+    getCollaborationCountsFast: getCollaborationCountsFast,
+    getEntitiesInfoFast: getEntitiesInfoFast
 };

@@ -33,6 +33,13 @@ function getEntityCollabCntCacheKey(entityid) {
     return "ent:collab-cnt:" + entityid;
 }
 
+function getEntityInfoCacheKey(entityid) {
+    if (!entityid) {
+        throw new Error("Entity ID cannot be undefined/null/empty-string");
+    }
+    return "ent:info:" + entityid;
+}
+
 function addKeyPrefix(key) {
     key = (config.isProduction() ? "p:" : "d:") + key;
     return key;
@@ -42,5 +49,6 @@ module.exports = {
     addKeyPrefix: addKeyPrefix,
     getEntityCommentCntCacheKey: getEntityCommentCntCacheKey,
     getEntityCollabCntCacheKey: getEntityCollabCntCacheKey,
+    getEntityInfoCacheKey: getEntityInfoCacheKey,
     REDIS_KEYS: REDIS_KEYS
 };
