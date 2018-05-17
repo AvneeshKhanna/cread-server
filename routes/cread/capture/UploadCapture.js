@@ -430,6 +430,7 @@ function updateCaptureDB(connection, captureid, uuid, watermark, merchantable, c
     return new Promise(function (resolve, reject) {
         var entityparams = {
             entityid: entityid,
+            uuid: uuid,
             type: 'CAPTURE',
             merchantable: (merchantable === 1),
             product_overlay: (merchantable === 1),

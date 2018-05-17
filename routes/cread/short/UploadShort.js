@@ -71,6 +71,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
 
     var entityparams = {
         entityid: entityid,
+        uuid: uuid,
         merchantable: (Number(request.body.merchantable) === 1),
         product_overlay: (Number(request.body.merchantable) === 1),
         caption: caption
