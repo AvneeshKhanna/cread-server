@@ -362,6 +362,7 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
                 userdata.followingcount = followingcount;
                 userdata.topinterests = topinterests;
                 userdata.interestcount = interests_arr.length;
+                userdata.web_profile_link = 'http://bit.ly/sumDmyLnk';  //TODO: Update
 
                 connection.query('SELECT COUNT(DISTINCT E.entityid) AS postcount, ' +
                     'COUNT(DISTINCT CASE WHEN(E.type = "SHORT") THEN SC.capid ' +
