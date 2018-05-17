@@ -313,6 +313,8 @@ function loadFeed(connection, uuid, mintid, limit, lastindexkey) {
             sqlparams = [explore_algo_base_score, uuid, uuid, uuid, limit, lastindexkey];
         }
 
+        console.log("TIME: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+
         connection.query('SELECT EA.caption, EA.entityid, EA.merchantable, EA.type, EA.regdate, ' +
             'User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, ' +
             'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
@@ -378,8 +380,6 @@ function loadFeed(connection, uuid, mintid, limit, lastindexkey) {
                             return el.entityid;
                         }).indexOf(element.entityid);*/
 
-                        console.log("entityid is " + JSON.stringify(element.entityid, null, 3));
-
                         if (element.type === 'CAPTURE') {
                             element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
                         }
@@ -438,7 +438,8 @@ function loadFeed(connection, uuid, mintid, limit, lastindexkey) {
                                 return e;
                             });*/
 
-                            return feedutils.getCollaborationCounts(connection, rows, feedEntities);
+                            /*return feedutils.getCollaborationCounts(connection, rows, feedEntities);*/
+                            return feedutils.getCollaborationCountsFast(connection, rows);
                         })
                         /*.then(function (rows) {
                             return feedutils.structureDataCrossPattern(rows);

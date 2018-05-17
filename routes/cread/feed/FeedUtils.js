@@ -3,8 +3,12 @@
  */
 'use-strict';
 
-var utils = require('../utils/Utils');
 var buckets = require('buckets-js');
+var async = require('async');
+
+var utils = require('../utils/Utils');
+var cachemanager = require('../utils/cache/CacheManager');
+var cacheutils = require('../utils/cache/CacheUtils');
 
 /**
  * Function to retrieve the users' details whose content has been collaborated on
@@ -199,7 +203,7 @@ function getCollaborationCounts(connection, rows, feedEntities) {
                         if (row_element.type === 'SHORT') {
                             row_element.collabcount = item.shortcollabcount;
                         }
-                        else if (row_element.type === 'CAPTURE'){
+                        else if (row_element.type === 'CAPTURE') {
                             row_element.collabcount = item.capturecollabcount;
                         }
 
@@ -242,18 +246,18 @@ function structureDataCrossPattern(rows) {
         var patternedRows = [];
 
         for (var index = 0; index < patternLoopSize; index++) {
-            if(patternIndexSeriesIndicator(index)){
+            if (patternIndexSeriesIndicator(index)) {
                 patternedRows.push(shortMasterQueue.dequeue());
             }
-            else{
+            else {
                 patternedRows.push(captureMasterQueue.dequeue());
             }
         }
 
-        if(!captureMasterQueue.isEmpty()){
+        if (!captureMasterQueue.isEmpty()) {
             patternedRows = patternedRows.concat(captureMasterQueue.toArray());
         }
-        else if(!shortMasterQueue.isEmpty()){
+        else if (!shortMasterQueue.isEmpty()) {
             patternedRows = patternedRows.concat(shortMasterQueue.toArray());
         }
 
@@ -276,10 +280,10 @@ function structureDataCrossPatternTopNew(rows) {
 
         //Ordering top posts by last added
         newPostsArray.sort(function (a, b) {
-            if(a.regdate > b.regdate){
+            if (a.regdate > b.regdate) {
                 return -1;
             }
-            else{
+            else {
                 return 1;
             }
         });
@@ -309,10 +313,10 @@ function structureDataCrossPatternTopNew(rows) {
         var patternedRows = [];
 
         for (var index = 0; index < patternLoopSize; index++) {
-            if(patternIndexSeriesIndicator(index)){
+            if (patternIndexSeriesIndicator(index)) {
                 patternedRows.push(topPostsQueue.dequeue());
             }
-            else{
+            else {
                 patternedRows.push(newPostsQueue.dequeue());
             }
         }
@@ -338,12 +342,126 @@ function structureDataCrossPatternTopNew(rows) {
  * in explore-feed grid
  * */
 function patternIndexSeriesIndicator(index) {
-    return Math.cos(((2*index + 1)*Math.PI)/4) > 0;
+    return Math.cos(((2 * index + 1) * Math.PI) / 4) > 0;
+}
+
+/**
+ * Function to update collab count in REDIS cach for given entities
+ *
+ * @param entities Should be of the structure - [{entityid: *string*, collabcount: *number*}, ...]
+ * */
+function updateCollabCountsCache(entities) {
+    return new Promise(function (resolve, reject) {
+        async.each(entities, function (entity, callback) {
+
+            var ent_collabcnt_cache_key = cacheutils.getEntityCollabCntCacheKey(entity.entityid);
+
+            if (typeof entity.collabcount !== "number") {
+                callback(new Error("Value to store for collab count in cache should be a number"));
+            }
+            else {
+                cachemanager.setCacheString(ent_collabcnt_cache_key, String(entity.collabcount))
+                    .then(function () {
+                        callback();
+                    })
+                    .catch(function (err) {
+                        callback(err);
+                    });
+            }
+
+        }, function (err) {
+            if (err) {
+                console.error(err);
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+
+    });
+}
+
+/**
+ * Function to fetch collaboration counts of multiple entities from cache using async.js
+ *
+ * @param entities Should be of the structure [{entityid: *string*}, ..]
+ * */
+function getAllCollaborationCountsCache(entities) {
+    return new Promise(function (resolve, reject) {
+        async.eachOf(entities, function (entity, index, callback) {
+            cachemanager.getCacheString(cacheutils.getEntityCollabCntCacheKey(entity.entityid))
+                .then(function (count) {
+                    entities[index].collabcount = count ? Number(count) : null;
+                    callback();
+                })
+                .catch(function (err) {
+                    callback(err);
+                })
+        }, function (err) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(entities);
+            }
+        });
+
+    });
+}
+
+/**
+ * Function to fetch collaboration counts for entities from cache. Data is update through a write-through approach if
+ * cache values do not exist
+ * */
+function getCollaborationCountsFast(connection, master_rows, feedEntities) {
+    return new Promise(function (resolve, reject) {
+        getAllCollaborationCountsCache(master_rows)
+            .then(function (rows) {
+                master_rows = rows;
+
+                var rows_no_collabcnt = master_rows.filter(function (mrow) {
+                    return mrow.collabcount === null;
+                });
+
+                if(rows_no_collabcnt.length > 0){
+                    return getCollaborationCounts(connection, rows_no_collabcnt, rows_no_collabcnt.map(function (r) {
+                        return r.entityid;
+                    }));
+                }
+                else{
+                    resolve(master_rows);
+                    throw new BreakPromiseChainError();
+                }
+            })
+            .then(function (rows) {
+                var master_entityids = master_rows.map(function (mr) {
+                    return mr.entityid;
+                });
+
+                rows.forEach(function (r) {
+                    master_rows[master_entityids.indexOf(r.entityid)].collabcount = r.collabcount;
+                });
+
+                resolve(master_rows);
+                updateCollabCountsCache(rows);
+                throw new BreakPromiseChainError();
+            })
+            .catch(function (err) {
+                if (err instanceof BreakPromiseChainError) {
+                    //Do nothing
+                }
+                else {
+                    reject(err);
+                }
+            });
+    });
 }
 
 module.exports = {
     getCollaborationData: getCollaborationData,
     getCollaborationCounts: getCollaborationCounts,
     structureDataCrossPattern: structureDataCrossPattern,
-    structureDataCrossPatternTopNew: structureDataCrossPatternTopNew
+    structureDataCrossPatternTopNew: structureDataCrossPatternTopNew,
+    getCollaborationCountsFast: getCollaborationCountsFast
 };

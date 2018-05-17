@@ -346,7 +346,8 @@ function scheduleFirstPostCommentJob(uuid, name, entityid) {
 })();
 
 /**
- * entities Entities whose comments counts are to be cached. Should be of the structure: [{entityid: *string*}]
+ * @param connection SQL session connection to execute query
+ * @param entities Entities whose comments counts are to be cached. Should be of the structure: [{entityid: *string*}]
  * */
 function updateCommentCountCacheFromDB(connection, entities) {
     return new Promise(function (resolve, reject) {
@@ -359,7 +360,7 @@ function updateCommentCountCacheFromDB(connection, entities) {
 }
 
 /**
- * entities Entities whose comments counts are to be cached. Should be of the structure: [{entityid: *string*, commentcount: *number*}]
+ * @param entities Entities whose comments counts are to be cached. Should be of the structure: [{entityid: *string*, commentcount: *number*}]
  * */
 function updateCommentCountsCache(entities) {
     return new Promise(function (resolve, reject) {
@@ -382,6 +383,7 @@ function updateCommentCountsCache(entities) {
 
         }, function (err) {
             if (err) {
+                console.error(err);
                 reject(err);
             }
             else {

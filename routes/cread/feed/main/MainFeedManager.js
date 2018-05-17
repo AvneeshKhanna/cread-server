@@ -274,8 +274,10 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
 
         lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
-        connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
-            'Capture.capid AS captureid, ' +
+        console.log("TIME before start: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+
+        connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, ' +
+            'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, Capture.capid AS captureid, ' +
             'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
             'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
             'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +
@@ -310,6 +312,8 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                 reject(err);
             }
             else {
+
+                console.log("TIME after SQL: " + moment().format('YYYY-MM-DD HH:mm:ss'));
 
                 if(rows.length > 0){
                     var feedEntities = rows.map(function (elem) {
@@ -369,8 +373,6 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                         return element;
                     });
 
-                    console.log("original rows were " + JSON.stringify(rows, null, 3));
-
                     var candownvote;
 
                     commentutils.loadCommentCountsFast(connection, rows)
@@ -389,9 +391,15 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                                 return e;
                             });*/
 
-                            return feedutils.getCollaborationCounts(connection, rows, feedEntities);
+                            console.log("TIME after getCollaborationData: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+
+                            /*return feedutils.getCollaborationCounts(connection, rows, feedEntities);*/
+                            return feedutils.getCollaborationCountsFast(connection, rows);
                         })
                         .then(function (rows) {
+
+                            console.log("TIME after getCollaborationCounts: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+
                             resolve({
                                 requestmore: rows.length >= limit,
                                 candownvote: candownvote,
