@@ -137,7 +137,7 @@ function loadPostsForInterestTag(connection, limit, lastindexkey) {
     lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT E.entityid ' +
+        connection.query('SELECT E.entityid, E.regdate ' +
             'FROM Entity E ' +
             'LEFT JOIN EntityInterests EI ' +
             'USING(entityid) ' +
@@ -190,9 +190,12 @@ function loadPostsForInterestTag(connection, limit, lastindexkey) {
  * */
 function lockEntityMultiple(connection, entityids) {
     return new Promise(function (resolve, reject) {
+
+        var to_lock = config.isProduction() ? 1 : 0;    //Don't lock in development mode
+
         connection.query('UPDATE Entity ' +
-            'SET locked = 1, lock_time = NOW() ' +
-            'WHERE entityid IN (?)', [entityids], function (err, rows) {
+            'SET locked = ?, lock_time = NOW() ' +
+            'WHERE entityid IN (?)', [to_lock, entityids], function (err, rows) {
             if (err) {
                 reject(err);
             }
