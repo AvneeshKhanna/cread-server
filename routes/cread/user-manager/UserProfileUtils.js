@@ -145,23 +145,24 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
 
     return new Promise(function (resolve, reject) {
         connection.query('SELECT Entity.caption, Entity.entityid, Entity.regdate, Entity.merchantable, Entity.type, User.uuid, ' +
-            'User.firstname, User.lastname, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
-            'Capture.capid AS captureid, ' +
+            'User.firstname, User.lastname, ' +
+            /*'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, Capture.capid AS captureid, ' +
             'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
             'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
-            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +
+            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +*/
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
             'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
             'COUNT(DISTINCT Comment.commid) AS commentcount ' +
             'FROM Entity ' +
-            'LEFT JOIN Capture ' +
+            /*'LEFT JOIN Capture ' +
             'USING(entityid) ' +
             'LEFT JOIN Short ' +
-            'USING(entityid) ' +
+            'USING(entityid) ' +*/
             'JOIN User ' +
-            'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
+            // 'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
+            'ON (Entity.uuid = User.uuid) ' +
             'LEFT JOIN HatsOff ' +
             'ON HatsOff.entityid = Entity.entityid ' +
             'LEFT JOIN Downvote D ' +
@@ -201,18 +202,18 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
                         element.merchantable = (element.merchantable !== 0);
                         element.long_form = (element.long_form === 1);
 
-                        if (element.type === 'CAPTURE') {
+                        /*if (element.type === 'CAPTURE') {
                             element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
                         }
                         else {
                             element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
-                        }
+                        }*/
 
-                        if (element.firstname) {
+                        if (element.hasOwnProperty('firstname')) {
                             delete element.firstname;
                         }
 
-                        if (element.lastname) {
+                        if (element.hasOwnProperty('lastname')) {
                             delete element.lastname;
                         }
 
@@ -233,7 +234,11 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
 
                     var candownvote;
 
-                    getUserQualityPercentile(connection, requesteruuid)
+                    feedutils.getEntitiesInfoFast(connection, rows)
+                        .then(function (updated_rows) {
+                            rows = updated_rows;
+                            return getUserQualityPercentile(connection, requesteruuid);
+                        })
                         .then(function (result) {
                             candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user_downvote;
                             return feedutils.getCollaborationData(connection, rows);

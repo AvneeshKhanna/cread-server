@@ -36,8 +36,11 @@ router.get('/load', function (request, response) {
     var limit = (config.isProduction()) ? 16 : 8; //Keep the value even for cross pattern in grid view
     var connection;
 
+    console.log("TIME at request: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+
     _auth.authValid(uuid, authkey)
         .then(function () {
+            console.log("TIME after authentication: " + moment().format('YYYY-MM-DD HH:mm:ss'));
             return config.getNewConnection();
         }, function () {
             response.send({
@@ -313,22 +316,23 @@ function loadFeed(connection, uuid, mintid, limit, lastindexkey) {
             sqlparams = [explore_algo_base_score, uuid, uuid, uuid, limit, lastindexkey];
         }
 
-        console.log("TIME: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+        console.log("TIME before SQL: " + moment().format('YYYY-MM-DD HH:mm:ss'));
 
         connection.query('SELECT EA.caption, EA.entityid, EA.merchantable, EA.type, EA.regdate, ' +
-            'User.uuid, User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, ' +
-            'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
-            '(CASE WHEN(EA.impact_score IS NULL) THEN ? ELSE EA.impact_score END) AS impact_weight, ' +
-            'CASE WHEN(EA.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
+            'User.uuid, User.firstname, User.lastname, ' +
+            /*'Capture.capid AS captureid, ' + /!*Short.txt AS short,*!/
+            'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +*/
+            'CASE WHEN(EA.impact_score IS NULL) THEN ? ELSE EA.impact_score END AS impact_weight, ' +
+            /*'CASE WHEN(EA.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
             'CASE WHEN(EA.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
-            'CASE WHEN(EA.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +
+            'CASE WHEN(EA.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +*/
             'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
             'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
             'FROM ' +
-                '(SELECT E.caption, E.entityid, E.merchantable, E.type, E.regdate, EntityAnalytics.impact_score ' +
+                '(SELECT E.caption, E.entityid, E.uuid, E.merchantable, E.type, E.regdate, EntityAnalytics.impact_score ' +
                 'FROM EntityAnalytics ' +
                 'JOIN Entity E ' +
                 'USING(entityid) ' +
@@ -344,12 +348,13 @@ function loadFeed(connection, uuid, mintid, limit, lastindexkey) {
                 'LIMIT ? ' +
                 'OFFSET ?) EA ' +
             //'ON (EA.entityid = Entity.entityid) ' +
-            'LEFT JOIN Short ' +
+            /*'LEFT JOIN Short ' +
             'ON Short.entityid = EA.entityid ' +
             'LEFT JOIN Capture ' +
-            'ON Capture.entityid = EA.entityid ' +
+            'ON Capture.entityid = EA.entityid ' +*/
             'JOIN User ' +
-            'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
+            // 'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
+            'ON (EA.uuid = User.uuid) ' +
             'LEFT JOIN HatsOff ' +
             'ON HatsOff.entityid = EA.entityid ' +
             'LEFT JOIN Downvote D ' +
@@ -368,6 +373,8 @@ function loadFeed(connection, uuid, mintid, limit, lastindexkey) {
                 reject(err);
             }
             else {
+
+                console.log("TIME after SQL: " + moment().format('YYYY-MM-DD HH:mm:ss'));
 
                 if (rows.length > 0) {
 
@@ -408,11 +415,11 @@ function loadFeed(connection, uuid, mintid, limit, lastindexkey) {
                             delete element.dbinarycount;
                         }
 
-                        if (element.firstname) {
+                        if (element.hasOwnProperty('firstname')) {
                             delete element.firstname;
                         }
 
-                        if (element.lastname) {
+                        if (element.hasOwnProperty('lastname')) {
                             delete element.lastname;
                         }
 
@@ -426,25 +433,37 @@ function loadFeed(connection, uuid, mintid, limit, lastindexkey) {
 
                     //--Retrieve Collaboration Data--
 
-                    userprofileutils.getUserQualityPercentile(connection, uuid)
+                    feedutils.getEntitiesInfoFast(connection, rows)
+                        .then(function (updated_rows){
+
+                            console.log("TIME after getEntitiesInfoFast: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+
+                            rows = updated_rows;
+                            return userprofileutils.getUserQualityPercentile(connection, uuid);
+                        })
                         .then(function (result) {
                             candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user_downvote;
                             return feedutils.getCollaborationData(connection, rows);
                         })
                         .then(function (rows) {
 
+                            console.log("TIME after getCollaborationData: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+
                             /*rows.map(function (e) {
                                 e.collabcount = 0;
                                 return e;
                             });*/
 
-                            /*return feedutils.getCollaborationCounts(connection, rows, feedEntities);*/
-                            return feedutils.getCollaborationCountsFast(connection, rows);
+                            return feedutils.getCollaborationCounts(connection, rows, feedEntities);
+                            /*return feedutils.getCollaborationCountsFast(connection, rows);*/
                         })
                         /*.then(function (rows) {
                             return feedutils.structureDataCrossPattern(rows);
                         })*/
                         .then(function (rows) {
+
+                            console.log("TIME after getCollaborationCounts: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+
                             resolve({
                                 requestmore: rows.length >= limit,
                                 candownvote: candownvote,

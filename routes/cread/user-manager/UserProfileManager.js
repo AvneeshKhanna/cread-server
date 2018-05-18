@@ -492,7 +492,7 @@ router.get('/load-timeline', function (request, response) {
     var platform = request.query.platform;
     var web_access_token = request.headers.wat;
 
-    var limit = config.isProduction() ? 10 : 6;  //TODO: Change to 10
+    var limit = config.isProduction() ? 10 : 8;  //TODO: Change to 10
 
     var connection;
 
