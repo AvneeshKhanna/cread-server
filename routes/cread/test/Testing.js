@@ -629,10 +629,10 @@ router.post('/invalidate-cfrnt', function (request, response) {
 });
 
 router.get('/get-keys', function (request, response) {
-    cachemanager.getAllCacheKeys("d:ent:info*")
+    cachemanager.getAllCacheKeys("d:*")
         .then(function (res) {
             response.send(res)
-            //return cachemanager.deleteCacheKeys([res[0]]);
+            // return cachemanager.deleteCacheKeys(res);
         })
         .then(response.send, response.send);
 

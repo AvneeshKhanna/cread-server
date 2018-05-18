@@ -37,8 +37,8 @@ function getCacheString(key){
 function setCacheHMap(key, value){
     return new Promise(function (resolve, reject) {
 
-        for (var key in value) {
-            value[key] = JSON.stringify(value[key]);
+        for (var prop in value) {
+            value[prop] = JSON.stringify(value[prop]);
         }
 
         config.getRedisClient()
@@ -61,8 +61,8 @@ function getCacheHMap(key){
                     else {
 
                         try{
-                            for(var key in value){
-                                value[key] = JSON.parse(value[key]);
+                            for(var prop in value){
+                                value[prop] = JSON.parse(value[prop]);
                             }
                         }
                         catch(ex){

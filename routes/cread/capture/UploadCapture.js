@@ -28,6 +28,7 @@ var entityutils = require('../entity/EntityUtils');
 var entityimgutils = require('../entity/EntityImageUtils');
 var entityintrstutils = require('../interests/EntityInterestsUtils');
 var commentutils = require('../comment/CommentUtils');
+var feedutils = require('../feed/FeedUtils');
 
 var filebasepath = './images/uploads/capture/'; 
 
@@ -177,6 +178,14 @@ router.post('/', upload.single('captured-image'), function (request, response) {
         })
         .then(function () {
             return userprofileutils.addToLatestPostsCache(connection, uuid, utils.createSmallCaptureUrl(uuid, captureid));
+        })
+        .then(function () {
+            return feedutils.updateEntitiesInfoCacheViaDB(connection, [
+                {
+                    entityid: entityid,
+                    uuid: uuid
+                }
+            ]);
         })
         .then(function () {
             if(Number(merchantable) === 1){
@@ -397,6 +406,14 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
         })
         .then(function () {
             return userprofileutils.addToLatestPostsCache(connection, uuid, utils.createSmallCaptureUrl(uuid, captureid));
+        })
+        .then(function () {
+            return feedutils.updateEntitiesInfoCacheViaDB(connection, [
+                {
+                    entityid: entityid,
+                    uuid: uuid
+                }
+            ]);
         })
         .then(function () {
             if(Number(merchantable) === 1){

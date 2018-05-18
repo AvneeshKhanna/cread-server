@@ -19,6 +19,7 @@ var upload = multer({dest: './images/uploads/short/', limits: {fileSize: 20 * 10
 var fs = require('fs');
 
 var utils = require('../utils/Utils');
+var feedutils = require('../feed/FeedUtils');
 var entityutils = require('../entity/EntityUtils');
 var entityimgutils = require('../entity/EntityImageUtils');
 var entityintrstutils = require('../interests/EntityInterestsUtils');
@@ -210,6 +211,14 @@ router.post('/', upload.single('short-image'), function (request, response) {
         })
         .then(function () {
             return userprofileutils.addToLatestPostsCache(connection, uuid, utils.createSmallShortUrl(uuid, shoid));
+        })
+        .then(function () {
+            return feedutils.updateEntitiesInfoCacheViaDB(connection, [
+                {
+                    entityid: entityid,
+                    uuid: uuid
+                }
+            ]);
         })
         .then(function () {
             if(entityparams.merchantable){

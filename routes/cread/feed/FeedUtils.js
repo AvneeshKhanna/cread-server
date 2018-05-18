@@ -464,13 +464,18 @@ function updateEntitiesInfoCache(entities) {
 
             var ent_info_cache_key = cacheutils.getEntityInfoCacheKey(entity.entityid);
 
-            cachemanager.setCacheHMap(ent_info_cache_key, entity)
-                .then(function () {
-                    callback();
-                })
-                .catch(function (err) {
-                    callback(err);
-                });
+            if (typeof entity !== "object") {
+                callback(new Error("Value to store for entity info in cache should be a key-value pair"));
+            }
+            else {
+                cachemanager.setCacheHMap(ent_info_cache_key, entity)
+                    .then(function () {
+                        callback();
+                    })
+                    .catch(function (err) {
+                        callback(err);
+                    });
+            }
 
         }, function (err) {
             if (err) {
@@ -582,9 +587,9 @@ function getEntitiesInfoFast(connection, master_rows) {
 
                 resolve(sortByDateDesc(mergeAndFlattenRows(master_rows, 'info')));
                 //TODO: Uncomment
-                /*updateEntitiesInfoCache(rows.map(function (r) {
+                updateEntitiesInfoCache(rows.map(function (r) {
                     return r.info;
-                }));*/
+                }));
                 throw new BreakPromiseChainError();
             })
             .catch(function (err) {
@@ -624,11 +629,29 @@ function sortByDateDesc(rows) {
     return rows;
 }
 
+/**
+ * Function to updata entities via DB into cache
+ *
+ * @param entities Should be of the form [{uuid: *string*, entityid: *string*, type: "SHORT" | "CAPTURE"}, ..]
+ * */
+function updateEntitiesInfoCacheViaDB(connection, entities) {
+    return new Promise(function (resolve, reject) {
+        getEntitiesInfoDB(connection, entities)
+            .then(function (rows) {
+                return updateEntitiesInfoCache(rows.map(function (row) {
+                    return row.info;
+                }));
+            })
+            .then(resolve, reject);
+    });
+}
+
 module.exports = {
     getCollaborationData: getCollaborationData,
     getCollaborationCounts: getCollaborationCounts,
     structureDataCrossPattern: structureDataCrossPattern,
     structureDataCrossPatternTopNew: structureDataCrossPatternTopNew,
     getCollaborationCountsFast: getCollaborationCountsFast,
-    getEntitiesInfoFast: getEntitiesInfoFast
+    getEntitiesInfoFast: getEntitiesInfoFast,
+    updateEntitiesInfoCacheViaDB: updateEntitiesInfoCacheViaDB
 };
