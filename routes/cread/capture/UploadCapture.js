@@ -88,6 +88,9 @@ router.post('/', upload.single('captured-image'), function (request, response) {
         .then(function () {
             return userprofileutils.renameFile(filebasepath, capture, captureid);
         })
+        /*.then(function () { TODO: handle image-progression
+            return entityimgutils.makeImageProgressive(filebasepath + captureid + '.jpg');
+        })*/
         .then(function () {
             return captureutils.addWatermarkToCapture(filebasepath + captureid + '.jpg', watermark, captureid);
         })

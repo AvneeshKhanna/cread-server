@@ -4,6 +4,7 @@
 'use-strict';
 
 var gm = require('gm');
+var isProgressive = require('is-progressive');
 var sizeOf = require('image-size');
 var color_extract = require('colour-extractor');
 
@@ -303,7 +304,34 @@ function uploadOverlayedImage(uuid, type, upload_file_base_path, upload_filename
     });
 }
 
+function makeImageProgressive(img_path) {
+    return new Promise(function (resolve, reject) {
+        gm(img_path)
+            .strip() // Removes any profiles or comments. Work with pure data
+            .interlace('Line') // Line interlacing creates a progressive build up
+            .quality(80) // Quality is for you to decide
+            .write(img_path, function(err) {
+                if(err) {
+                    reject(err);
+                }
+                else{
+                    
+                    isProgressive.file(img_path)
+                        .then(function (progressive) {
+                            console.log('progressive: ' + progressive);
+                        })
+                        .catch(function (err) {
+                            console.error(err);
+                        });
+                    
+                    resolve(img_path);
+                }
+            });
+    });
+}
+
 module.exports = {
     createOverlayedImageCoffeeMug: createOverlayedImageCoffeeMug,
-    createOverlayedImageJournal: createOverlayedImageJournal
+    createOverlayedImageJournal: createOverlayedImageJournal,
+    makeImageProgressive: makeImageProgressive
 };
