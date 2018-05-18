@@ -284,7 +284,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
             'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +*/
             /*'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +*/
             /*'COUNT(DISTINCT Comment.commid) AS commentcount, ' +*/
-            'HatsOff.hoid IS NOT NULL AS hbinarycount, ' +
+            'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
             'User.uuid, User.firstname, User.lastname ' +
             'FROM Entity ' +
@@ -298,7 +298,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
             /*'LEFT JOIN Comment ' +
             'ON Comment.entityid = Entity.entityid ' +*/
             'LEFT JOIN HatsOff ' +
-            'ON (HatsOff.entityid = Entity.entityid AND HatsOff.uuid = ?) ' +
+            'ON HatsOff.entityid = Entity.entityid ' +
             'LEFT JOIN Downvote D ' +
             'ON D.entityid = Entity.entityid ' +
             'LEFT JOIN Follow ' +

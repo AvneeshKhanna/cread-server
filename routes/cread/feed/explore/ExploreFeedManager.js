@@ -311,11 +311,11 @@ function loadFeed(connection, uuid, mintid, limit, lastindexkey) {
 
         if(mintid){
             sql_mintid_where = 'AND I.mintid = ? ';
-            sqlparams = [explore_algo_base_score, uuid, uuid, mintid, limit, lastindexkey, uuid];
+            sqlparams = [explore_algo_base_score, uuid, uuid, uuid, mintid, limit, lastindexkey];
         }
         else{
             sql_mintid_where = '';
-            sqlparams = [explore_algo_base_score, uuid, uuid, limit, lastindexkey, uuid];
+            sqlparams = [explore_algo_base_score, uuid, uuid, uuid, limit, lastindexkey];
         }
 
         console.log("TIME before SQL: " + moment().format('YYYY-MM-DD HH:mm:ss'));
@@ -330,7 +330,7 @@ function loadFeed(connection, uuid, mintid, limit, lastindexkey) {
             'CASE WHEN(EA.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +*/
             /*'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +*/
             // 'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
-            'HatsOff.hoid IS NOT NULL AS hbinarycount, ' +
+            'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
             'FROM ' +
@@ -358,7 +358,7 @@ function loadFeed(connection, uuid, mintid, limit, lastindexkey) {
             // 'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
             'ON (EA.uuid = User.uuid) ' +
             'LEFT JOIN HatsOff ' +
-            'ON (HatsOff.entityid = EA.entityid AND HatsOff.uuid = ?) ' +
+            'ON HatsOff.entityid = EA.entityid ' +
             'LEFT JOIN Downvote D ' +
             'ON D.entityid = EA.entityid ' +
             /*'LEFT JOIN Comment ' +

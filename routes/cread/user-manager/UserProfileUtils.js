@@ -155,7 +155,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
             'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
             'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
-            'HatsOff.uuid IS NOT NULL AS hbinarycount, ' +
+            'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount ' +
             // 'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount ' +
             /*'COUNT(DISTINCT Comment.commid) AS commentcount ' +*/
@@ -168,7 +168,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
             // 'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
             'ON (Entity.uuid = User.uuid) ' +
             'LEFT JOIN HatsOff ' +
-            'ON (HatsOff.entityid = Entity.entityid AND HatsOff.uuid = ?) ' +
+            'ON HatsOff.entityid = Entity.entityid ' +
             'LEFT JOIN Downvote D ' +
             'ON D.entityid = Entity.entityid ' +
             /*'LEFT JOIN Comment ' +
@@ -440,7 +440,7 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                     'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
                     'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +
                     'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
-                    'HatsOff.hoid IS NOT NULL AS hbinarycount, ' +
+                    'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
                     'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount ' +
                     // 'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount ' +
                     /*'COUNT(DISTINCT Comment.commid) AS commentcount ' +*/
@@ -452,7 +452,7 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                     'JOIN User ' +
                     'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
                     'LEFT JOIN HatsOff ' +
-                    'ON (HatsOff.entityid = Entity.entityid AND HatsOff.uuid = ?) ' +
+                    'ON HatsOff.entityid = Entity.entityid ' +
                     'LEFT JOIN Downvote D ' +
                     'ON D.entityid = Entity.entityid ' +
                     /*'LEFT JOIN Comment ' +
