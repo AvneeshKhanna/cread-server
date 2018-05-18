@@ -88,9 +88,6 @@ router.post('/', upload.single('captured-image'), function (request, response) {
         .then(function () {
             return userprofileutils.renameFile(filebasepath, capture, captureid);
         })
-        /*.then(function () { TODO: handle image-progression
-            return entityimgutils.makeImageProgressive(filebasepath + captureid + '.jpg');
-        })*/
         .then(function () {
             return captureutils.addWatermarkToCapture(filebasepath + captureid + '.jpg', watermark, captureid);
         })
@@ -131,6 +128,9 @@ router.post('/', upload.single('captured-image'), function (request, response) {
             else {
                 filename_to_upload = captureid + '.jpg';
             }
+            return entityimgutils.makeImageProgressive(filebasepath + filename_to_upload);
+        })
+        .then(function () {
             return userprofileutils.uploadImageToS3(filebasepath + filename_to_upload, uuid, 'Capture', captureid + '-small' + '.jpg');
         })
         .then(function () {
@@ -330,6 +330,9 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
             if(interests && interests.length > 0){
                 return entityintrstutils.saveEntityInterests(connection, entityid, interests);
             }
+        })
+        .then(function () {
+            return entityimgutils.makeImageProgressive(filebasepath + capture_img_low.filtername);
         })
         .then(function () {
             return profilepicutils.uploadImageToS3(filebasepath + capture_img_high.filename, uuid, 'Capture', captureid + '.jpg');

@@ -138,6 +138,9 @@ router.post('/', upload.single('short-image'), function (request, response) {
         })
         .then(function (renamedpath) {
             filepath_to_upload = renamedpath;
+            return entityimgutils.makeImageProgressive(filepath_to_upload);
+        })
+        .then(function () {
             return userprofileutils.uploadImageToS3(filepath_to_upload, uuid, 'Short', shoid + '-small.jpg');
         })
         .then(function () {
@@ -305,6 +308,7 @@ router.post('/edit', upload.single('short-image'), function (request, response) 
 
     var connection;
     var requesterdetails;
+    var filepath_to_upload;
 
     _auth.authValid(uuid, authkey)
         .then(function (details) {
@@ -348,7 +352,11 @@ router.post('/edit', upload.single('short-image'), function (request, response) 
             return userprofileutils.renameFile(filebasepath, short, shoid);
         })
         .then(function (renamedpath) {
-            return userprofileutils.uploadImageToS3(renamedpath, uuid, 'Short', shoid + '-small.jpg');
+            filepath_to_upload = renamedpath;
+            return entityimgutils.makeImageProgressive(filepath_to_upload);
+        })
+        .then(function () {
+            return userprofileutils.uploadImageToS3(filepath_to_upload, uuid, 'Short', shoid + '-small.jpg');
         })
         .then(function () {
             return utils.commitTransaction(connection);
