@@ -20,6 +20,7 @@ var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
 var consts = require('../../utils/Constants');
 var campaignutils = require('../../campaign/CampaignUtils');
 var utils = require('../../utils/Utils');
+var commentutils = require('../../comment/CommentUtils');
 
 var exploredatahandler = require('./ExploreFeedDataHandler');
 
@@ -327,7 +328,7 @@ function loadFeed(connection, uuid, mintid, limit, lastindexkey) {
             'CASE WHEN(EA.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
             'CASE WHEN(EA.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +*/
             'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
-            'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
+            // 'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
@@ -435,9 +436,11 @@ function loadFeed(connection, uuid, mintid, limit, lastindexkey) {
 
                     feedutils.getEntitiesInfoFast(connection, rows)
                         .then(function (updated_rows){
-
                             console.log("TIME after getEntitiesInfoFast: " + moment().format('YYYY-MM-DD HH:mm:ss'));
-
+                            rows = updated_rows;
+                            return commentutils.loadCommentCountsFast(connection, rows);
+                        })
+                        .then(function (updated_rows) {
                             rows = updated_rows;
                             return userprofileutils.getUserQualityPercentile(connection, uuid);
                         })

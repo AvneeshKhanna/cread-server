@@ -26,6 +26,7 @@ var consts = require('../utils/Constants');
 
 var cache_manager = require('../utils/cache/CacheManager');
 var cache_utils = require('../utils/cache/CacheUtils');
+var commentutils = require('../comment/CommentUtils');
 var REDIS_KEYS = cache_utils.REDIS_KEYS;
 
 function loadTimelineLegacy(connection, requesteduuid, requesteruuid, limit, page) {
@@ -155,8 +156,8 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
-            'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
-            'COUNT(DISTINCT Comment.commid) AS commentcount ' +
+            'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount ' +
+            /*'COUNT(DISTINCT Comment.commid) AS commentcount ' +*/
             'FROM Entity ' +
             'LEFT JOIN Capture ' +
             'USING(entityid) ' +
@@ -169,8 +170,8 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
             'ON HatsOff.entityid = Entity.entityid ' +
             'LEFT JOIN Downvote D ' +
             'ON D.entityid = Entity.entityid ' +
-            'LEFT JOIN Comment ' +
-            'ON Comment.entityid = Entity.entityid ' +
+            /*'LEFT JOIN Comment ' +
+            'ON Comment.entityid = Entity.entityid ' +*/
             'LEFT JOIN Follow ' +
             'ON User.uuid = Follow.followee ' +
             'WHERE User.uuid = ? ' +
@@ -238,13 +239,13 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
 
                     var candownvote;
 
-                    /*feedutils.getEntitiesInfoFast(connection, rows)
+                    commentutils.loadCommentCountsFast(connection, rows)
                         .then(function (updated_rows) {
-                            console.log("TIME after getEntitiesInfoFast: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+                            console.log("TIME after loadCommentCountsFast: " + moment().format('YYYY-MM-DD HH:mm:ss'));
                             rows = updated_rows;
                             return getUserQualityPercentile(connection, requesteruuid);
-                        })*/
-                    getUserQualityPercentile(connection, requesteruuid)
+                        })
+                    // getUserQualityPercentile(connection, requesteruuid)
                         .then(function (result) {
                             candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user_downvote;
                             return feedutils.getCollaborationData(connection, rows);
@@ -427,7 +428,8 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
             }
             else {
                 connection.query('SELECT Entity.caption, Entity.entityid, Entity.regdate, Entity.merchantable, Entity.type, User.uuid, ' +
-                    'User.firstname, User.lastname, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
+                    'User.firstname, User.lastname, ' +
+                    'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
                     'Capture.capid AS captureid, CShort.entityid AS csentityid, SCapture.entityid AS scentityid, ' +
                     'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
                     'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
@@ -435,8 +437,8 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                     'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
                     'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
                     'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
-                    'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
-                    'COUNT(DISTINCT Comment.commid) AS commentcount ' +
+                    'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount ' +
+                    /*'COUNT(DISTINCT Comment.commid) AS commentcount ' +*/
                     'FROM Entity ' +
                     'LEFT JOIN Capture ' +
                     'USING(entityid) ' +
@@ -448,8 +450,8 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                     'ON HatsOff.entityid = Entity.entityid ' +
                     'LEFT JOIN Downvote D ' +
                     'ON D.entityid = Entity.entityid ' +
-                    'LEFT JOIN Comment ' +
-                    'ON Comment.entityid = Entity.entityid ' +
+                    /*'LEFT JOIN Comment ' +
+                    'ON Comment.entityid = Entity.entityid ' +*/
                     'LEFT JOIN Short CShort ' +
                     'ON Capture.shoid = CShort.shoid ' +
                     'LEFT JOIN Capture SCapture ' +
@@ -500,11 +502,11 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                                     }
                                 }
 
-                                if (element.firstname) {
+                                if (element.hasOwnProperty('firstname')) {
                                     delete element.firstname;
                                 }
 
-                                if (element.lastname) {
+                                if (element.hasOwnProperty('lastname')) {
                                     delete element.lastname;
                                 }
 
@@ -536,13 +538,16 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
 
                             var candownvote;
 
-                            getUserQualityPercentile(connection, requesteruuid)
+                            commentutils.loadCommentCountsFast(connection, rows)
+                                .then(function (updated_rows) {
+                                    rows = updated_rows;
+                                    return getUserQualityPercentile(connection, requesteruuid);
+                                })
                                 .then(function (result) {
                                     candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user_downvote;
                                     return feedutils.getCollaborationCounts(connection, rows, feedEntities);
                                 })
                                 .then(function (rows) {
-                                    console.log("rows after getCollabCounts is " + JSON.stringify(rows, null, 3));
                                     resolve({
                                         requestmore: rows.length >= limit,
                                         candownvote: candownvote,
