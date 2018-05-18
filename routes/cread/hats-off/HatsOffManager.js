@@ -73,6 +73,11 @@ router.post('/on-click', function (request, response) {
             });
             response.end();
         })
+        .then(function () { //Updating Hatsoff count for cache
+            return hatsoffutils.updateHatsoffCountCacheFromDB(connection, [{
+                entityid: entityid
+            }]);
+        })
         .then(function () {
             return entityutils.getEntityUsrDetailsForNotif(connection, entityid);
         })

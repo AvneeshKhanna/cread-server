@@ -13,6 +13,7 @@ var AWS = config.AWS;
 var moment = require('moment');
 var feedutils = require('../FeedUtils');
 var commentutils = require('../../comment/CommentUtils');
+var hatsoffutils = require('../../hats-off/HatsOffUtils');
 
 var _auth = require('../../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../../utils/BreakPromiseChainError');
@@ -281,7 +282,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
             'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
             'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
             'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +*/
-            'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
+            /*'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +*/
             /*'COUNT(DISTINCT Comment.commid) AS commentcount, ' +*/
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
@@ -377,6 +378,10 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                     var candownvote;
 
                     feedutils.getEntitiesInfoFast(connection, rows)
+                        .then(function (updated_rows) {
+                            rows = updated_rows;
+                            return hatsoffutils.loadHatsoffCountsFast(connection, rows);
+                        })
                         .then(function (updated_rows) {
                             rows = updated_rows;
                             return commentutils.loadCommentCountsFast(connection, rows);

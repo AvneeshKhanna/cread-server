@@ -10,6 +10,7 @@ var utils = require('../utils/Utils');
 var feedutils = require('../feed/FeedUtils');
 var userprofileutils = require('../user-manager/UserProfileUtils');
 var commentutils = require('../comment/CommentUtils');
+var hatsoffutils = require('../hats-off/HatsOffUtils');
 var consts = require('../utils/Constants');
 
 function getRecommendedPosts(connection, requesteruuid, creatoruuid, collaboratoruuid, entityid, limit, lastindexkey) {
@@ -30,7 +31,7 @@ function getRecommendedPosts(connection, requesteruuid, creatoruuid, collaborato
             'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
             'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
             'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +*/
-            'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
+            /*'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +*/
             /*'COUNT(DISTINCT Comment.commid) AS commentcount, ' +*/
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
@@ -106,6 +107,10 @@ function getRecommendedPosts(connection, requesteruuid, creatoruuid, collaborato
                     var candownvote;
 
                     feedutils.getEntitiesInfoFast(connection, rows)
+                        .then(function (updated_rows) {
+                            rows = updated_rows;
+                            return hatsoffutils.loadHatsoffCountsFast(connection, rows);
+                        })
                         .then(function (updated_rows) {
                             rows = updated_rows;
                             return commentutils.loadCommentCountsFast(connection, rows);

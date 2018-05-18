@@ -10,8 +10,11 @@
 var uuidGenerator = require('uuid');
 var utils = require('../utils/Utils');
 var updatesutils = require('../updates/UpdatesUtils');
+var cacheutils = require('../utils/cache/CacheUtils');
+var cachemanager = require('../utils/cache/CacheManager');
 
 var moment = require('moment');
+var async = require('async');
 
 function registerHatsOff(connection, register, uuid, entityid) {
 
@@ -183,9 +186,159 @@ function updateHatsOffDataForUpdates(connection, register, uuid, actor_uuid, ent
     });
 }
 
+function getAllHatsoffCounts(connection, entities) {
+
+    var entityids = entities.map(function (e) {
+        return e.entityid;
+    });
+
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT E.entityid, COUNT(H.hoid) AS hatsoffcount ' +
+            'FROM Entity E ' +
+            'LEFT JOIN HatsOff H ' +
+            'USING(entityid) ' +
+            'WHERE E.entityid IN (?) ' +
+            'GROUP BY E.entityid', [entityids], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(rows);
+            }
+        });
+    });
+}
+
+/**
+ * @param connection SQL session connection to execute query
+ * @param entities Entities whose comments counts are to be cached. Should be of the structure: [{entityid: *string*}]
+ * */
+function updateHatsoffCountCacheFromDB(connection, entities) {
+    return new Promise(function (resolve, reject) {
+        getAllHatsoffCounts(connection, entities)
+            .then(function (rows) {
+                return updateHatsoffCountsCache(rows);
+            })
+            .then(resolve, reject);
+    });
+}
+
+/**
+ * @param entities Entities whose hastoff counts are to be cached. Should be of the structure: [{entityid: *string*, hatsoffcount: *number*}]
+ * */
+function updateHatsoffCountsCache(entities) {
+    return new Promise(function (resolve, reject) {
+        async.each(entities, function (entity, callback) {
+
+            var ent_htsoffcnt_cache_key = cacheutils.getEntityHtsoffCntCacheKey(entity.entityid);
+
+            if (typeof entity.hatsoffcount !== "number") {
+                callback(new Error("Value to store for hatsoffcount in cache should be a number"));
+            }
+            else {
+                cachemanager.setCacheString(ent_htsoffcnt_cache_key, String(entity.hatsoffcount))
+                    .then(function () {
+                        callback();
+                    })
+                    .catch(function (err) {
+                        callback(err);
+                    });
+            }
+
+        }, function (err) {
+            if (err) {
+                console.error(err);
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+
+    });
+}
+
+/**
+ * @param entities Entities whose hatsoff counts are to be fetched from cache. Should be of the structure: [{entityid: *string*}]
+ * */
+function getAllHatsoffCountsCache(entities) {
+    return new Promise(function (resolve, reject) {
+        async.eachOf(entities, function (entity, index, callback) {
+
+            var ent_htsoffcnt_cache_key = cacheutils.getEntityHtsoffCntCacheKey(entity.entityid);
+
+            cachemanager.getCacheString(ent_htsoffcnt_cache_key)
+                .then(function (hatsoffcount) {
+                    entities[index].hatsoffcount = (!hatsoffcount || hatsoffcount === "null" || hatsoffcount === "undefined") ? null : Number(hatsoffcount);
+
+                    (hatsoffcount === "null" || hatsoffcount === "undefined") ? console.log('Incorrect values are being stored in cache for hatsoffcount') : //Do nothig;
+
+                        callback();
+                })
+                .catch(function (err) {
+                    callback(err);
+                });
+
+        }, function (err) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(entities);
+            }
+        });
+    });
+}
+
+function loadHatsoffCountsFast(connection, master_rows) {
+    return new Promise(function (resolve, reject) {
+        getAllHatsoffCountsCache(master_rows)
+            .then(function (rows) {
+
+                master_rows = rows;
+
+                var entities_no_hoffcnt = master_rows.filter(function (r) {
+                    return r.hatsoffcount === null;
+                });
+
+                if (entities_no_hoffcnt.length > 0) {
+                    return getAllHatsoffCounts(connection, entities_no_hoffcnt);
+                }
+                else {
+                    resolve(master_rows);
+                    throw new BreakPromiseChainError();
+                }
+            })
+            .then(function (rows) {
+
+                var master_entityids = master_rows.map(function (mr) {
+                    return mr.entityid;
+                });
+
+                rows.forEach(function (r) {
+                    master_rows[master_entityids.indexOf(r.entityid)].hatsoffcount = r.hatsoffcount;
+                });
+
+                resolve(master_rows);
+                updateHatsoffCountsCache(rows);
+                throw new BreakPromiseChainError();
+            })
+            .catch(function (err) {
+                if (err instanceof BreakPromiseChainError) {
+                    //Do nothing
+                }
+                else {
+                    reject(err);
+                }
+            });
+    });
+}
+
 module.exports = {
     registerHatsOff: registerHatsOff,
     loadHatsOffsLegacy: loadHatsOffsLegacy,
     loadHatsOffs: loadHatsOffs,
-    updateHatsOffDataForUpdates: updateHatsOffDataForUpdates
+    updateHatsOffDataForUpdates: updateHatsOffDataForUpdates,
+    loadHatsoffCountsFast: loadHatsoffCountsFast,
+    updateHatsoffCountCacheFromDB: updateHatsoffCountCacheFromDB
 };

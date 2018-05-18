@@ -40,6 +40,14 @@ function getEntityInfoCacheKey(entityid) {
     return "ent:info:" + entityid;
 }
 
+function getEntityHtsoffCntCacheKey(entityid) {
+    if (!entityid) {
+        throw new Error("Entity ID cannot be undefined/null/empty-string");
+    }
+
+    return "ent:htsoff-cnt:" + entityid;
+}
+
 function addKeyPrefix(key) {
     key = (config.isProduction() ? "p:" : "d:") + key;
     return key;
@@ -48,6 +56,7 @@ function addKeyPrefix(key) {
 module.exports = {
     addKeyPrefix: addKeyPrefix,
     getEntityCommentCntCacheKey: getEntityCommentCntCacheKey,
+    getEntityHtsoffCntCacheKey: getEntityHtsoffCntCacheKey,
     getEntityCollabCntCacheKey: getEntityCollabCntCacheKey,
     getEntityInfoCacheKey: getEntityInfoCacheKey,
     REDIS_KEYS: REDIS_KEYS

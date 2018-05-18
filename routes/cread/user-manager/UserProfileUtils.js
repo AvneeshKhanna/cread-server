@@ -27,6 +27,7 @@ var consts = require('../utils/Constants');
 var cache_manager = require('../utils/cache/CacheManager');
 var cache_utils = require('../utils/cache/CacheUtils');
 var commentutils = require('../comment/CommentUtils');
+var hatsoffutils = require('../hats-off/HatsOffUtils');
 var REDIS_KEYS = cache_utils.REDIS_KEYS;
 
 function loadTimelineLegacy(connection, requesteduuid, requesteruuid, limit, page) {
@@ -155,8 +156,8 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
             'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
-            'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
-            'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount ' +
+            'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount ' +
+            // 'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount ' +
             /*'COUNT(DISTINCT Comment.commid) AS commentcount ' +*/
             'FROM Entity ' +
             'LEFT JOIN Capture ' +
@@ -239,7 +240,11 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
 
                     var candownvote;
 
-                    commentutils.loadCommentCountsFast(connection, rows)
+                    hatsoffutils.loadHatsoffCountsFast(connection, rows)
+                        .then(function (updated_rows) {
+                            rows = updated_rows;
+                            return commentutils.loadCommentCountsFast(connection, rows);
+                        })
                         .then(function (updated_rows) {
                             console.log("TIME after loadCommentCountsFast: " + moment().format('YYYY-MM-DD HH:mm:ss'));
                             rows = updated_rows;
@@ -436,8 +441,8 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                     'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +
                     'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
                     'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
-                    'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
-                    'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount ' +
+                    'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount ' +
+                    // 'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount ' +
                     /*'COUNT(DISTINCT Comment.commid) AS commentcount ' +*/
                     'FROM Entity ' +
                     'LEFT JOIN Capture ' +
@@ -525,20 +530,13 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                                 return element;
                             });
 
-                            /*feedutils.getCollaborationData(connection, rows)
-                                .then(function (rows) {
-
-                                    /!*rows.map(function (e) {
-                                        e.collabcount = 0;
-                                        return e;
-                                    });*!/
-
-                                    return feedutils.getCollaborationCounts(connection, rows, feedEntities);
-                                })*/
-
                             var candownvote;
 
-                            commentutils.loadCommentCountsFast(connection, rows)
+                            hatsoffutils.loadHatsoffCountsFast(connection, rows)
+                                .then(function (updated_rows) {
+                                    rows = updated_rows;
+                                    return commentutils.loadCommentCountsFast(connection, rows);
+                                })
                                 .then(function (updated_rows) {
                                     rows = updated_rows;
                                     return getUserQualityPercentile(connection, requesteruuid);

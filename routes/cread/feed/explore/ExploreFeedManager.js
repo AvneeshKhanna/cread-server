@@ -21,6 +21,7 @@ var consts = require('../../utils/Constants');
 var campaignutils = require('../../campaign/CampaignUtils');
 var utils = require('../../utils/Utils');
 var commentutils = require('../../comment/CommentUtils');
+var hatsoffutils = require('../../hats-off/HatsOffUtils');;
 
 var exploredatahandler = require('./ExploreFeedDataHandler');
 
@@ -327,7 +328,7 @@ function loadFeed(connection, uuid, mintid, limit, lastindexkey) {
             /*'CASE WHEN(EA.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
             'CASE WHEN(EA.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
             'CASE WHEN(EA.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +*/
-            'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
+            /*'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +*/
             // 'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
@@ -360,8 +361,8 @@ function loadFeed(connection, uuid, mintid, limit, lastindexkey) {
             'ON HatsOff.entityid = EA.entityid ' +
             'LEFT JOIN Downvote D ' +
             'ON D.entityid = EA.entityid ' +
-            'LEFT JOIN Comment ' +
-            'ON Comment.entityid = EA.entityid ' +
+            /*'LEFT JOIN Comment ' +
+            'ON Comment.entityid = EA.entityid ' +*/
             'LEFT JOIN Follow ' +
             'ON User.uuid = Follow.followee ' +
             /*'WHERE Entity.status = "ACTIVE" ' +
@@ -437,6 +438,10 @@ function loadFeed(connection, uuid, mintid, limit, lastindexkey) {
                     feedutils.getEntitiesInfoFast(connection, rows)
                         .then(function (updated_rows){
                             console.log("TIME after getEntitiesInfoFast: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+                            rows = updated_rows;
+                            return hatsoffutils.loadHatsoffCountsFast(connection, rows);
+                        })
+                        .then(function (updated_rows) {
                             rows = updated_rows;
                             return commentutils.loadCommentCountsFast(connection, rows);
                         })
