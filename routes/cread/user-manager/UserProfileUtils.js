@@ -250,7 +250,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
                             rows = updated_rows;
                             return getUserQualityPercentile(connection, requesteruuid);
                         })
-                    // getUserQualityPercentile(connection, requesteruuid)
+                        // getUserQualityPercentile(connection, requesteruuid)
                         .then(function (result) {
                             candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user_downvote;
                             return feedutils.getCollaborationData(connection, rows);
@@ -318,7 +318,7 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
             }
             else {
 
-                if(rows.length === 0){  //Case when requesteduuid is invalid (could be possible for web)
+                if (rows.length === 0) {  //Case when requesteduuid is invalid (could be possible for web)
                     reject(new NotFoundError('Invalid query parameter: "requesteduuid"'));
                     return;
                 }
@@ -332,11 +332,11 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
                     return !!r;
                 });
 
-                if(interests_arr[0]){
+                if (interests_arr[0]) {
                     topinterests.push(interests_arr[0])
                 }
 
-                if(interests_arr[1]){
+                if (interests_arr[1]) {
                     topinterests.push(interests_arr[1])
                 }
 
@@ -429,7 +429,7 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
             if (err) {
                 reject(err);
             }
-            else if(requesteduuiddetails.length === 0){
+            else if (requesteduuiddetails.length === 0) {
                 reject(new NotFoundError("Invalid 'requesteduuid'"));
             }
             else {
@@ -990,17 +990,17 @@ function addToLatestPostsCache(connection, uuid, entityurl) {
         var posts;
         getUserQualityPercentile(connection, uuid)
             .then(function (result) {
-                if(result.quality_percentile_score >= consts.min_qpercentile_user_recommendation){
+                if (result.quality_percentile_score >= consts.min_qpercentile_user_recommendation) {
                     return cache_manager.getCacheHMapValue(REDIS_KEYS.USER_LATEST_POSTS, uuid);
                 }
-                else{
+                else {
                     return new Promise(function (resolve, reject) {
                         resolve();
                     });
                 }
             })
             .then(function (result) {
-                if(result){
+                if (result) {
                     posts = parseLatestPostsCacheValue(result);
                 }
                 else {
@@ -1009,7 +1009,7 @@ function addToLatestPostsCache(connection, uuid, entityurl) {
 
                 posts.unshift(entityurl);
 
-                if(posts.length > 7){
+                if (posts.length > 7) {
                     posts.pop();
                 }
 
@@ -1052,10 +1052,10 @@ function getLatestPostsOfUser(connection, uuid) {
                 var posts = [];
 
                 rows.map(function (element) {
-                    if(element.type === 'SHORT'){
+                    if (element.type === 'SHORT') {
                         posts.push(utils.createSmallShortUrl(uuid, element.shoid));
                     }
-                    else{
+                    else {
                         posts.push(utils.createSmallCaptureUrl(uuid, element.capid));
                     }
                 });
@@ -1070,20 +1070,20 @@ function updateLatestPostsCache(connection, uuid) {
     return new Promise(function (resolve, reject) {
         getUserQualityPercentile(connection, uuid)
             .then(function (result) {
-                if(result.quality_percentile_score < consts.min_qpercentile_user_recommendation){
+                if (result.quality_percentile_score < consts.min_qpercentile_user_recommendation) {
                     resolve([]);
                 }
-                else{
+                else {
                     var posts;
                     getLatestPostsOfUser(connection, uuid)
                         .then(function (psts) {
                             posts = psts;
-                            if(posts.length > 0){
+                            if (posts.length > 0) {
                                 var lp_hmap = {};
                                 lp_hmap[uuid] = flattenPostsArrFrCache(posts);
                                 return cache_manager.setCacheHMap(REDIS_KEYS.USER_LATEST_POSTS, lp_hmap);
                             }
-                            else{
+                            else {
                                 //TODO: Add code to delete cache key if it exists
                                 return new Promise(function (resolve, reject) {
                                     resolve(posts);
@@ -1102,14 +1102,14 @@ function getLatestPostsCache(uuids) {
     return new Promise(function (resolve, reject) {
         cache_manager.getCacheHMapMultiple(cache_utils.REDIS_KEYS.USER_LATEST_POSTS, uuids)
             .then(function (stringified_posts) {
-                if(stringified_posts){
+                if (stringified_posts) {
                     var res = {};
                     for (var i = 0; i < stringified_posts.length; i++) {
                         var stringified_post = stringified_posts[i];
-                        if(stringified_post){
+                        if (stringified_post) {
                             res[uuids[i]] = parseLatestPostsCacheValue(stringified_post);
                         }
-                        else{
+                        else {
                             res[uuids[i]] = [];
                         }
                     }
