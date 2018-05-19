@@ -9,6 +9,7 @@ var async = require('async');
 var utils = require('../utils/Utils');
 var cachemanager = require('../utils/cache/CacheManager');
 var cacheutils = require('../utils/cache/CacheUtils');
+var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
 /**
  * Function to retrieve the users' details whose content has been collaborated on

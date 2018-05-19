@@ -12,6 +12,7 @@ var utils = require('../utils/Utils');
 var updatesutils = require('../updates/UpdatesUtils');
 var cacheutils = require('../utils/cache/CacheUtils');
 var cachemanager = require('../utils/cache/CacheManager');
+var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
 var moment = require('moment');
 var async = require('async');
