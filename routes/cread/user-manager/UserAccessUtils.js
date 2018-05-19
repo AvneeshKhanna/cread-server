@@ -284,22 +284,19 @@ function updateNewFacebookUserDataForUpdates(connection, uuid, actor_uuid, categ
 }
 
 /**
- * Function to add Cread Kalakaar as a follower and a followee for the user as well as add a default chat message
+ * Function to schedule a task to Cread Kalakaar as a follower and a followee for the user as well as add a default chat message
  * from Cread Kalakaar
  * */
 function addDefaultCreadKalakaarActions(connection, user_uuid) {
     return new Promise(function (resolve, reject) {
         utils.beginTransaction(connection)
             .then(function () {
-                return followutils.registerFollowForCreadKalakaar(connection, user_uuid);
-            })
-            .then(function () {
                 var default_ck_chat_job_data = {
                     for_uuid: user_uuid
                 };
 
                 return jobqueuehandler.scheduleJob(REDIS_KEYS.KUE_DEFAULT_CK_CHAT_MSG, default_ck_chat_job_data, {
-                    delay: 5 * 60 * 1000,
+                    delay: config.isProduction() ? 5 * 60 * 1000 : 10 * 1000,
                     removeOnComplete: true
                 });
             })
