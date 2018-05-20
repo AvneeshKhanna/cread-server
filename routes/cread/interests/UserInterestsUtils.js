@@ -12,6 +12,7 @@ function loadAllInterestsForUser(connection, uuid) {
             'FROM Interests I ' +
             'LEFT JOIN UserInterests UI ' +
             'ON(I.intid = UI.intid AND UI.uuid = ?) ' +
+            'WHERE I.superset <> "ALL" ' +
             'GROUP BY I.intid', [uuid], function (err, rows) {
             if (err) {
                 reject(err);

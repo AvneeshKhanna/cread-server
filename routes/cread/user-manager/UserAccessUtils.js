@@ -326,6 +326,9 @@ function addDefaultCreadKalakaarActions(connection, user_uuid) {
                 return utils.beginTransaction(connection);
             })
             .then(function () {
+                return followutils.registerFollowForCreadKalakaar(connection, jobData.for_uuid);
+            })
+            .then(function () {
                 return chatconvoutils.addDefaultMessageFromCreadKalakaar(connection, jobData.for_uuid);
             })
             .then(function () {
