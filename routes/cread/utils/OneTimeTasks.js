@@ -69,10 +69,10 @@ function addEntityData(connection) {
 
                     config.connectionPool.getConnection(function (error, conn) {
 
-                        if(error){
+                        if (error) {
                             callback(error);
                         }
-                        else{
+                        else {
                             conn.beginTransaction(function (err) {
                                 if (err) {
                                     conn.rollback(function () {
@@ -112,7 +112,7 @@ function addEntityData(connection) {
                                                             console.log('TRANSACTION COMMITTED');
                                                             config.disconnect(conn);
                                                             callback();
-                                                            if(data.indexOf(cmid) === data.length - 1){ //Last case of async.eachSeries
+                                                            if (data.indexOf(cmid) === data.length - 1) { //Last case of async.eachSeries
                                                                 resolve("Process completed. Please check if there are any inconsistencies in the database");
                                                             }
                                                         }
@@ -155,10 +155,10 @@ router.post('/load-capture-urls', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     message: 'Some error occurred at the server'
@@ -219,10 +219,10 @@ router.post('/default-follow-cread-kalakaar', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     message: 'Some error occurred at the server'
@@ -248,13 +248,13 @@ function registerAllFollowCreadKalakaar(connection, user_uuids) {
                     callback(err);
                 });
         }, function (err) {
-            if(err){
+            if (err) {
                 utils.rollbackTransaction(connection, undefined, err)
                     .catch(function (err) {
                         reject(err);
                     });
             }
-            else{
+            else {
                 utils.commitTransaction(connection)
                     .then(function () {
                         resolve();
@@ -296,10 +296,10 @@ router.post('/default-chat-cread-kalakaar', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     message: 'Some error occurred at the server'
@@ -314,7 +314,7 @@ function addAllDefaultMessageFromCreadKalakaar(connection, user_uuids) {
         async.eachSeries(user_uuids, function (user_uuid, callback) {
             utils.beginTransaction(connection)
                 .then(function () {
-                  return chatconvoutils.addDefaultMessageFromCreadKalakaar(connection, user_uuid);
+                    return chatconvoutils.addDefaultMessageFromCreadKalakaar(connection, user_uuid);
                 })
                 .then(function () {
                     setTimeout(function () {
@@ -325,13 +325,13 @@ function addAllDefaultMessageFromCreadKalakaar(connection, user_uuids) {
                     callback(err);
                 })
         }, function (err) {
-            if(err){
+            if (err) {
                 utils.rollbackTransaction(connection, undefined, err)
                     .catch(function (err) {
                         reject(err);
                     });
             }
-            else{
+            else {
                 utils.commitTransaction(connection)
                     .then(function () {
                         resolve();
@@ -376,12 +376,12 @@ router.post('/add-product-images', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
-                if(!response.headerSent){
+                if (!response.headerSent) {
                     response.status(500).send({
                         message: 'Some error occurred at the server'
                     });
@@ -420,8 +420,8 @@ function createMultipleEntityProductImages(entities) {
                     callback();
                 })
 
-        },function (err) {
-            if(err){
+        }, function (err) {
+            if (err) {
                 console.log('All data could not be processed');
                 reject(err);
             }
@@ -569,10 +569,10 @@ router.post('/populate-help-ques', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     message: 'Some error occurred at the server'
