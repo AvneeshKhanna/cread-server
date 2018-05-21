@@ -31,6 +31,7 @@ scheduler.reminder_hotd_job.start();
 scheduler.generate_new_web_token_job.start();
 scheduler.unlock_entities_job.start();
 scheduler.add_product_images_job.start();
+scheduler.help_queries_status_job.start();
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
@@ -191,6 +192,7 @@ app.use('/recommend-posts', require('./routes/cread/recommendations/PostsRecomme
 app.use('/popular-feed-buy', require('./routes/cread/feed/popular-feed-buy/PopularFeedBuyManager'));
 app.use('/redis', require('./routes/dev-utils/RedisExample'));  //TODO: Remove
 // app.use('/job-queue', require('./routes/cread/utils/long-tasks/JobQueueHandler'));  //TODO: Remove
+app.use('/support', require('./routes/cread/support/HelpQuesManager'));
 
 //-dashboard-
 app.use('/campaign-details', require('./routes/cread/dsbrd/campaign-details/CampaignDetails'));

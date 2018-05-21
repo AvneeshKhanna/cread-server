@@ -412,11 +412,85 @@ function createEntityProductImage(connection, entityid) {
     });
 }
 
+var help_queries_status_job = new CronJob({
+    //Runs every 3 hours
+    cronTime: '10 * */3 * * *', //second | minute | hour | day-of-month | month | day-of-week
+    onTick: function () {
+
+        var connection;
+
+        if(config.isProduction()){
+            config.getNewConnection()
+                .then(function (conn) {
+                    connection = conn;
+                    return getHelpQuesAnswersLastHr(connection);
+                })
+                .then(function (items) {
+
+                    if(items.length > 0){
+                        var toAddresses  = [
+                            "admin@thetestament.com",
+                            "nishantmittal2410@gmail.com"/*,
+                            "avneesh.khanna92@gmail.com"*/
+                        ];
+                        return utils.sendAWSTextEmail("New Help Queries in the Last 3 Hours",
+                            "Hi,\nYou have new queries for: \n\n" + items.map(function (item) {
+                                return item.question;
+                            }).join('\n\n'),
+                            toAddresses);
+                    }
+                    else{
+                        console.log('No help queries in the past 3 hours');
+                        throw new BreakPromiseChainError();
+                    }
+
+                })
+                .then(function () {
+                    console.log("Queries Present: Mailed");
+                    throw new BreakPromiseChainError();
+                })
+                .catch(function (err) {
+                    config.disconnect(connection);
+                    if (err instanceof BreakPromiseChainError) {
+                        //Do nothing
+                    }
+                    else {
+                        console.error(err);
+                    }
+                });
+        }
+        else {
+            //Development Mode. Do nothing
+        }
+
+    },
+    start: false,   //Whether to start just now
+    timeZone: 'Asia/Kolkata'
+});
+
+function getHelpQuesAnswersLastHr(connection) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT HQ.question, SUM(HQA.count) ' +
+            'FROM HelpQuesAns HQA ' +
+            'JOIN HelpQues HQ ' +
+            'WHERE HQA.last_update_time > DATE_SUB(NOW(), INTERVAL 3 HOUR) ' +
+            'GROUP BY HQ.qid', [], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(rows);
+            }
+        });
+    });
+}
+
 module.exports = {
     update_latestposts_cache_job: update_latestposts_cache_job,
     delete_stale_hotds_job: delete_stale_hotds_job,
     reminder_hotd_job: reminder_hotd_job,
     generate_new_web_token_job: generate_new_web_token_job,
     unlock_entities_job: unlock_entities_job,
-    add_product_images_job: add_product_images_job
+    add_product_images_job: add_product_images_job,
+    help_queries_status_job: help_queries_status_job
 };
