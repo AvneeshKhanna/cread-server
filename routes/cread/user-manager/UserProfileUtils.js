@@ -19,6 +19,7 @@ var s3bucket = envconfig.get('s3.bucket');
 
 var imagesize = require('image-size');
 
+var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var NotFoundError = require('../utils/NotFoundError');
 
 var feedutils = require('../feed/FeedUtils');
@@ -380,7 +381,6 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
                 userdata.followingcount = followingcount;
                 userdata.topinterests = topinterests;
                 userdata.interestcount = interests_arr.length;
-                userdata.web_profile_link = 'http://bit.ly/sumDmyLnk';  //TODO: Update
 
                 connection.query('SELECT COUNT(DISTINCT E.entityid) AS postcount, ' +
                     'COUNT(DISTINCT CASE WHEN(E.type = "SHORT") THEN SC.capid ' +
@@ -410,7 +410,15 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
                         userdata.commentscount = data[0].commentscount; //Total comments received by this user's posts
                         userdata.hatsoffscount = data[0].hatsoffscount; //Total hatsoffs received by this user's posts
                         userdata.collaborationscount = data[0].collaborationscount; //Total posts created by others using this user's posts
-                        resolve(userdata);
+
+                        getShortProfileLink(requesteduuid)
+                            .then(function (link) {
+                                userdata.web_profile_link = link;
+                                resolve(userdata);
+                            })
+                            .catch(function (err) {
+                                reject(err);
+                            });
                     }
                 });
             }
@@ -1125,14 +1133,60 @@ function getLatestPostsCache(uuids) {
     });
 }
 
-function getShortProfileLink(uuid) {
+function getShortProfileLinkCache(uuid) {
     return new Promise(function (resolve, reject) {
-        utils.getShortBitlyLink(utils.getProfileWebstoreLink(uuid))
+        cache_manager.getCacheString(cache_utils.getProfileLinkCacheKey(uuid))
             .then(function (link) {
                 resolve(link);
             })
             .catch(function (err) {
                 reject(err);
+            })
+    });
+}
+
+function updateShortProfileLinkCache(uuid, link) {
+    return new Promise(function (resolve, reject) {
+        if(!uuid){
+            resolve(new Error('uuid cannot be null/empty/undefined to store user profile link in cache'));
+        }
+        else{
+            cache_manager.setCacheString(cache_utils.getProfileLinkCacheKey(uuid), link)
+                .then(function () {
+                    resolve();
+                })
+                .catch(function (err) {
+                    reject(err);
+                });
+        }
+    });
+}
+
+function getShortProfileLink(uuid) {
+    return new Promise(function (resolve, reject) {
+        getShortProfileLinkCache(uuid)
+            .then(function (link) {
+                if(link){
+                    console.log('profile link fetched from cache');
+                    resolve(link);
+                    throw new BreakPromiseChainError();
+                }
+                else{
+                    return utils.getShortBitlyLink(utils.getProfileWebstoreLink(uuid))
+                }
+            })
+            .then(function (link) {
+                resolve(link);
+                updateShortProfileLinkCache(uuid, link);
+            })
+            .catch(function (err) {
+                if(err instanceof BreakPromiseChainError){
+                    //Do nothing
+                }
+                else{
+                    console.error(err);
+                    reject(err);
+                }
             });
     });
 }

@@ -160,7 +160,7 @@ function getWebstoreDomain() {
         return 'http://www.cread.in';
     }
     else {
-        return 'http://408ea2d2.ngrok.io';
+        return 'http://www.cread.in';
     }
 }
 

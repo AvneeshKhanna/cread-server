@@ -638,5 +638,89 @@ router.get('/get-keys', function (request, response) {
 
 });
 
+router.get('/get-redis-fast', function (request, response) {
+    cachemanager.getAllCacheKeys("d:ent:info*")
+        .then(function (res) {
+            return getMultipleRedisValuesFast(res);
+        })
+        .then(function () {
+            response.send('done').end();
+        }, function (err) {
+            response.send(err).end();
+        });
+
+});
+
+router.get('/get-redis-slow', function (request, response) {
+    cachemanager.getAllCacheKeys("d:ent:info*")
+        .then(function (res) {
+            return getMultipleRedisValuesSlow(res);
+        })
+        .then(function () {
+            response.send('done').end();
+        }, function (err) {
+            response.send(err).end();
+        });
+
+});
+
+function getMultipleRedisValuesFast(keys) {
+    return new Promise(function (resolve, reject) {
+
+        var cntr = 0;
+
+        async.each(keys, function (key, callback) {
+
+            key = key.replace('d:', '');
+
+            cachemanager.getCacheHMap(key)
+                .then(function (val) {
+                    console.log(cntr++);
+                    callback();
+                })
+                .catch(function (err) {
+                    callback(err);
+                });
+
+        }, function (err) {
+            if(err){
+                reject(err);
+            }
+            else{
+                resolve();
+            }
+        });
+    });
+}
+
+function getMultipleRedisValuesSlow(keys) {
+    return new Promise(function (resolve, reject) {
+
+        var cntr = 0;
+
+        async.eachSeries(keys, function (key, callback) {
+
+            key = key.replace('d:', '');
+
+            cachemanager.getCacheHMap(key)
+                .then(function (val) {
+                    console.log(cntr++);
+                    callback();
+                })
+                .catch(function (err) {
+                    callback(err);
+                });
+
+        }, function (err) {
+            if(err){
+                reject(err);
+            }
+            else{
+                resolve();
+            }
+        });
+    });
+}
+
 module.exports = router;
 

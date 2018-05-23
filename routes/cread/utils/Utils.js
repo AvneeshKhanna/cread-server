@@ -470,7 +470,7 @@ function getInterestBgImgUrl(intname) {
 
 function getShortBitlyLink(longUrl) {
     return new Promise(function (resolve, reject) {
-        request_client(bitly.api_base_url + "/v3/link/lookup?url=" +
+        request_client(bitly.api_base_url + "/v3/shorten?longUrl=" +
             encodeURIComponent(longUrl) +
             "&access_token=" +
             bitly.generic_access_token, function (err, res, body) {
@@ -483,7 +483,7 @@ function getShortBitlyLink(longUrl) {
             }
             else {  //res.statusCode === 200
                 body = JSON.parse(body);
-                resolve(body.data.link_lookup[0].aggregdate_link); //TODO: test
+                resolve(body.data.url)
             }
         })
     });
