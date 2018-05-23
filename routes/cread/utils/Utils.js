@@ -443,7 +443,7 @@ function deleteUnrequiredFiles(files) {
         async.each(files, function (file, callback) {
 
             fs.unlink(file, function (err) {
-                if(err){
+                if (err) {
                     callback(err);
                 }
                 else {
@@ -452,7 +452,7 @@ function deleteUnrequiredFiles(files) {
             });
 
         }, function (err) {
-            if(err){
+            if (err) {
                 console.error(err);
                 reject(err);
             }
