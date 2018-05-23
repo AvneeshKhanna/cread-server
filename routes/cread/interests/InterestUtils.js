@@ -5,7 +5,8 @@
 
 function loadMacroInterests(connection) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT MI.mintid, MI.mintname, MI.type ' +
+        connection.query('SELECT MI.mintid, MI.mintname, ' +
+            'CASE WHEN MI.type = "GENERAL" THEN "FEEL" ELSE MI.type END AS type ' +
             'FROM MacroInterests MI', [], function (err, rows) {
             if (err) {
                 reject(err);

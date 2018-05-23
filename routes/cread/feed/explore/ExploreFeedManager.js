@@ -443,10 +443,12 @@ function loadFeed(connection, uuid, mintid, limit, lastindexkey) {
                         })
                         .then(function (updated_rows) {
                             rows = updated_rows;
+                            console.log("TIME after loadHatsoffCountsFast: " + moment().format('YYYY-MM-DD HH:mm:ss'));
                             return commentutils.loadCommentCountsFast(connection, rows);
                         })
                         .then(function (updated_rows) {
                             rows = updated_rows;
+                            console.log("TIME after loadCommentCountsFast: " + moment().format('YYYY-MM-DD HH:mm:ss'));
                             return userprofileutils.getUserQualityPercentile(connection, uuid);
                         })
                         .then(function (result) {

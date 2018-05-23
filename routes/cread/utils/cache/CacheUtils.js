@@ -48,6 +48,14 @@ function getEntityHtsoffCntCacheKey(entityid) {
     return "ent:htsoff-cnt:" + entityid;
 }
 
+function getProfileLinkCacheKey(uuid) {
+    if (!uuid) {
+        throw new Error("UUID cannot be undefined/null/empty-string");
+    }
+
+    return "usr:prfle-link:" + uuid;
+}
+
 function addKeyPrefix(key) {
     key = (config.isProduction() ? "p:" : "d:") + key;
     return key;
@@ -59,5 +67,6 @@ module.exports = {
     getEntityHtsoffCntCacheKey: getEntityHtsoffCntCacheKey,
     getEntityCollabCntCacheKey: getEntityCollabCntCacheKey,
     getEntityInfoCacheKey: getEntityInfoCacheKey,
+    getProfileLinkCacheKey: getProfileLinkCacheKey,
     REDIS_KEYS: REDIS_KEYS
 };
