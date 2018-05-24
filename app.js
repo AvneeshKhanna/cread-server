@@ -193,6 +193,7 @@ app.use('/popular-feed-buy', require('./routes/cread/feed/popular-feed-buy/Popul
 app.use('/redis', require('./routes/dev-utils/RedisExample'));  //TODO: Remove
 // app.use('/job-queue', require('./routes/cread/utils/long-tasks/JobQueueHandler'));  //TODO: Remove
 app.use('/support', require('./routes/cread/support/HelpQuesManager'));
+app.use('/mark-for-collab', require('./routes/cread/ops/mark-for-collab/MarkForCollabManager'));
 
 //-dashboard-
 app.use('/campaign-details', require('./routes/cread/dsbrd/campaign-details/CampaignDetails'));

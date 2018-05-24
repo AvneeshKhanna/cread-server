@@ -23,6 +23,12 @@ const max_intrst_selectn_div = config.isProduction() ? 4 : 4;   //Divisor to div
 const min_percentile_quality_user_downvote = 90;
 const min_qpercentile_user_recommendation = 70;
 
+const mark_for_collab = {
+    UNMARKED: 'UNMARKED',
+    ACCEPTED: 'ACCEPTED',
+    REJECTED: 'REJECTED'
+};
+
 const share_time_interval = {
     same_share : {
         time_diff: config.isProduction() ? 24 : 2,
@@ -72,5 +78,6 @@ module.exports = {
     explore_algo_base_score: explore_algo_base_score,
     min_percentile_quality_user_downvote: min_percentile_quality_user_downvote,
     min_qpercentile_user_recommendation: min_qpercentile_user_recommendation,
-    max_intrst_selectn_div: max_intrst_selectn_div
+    max_intrst_selectn_div: max_intrst_selectn_div,
+    mark_for_collab: mark_for_collab
 };
