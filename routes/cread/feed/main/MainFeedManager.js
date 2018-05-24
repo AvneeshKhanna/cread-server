@@ -414,7 +414,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                                 requestmore: rows.length >= limit,
                                 candownvote: candownvote,
                                 lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
-                                feed: rows
+                                feed: utils.shuffle(rows)
                             });
                         })
                         .catch(function (err) {
