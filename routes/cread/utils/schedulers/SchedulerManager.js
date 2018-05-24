@@ -414,7 +414,7 @@ function createEntityProductImage(connection, entityid) {
 
 var help_queries_status_job = new CronJob({
     //Runs every 3 hours
-    cronTime: '10 * */3 * * *', //second | minute | hour | day-of-month | month | day-of-week
+    cronTime: '00 00 */3 * * *', //second | minute | hour | day-of-month | month | day-of-week
     onTick: function () {
 
         var connection;
