@@ -18,6 +18,7 @@ var utils = require('../utils/Utils');
 var envtype = config.envtype;
 var cache_time = consts.cache_time;
 var explore_algo_base_score = consts.explore_algo_base_score;
+var mark_for_collab_consts = consts.mark_for_collab;
 
 router.get('/load', function (request, response) {
 
@@ -203,29 +204,35 @@ function loadInspirationFeed(connection, limit, lastindexkey) {
     //lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
     lastindexkey = (lastindexkey) ? Number(lastindexkey) : 0;
 
+    var mark_for_collab_sqlparam = [
+        mark_for_collab_consts.UNMARKED,
+        mark_for_collab_consts.ACCEPTED
+    ];
+
     return new Promise(function (resolve, reject) {
         connection.query('SELECT (@rownr := @rownr + 1) AS row_no, Master.* ' +
             'FROM ' +
-            '(SELECT Entity.entityid, Entity.regdate, Entity.merchantable, Capture.capid AS captureid, ' +
-            'Capture.img_width, Capture.img_height, Capture.uuid, Capture.shoid, User.firstname, User.lastname, ' +
-            '(CASE WHEN(EA.impact_score IS NULL) THEN ? ELSE EA.impact_score END) AS impact_weight ' +
-            'FROM Entity ' +
-            'JOIN Capture ' +
-            'USING(entityid) ' +
-            'JOIN User ' +
-            'ON User.uuid = Capture.uuid ' +
-            'LEFT JOIN EntityAnalytics EA ' +
-            'ON (EA.entityid = Entity.entityid) ' +
-            'WHERE Entity.status = "ACTIVE" ' +
-            //'AND Capture.shoid IS NULL ' +
-            //'AND Entity.regdate < ? ' +
-            'AND Entity.for_explore = 1 ' +
-            'GROUP BY Entity.entityid ' +
-            'ORDER BY impact_weight DESC) AS Master ' +
+                '(SELECT Entity.entityid, Entity.regdate, Entity.merchantable, Capture.capid AS captureid, ' +
+                'Capture.img_width, Capture.img_height, Capture.uuid, Capture.shoid, User.firstname, User.lastname, ' +
+                '(CASE WHEN(EA.impact_score IS NULL) THEN ? ELSE EA.impact_score END) AS impact_weight ' +
+                'FROM Entity ' +
+                'JOIN Capture ' +
+                'USING(entityid) ' +
+                'JOIN User ' +
+                'ON User.uuid = Capture.uuid ' +
+                'LEFT JOIN EntityAnalytics EA ' +
+                'ON (EA.entityid = Entity.entityid) ' +
+                'WHERE Entity.status = "ACTIVE" ' +
+                //'AND Capture.shoid IS NULL ' +
+                //'AND Entity.regdate < ? ' +
+                'AND Entity.for_explore = 1 ' +
+                'AND Entity.mark_for_collab IN (?) ' +
+                'GROUP BY Entity.entityid ' +
+                'ORDER BY impact_weight DESC) AS Master ' +
             'CROSS JOIN (SELECT @rownr := 0) AS dummy ' +
             'HAVING row_no > ? ' +
             'LIMIT ? '/* +
-            'OFFSET ?'*/, [explore_algo_base_score, lastindexkey, limit/*, offset*/], function (err, rows) {
+            'OFFSET ?'*/, [explore_algo_base_score, mark_for_collab_sqlparam, lastindexkey, limit/*, offset*/], function (err, rows) {
             if (err) {
                 reject(err);
             }
