@@ -173,7 +173,7 @@ app.use('/capture-manage', require('./routes/cread/capture/CaptureManager'));
 app.use('/entity-manage', require('./routes/cread/entity/EntityManager'));
 app.use('/hatsoff', require('./routes/cread/hats-off/HatsOffManager'));
 app.use('/comment', require('./routes/cread/comment/CommentManager'));
-app.use('/products',require('./routes/cread/buy/ProductsManager'));
+app.use('/products', require('./routes/cread/buy/ProductsManager'));
 app.use('/order', require('./routes/cread/buy/OrderManager'));
 app.use('/buying-track', require('./routes/cread/buy/track/BuyTrackManager'));
 app.use('/sell', require('./routes/cread/sell/SellOrdersManager'));
