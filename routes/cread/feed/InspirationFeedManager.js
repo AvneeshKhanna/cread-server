@@ -204,11 +204,6 @@ function loadInspirationFeed(connection, limit, lastindexkey) {
     //lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
     lastindexkey = (lastindexkey) ? Number(lastindexkey) : 0;
 
-    var mark_for_collab_sqlparam = [
-        mark_for_collab_consts.UNMARKED,
-        mark_for_collab_consts.ACCEPTED
-    ];
-
     return new Promise(function (resolve, reject) {
         connection.query('SELECT (@rownr := @rownr + 1) AS row_no, Master.* ' +
             'FROM ' +
@@ -226,13 +221,13 @@ function loadInspirationFeed(connection, limit, lastindexkey) {
                 //'AND Capture.shoid IS NULL ' +
                 //'AND Entity.regdate < ? ' +
                 'AND Entity.for_explore = 1 ' +
-                'AND Entity.mark_for_collab IN (?) ' +
+                'AND Entity.mark_for_collab = ? ' +
                 'GROUP BY Entity.entityid ' +
                 'ORDER BY impact_weight DESC) AS Master ' +
             'CROSS JOIN (SELECT @rownr := 0) AS dummy ' +
             'HAVING row_no > ? ' +
             'LIMIT ? '/* +
-            'OFFSET ?'*/, [explore_algo_base_score, mark_for_collab_sqlparam, lastindexkey, limit/*, offset*/], function (err, rows) {
+            'OFFSET ?'*/, [explore_algo_base_score, mark_for_collab_consts.ACCEPTED, lastindexkey, limit/*, offset*/], function (err, rows) {
             if (err) {
                 reject(err);
             }
