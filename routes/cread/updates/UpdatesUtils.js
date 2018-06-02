@@ -214,7 +214,6 @@ function loadUpdates(connection, uuid, lastindexkey, limit){
 
 function getNotificationAndChatSeenStatus(connection, uuid) {
     return new Promise(function (resolve, reject) {
-        //TODO: Add logic for Chat unseen status
         connection.query('SELECT * ' +
             'FROM Updates ' +
             'WHERE uuid = ? ' +
