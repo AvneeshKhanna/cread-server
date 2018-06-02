@@ -148,6 +148,34 @@ function markChatAsRead(connection, chatid, requesteruuid) {
     });
 }
 
+function markChatsSeen(connection, uuid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('UPDATE Chat SET', [], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
+function updateChatsUnseenStatus(connection, unseen, to_uuid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('UPDATE Chat ' +
+            'SET accptr_unseen = CASE WHEN (acceptor_id = ?) THEN ? ELSE accptr_unseen END, ' +
+            'initr_unseen = CASE WHEN(initiator_id = ?) THEN ? ELSE initr_unseen END ', [to_uuid, unseen, to_uuid, unseen], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
 function createNewChat(connection, message) {
     return new Promise(function (resolve, reject) {
 
@@ -219,6 +247,7 @@ function getChatRequestsCount(connection, uuid){
 
 module.exports = {
     markChatAsRead: markChatAsRead,
+    updateChatsUnseenStatus: updateChatsUnseenStatus,
     loadPermittedChats: loadPermittedChats,
     loadChatRequests: loadChatRequests,
     createNewChat: createNewChat,

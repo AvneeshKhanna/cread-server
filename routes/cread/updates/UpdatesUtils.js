@@ -109,6 +109,21 @@ function updateUpdatesUnreadStatus(connection, updateid) {
     });
 }
 
+function updateUpdatesSeenStatus(connection, uuid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('UPDATE Updates ' +
+            'SET unseen = ? ' +
+            'WHERE uuid = ? AND unseen = 1', [false, uuid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
 function loadUpdates(connection, uuid, lastindexkey, limit){
 
     lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
@@ -197,9 +212,41 @@ function loadUpdates(connection, uuid, lastindexkey, limit){
     });
 }
 
+function getNotificationAndChatSeenStatus(connection, uuid) {
+    return new Promise(function (resolve, reject) {
+        //TODO: Add logic for Chat unseen status
+        connection.query('SELECT * ' +
+            'FROM Updates ' +
+            'WHERE uuid = ? ' +
+            'AND unseen = 1 ' +
+            'LIMIT 1; ' +
+            'SELECT * ' +
+            'FROM Chat ' +
+            'WHERE (initiator_id = ? AND initr_unseen = 1) ' +
+            'OR (acceptor_id = ? AND accptr_unseen = 1) ' +
+            'LIMIT 1', [uuid, uuid, uuid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+
+                var updates_data = rows[0][0];
+                var chats_data = rows[1][0];
+
+                resolve({
+                    updates_unseen: !!updates_data,
+                    chats_unseen: !!chats_data
+                });
+            }
+        });
+    });
+}
+
 module.exports = {
     loadUpdates: loadUpdates,
     addToUpdatesTable: addToUpdatesTable,
     updateUpdatesUnreadStatus: updateUpdatesUnreadStatus,
-    deleteFromUpdatesTable: deleteFromUpdatesTable
+    deleteFromUpdatesTable: deleteFromUpdatesTable,
+    getNotificationAndChatSeenStatus: getNotificationAndChatSeenStatus,
+    updateUpdatesSeenStatus: updateUpdatesSeenStatus
 };

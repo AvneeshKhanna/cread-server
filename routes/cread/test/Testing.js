@@ -722,5 +722,41 @@ function getMultipleRedisValuesSlow(keys) {
     });
 }
 
+router.post('/update-dy-column', function (request, response) {
+
+    var connection;
+
+    config.getNewConnection()
+        .then(function (conn) {
+            connection = conn;
+            return new Promise(function (resolve, reject) {
+                connection.query('UPDATE User SET ? = ? WHERE uuid = "9ba39cfc-ac45-4a06-a20b-b5ab08cfc728"', ['firstname', 'Avneesh'], function(err, rows){
+                    if(err){
+                        reject(err);
+                    }
+                    else{
+                        resolve();
+                    }
+                });
+            });
+        })
+        .then(function () {
+            response.send('done').end();
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+});
+
 module.exports = router;
 

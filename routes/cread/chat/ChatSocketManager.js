@@ -31,7 +31,9 @@ function initialiseSocket(io){
         socket.on('send-message', function (message) {
 
             var chat_msg_conn;
+            var mark_chats_unseen;
 
+            mark_chats_unseen = !chatconvoutils.isUserConnected(message.to_uuid);
             message.unread = !chatconvoutils.isUserConnected(message.to_uuid);
             message.from_profilepicurl = utils.createSmallProfilePicUrl(message.from_uuid);
 
@@ -51,6 +53,11 @@ function initialiseSocket(io){
                         message.chatid = chatid;
                     }
                     return chatconvoutils.addMessageToDb(chat_msg_conn, message);
+                })
+                .then(function () {
+                    if(mark_chats_unseen){
+                        return chatlistutils.updateChatsUnseenStatus(chat_msg_conn, true, message.to_uuid);
+                    }
                 })
                 .then(function () {
                     return utils.commitTransaction(chat_msg_conn);
