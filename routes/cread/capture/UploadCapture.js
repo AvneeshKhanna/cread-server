@@ -346,7 +346,7 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
             }
         })
         .then(function () {
-            return entityimgutils.makeImageProgressive(filebasepath + capture_img_low.filtername);
+            return entityimgutils.makeImageProgressive(filebasepath + capture_img_low.filename);
         })
         .then(function () {
             return profilepicutils.uploadImageToS3(filebasepath + capture_img_high.filename, uuid, 'Capture', captureid + '.jpg');
