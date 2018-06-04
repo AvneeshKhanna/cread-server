@@ -35,6 +35,8 @@ var docClient = new AWS.DynamoDB.DocumentClient();
 var envconfig = require('config');
 var userstbl_ddb = envconfig.get('dynamoDB.users_table');
 
+var notifscheduler = require('../notification-system/NotificationScheduler');
+
 var BreakPromiseChainError = require('../cread/utils/BreakPromiseChainError');
 
 router.get('/restart-heroku', function (request, response) {
@@ -400,5 +402,63 @@ router.get('/load-entity-url', function (request, response) {
         });
 
 });
+
+router.post('/send-inactive-notif', function (request, response) {
+    var connection;
+
+    config.getNewConnection()
+        .then(function (conn) {
+            connection = conn;
+            return getInactiveUsersSinceLong(connection);
+        })
+        .then(function (users) {
+            response.send("Process initiated").end();
+            return notifscheduler.sendNotificationInactiveUsersAll(users)
+        })
+        .then(function () {
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if (err instanceof BreakPromiseChainError) {
+                //Do nothing
+            }
+            else {
+                console.error(err);
+                if (!response.headersSent) {  //Because a case can arrive where sendNotificationInactiveUsersAll() throws an error
+                    response.status(500).send({
+                        error: 'Some error occurred at the server'
+                    });
+                    response.end();
+                }
+            }
+        });
+});
+
+function getInactiveUsersSinceLong(connection) {
+
+    var last_post_limit = {
+        upper: 15,
+        lower: 5
+    };
+
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT U.uuid, U.firstname, ' +
+            'CASE WHEN (E.entityid IS NOT NULL) THEN MAX(E.regdate) ELSE U.regdate END AS last_check_time ' +
+            'FROM User U ' +
+            'LEFT JOIN Entity E ' +
+            'USING(uuid) ' +
+            'WHERE (E.status = "ACTIVE" OR E.status IS NULL) ' +
+            'GROUP BY U.uuid ' +
+            'HAVING last_check_time NOT BETWEEN DATE_SUB(NOW(), INTERVAL ? DAY) AND NOW()', [last_post_limit.lower], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(rows);
+            }
+        });
+    });
+}
 
 module.exports = router;

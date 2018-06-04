@@ -21,8 +21,8 @@ notifscheduler.engagement_notification_job.start();
 //To initiate the cron job for featured artist notifications
 notifscheduler.featured_artist_notification.start();
 
-//To initiate the cron job for new-users-no-post notification
-//notifscheduler.newusers_no_post_notification.start(); //TODO: Correct logic
+//To initiate the cron job for users-no-post notification
+//notifscheduler.users_no_post_notification.start(); //TODO: Uncomment
 
 var scheduler = require('./routes/cread/utils/schedulers/SchedulerManager');
 scheduler.update_latestposts_cache_job.start();

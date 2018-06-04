@@ -263,40 +263,23 @@ var engagement_notification_job = new CronJob({
     timeZone: 'Asia/Kolkata'
 });
 
-var newusers_no_post_notification = new CronJob({
-    //Runs at 10:00 am
-    cronTime: '00 30 14 * * *', //second | minute | hour | day-of-month | month | day-of-week
+var users_no_post_notification = new CronJob({
+    //Runs at 9:00 pm every 5 days
+    cronTime: '00 00 18 */5 * *', //second | minute | hour | day-of-month | month | day-of-week   //TODO: Change time
     onTick: function () {
 
         var connection;
-        var new_usr_uuids;
 
         config.getNewConnection()
             .then(function (conn) {
                 connection = conn;
-                return checkForNewUsersWithNoPosts(connection);
+                return getInactiveUsers(connection);
             })
-            .then(function (uuids) {
-                new_usr_uuids = uuids;
-                if(new_usr_uuids.length > 0){
-                    return getRecentPosters(connection);
-                }
-                else{
-                    console.log('newusers_no_post_notification complete. No users to send notification to.');
-                    throw new BreakPromiseChainError();
-                }
-            })
-            .then(function (message) {
-                var notifData = {
-                    category: 'engagement-notification',
-                    persistable: 'No',
-                    message: message
-                };
-
-                return notify.notificationPromise(new_usr_uuids, notifData);
+            .then(function (users) {
+                return sendNotificationInactiveUsersAll(users)
             })
             .then(function () {
-                console.log('newusers_no_post_notification complete');
+                console.log('users_no_post_notification complete');
                 throw new BreakPromiseChainError();
             })
             .catch(function (err) {
@@ -331,6 +314,66 @@ function checkForNewUsersWithNoPosts(connection) {
                 resolve(rows.map(function (r) {
                     return r.uuid;
                 }));
+            }
+        });
+    });
+}
+
+/**
+ * Get the list of users who have been inactive for 5 days AND either had been active in
+ * */
+function sendNotificationInactiveUsersAll(users) {
+    return new Promise(function (resolve, reject) {
+        async.each(users, function (user, callback) {
+
+            var notifData = {
+                category: 'engagement-notification',
+                persistable: 'No',
+                message: "You have not posted anything in a while, " + user.firstname + ". You might like to check out recent happenings on Cread!"
+            };
+
+            notify.notificationPromise(new Array(user.uuid), notifData)
+                .then(function () {
+                    callback();
+                })
+                .catch(function (err) {
+                    callback(err);
+                });
+        }, function (err) {
+            if(err){
+                console.error("sendNotificationInactiveUsersAll errored");
+                reject(err);
+            }
+            else {
+                console.log("sendNotificationInactiveUsersAll complete");
+                resolve();
+            }
+        });
+    });
+}
+
+function getInactiveUsers(connection) {
+
+    var last_post_limit = {
+        upper: 15,
+        lower: 5
+    };
+
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT U.uuid, U.firstname, ' +
+            'CASE WHEN (E.entityid IS NOT NULL) THEN MAX(E.regdate) ELSE U.regdate END AS last_check_time ' +
+            'FROM User U ' +
+            'LEFT JOIN Entity E ' +
+            'USING(uuid) ' +
+            'WHERE (E.status = "ACTIVE" OR E.status IS NULL) ' +
+            'GROUP BY U.uuid ' +
+            'HAVING (last_check_time BETWEEN DATE_SUB(NOW(), INTERVAL ? DAY) AND DATE_SUB(NOW(), INTERVAL ? DAY) ' +
+            'AND last_check_time NOT BETWEEN DATE_SUB(NOW(), INTERVAL ? DAY) AND NOW())', [last_post_limit.upper, last_post_limit.lower, last_post_limit.lower], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(rows);
             }
         });
     });
@@ -373,6 +416,7 @@ module.exports = {
     top_givers_notification: top_givers_notification,
     top_post_notification: top_post_notification,
     featured_artist_notification: featured_artist_notification,
-    newusers_no_post_notification: newusers_no_post_notification,
-    engagement_notification_job: engagement_notification_job
+    users_no_post_notification: users_no_post_notification,
+    engagement_notification_job: engagement_notification_job,
+    sendNotificationInactiveUsersAll: sendNotificationInactiveUsersAll
 };
