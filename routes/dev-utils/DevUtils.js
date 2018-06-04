@@ -438,8 +438,8 @@ router.post('/send-inactive-notif', function (request, response) {
 function getInactiveUsersSinceLong(connection) {
 
     var last_post_limit = {
-        upper: 15,
-        lower: 5
+        upper: 9,
+        lower: 3
     };
 
     return new Promise(function (resolve, reject) {

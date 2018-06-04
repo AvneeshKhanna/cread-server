@@ -264,8 +264,8 @@ var engagement_notification_job = new CronJob({
 });
 
 var users_no_post_notification = new CronJob({
-    //Runs at 9:00 pm every 5 days
-    cronTime: '00 00 18 */5 * *', //second | minute | hour | day-of-month | month | day-of-week   //TODO: Change time
+    //Runs at 9:00 pm every 3 days
+    cronTime: '00 00 18 */3 * *', //second | minute | hour | day-of-month | month | day-of-week   //TODO: Change time
     onTick: function () {
 
         var connection;
@@ -355,8 +355,8 @@ function sendNotificationInactiveUsersAll(users) {
 function getInactiveUsers(connection) {
 
     var last_post_limit = {
-        upper: 15,
-        lower: 5
+        upper: 9,
+        lower: 3
     };
 
     return new Promise(function (resolve, reject) {
