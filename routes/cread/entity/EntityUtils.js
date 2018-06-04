@@ -15,6 +15,8 @@ var consts = require('../utils/Constants');
 
 var NotFoundError = require('../utils/NotFoundError');
 
+var notify = require('../../notification-system/notificationFramework');
+
 function retrieveShortDetails(connection, entityid) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT Short.shoid, Short.uuid AS shortuuid, Short.capid, Short.entityid, Short.txt, Short.textsize, Short.textcolor, Short.textgravity, Short.dx, Short.dy, Short.txt_width, Short.txt_height, Short.img_height, Short.img_width, Capture.uuid AS captureuuid ' +
@@ -724,6 +726,40 @@ function isEntityActive(connection, entityid) {
     });
 }
 
+/**
+ * Send a notification to the user's followers when he has posted after a while
+ * */
+function sendGapPostNotification(connection, firstname, lastname, uuid, entityid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT follower ' +
+            'FROM Follow ' +
+            'WHERE followee = ?', [uuid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                var followers = rows.map(function (element) {
+                    return element.follower;
+                });
+
+                getEntityUrl(connection, entityid)
+                    .then(function (entityurl) {
+                        var notifData = {
+                            message: firstname + " " + lastname + " has posted after a while. You might want to check it out",
+                            entityid: entityid,
+                            entityurl: entityurl,
+                            persistable: "No",
+                            category: "post-after-gap"
+                        };
+
+                        return notify.notificationPromise(followers, notifData);
+                    })
+                    .then(resolve, reject);
+            }
+        });
+    });
+}
+
 module.exports = {
     updateEntityCollabDataForUpdates: updateEntityCollabDataForUpdates,
     loadEntityData: loadEntityData,
@@ -742,5 +778,6 @@ module.exports = {
     updateLastEventTimestamp: updateLastEventTimestamp,
     updateLastEventTimestampViaType: updateLastEventTimestampViaType,
     checkForFirstPost: checkForFirstPost,
-    isEntityActive: isEntityActive
+    isEntityActive: isEntityActive,
+    sendGapPostNotification: sendGapPostNotification
 };

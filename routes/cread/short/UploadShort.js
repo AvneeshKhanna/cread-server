@@ -99,6 +99,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
     var requesterdetails;
     var captureuseruuid;
     var filepath_to_upload;
+    var is_first_post;
 
     _auth.authValid(uuid, authkey)
         .then(function (details) {
@@ -168,7 +169,8 @@ router.post('/', upload.single('short-image'), function (request, response) {
             return entityutils.checkForFirstPost(connection, uuid);
         })
         .then(function (result) {
-            if(result.firstpost){
+            is_first_post = result.firstpost;
+            if(is_first_post){
                 commentutils.scheduleFirstPostCommentJob(uuid, result.name, entityid);
             }
         })
@@ -231,6 +233,17 @@ router.post('/', upload.single('short-image'), function (request, response) {
         .then(function () {
             if(entityparams.merchantable){
                 return entityimgutils.createOverlayedImageJournal(shoid, "Short", uuid, filepath_to_upload);
+            }
+        })
+        .then(function () {
+            if(!is_first_post){
+                return userprofileutils.checkIfPostedAfterGap(connection, uuid, entityid);
+            }
+        })
+        .then(function (hasPostedAfterGap) {
+            if(hasPostedAfterGap){
+                //Send a notification to followers
+                return entityutils.sendGapPostNotification(connection, requesterdetails.firstname, requesterdetails.lastname, uuid, entityid);
             }
         })
         .then(function () {

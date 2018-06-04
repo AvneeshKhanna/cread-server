@@ -1191,6 +1191,24 @@ function getShortProfileLink(uuid) {
     });
 }
 
+function checkIfPostedAfterGap(connection, uuid, entityid) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT entityid ' +
+            'FROM Entity ' +
+            'WHERE status = "ACTIVE" ' +
+            'AND uuid = ? ' +
+            'AND entityid <> ? ' +
+            'AND regdate > DATE_SUB(NOW(), INTERVAL 5 DAY)', [uuid, entityid], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(!rows[0]);
+            }
+        });
+    });
+}
+
 module.exports = {
     loadTimelineLegacy: loadTimelineLegacy,
     loadTimeline: loadTimeline,
@@ -1211,5 +1229,6 @@ module.exports = {
     getLatestPostsCache: getLatestPostsCache,
     addToLatestPostsCache: addToLatestPostsCache,
     updateLatestPostsCache: updateLatestPostsCache,
-    getShortProfileLink: getShortProfileLink
+    getShortProfileLink: getShortProfileLink,
+    checkIfPostedAfterGap: checkIfPostedAfterGap
 };

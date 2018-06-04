@@ -69,6 +69,7 @@ router.post('/', upload.single('captured-image'), function (request, response) {
     var requesterdetails;
     var toresize;
     var filename_to_upload;
+    var is_first_post;
 
     _auth.authValid(uuid, authkey)
         .then(function (details) {
@@ -158,7 +159,8 @@ router.post('/', upload.single('captured-image'), function (request, response) {
             return entityutils.checkForFirstPost(connection, uuid);
         })
         .then(function (result) {
-            if(result.firstpost){
+            is_first_post = result.firstpost;
+            if(is_first_post){
                 commentutils.scheduleFirstPostCommentJob(uuid, result.name, entityid);
             }
         })
@@ -198,6 +200,17 @@ router.post('/', upload.single('captured-image'), function (request, response) {
         .then(function () {
             if(Number(merchantable) === 1){
                 return entityimgutils.createOverlayedImageJournal(captureid, "Capture", uuid, filebasepath + filename_to_upload);
+            }
+        })
+        .then(function () {
+            if(!is_first_post){
+                return userprofileutils.checkIfPostedAfterGap(connection, uuid, entityid);
+            }
+        })
+        .then(function (hasPostedAfterGap) {
+            if(hasPostedAfterGap){
+                //Send a notification to followers
+                return entityutils.sendGapPostNotification(connection, requesterdetails.firstname, requesterdetails.lastname, uuid, entityid);
             }
         })
         .then(function () {
@@ -268,6 +281,7 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
     var connection;
     var requesterdetails;
     var toresize;
+    var is_first_post;
 
     var filebasepath = './images/uploads/capture/';
     var shortdetails;
@@ -364,7 +378,8 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
             return entityutils.checkForFirstPost(connection, uuid);
         })
         .then(function (result) {
-            if(result.firstpost){
+            is_first_post = result.firstpost;
+            if(is_first_post){
                 commentutils.scheduleFirstPostCommentJob(uuid, result.name, entityid);
             }
         })
@@ -429,6 +444,17 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
         .then(function () {
             if(Number(merchantable) === 1){
                 return entityimgutils.createOverlayedImageJournal(captureid, "Capture", uuid, filebasepath + capture_img_low.filename);
+            }
+        })
+        .then(function () {
+            if(!is_first_post){
+                return userprofileutils.checkIfPostedAfterGap(connection, uuid, entityid);
+            }
+        })
+        .then(function (hasPostedAfterGap) {
+            if(hasPostedAfterGap){
+                //Send a notification to followers
+                return entityutils.sendGapPostNotification(connection, requesterdetails.firstname, requesterdetails.lastname, uuid, entityid);
             }
         })
         .then(function () {
