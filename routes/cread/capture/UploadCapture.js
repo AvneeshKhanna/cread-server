@@ -15,7 +15,7 @@ var profilementionutils = require('../profile-mention/ProfileMentionUtils');
 
 var uuidgen = require('uuid');
 var multer = require('multer');
-var upload = multer({dest: './images/uploads/capture/', limits: { fileSize: 20*1024*1024 }});
+var upload = multer({dest: './images/uploads/capture/', limits: {fileSize: 20 * 1024 * 1024}});
 var fs = require('fs');
 
 var utils = require('../utils/Utils');
@@ -30,7 +30,7 @@ var entityintrstutils = require('../interests/EntityInterestsUtils');
 var commentutils = require('../comment/CommentUtils');
 var feedutils = require('../feed/FeedUtils');
 
-var filebasepath = './images/uploads/capture/'; 
+var filebasepath = './images/uploads/capture/';
 
 router.post('/', upload.single('captured-image'), function (request, response) {
 
@@ -48,7 +48,7 @@ router.post('/', upload.single('captured-image'), function (request, response) {
     var uniquehashtags;
     var mentioneduuids = [];
 
-    if(caption){
+    if (caption) {
         uniquehashtags = hashtagutils.extractUniqueHashtags(caption);
         mentioneduuids = utils.extractProfileMentionUUIDs(caption);
     }
@@ -59,7 +59,7 @@ router.post('/', upload.single('captured-image'), function (request, response) {
         img_width: request.body.img_width
     };
 
-    var img_aspect_ratio = parseFloat(captureparams.img_width/captureparams.img_height);
+    var img_aspect_ratio = parseFloat(captureparams.img_width / captureparams.img_height);
     var width_to_resize, height_to_resize;
 
     var captureid = uuidgen.v4();
@@ -96,8 +96,8 @@ router.post('/', upload.single('captured-image'), function (request, response) {
             toresize = resize;
             if (toresize) {
 
-                width_to_resize = img_aspect_ratio >= 1 /* Case when width > height */ ? 800*img_aspect_ratio : 800;
-                height_to_resize = img_aspect_ratio <= 1 /* Case when height > width */ ? 800/img_aspect_ratio : 800;
+                width_to_resize = img_aspect_ratio >= 1 /* Case when width > height */ ? 800 * img_aspect_ratio : 800;
+                height_to_resize = img_aspect_ratio <= 1 /* Case when height > width */ ? 800 / img_aspect_ratio : 800;
 
                 //To save in the database
                 captureparams.img_height = height_to_resize;
@@ -110,12 +110,12 @@ router.post('/', upload.single('captured-image'), function (request, response) {
             return updateCaptureDB(connection, captureid, uuid, watermark, merchantable, caption, entityid, undefined, captureparams);
         })
         .then(function () {
-            if(uniquehashtags && uniquehashtags.length > 0){
+            if (uniquehashtags && uniquehashtags.length > 0) {
                 return hashtagutils.addHashtagsForEntity(connection, uniquehashtags, entityid);
             }
         })
         .then(function () {
-            if(interests && interests.length > 0){
+            if (interests && interests.length > 0) {
                 return entityintrstutils.saveEntityInterests(connection, entityid, interests);
             }
         })
@@ -137,7 +137,7 @@ router.post('/', upload.single('captured-image'), function (request, response) {
         .then(function () {
             return utils.commitTransaction(connection);
         }, function (err) {
-            if(!(err instanceof BreakPromiseChainError)) {
+            if (!(err instanceof BreakPromiseChainError)) {
                 return utils.rollbackTransaction(connection, undefined, err);
             }
             else {
@@ -160,17 +160,17 @@ router.post('/', upload.single('captured-image'), function (request, response) {
         })
         .then(function (result) {
             is_first_post = result.firstpost;
-            if(is_first_post){
+            if (is_first_post) {
                 commentutils.scheduleFirstPostCommentJob(uuid, result.name, entityid);
             }
         })
         .then(function () {
-            if(mentioneduuids.length > 0  ){
+            if (mentioneduuids.length > 0) {
                 return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-post", uuid, mentioneduuids);
             }
         })
         .then(function () {
-            if(mentioneduuids.length > 0  ){
+            if (mentioneduuids.length > 0) {
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " mentioned you in a post",
                     category: "profile-mention-post",
@@ -193,22 +193,22 @@ router.post('/', upload.single('captured-image'), function (request, response) {
             ]);
         })
         .then(function () {
-            if(Number(merchantable) === 1){
+            if (Number(merchantable) === 1) {
                 return entityimgutils.createOverlayedImageCoffeeMug(captureid, uuid, "Capture", filebasepath + filename_to_upload);
             }
         })
         .then(function () {
-            if(Number(merchantable) === 1){
+            if (Number(merchantable) === 1) {
                 return entityimgutils.createOverlayedImageJournal(captureid, "Capture", uuid, filebasepath + filename_to_upload);
             }
         })
         .then(function () {
-            if(!is_first_post){
+            if (!is_first_post) {
                 return userprofileutils.checkIfPostedAfterGap(connection, uuid, entityid);
             }
         })
         .then(function (hasPostedAfterGap) {
-            if(hasPostedAfterGap){
+            if (hasPostedAfterGap) {
                 //Send a notification to followers
                 return entityutils.sendGapPostNotification(connection, requesterdetails.firstname, requesterdetails.lastname, uuid, entityid);
             }
@@ -230,7 +230,10 @@ router.post('/', upload.single('captured-image'), function (request, response) {
         });
 });
 
-router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount: 1}, { name: 'capture-img-low', maxCount: 1}]), function (request, response) {
+router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount: 1}, {
+    name: 'capture-img-low',
+    maxCount: 1
+}]), function (request, response) {
 
     console.log("request is " + JSON.stringify(request.body, null, 3));
     console.log("request files is " + JSON.stringify(request.files, null, 3));
@@ -247,7 +250,7 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
     var uniquehashtags;
     var mentioneduuids = [];
 
-    if(caption){
+    if (caption) {
         uniquehashtags = hashtagutils.extractUniqueHashtags(caption);
         mentioneduuids = utils.extractProfileMentionUUIDs(caption);
     }
@@ -287,7 +290,7 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
     var shortdetails;
 
     _auth.authValid(uuid, authkey)
-        .then(function (details){
+        .then(function (details) {
             requesterdetails = details;
             return config.getNewConnection();
         }, function () {
@@ -336,12 +339,12 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
             return entityutils.updateLastEventTimestampViaType(connection, shoid, uuid);
         })
         .then(function () {
-            if(uniquehashtags && uniquehashtags.length > 0){
+            if (uniquehashtags && uniquehashtags.length > 0) {
                 return hashtagutils.addHashtagsForEntity(connection, uniquehashtags, entityid);
             }
         })
         .then(function () {
-            if(interests && interests.length > 0){
+            if (interests && interests.length > 0) {
                 return entityintrstutils.saveEntityInterests(connection, entityid, interests);
             }
         })
@@ -357,7 +360,7 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
         .then(function () {
             return utils.commitTransaction(connection);
         }, function (err) {
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 throw new BreakPromiseChainError();
             }
             else {
@@ -379,7 +382,7 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
         })
         .then(function (result) {
             is_first_post = result.firstpost;
-            if(is_first_post){
+            if (is_first_post) {
                 commentutils.scheduleFirstPostCommentJob(uuid, result.name, entityid);
             }
         })
@@ -391,12 +394,12 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
         })
         .then(function (shdetails) {
             shortdetails = shdetails;
-            if(shortdetails.uuid !== uuid){
+            if (shortdetails.uuid !== uuid) {
                 return entityutils.updateEntityCollabDataForUpdates(connection, entityid, shortdetails.uuid, uuid);
             }
         })
         .then(function () {
-            if(shortdetails.uuid !== uuid){
+            if (shortdetails.uuid !== uuid) {
                 var notifData = {
                     message: requesterdetails.firstname + ' ' + requesterdetails.lastname + " uploaded a graphic art to your writing",
                     category: "collaborate",
@@ -409,12 +412,12 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
         })
         .then(function () {
             //TODO: Add support for multiple uuids
-            if(mentioneduuids.length > 0  ){
+            if (mentioneduuids.length > 0) {
                 return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-post", uuid, mentioneduuids);
             }
         })
         .then(function () {
-            if(mentioneduuids.length > 0  ){
+            if (mentioneduuids.length > 0) {
                 var notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " mentioned you in a post",
                     category: "profile-mention-post",
@@ -437,22 +440,22 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
             ]);
         })
         .then(function () {
-            if(Number(merchantable) === 1){
+            if (Number(merchantable) === 1) {
                 return entityimgutils.createOverlayedImageCoffeeMug(captureid, uuid, "Capture", filebasepath + capture_img_low.filename);
             }
         })
         .then(function () {
-            if(Number(merchantable) === 1){
+            if (Number(merchantable) === 1) {
                 return entityimgutils.createOverlayedImageJournal(captureid, "Capture", uuid, filebasepath + capture_img_low.filename);
             }
         })
         .then(function () {
-            if(!is_first_post){
+            if (!is_first_post) {
                 return userprofileutils.checkIfPostedAfterGap(connection, uuid, entityid);
             }
         })
         .then(function (hasPostedAfterGap) {
-            if(hasPostedAfterGap){
+            if (hasPostedAfterGap) {
                 //Send a notification to followers
                 return entityutils.sendGapPostNotification(connection, requesterdetails.firstname, requesterdetails.lastname, uuid, entityid);
             }
