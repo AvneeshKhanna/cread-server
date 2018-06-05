@@ -157,6 +157,127 @@ function getRecommendedPosts(connection, requesteruuid, creatoruuid, collaborato
     });
 }
 
+function getFirstPosts(connection, uuid, entityids, limit, lastindexkey) {
+    return new Promise(function (resolve, reject) {
+
+        lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
+
+        console.log("TIME before start: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+
+        connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, ' +
+            'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
+            'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
+            'User.uuid, User.firstname, User.lastname ' +
+            'FROM Entity ' +
+            'JOIN User ' +
+            'ON(User.uuid = Entity.uuid) ' +
+            'LEFT JOIN HatsOff ' +
+            'ON HatsOff.entityid = Entity.entityid ' +
+            'LEFT JOIN Downvote D ' +
+            'ON D.entityid = Entity.entityid ' +
+            'WHERE Entity.entityid IN (?) ' +
+            'AND Entity.status = "ACTIVE" ' +
+            'AND Entity.regdate < ? ' +
+            'GROUP BY Entity.entityid ' +
+            'ORDER BY Entity.regdate DESC ' +
+            'LIMIT ? ', [uuid, uuid, entityids, lastindexkey, limit], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+
+                console.log("TIME after SQL: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+
+                if(rows.length > 0){
+                    var feedEntities = rows.map(function (elem) {
+                        return elem.entityid;
+                    });
+
+                    rows.map(function (element) {
+                        element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
+                        element.hatsoffstatus = element.hbinarycount > 0;
+                        element.downvotestatus = element.dbinarycount > 0;
+
+                        element.creatorname = element.firstname + ' ' + element.lastname;
+                        element.merchantable = (element.merchantable !== 0);
+
+                        if(element.hasOwnProperty('firstname')) {
+                            delete element.firstname;
+                        }
+
+                        if(element.hasOwnProperty('lastname')) {
+                            delete element.lastname;
+                        }
+
+                        if(element.hasOwnProperty('hbinarycount')) {
+                            delete element.hbinarycount;
+                        }
+
+                        if(element.hasOwnProperty('dbinarycount')) {
+                            delete element.dbinarycount;
+                        }
+
+                        if(element.hasOwnProperty('binarycount')) {
+                            delete element.binarycount;
+                        }
+
+                        return element;
+                    });
+
+                    var candownvote;
+
+                    feedutils.getEntitiesInfoFast(connection, rows)
+                        .then(function (updated_rows) {
+                            rows = updated_rows;
+                            return hatsoffutils.loadHatsoffCountsFast(connection, rows);
+                        })
+                        .then(function (updated_rows) {
+                            rows = updated_rows;
+                            return commentutils.loadCommentCountsFast(connection, rows);
+                        })
+                        .then(function (updated_rows) {
+                            rows = updated_rows;
+                            return userprofileutils.getUserQualityPercentile(connection, uuid)
+                        })
+                        .then(function (result) {
+                            candownvote = result.quality_percentile_score > consts.min_percentile_quality_user_downvote;
+                            return feedutils.getCollaborationData(connection, rows);
+                        })
+                        .then(function (rows) {
+
+                            console.log("TIME after getCollaborationData: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+
+                            return feedutils.getCollaborationCountsFast(connection, rows);
+                        })
+                        .then(function (rows) {
+
+                            console.log("TIME after getCollaborationCounts: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+
+                            resolve({
+                                requestmore: rows.length >= limit,
+                                candownvote: candownvote,
+                                lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
+                                items: utils.shuffle(rows)
+                            });
+                        })
+                        .catch(function (err) {
+                            reject(err);
+                        });
+                }
+                else {  //Case of no data
+                    resolve({
+                        requestmore: rows.length >= limit,
+                        candownvote: false,
+                        lastindexkey: null,
+                        items: []
+                    });
+                }
+            }
+        });
+    });
+}
+
 module.exports = {
-    getRecommendedPosts: getRecommendedPosts
+    getRecommendedPosts: getRecommendedPosts,
+    getFirstPosts: getFirstPosts
 };
