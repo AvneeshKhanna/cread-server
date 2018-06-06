@@ -34,7 +34,7 @@ var update_latestposts_cache_job = new CronJob({
                         'JOIN UserAnalytics UA ' +
                         'USING(uuid) ' +
                         'WHERE UA.quality_percentile_score >= ?', [consts.min_qpercentile_user_recommendation], function (err, rows) {
-                        if(err){
+                        if (err) {
                             reject(err);
                         }
                         else {
@@ -71,7 +71,7 @@ var update_latestposts_cache_job = new CronJob({
 /**
  * Update cache of all quality users for latest posts
  * */
-function updateLatestPostsAllCache(connection, users){
+function updateLatestPostsAllCache(connection, users) {
     return new Promise(function (resolve, reject) {
         async.eachSeries(users, function (user, callback) {
             userprofileutils.updateLatestPostsCache(connection, user)
@@ -82,7 +82,7 @@ function updateLatestPostsAllCache(connection, users){
                     callback(err);
                 });
         }, function (err) {
-            if(err){
+            if (err) {
                 reject(err);
             }
             else {
@@ -147,7 +147,7 @@ var reminder_hotd_job = new CronJob({
 
         var connection;
 
-        if(config.isProduction()){
+        if (config.isProduction()) {
             config.getNewConnection()
                 .then(function (conn) {
                     connection = conn;
@@ -155,11 +155,11 @@ var reminder_hotd_job = new CronJob({
                 })
                 .then(function (isScheduled) {
 
-                    if(isScheduled){
+                    if (isScheduled) {
                         console.log("HOTD scheduled for tomorrow");
                     }
-                    else{
-                        var toAddresses  = [
+                    else {
+                        var toAddresses = [
                             "admin@thetestament.com",
                             "nishantmittal2410@gmail.com",
                             "avneesh.khanna92@gmail.com"
@@ -286,7 +286,7 @@ var add_product_images_job = new CronJob({
 
         var connection;
 
-        if(config.isProduction()){
+        if (config.isProduction()) {
             config.getNewConnection()
                 .then(function (conn) {
                     connection = conn;
@@ -363,8 +363,8 @@ function createMultipleEntityProductImages(entities) {
                     callback();
                 })
 
-        },function (err) {
-            if(err){
+        }, function (err) {
+            if (err) {
                 console.log('All data could not be processed');
                 reject(err);
             }
@@ -419,7 +419,7 @@ var help_queries_status_job = new CronJob({
 
         var connection;
 
-        if(config.isProduction()){
+        if (config.isProduction()) {
             config.getNewConnection()
                 .then(function (conn) {
                     connection = conn;
@@ -427,8 +427,8 @@ var help_queries_status_job = new CronJob({
                 })
                 .then(function (items) {
 
-                    if(items.length > 0){
-                        var toAddresses  = [
+                    if (items.length > 0) {
+                        var toAddresses = [
                             "admin@thetestament.com",
                             "nishantmittal2410@gmail.com"/*,
                             "avneesh.khanna92@gmail.com"*/
@@ -439,7 +439,7 @@ var help_queries_status_job = new CronJob({
                             }).join('\n\n'),
                             toAddresses);
                     }
-                    else{
+                    else {
                         console.log('No help queries in the past 3 hours');
                         throw new BreakPromiseChainError();
                     }
