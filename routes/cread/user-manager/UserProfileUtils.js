@@ -1209,6 +1209,21 @@ function checkIfPostedAfterGap(connection, uuid, entityid) {
     });
 }
 
+function getAllUsersExcept(connection, uuids) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT uuid FROM User WHERE uuid NOT IN (?)', [uuids], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(rows.map(function (row) {
+                    return row.uuid;
+                }));
+            }
+        });
+    });
+}
+
 module.exports = {
     loadTimelineLegacy: loadTimelineLegacy,
     loadTimeline: loadTimeline,
@@ -1223,6 +1238,7 @@ module.exports = {
     renameFile: renameFile,
     createSmallImage: createSmallImage,
     uploadImageToS3: uploadImageToS3,
+    getAllUsersExcept: getAllUsersExcept,
     copySocialMediaProfilePic: copySocialMediaProfilePic,
     createSmallProfilePic: createSmallProfilePic,
     getUserQualityPercentile: getUserQualityPercentile,

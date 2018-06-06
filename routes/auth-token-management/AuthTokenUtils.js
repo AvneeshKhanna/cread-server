@@ -24,7 +24,19 @@ function decryptPayloadAuth(encrypted) {
     });
 }
 
+function decryptPayloadAuthSync(encrypted) {
+    try{
+        // Decrypt Data
+        var decryptedBytes = CryptoJS.AES.decrypt(encrypted, config['crypto-secret-key']);
+        return JSON.parse(decryptedBytes.toString(CryptoJS.enc.Utf8));
+    }
+    catch(err){
+        throw err;
+    }
+}
+
 module.exports = {
     encryptPayloadForAuth: encryptPayloadForAuth,
-    decryptPayloadAuth: decryptPayloadAuth
+    decryptPayloadAuth: decryptPayloadAuth,
+    decryptPayloadAuthSync: decryptPayloadAuthSync
 };

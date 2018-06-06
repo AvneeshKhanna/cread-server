@@ -8,6 +8,7 @@ var router = express.Router();
 
 var config = require('../../Config');
 var _auth = require('../../auth-token-management/AuthTokenManager');
+var _authutils = require('../../auth-token-management/AuthTokenUtils');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
 var consts = require('../utils/Constants');
@@ -92,8 +93,20 @@ router.get('/load-firsts', function (request, response) {
     var uuid = request.headers.uuid;
     var authkey = request.headers.authkey;
     var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : "";
-    var entityids = JSON.parse(decodeURIComponent(request.headers.entityids));
     var platform = request.query.platform;
+
+    var entityids;
+
+    try{
+        entityids = _authutils.decryptPayloadAuthSync(decodeURIComponent(request.headers.entityids));
+    }
+    catch (err){
+        console.error(err);
+        response.status(500).send({
+            message: 'Some error occurred at the server'
+        }).end();
+        return;
+    }
 
     var limit = (config.isProduction()) ? 8 : 4;
 

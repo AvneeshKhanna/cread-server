@@ -9,7 +9,9 @@ var moment = require('moment');
 var async = require('async');
 
 var config = require('../Config');
+var _auth = require('../auth-token-management/AuthTokenUtils');
 var BreakPromiseChainError = require('../cread/utils/BreakPromiseChainError');
+var userprofileutils = require('../cread/user-manager/UserProfileUtils');
 var featuredartistutils = require('../cread/featured-artists/FeaturedArtistsUtils');
 var usereventsutils = require('../cread/user-manager/events/UserEventsUtils');
 
@@ -352,6 +354,10 @@ function sendNotificationInactiveUsersAll(users) {
     });
 }
 
+/**
+ * Function to get users who have not posted anything in the last 3 days AND either they had posted in the previous 9 days or
+ * haven't posted anything since they joined
+ * */
 function getInactiveUsers(connection) {
 
     var last_post_limit = {
@@ -412,11 +418,94 @@ function getRecentPosters(connection) {
     });
 }
 
+var first_posts_notification_job = new CronJob({
+    //Runs at 1:00 pm every 3 days
+    cronTime: '00 00 13 */3 * *', //second | minute | hour | day-of-month | month | day-of-week   //TODO: Change time
+    onTick: function () {
+
+        var connection;
+        var first_post_users;
+
+        config.getNewConnection()
+            .then(function (conn) {
+                connection = conn;
+                return getFirstPosts(connection);
+            })
+            .then(function (users) {
+                first_post_users = users;
+                if(first_post_users.length > 0){
+                    return userprofileutils.getAllUsersExcept(connection, first_post_users.map(function (user) {
+                        return user.uuid;
+                    }));
+                }
+                else{
+                    throw new BreakPromiseChainError();
+                }
+            })
+            .then(function (uuids) {
+
+                var encrypted_entityids = _auth.encryptPayloadForAuth(first_post_users.map(function (user) {
+                    return user.entityid;
+                }));
+
+                var notifData = {
+                    category: 'first-post-users',
+                    persistable: 'No',
+                    message: first_post_users[0].firstname + (first_post_users[1] ? ', ' + first_post_users[1].firstname : '') + ' and a few others have posted for the first time recently. You might want to check it out!',
+                    entityids: encrypted_entityids
+                };
+
+                return notify.notificationPromise(uuids, notifData);
+            })
+            .then(function () {
+                console.log('first_posts_notification_job complete');
+                throw new BreakPromiseChainError();
+            })
+            .catch(function (err) {
+                config.disconnect(connection);
+                if (err instanceof BreakPromiseChainError) {
+                    //Do nothing
+                }
+                else {
+                    console.error(err);
+                }
+            });
+
+    },
+    start: false,   //Whether to start just now
+    timeZone: 'Asia/Kolkata'
+});
+
+function getFirstPosts(connection) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT U.uuid, U.firstname, U.lastname, E.entityid ' +
+            'FROM (' +
+                'SELECT entityid, MIN(regdate) AS first_post_time ' +
+                'FROM Entity ' +
+                'WHERE status = "ACTIVE" ' +
+                'GROUP BY uuid ' +
+                'HAVING first_post_time > DATE_SUB(NOW(), INTERVAL 3 DAY)' +
+            ') AS FirstPosts ' +
+            'JOIN Entity E ' +
+            'ON(E.regdate = FirstPosts.first_post_time) ' +
+            'JOIN User U ' +
+            'ON(U.uuid = E.uuid)', [], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(rows);
+            }
+        });
+    });
+}
+
 module.exports = {
     top_givers_notification: top_givers_notification,
     top_post_notification: top_post_notification,
     featured_artist_notification: featured_artist_notification,
     users_no_post_notification: users_no_post_notification,
     engagement_notification_job: engagement_notification_job,
+    first_posts_notification_job: first_posts_notification_job,
     sendNotificationInactiveUsersAll: sendNotificationInactiveUsersAll
 };
