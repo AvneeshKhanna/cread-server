@@ -452,7 +452,7 @@ var first_posts_notification_job = new CronJob({
                     category: 'first-post-users',
                     persistable: 'No',
                     message: first_post_users[0].firstname + (first_post_users[1] ? ', ' + first_post_users[1].firstname : '') + ' and a few others have posted for the first time recently. You might want to check it out!',
-                    entityids: encrypted_entityids
+                    entityids: encrypted_entityids.toString()
                 };
 
                 return notify.notificationPromise(uuids, notifData);
