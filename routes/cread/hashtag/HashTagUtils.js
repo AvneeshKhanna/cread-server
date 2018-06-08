@@ -5,6 +5,8 @@
 var moment = require('moment');
 
 var feedutils = require('../feed/FeedUtils');
+var hatsoffutils = require('../hats-off/HatsOffUtils');
+var commentutils = require('../comment/CommentUtils');
 var utils = require('../utils/Utils');
 var userprofileutils = require('../user-manager/UserProfileUtils');
 var consts = require('../utils/Constants');
@@ -126,31 +128,32 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
         lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
         connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, User.uuid, ' +
-            'User.firstname, User.lastname, Short.txt AS short, Capture.capid AS captureid, ' +
+            'User.firstname, User.lastname, ' +
+            /*'Short.txt AS short, Capture.capid AS captureid, ' +
             'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
             'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
             'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
             'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
             'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
-            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +
+            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +*/
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount ' +
             'FROM Entity ' +
             // 'JOIN HashTagDistribution AS HTD ' +
             // 'ON HTD.entityid = Entity.entityid ' +
-            'LEFT JOIN Short ' +
+            /*'LEFT JOIN Short ' +
             'ON Short.entityid = Entity.entityid ' +
             'LEFT JOIN Capture ' +
-            'ON Capture.entityid = Entity.entityid ' +
+            'ON Capture.entityid = Entity.entityid ' +*/
             'JOIN User ' +
-            'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
+            'ON(Entity.uuid = User.uuid) ' +
             'LEFT JOIN HatsOff ' +
             'ON HatsOff.entityid = Entity.entityid ' +
             'LEFT JOIN Downvote D ' +
             'ON D.entityid = Entity.entityid ' +
-            'LEFT JOIN Comment ' +
-            'ON Comment.entityid = Entity.entityid ' +
+            /*'LEFT JOIN Comment ' +
+            'ON Comment.entityid = Entity.entityid ' +*/
             'LEFT JOIN Follow ' +
             'ON User.uuid = Follow.followee ' +
             'WHERE Entity.for_explore = "1" ' +
@@ -172,12 +175,12 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
                     });
 
                     rows.map(function (element) {
-                        if (element.type === 'CAPTURE') {
+                        /*if (element.type === 'CAPTURE') {
                             element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
                         }
                         else if (element.type === 'SHORT') {
                             element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
-                        }
+                        }*/
 
                         element.creatorname = element.firstname + ' ' + element.lastname;
 
@@ -186,7 +189,7 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
                         element.followstatus = element.binarycount > 0;
                         element.downvotestatus = element.dbinarycount > 0;
                         element.merchantable = (element.merchantable !== 0);
-                        element.long_form = (element.long_form === 1);
+                        //element.long_form = (element.long_form === 1);
 
                         if (element.hasOwnProperty('binarycount')) {
                             delete element.binarycount;
@@ -215,7 +218,22 @@ function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
 
                     var candownvote;
 
-                    userprofileutils.getUserQualityPercentile(connection, uuid)
+                    feedutils.getEntitiesInfoFast(connection, rows)
+                        .then(function (updated_rows){
+                            console.log("TIME after getEntitiesInfoFast: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+                            rows = updated_rows;
+                            return hatsoffutils.loadHatsoffCountsFast(connection, rows);
+                        })
+                        .then(function (updated_rows) {
+                            rows = updated_rows;
+                            console.log("TIME after loadHatsoffCountsFast: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+                            return commentutils.loadCommentCountsFast(connection, rows);
+                        })
+                        .then(function (updated_rows) {
+                            rows = updated_rows;
+                            console.log("TIME after loadCommentCountsFast: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+                            return userprofileutils.getUserQualityPercentile(connection, uuid);
+                        })
                         .then(function (result) {
                             candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user_downvote;
                             return feedutils.getCollaborationData(connection, rows);

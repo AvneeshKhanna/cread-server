@@ -26,7 +26,7 @@ router.get('/feed', function (request, response) {
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
     var platform = request.query.platform;
 
-    var limit = (config.envtype === 'PRODUCTION') ? 15 : 3;
+    var limit = config.isProduction() ? 15 : 4;
     var connection;
 
     _auth.authValid(uuid, authkey)
