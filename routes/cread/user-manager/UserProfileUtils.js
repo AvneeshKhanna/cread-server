@@ -297,15 +297,17 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
 
     return new Promise(function (resolve, reject) {
         connection.query('SELECT User.uuid, User.firstname, User.lastname, User.bio, User.watermarkstatus, ' +
-            'User.email, User.phone, Follow.followid, Follow.followee, Follow.follower, FA.featured_id, I.intname ' +
+            'User.email, User.phone, Follow.followid, Follow.followee, Follow.follower, FA.featured_id, I.intname, ' +
+            'CASE WHEN(FA.featurecount IS NULL) THEN 0 ELSE FA.featurecount END AS featurecount ' +
             'FROM User ' +
             'LEFT JOIN ' +
-            '(SELECT uuid, featured_id ' +
-            'FROM FeaturedArtists ' +
-            'WHERE regdate >= ? ' +
-            'AND uuid <> ? ' +
-            'ORDER BY featured_score DESC ' +
-            'LIMIT 4) FA ' +
+                    '(SELECT uuid, featured_id, regdate, COUNT(featured_id) AS featurecount ' +
+                    'FROM FeaturedArtists ' +
+                    'WHERE uuid <> ? ' +
+                    'GROUP BY uuid ' +
+                    'HAVING regdate >= ? ' +
+                    'ORDER BY featured_score DESC ' +
+                    'LIMIT 4) FA ' +
             'ON (FA.uuid = User.uuid) ' +
             'LEFT JOIN Follow ' +
             'ON (Follow.followee = User.uuid OR Follow.follower = User.uuid) ' +
@@ -313,7 +315,7 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
             'ON(User.uuid = UI.uuid) ' +
             'LEFT JOIN Interests I ' +
             'ON(UI.intid = I.intid) ' +
-            'WHERE User.uuid = ?', [today, config.getCreadKalakaarUUID(), requesteduuid], function (err, rows) {
+            'WHERE User.uuid = ?', [config.getCreadKalakaarUUID(), today, requesteduuid], function (err, rows) {
             if (err) {
                 reject(err);
             }
