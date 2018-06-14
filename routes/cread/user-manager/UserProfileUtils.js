@@ -301,11 +301,11 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
             'CASE WHEN(FA.featurecount IS NULL) THEN 0 ELSE FA.featurecount END AS featurecount ' +
             'FROM User ' +
             'LEFT JOIN ' +
-                    '(SELECT uuid, featured_id, regdate, COUNT(featured_id) AS featurecount ' +
+                    '(SELECT uuid, featured_id, MAX(regdate) AS last_featured_date, COUNT(featured_id) AS featurecount ' +
                     'FROM FeaturedArtists ' +
                     'WHERE uuid <> ? ' +
                     'GROUP BY uuid ' +
-                    'HAVING regdate >= ? ' +
+                    'HAVING last_featured_date >= ? ' +
                     'ORDER BY featured_score DESC ' +
                     'LIMIT 4) FA ' +
             'ON (FA.uuid = User.uuid) ' +
