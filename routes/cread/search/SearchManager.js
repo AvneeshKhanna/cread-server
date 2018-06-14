@@ -33,15 +33,15 @@ router.get('/load', function (request, response) {
     config.getNewConnection()
         .then(function (conn) {
             connection = conn;
-            if(keyword.length > 0){
-                if(searchtype === 'USER'){
+            if (keyword.length > 0) {
+                if (searchtype === 'USER') {
                     return searchutils.getUsernamesSearchResult(connection, keyword, limit, lastindexkey);
                 }
-                else if(searchtype === 'HASHTAG'){
+                else if (searchtype === 'HASHTAG') {
                     return searchutils.getHashtagSearchResult(connection, keyword, limit, lastindexkey);
                 }
             }
-            else{   //Case where after filtering, keyword is empty
+            else {   //Case where after filtering, keyword is empty
                 response.send({
                     data: {
                         searchtype: searchtype,
@@ -60,7 +60,7 @@ router.get('/load', function (request, response) {
             result.searchtype = searchtype;
             response.set('Cache-Control', 'public, max-age=' + cache_time.high);
 
-            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+            if (request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')) {
                 response.status(304).send().end();
             }
             else {
@@ -73,10 +73,10 @@ router.get('/load', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     message: 'Some error occurred at the server'
