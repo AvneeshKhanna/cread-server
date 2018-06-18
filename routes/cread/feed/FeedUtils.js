@@ -490,6 +490,9 @@ function updateEntitiesInfoCache(entities) {
     })
 }
 
+/**
+ * To get Short and Capture related information about Entities via DB query
+ * */
 function getEntitiesInfoDB(connection, entities) {
     return new Promise(function (resolve, reject) {
 
@@ -501,7 +504,8 @@ function getEntitiesInfoDB(connection, entities) {
             'Capture.capid AS captureid, ' +
             'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
             'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
-            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height ' +
+            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +
+            'CASE WHEN(Entity.type = "SHORT") THEN Short.livefilter ELSE Capture.livefilter END AS livefilter ' +
             'FROM Entity ' +
             'LEFT JOIN Short ' +
             'ON Short.entityid = Entity.entityid ' +
@@ -535,6 +539,9 @@ function getEntitiesInfoDB(connection, entities) {
     });
 }
 
+/**
+ * To get Short and Capture related information about Entities via cache
+ * */
 function getAllEntitiesInfo(entities) {
     return new Promise(function (resolve, reject) {
         async.eachOf(entities, function (entity, index, callback) {
@@ -573,7 +580,7 @@ function getEntitiesInfoFast(connection, master_rows) {
                 }
                 else{
                     console.log("fetched from cache");
-                    resolve(sortByDateDesc(mergeAndFlattenRows(master_rows, 'info')));
+                    resolve(addDefaultKV(sortByDateDesc(mergeAndFlattenRows(master_rows, 'info')), 'livefilter', 'none'));
                     throw new BreakPromiseChainError();
                 }
             })
@@ -586,7 +593,7 @@ function getEntitiesInfoFast(connection, master_rows) {
                     master_rows[master_entityids.indexOf(r.info.entityid)].info =  r.info;
                 });
 
-                resolve(sortByDateDesc(mergeAndFlattenRows(master_rows, 'info')));
+                resolve(addDefaultKV(sortByDateDesc(mergeAndFlattenRows(master_rows, 'info')), 'livefilter', 'none'));
                 //TODO: Uncomment
                 updateEntitiesInfoCache(rows.map(function (r) {
                     return r.info;
@@ -605,7 +612,7 @@ function getEntitiesInfoFast(connection, master_rows) {
 }
 
 /**
- * Converts {outer: 1, key: {inner: 2}} -> {outer: 1, inner: 2}
+ * Converts {outer: x, key: {inner: y}} -> {outer: x, inner: y}
  * */
 function mergeAndFlattenRows(rows, key) {
     rows = rows.map(function (row) {
@@ -618,6 +625,9 @@ function mergeAndFlattenRows(rows, key) {
     return rows;
 }
 
+/**
+ * Sort the elements of the array by descending order of date
+ * */
 function sortByDateDesc(rows) {
     rows.sort(function (a, b) {
         if (a.regdate < b.regdate) {
@@ -628,6 +638,18 @@ function sortByDateDesc(rows) {
         }
     });
     return rows;
+}
+
+/**
+ * To add a default key-value pair to all the elements of an array
+ * */
+function addDefaultKV(arr, key, value) {
+    arr.forEach(function (a) {
+        if(!a[key]){
+            a[key] = value;
+        }
+    });
+    return arr;
 }
 
 /**

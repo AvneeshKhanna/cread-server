@@ -55,6 +55,7 @@ router.post('/', upload.single('captured-image'), function (request, response) {
 
     var captureparams = {
         filtername: request.body.filtername ? request.body.filtername : 'original',
+        livefilter: request.body.livefilter ? request.body.livefilter : 'none',
         img_height: request.body.img_height,
         img_width: request.body.img_width
     };
@@ -263,6 +264,7 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
     var img_height = request.body.img_height;
     var imgtintcolor = request.body.imgtintcolor ? request.body.imgtintcolor : null;
     var filtername = request.body.filtername;
+    var livefilter = request.body.livefilter ? request.body.livefilter : 'none';
     var text = request.body.text;
     var text_long = request.body.text_long ? request.body.text_long : null;
     var bg_sound = request.body.bg_sound ? request.body.bg_sound : 'none';
@@ -331,6 +333,7 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
                 textsize: textsize,
                 textgravity: textgravity,
                 textshadow: textshadow ? Number(textshadow) : 0,
+                livefilter: livefilter,
                 shape: shape ? shape : 'shape_none'
             };
             return updateCaptureDB(connection, captureid, uuid, watermark, merchantable, caption, entityid, shoid, captureparamas)

@@ -52,6 +52,7 @@ router.post('/', upload.single('short-image'), function (request, response) {
         img_height: request.body.img_height,
         imgtintcolor: request.body.imgtintcolor ? request.body.imgtintcolor : null,
         filtername: request.body.filtername ? request.body.filtername : 'original',
+        livefilter: request.body.livefilter ? request.body.livefilter : 'none',
         txt: request.body.text,
         text_long: request.body.text_long ? request.body.text_long : null,
         textsize: request.body.textsize,
@@ -400,6 +401,14 @@ router.post('/edit', upload.single('short-image'), function (request, response) 
                 };
                 return notify.notificationPromise(mentioneduuids, notifData);
             }
+        })
+        .then(function () {
+            return feedutils.updateEntitiesInfoCacheViaDB(connection, [
+                {
+                    entityid: entityid,
+                    uuid: uuid
+                }
+            ]);
         })
         .then(function () {
             throw new BreakPromiseChainError();

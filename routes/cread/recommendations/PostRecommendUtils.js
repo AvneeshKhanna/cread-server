@@ -157,6 +157,9 @@ function getRecommendedPosts(connection, requesteruuid, creatoruuid, collaborato
     });
 }
 
+/**
+ * Function load to posts for specific entityids for first-post notification
+ * */
 function getFirstPosts(connection, uuid, entityids, limit, lastindexkey) {
     return new Promise(function (resolve, reject) {
 

@@ -15,6 +15,7 @@ var consts = require('../utils/Constants');
 var utils = require('../utils/Utils');
 var entityutils = require('./EntityUtils');
 var entityintrstutils = require('../interests/EntityInterestsUtils');
+var feedutils = require('../feed/FeedUtils');
 var captureutils = require('../capture/CaptureUtils');
 var hashtagutils = require('../hashtag/HashTagUtils');
 var profilementionutils = require('../profile-mention/ProfileMentionUtils');
@@ -475,6 +476,14 @@ router.post('/edit-caption', function (request, response) {
                 };
                 return notify.notificationPromise(mentioneduuids, notifData);
             }
+        })
+        .then(function () {
+            return feedutils.updateEntitiesInfoCacheViaDB(connection, [
+                {
+                    entityid: entityid,
+                    uuid: uuid
+                }
+            ]);
         })
         .then(function () {
             throw new BreakPromiseChainError();
