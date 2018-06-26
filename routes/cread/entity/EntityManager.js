@@ -394,6 +394,7 @@ router.get('/load-collab-details', function (request, response) {
 
 /**
  * Function to update a caption for a particular entity
+ * @deprecated
  * */
 router.post('/edit-caption', function (request, response) {
 
@@ -401,6 +402,7 @@ router.post('/edit-caption', function (request, response) {
     var authkey = request.body.authkey;
     var entityid = request.body.entityid;
     var caption = request.body.caption.trim() ? request.body.caption.trim() : null;
+    var livefilter = request.body.livefilter ? request.body.livefilter : 'none';
 
     var uniquehashtags;
     var mentioneduuids = [];

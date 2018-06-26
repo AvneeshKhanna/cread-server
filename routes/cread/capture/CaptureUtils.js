@@ -142,7 +142,21 @@ function addWatermarkToCapture(captureimg, watermark, captureid) {
     });
 }
 
+function updateCaptureDetails(connection, entityid, captureparams) {
+    return new Promise(function (resolve, reject) {
+        connection.query('UPDATE Capture SET = ? WHERE entityid = ?', [captureparams, entityid], function (err, rows) {
+            if(err){
+                reject(err);
+            }
+            else{
+                resolve();
+            }
+        });
+    });
+}
+
 module.exports = {
     downloadCapture: downloadCapture,
-    addWatermarkToCapture: addWatermarkToCapture
+    addWatermarkToCapture: addWatermarkToCapture,
+    updateCaptureDetails: updateCaptureDetails
 };

@@ -285,6 +285,7 @@ router.post('/edit', upload.single('short-image'), function (request, response) 
         img_height: request.body.img_height,
         imgtintcolor: request.body.imgtintcolor ? request.body.imgtintcolor : null,
         filtername: request.body.filtername ? request.body.filtername : 'original',
+        livefilter: request.body.livefilter ? request.body.livefilter : 'none',
         bg_sound: request.body.bg_sound ? request.body.bg_sound : 'none',
         txt: request.body.text,
         text_long: request.body.text_long ? request.body.text_long : null,
