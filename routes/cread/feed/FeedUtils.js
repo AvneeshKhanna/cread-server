@@ -425,12 +425,12 @@ function getCollaborationCountsFast(connection, master_rows, feedEntities) {
                     return mrow.collabcount === null;
                 });
 
-                if(rows_no_collabcnt.length > 0){
+                if (rows_no_collabcnt.length > 0) {
                     return getCollaborationCounts(connection, rows_no_collabcnt, rows_no_collabcnt.map(function (r) {
                         return r.entityid;
                     }));
                 }
-                else{
+                else {
                     resolve(master_rows);
                     throw new BreakPromiseChainError();
                 }
@@ -519,10 +519,10 @@ function getEntitiesInfoDB(connection, entities) {
             else {
 
                 rows = rows.map(function (element) {
-                    if(element.type === 'CAPTURE'){
+                    if (element.type === 'CAPTURE') {
                         element.entityurl = utils.createSmallCaptureUrl(entities[entityids.indexOf(element.entityid)].uuid, element.captureid);
                     }
-                    else{
+                    else {
                         element.entityurl = utils.createSmallShortUrl(entities[entityids.indexOf(element.entityid)].uuid, element.shoid);
                     }
 
@@ -554,7 +554,7 @@ function getAllEntitiesInfo(entities) {
                     callback(err);
                 });
         }, function (err) {
-            if(err){
+            if (err) {
                 reject(err);
             }
             else {
@@ -575,10 +575,10 @@ function getEntitiesInfoFast(connection, master_rows) {
                     return mrow.info === null;
                 });
 
-                if(rows_no_info.length > 0){
+                if (rows_no_info.length > 0) {
                     return getEntitiesInfoDB(connection, rows_no_info);
                 }
-                else{
+                else {
                     console.log("fetched from cache");
                     resolve(addDefaultKV(sortByDateDesc(mergeAndFlattenRows(master_rows, 'info')), 'livefilter', 'none'));
                     throw new BreakPromiseChainError();
@@ -590,7 +590,7 @@ function getEntitiesInfoFast(connection, master_rows) {
                 });
 
                 rows.forEach(function (r) {
-                    master_rows[master_entityids.indexOf(r.info.entityid)].info =  r.info;
+                    master_rows[master_entityids.indexOf(r.info.entityid)].info = r.info;
                 });
 
                 resolve(addDefaultKV(sortByDateDesc(mergeAndFlattenRows(master_rows, 'info')), 'livefilter', 'none'));
@@ -617,7 +617,7 @@ function getEntitiesInfoFast(connection, master_rows) {
 function mergeAndFlattenRows(rows, key) {
     rows = rows.map(function (row) {
         row = Object.assign(row, row[key]);
-        if(row.hasOwnProperty(key)){
+        if (row.hasOwnProperty(key)) {
             delete row[key];
         }
         return row;
@@ -645,7 +645,7 @@ function sortByDateDesc(rows) {
  * */
 function addDefaultKV(arr, key, value) {
     arr.forEach(function (a) {
-        if(!a[key]){
+        if (!a[key]) {
             a[key] = value;
         }
     });
