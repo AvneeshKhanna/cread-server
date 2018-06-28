@@ -144,7 +144,7 @@ function addWatermarkToCapture(captureimg, watermark, captureid) {
 
 function updateCaptureDetails(connection, entityid, captureparams) {
     return new Promise(function (resolve, reject) {
-        connection.query('UPDATE Capture SET = ? WHERE entityid = ?', [captureparams, entityid], function (err, rows) {
+        connection.query('UPDATE Capture SET ? WHERE entityid = ?', [captureparams, entityid], function (err, rows) {
             if(err){
                 reject(err);
             }

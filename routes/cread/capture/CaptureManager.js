@@ -67,7 +67,7 @@ router.post('/edit-caption', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
     var entityid = request.body.entityid;
-    var caption = request.body.caption.trim() ? request.body.caption.trim() : null;
+    var caption = request.body.caption ? request.body.caption.trim() : null;
     var livefilter = request.body.livefilter ? request.body.livefilter : 'none';
 
     var uniquehashtags;
