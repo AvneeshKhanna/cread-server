@@ -13,6 +13,9 @@ var config = require('../Config');
 
 var request_client = require('request');
 var async = require('async');
+const json2csvparser = require('json2csv').Parser;
+const fs = require('fs');
+const path = require('path');
 
 var chatconvoutils = require('../cread/chat/ChatConversationUtils');
 
@@ -38,6 +41,10 @@ var userstbl_ddb = envconfig.get('dynamoDB.users_table');
 var notifscheduler = require('../notification-system/NotificationScheduler');
 
 var BreakPromiseChainError = require('../cread/utils/BreakPromiseChainError');
+
+const users_csv_dir = path.join(__dirname, '../../public/files/');
+const users_csv_file = 'Users.csv';
+const users_csv_path = users_csv_dir + users_csv_file;
 
 router.get('/restart-heroku', function (request, response) {
 
@@ -456,6 +463,68 @@ function getInactiveUsersSinceLong(connection) {
             }
             else {
                 resolve(rows);
+            }
+        });
+    });
+}
+
+router.get('/get-all-users', function (request, response) {
+
+    var connection;
+
+    config.getNewConnection()
+        .then(function (conn) {
+            connection = conn;
+            return getAllUsers(connection);
+        })
+        .then(function () {
+            /*
+            download() is asynchronous and uses sendFile() internally which will end response automatically on its own.
+            Hence, no need to call response.end() Ref:https://stackoverflow.com/a/33202186/6439132
+            */
+            response.download(users_csv_path, users_csv_file);
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
+
+function getAllUsers(connection) {
+    return new Promise(function (resolve, reject) {
+        connection.query('SELECT firstname, lastname, phone, email, DATE_FORMAT(regdate, "%d-%m-%Y %h:%m:%s %p") AS regtimestamp ' +
+            'FROM User ' +
+            'ORDER BY regdate DESC', [], function (err, rows, columns) {
+            if (err) {
+                reject(err);
+            }
+            else {
+
+                const fields = columns.map(function (col) {
+                    return col.name;
+                });
+
+                const json2csv = new json2csvparser(fields);
+                var csv_data = json2csv.parse(rows);
+
+                fs.writeFile(users_csv_path, csv_data, function (err) {
+                    if(err){
+                        reject(err);
+                    }
+                    else{
+                        resolve(csv_data);
+                    }
+                })
             }
         });
     });
