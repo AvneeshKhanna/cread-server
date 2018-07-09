@@ -154,7 +154,7 @@ function loadCollabDetails(connection, entityid, entitytype, limit, lastindexkey
     var query;
 
     if (entitytype === 'SHORT') {
-        query = 'SELECT User.firstname, User.lastname, User.uuid, Capture.capid, Capture.entityid, Capture.regdate ' +
+        query = 'SELECT User.firstname, User.lastname, User.uuid, Capture.capid, Capture.entityid, Capture.img_width, Capture.img_height, Capture.regdate ' +
             'FROM Short ' +
             'JOIN Capture ' +
             'USING (shoid) ' +
@@ -169,7 +169,7 @@ function loadCollabDetails(connection, entityid, entitytype, limit, lastindexkey
             'LIMIT ?'
     }
     else {
-        query = 'SELECT User.firstname, User.lastname, User.uuid, Short.shoid, Short.entityid, Short.regdate ' +
+        query = 'SELECT User.firstname, User.lastname, User.uuid, Short.shoid, Short.entityid, Short.img_width, Short.img_height, Short.regdate ' +
             'FROM Capture ' +
             'JOIN Short ' +
             'USING (capid) ' +

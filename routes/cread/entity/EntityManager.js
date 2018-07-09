@@ -337,6 +337,9 @@ router.post('/load-collab-details', function (request, response) {
         });
 });
 
+/**
+ * Endpoint to load details of a particular posts' collaborations
+ * */
 router.get('/load-collab-details', function (request, response) {
 
     var uuid = request.headers.uuid;
