@@ -34,7 +34,7 @@ router.get('/load', function (request, response) {
     var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : null;
     var platform = request.query.platform;
     var mintid = request.query.mintid;
-    var sortby = request.query.sortby;
+    var sortby = request.query.sortby ? request.query.sortby : 'popular';
 
     var limit = (config.isProduction()) ? 16 : 8; //Keep the value even for cross pattern in grid view
     var connection;
