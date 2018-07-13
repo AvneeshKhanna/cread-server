@@ -34,6 +34,7 @@ router.get('/load', function (request, response) {
     var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : null;
     var platform = request.query.platform;
     var mintid = request.query.mintid;
+    var sortby = request.query.sortby;
 
     var limit = (config.isProduction()) ? 16 : 8; //Keep the value even for cross pattern in grid view
     var connection;
@@ -56,7 +57,7 @@ router.get('/load', function (request, response) {
             //return exploredatahandler.getEntityDataFromCache();
         })
         .then(function (/*edata*/) {
-            return loadFeed(connection, uuid, mintid, limit, /*edata, */lastindexkey);
+            return loadFeed(connection, uuid, mintid, sortby, limit, /*edata, */lastindexkey);
         })
         .then(function (result) {
 
@@ -300,12 +301,13 @@ function loadFeedLegacy(connection, uuid, limit, page) {
     });
 }
 
-function loadFeed(connection, uuid, mintid, limit, lastindexkey) {
+function loadFeed(connection, uuid, mintid, sortby, limit, lastindexkey) {
     return new Promise(function (resolve, reject) {
 
         //lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
         lastindexkey = (lastindexkey) ? Number(lastindexkey) : 0;
 
+        var sql;
         var sql_mintid_where;
         var sqlparams = [];
 
@@ -318,59 +320,109 @@ function loadFeed(connection, uuid, mintid, limit, lastindexkey) {
             sqlparams = [explore_algo_base_score, uuid, uuid, uuid, limit, lastindexkey];
         }
 
+        if(sortby === 'popular'){
+            sql = 'SELECT EA.caption, EA.entityid, EA.merchantable, EA.type, EA.regdate, ' +
+                'User.uuid, User.firstname, User.lastname, ' +
+                'CASE WHEN(EA.impact_score IS NULL) THEN ? ELSE EA.impact_score END AS impact_weight, ' +
+                'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
+                'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
+                'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
+                'FROM ' +
+                    '(SELECT E.caption, E.entityid, E.uuid, E.merchantable, E.type, E.regdate, EntityAnalytics.impact_score ' +
+                    'FROM EntityAnalytics ' +
+                    'JOIN Entity E ' +
+                    'USING(entityid) ' +
+                    'LEFT JOIN EntityInterests EI ' +
+                    'USING(entityid) ' +
+                    'LEFT JOIN Interests I ' +
+                    'ON(EI.intid = I.intid) ' +
+                    'WHERE E.status = "ACTIVE" ' +
+                    'AND E.for_explore = 1 ' +
+                    sql_mintid_where +
+                    'GROUP BY E.entityid ' +
+                    'ORDER BY impact_score DESC ' +
+                    'LIMIT ? ' +
+                    'OFFSET ?) EA ' +
+                'JOIN User ' +
+                'ON (EA.uuid = User.uuid) ' +
+                'LEFT JOIN HatsOff ' +
+                'ON HatsOff.entityid = EA.entityid ' +
+                'LEFT JOIN Downvote D ' +
+                'ON D.entityid = EA.entityid ' +
+                'LEFT JOIN Follow ' +
+                'ON User.uuid = Follow.followee ' +
+                'GROUP BY EA.entityid ' +
+                'ORDER BY impact_weight DESC';
+        }
+        else if(sortby === 'recent'){
+            sql = 'SELECT EA.caption, EA.entityid, EA.merchantable, EA.type, EA.regdate, ' +
+                'User.uuid, User.firstname, User.lastname, ' +
+                '? AS impact_weight, ' +    //For legacy reason. No actual use of 'impact_weight' in the calculations
+                'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
+                'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
+                'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
+                'FROM ' +
+                    '(SELECT E.caption, E.entityid, E.uuid, E.merchantable, E.type, E.regdate ' +
+                    'FROM Entity E ' +
+                    'LEFT JOIN EntityInterests EI ' +
+                    'USING(entityid) ' +
+                    'LEFT JOIN Interests I ' +
+                    'ON(EI.intid = I.intid) ' +
+                    'WHERE E.status = "ACTIVE" ' +
+                    'AND E.for_explore = 1 ' +
+                    sql_mintid_where +
+                    'GROUP BY E.entityid ' +
+                    'ORDER BY E.regdate DESC ' +
+                    'LIMIT ? ' +
+                    'OFFSET ?) EA ' +
+                'JOIN User ' +
+                'ON (EA.uuid = User.uuid) ' +
+                'LEFT JOIN HatsOff ' +
+                'ON HatsOff.entityid = EA.entityid ' +
+                'LEFT JOIN Downvote D ' +
+                'ON D.entityid = EA.entityid ' +
+                'LEFT JOIN Follow ' +
+                'ON User.uuid = Follow.followee ' +
+                'GROUP BY EA.entityid ' +
+                'ORDER BY EA.regdate DESC';
+        }
+        else if(sortby === 'allstar'){
+            sql = 'SELECT EA.caption, EA.entityid, EA.merchantable, EA.type, EA.regdate, ' +
+                'User.uuid, User.firstname, User.lastname, ' +
+                '? AS impact_weight, ' +    //For legacy reason. No actual use of 'impact_weight' in the calculations
+                'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
+                'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
+                'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
+                'FROM ' +
+                    '(SELECT E.caption, E.entityid, E.uuid, E.merchantable, E.type, E.regdate ' +
+                    'FROM Entity E ' +
+                    'LEFT JOIN EntityInterests EI ' +
+                    'USING(entityid) ' +
+                    'LEFT JOIN Interests I ' +
+                    'ON(EI.intid = I.intid) ' +
+                    'WHERE E.status = "ACTIVE" ' +
+                    'AND E.starred = true ' +
+                    'AND E.for_explore = 1 ' +
+                    sql_mintid_where +
+                    'GROUP BY E.entityid ' +
+                    'ORDER BY E.regdate DESC ' +
+                    'LIMIT ? ' +
+                    'OFFSET ?) EA ' +
+                'JOIN User ' +
+                'ON (EA.uuid = User.uuid) ' +
+                'LEFT JOIN HatsOff ' +
+                'ON HatsOff.entityid = EA.entityid ' +
+                'LEFT JOIN Downvote D ' +
+                'ON D.entityid = EA.entityid ' +
+                'LEFT JOIN Follow ' +
+                'ON User.uuid = Follow.followee ' +
+                'GROUP BY EA.entityid ' +
+                'ORDER BY EA.regdate DESC';
+        }
+
         console.log("TIME before SQL: " + moment().format('YYYY-MM-DD HH:mm:ss'));
 
-        connection.query('SELECT EA.caption, EA.entityid, EA.merchantable, EA.type, EA.regdate, ' +
-            'User.uuid, User.firstname, User.lastname, ' +
-            /*'Capture.capid AS captureid, ' + /!*Short.txt AS short,*!/
-            'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +*/
-            'CASE WHEN(EA.impact_score IS NULL) THEN ? ELSE EA.impact_score END AS impact_weight, ' +
-            /*'CASE WHEN(EA.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
-            'CASE WHEN(EA.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
-            'CASE WHEN(EA.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +*/
-            /*'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +*/
-            // 'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
-            'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
-            'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
-            'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
-            'FROM ' +
-                '(SELECT E.caption, E.entityid, E.uuid, E.merchantable, E.type, E.regdate, EntityAnalytics.impact_score ' +
-                'FROM EntityAnalytics ' +
-                'JOIN Entity E ' +
-                'USING(entityid) ' +
-                'LEFT JOIN EntityInterests EI ' +
-                'USING(entityid) ' +
-                'LEFT JOIN Interests I ' +
-                'ON(EI.intid = I.intid) ' +
-                'WHERE E.status = "ACTIVE" ' +
-                'AND E.for_explore = 1 ' +
-                sql_mintid_where +
-                'GROUP BY E.entityid ' +
-                'ORDER BY impact_score DESC ' +
-                'LIMIT ? ' +
-                'OFFSET ?) EA ' +
-            //'ON (EA.entityid = Entity.entityid) ' +
-            /*'LEFT JOIN Short ' +
-            'ON Short.entityid = EA.entityid ' +
-            'LEFT JOIN Capture ' +
-            'ON Capture.entityid = EA.entityid ' +*/
-            'JOIN User ' +
-            // 'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
-            'ON (EA.uuid = User.uuid) ' +
-            'LEFT JOIN HatsOff ' +
-            'ON HatsOff.entityid = EA.entityid ' +
-            'LEFT JOIN Downvote D ' +
-            'ON D.entityid = EA.entityid ' +
-            /*'LEFT JOIN Comment ' +
-            'ON Comment.entityid = EA.entityid ' +*/
-            'LEFT JOIN Follow ' +
-            'ON User.uuid = Follow.followee ' +
-            /*'WHERE Entity.status = "ACTIVE" ' +
-            'AND Entity.for_explore = 1 ' +*/
-            'GROUP BY EA.entityid ' +
-            'ORDER BY impact_weight DESC '/* +
-            'LIMIT ? ' +
-            'OFFSET ?;'*/, sqlparams, function (err, rows) {
+        connection.query(sql, sqlparams, function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -478,7 +530,7 @@ function loadFeed(connection, uuid, mintid, limit, lastindexkey) {
                                 requestmore: rows.length >= limit,
                                 candownvote: candownvote,
                                 lastindexkey: lastindexkey,
-                                feed: utils.shuffle(rows)
+                                feed: (sortby === 'popular') ? utils.shuffle(rows) : rows
                             });
                         })
                         .catch(function (err) {
