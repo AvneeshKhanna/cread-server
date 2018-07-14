@@ -37,10 +37,10 @@ router.get('/feed/load', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send((!config.isProduction()) ? err : {
                     message: 'Some error occurred at the server'
@@ -52,7 +52,7 @@ router.get('/feed/load', function (request, response) {
 
 router.post('/update', function (request, response) {
 
-    var mark_as_star = request.body.mark_as_star  === "true";
+    var mark_as_star = request.body.mark_as_star === "true";
     var entityid = request.body.entityid;
 
     var connection;
@@ -73,10 +73,10 @@ router.post('/update', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send(!config.isProduction() ? err : {
                     message: 'Some error occurred at the server'
