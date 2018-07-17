@@ -18,6 +18,7 @@ function loadMarkStarFeed(connection, limit, lastindexkey, starred)  {
 
         connection.query('SELECT E.entityid, E.uuid, E.starred, E.type, E.regdate, ' +
             'S.shoid, S.capid AS shcaptureid, C.capid, C.shoid AS cpshortid, ' +
+            'CASE WHEN(E.type = "SHORT") THEN S.text_long IS NOT NULL ELSE C.text_long IS NOT NULL END AS long_form, ' +
             'CASE WHEN(E.status = "SHORT") THEN S.img_height ELSE C.img_height END AS img_height, ' +
             'CASE WHEN(E.status = "SHORT") THEN S.img_width ELSE C.img_width END AS img_width ' +
             'FROM Entity E ' +
@@ -46,6 +47,7 @@ function loadMarkStarFeed(connection, limit, lastindexkey, starred)  {
                         }
 
                         row.starred = String(row.starred === 1);
+                        row.long_form = row.long_form === 1;
 
                         if(row.hasOwnProperty('uuid')){
                             delete row.uuid;
