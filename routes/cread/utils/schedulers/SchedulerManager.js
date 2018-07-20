@@ -435,7 +435,7 @@ var help_queries_status_job = new CronJob({
                         ];
                         return utils.sendAWSTextEmail("New Help Queries in the Last 3 Hours",
                             "Hi,\nYou have new queries for: \n\n" + items.map(function (item) {
-                                return item.question;
+                                return item.question + " (" + item.firstname + " " + item.lastname + ")";
                             }).join('\n\n'),
                             toAddresses);
                     }
@@ -470,9 +470,12 @@ var help_queries_status_job = new CronJob({
 
 function getHelpQuesAnswersLastHr(connection) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT HQ.question, SUM(HQA.count) ' +
+        connection.query('SELECT HQ.question, SUM(HQA.count), U.firstname, U.lastname ' +
             'FROM HelpQuesAns HQA ' +
             'JOIN HelpQues HQ ' +
+            'USING(qid) ' +
+            'JOIN User U ' +
+            'ON(U.uuid = HQA.uuid) ' +
             'WHERE HQA.last_update_time > DATE_SUB(NOW(), INTERVAL 3 HOUR) ' +
             'GROUP BY HQ.qid', [], function (err, rows) {
             if (err) {
