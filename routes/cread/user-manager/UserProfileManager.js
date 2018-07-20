@@ -740,6 +740,68 @@ router.post('/load-profile', function (request, response) {
 
 });
 
+router.get('/load-repost-timeline', function (request, response) {
+
+    var uuid = request.headers.uuid;
+    var authkey = request.headers.authkey;
+
+    var requesteduuid = request.query.requesteduuid;
+    var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : "";
+    var platform = request.query.platform;
+
+    var limit = config.isProduction() ? 15 : 8;
+
+    var connection;
+
+    _auth.authValid(uuid, authkey)
+        .then(function (details) {
+            return config.getNewConnection();
+        }, function () {
+            response.send({
+                tokenstatus: 'invalid'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .then(function (conn) {
+            connection = conn;
+            return userprofileutils.loadRepostTimeline(connection, uuid, requesteduuid, lastindexkey, limit);
+        })
+        .then(function (result) {
+            if (platform !== "android" && platform !== "web") {
+                result.items = utils.filterProfileMentions(result.items, "caption")
+            }
+
+            response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
+
+            if (request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')) {
+                response.status(304).send().end();
+            }
+            else {
+                response.status(200).send({
+                    tokenstatus: 'valid',
+                    data: result
+                });
+                response.end();
+            }
+
+            throw new BreakPromiseChainError();
+        })
+        .catch(function (err) {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+
+});
+
 router.get('/load-collab-timeline', function (request, response) {
 
     var uuid = request.headers.uuid;

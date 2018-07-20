@@ -412,6 +412,9 @@ function createEntityProductImage(connection, entityid) {
     });
 }
 
+/**
+ * Cron job to shoot mail to team for help queries present in the last 3 hours
+ * */
 var help_queries_status_job = new CronJob({
     //Runs every 3 hours
     cronTime: '00 00 */3 * * *', //second | minute | hour | day-of-month | month | day-of-week

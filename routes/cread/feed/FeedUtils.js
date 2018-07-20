@@ -5,11 +5,162 @@
 
 var buckets = require('buckets-js');
 var async = require('async');
+var moment = require('moment');
 
 var utils = require('../utils/Utils');
+var hatsoffutils = require('../hats-off/HatsOffUtils');
+var commentutils = require('../comment/CommentUtils');
+var userprofileutils = require('../user-manager/UserProfileUtils');
 var cachemanager = require('../utils/cache/CacheManager');
 var cacheutils = require('../utils/cache/CacheUtils');
+var consts = require('../utils/Constants');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
+
+/**
+ * Function to execute query and load data according a feed
+ * */
+function loadFeed(connection, uuid, sql, sqlparams, sortby, lastindexkey, limit) {
+    return new Promise(function (resolve, reject) {
+
+        console.log("TIME before start: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+
+        connection.query(sql, sqlparams, function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                console.log("TIME after SQL: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+
+                if (rows.length > 0) {
+
+                    var feedEntities = rows.map(function (elem) {
+                        return elem.entityid;
+                    });
+
+                    rows.map(function (element) {
+                        /*var thisEntityIndex = hdata.map(function (el) {
+                            return el.entityid;
+                        }).indexOf(element.entityid);*/
+
+                        if (element.type === 'CAPTURE') {
+                            element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
+                        }
+                        else {
+                            element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
+                        }
+
+                        element.creatorname = element.firstname + ' ' + element.lastname;
+
+                        element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
+                        element.hatsoffstatus = element.hbinarycount > 0;
+                        element.downvotestatus = element.dbinarycount > 0;
+                        element.followstatus = element.binarycount !== 0; //Even if key is absent (case for feed-load), this will return 'true'
+                        element.merchantable = (element.merchantable !== 0);
+                        element.long_form = (element.long_form === 1);
+
+                        if (element.hasOwnProperty('binarycount')) {
+                            delete element.binarycount;
+                        }
+
+                        if (element.hasOwnProperty('hbinarycount')) {
+                            delete element.hbinarycount;
+                        }
+
+                        if (element.hasOwnProperty('dbinarycount')) {
+                            delete element.dbinarycount;
+                        }
+
+                        if (element.hasOwnProperty('firstname')) {
+                            delete element.firstname;
+                        }
+
+                        if (element.hasOwnProperty('lastname')) {
+                            delete element.lastname;
+                        }
+
+                        return element;
+                    });
+
+                    if(typeof lastindexkey === 'string'){
+                        lastindexkey = moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss');
+                    }
+                    else if(typeof lastindexkey === 'number'){
+                        lastindexkey = lastindexkey + rows.length;
+                    }
+                    else{
+                        reject(new Error('Invalid type of argument "lastindexkey"'));
+                        return;
+                    }
+
+                    /*rows[rows.length - 1]._id*/ //moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss');
+
+                    var candownvote = false;    //FixMe
+
+                    //--Retrieve Collaboration Data--
+
+                    getEntitiesInfoFast(connection, rows)
+                        .then(function (updated_rows){
+                            console.log("TIME after getEntitiesInfoFast: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+                            rows = updated_rows;
+                            return hatsoffutils.loadHatsoffCountsFast(connection, rows);
+                        })
+                        .then(function (updated_rows) {
+                            rows = updated_rows;
+                            console.log("TIME after loadHatsoffCountsFast: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+                            return commentutils.loadCommentCountsFast(connection, rows);
+                        })
+                        .then(function (updated_rows) {
+                            rows = updated_rows;
+                            console.log("TIME after loadCommentCountsFast: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+                            /*return userprofileutils.getUserQualityPercentile(connection, uuid); FixMe
+                        })
+                        .then(function (result) {
+                            candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user_downvote;
+                            */return getCollaborationData(connection, rows);
+                        })
+                        .then(function (rows) {
+
+                            console.log("TIME after getCollaborationData: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+
+                            /*rows.map(function (e) {
+                                e.collabcount = 0;
+                                return e;
+                            });*/
+
+                            return getCollaborationCounts(connection, rows, feedEntities);
+                            /*return feedutils.getCollaborationCountsFast(connection, rows);*/
+                        })
+                        /*.then(function (rows) {
+                            return feedutils.structureDataCrossPattern(rows);
+                        })*/
+                        .then(function (rows) {
+
+                            console.log("TIME after getCollaborationCounts: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+
+                            resolve({
+                                requestmore: rows.length >= limit,
+                                candownvote: candownvote,
+                                lastindexkey: lastindexkey,
+                                items: (sortby === 'popular') ? utils.shuffle(rows) : rows
+                            });
+                        })
+                        .catch(function (err) {
+                            reject(err);
+                        });
+
+                }
+                else {  //Case of no data
+                    resolve({
+                        requestmore: rows.length >= limit,
+                        candownvote: false,
+                        lastindexkey: "",
+                        items: []
+                    });
+                }
+            }
+        });
+    });
+}
 
 /**
  * Function to retrieve the users' details whose content has been collaborated on
@@ -670,6 +821,7 @@ function updateEntitiesInfoCacheViaDB(connection, entities) {
 }
 
 module.exports = {
+    loadFeed: loadFeed,
     getCollaborationData: getCollaborationData,
     getCollaborationCounts: getCollaborationCounts,
     structureDataCrossPattern: structureDataCrossPattern,

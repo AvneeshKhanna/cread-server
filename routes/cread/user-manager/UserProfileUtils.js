@@ -432,6 +432,49 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
     });
 }
 
+function loadRepostTimeline(connection, requesteruuid, requesteduuid, lastindexkey, limit) {
+
+    return new Promise(function (resolve, reject) {
+
+        lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
+
+        var sql = 'SELECT E.caption, E.entityid, E.regdate, E.merchantable, E.type, U.uuid, ' +
+            'U.firstname, U.lastname, ' +
+            'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
+            'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
+            'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount ' +
+            'FROM Repost R ' +
+            'JOIN Entity E ' +
+            'ON(E.entityid = R.entityid) ' +
+            'JOIN User U ' +
+            'ON (E.uuid = U.uuid) ' +
+            'LEFT JOIN HatsOff ' +
+            'ON HatsOff.entityid = E.entityid ' +
+            'LEFT JOIN Downvote D ' +
+            'ON D.entityid = E.entityid ' +
+            'LEFT JOIN Follow ' +
+            'ON U.uuid = Follow.followee ' +
+            'WHERE R.uuid = ? ' +
+            'AND E.status = "ACTIVE" ' +
+            'AND E.regdate < ? ' +
+            'GROUP BY E.entityid ' +
+            'ORDER BY E.regdate DESC ' +
+            'LIMIT ?';
+
+        var sqlparams = [
+            requesteruuid,
+            requesteruuid,
+            requesteruuid,
+            requesteduuid,
+            lastindexkey,
+            limit
+        ];
+
+        feedutils.loadFeed(connection, requesteruuid, sql, sqlparams, undefined, lastindexkey, limit)
+            .then(resolve, reject);
+    });
+}
+
 function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, limit, lastindexkey) {
     lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
@@ -1234,6 +1277,7 @@ function getAllUsersExcept(connection, uuids) {
 module.exports = {
     loadTimelineLegacy: loadTimelineLegacy,
     loadTimeline: loadTimeline,
+    loadRepostTimeline: loadRepostTimeline,
     loadCollaborationTimeline: loadCollaborationTimeline,
     loadProfileInformation: loadProfileInformation,
     loadFacebookFriends: loadFacebookFriends,

@@ -26,6 +26,14 @@ function getEntityCommentCntCacheKey(entityid) {
     return "ent:cmnt-cnt:" + entityid;
 }
 
+function getEntityRepostCntCacheKey(entityid) {
+    if (!entityid) {
+        throw new Error("Entity ID cannot be undefined/null/empty-string");
+    }
+
+    return "ent:rpst-cnt:" + entityid;
+}
+
 function getEntityCollabCntCacheKey(entityid) {
     if (!entityid) {
         throw new Error("Entity ID cannot be undefined/null/empty-string");
@@ -66,6 +74,7 @@ module.exports = {
     getEntityCommentCntCacheKey: getEntityCommentCntCacheKey,
     getEntityHtsoffCntCacheKey: getEntityHtsoffCntCacheKey,
     getEntityCollabCntCacheKey: getEntityCollabCntCacheKey,
+    getEntityRepostCntCacheKey: getEntityRepostCntCacheKey,
     getEntityInfoCacheKey: getEntityInfoCacheKey,
     getProfileLinkCacheKey: getProfileLinkCacheKey,
     REDIS_KEYS: REDIS_KEYS
