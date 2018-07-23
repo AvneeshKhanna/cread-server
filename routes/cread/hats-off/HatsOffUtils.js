@@ -317,7 +317,12 @@ function loadHatsoffCountsFast(connection, master_rows) {
                 });
 
                 rows.forEach(function (r) {
-                    master_rows[master_entityids.indexOf(r.entityid)].hatsoffcount = r.hatsoffcount;
+
+                    utils.getAllIndexes(master_entityids, r.entityid).forEach(function (i) {
+                        master_rows[i].hatsoffcount = r.hatsoffcount;
+                    });
+
+                    // master_rows[master_entityids.indexOf(r.entityid)].hatsoffcount = r.hatsoffcount;
                 });
 
                 resolve(master_rows);

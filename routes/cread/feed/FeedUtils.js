@@ -10,7 +10,7 @@ var moment = require('moment');
 var utils = require('../utils/Utils');
 var hatsoffutils = require('../hats-off/HatsOffUtils');
 var commentutils = require('../comment/CommentUtils');
-var userprofileutils = require('../user-manager/UserProfileUtils');
+// var userprofileutils = require('../user-manager/UserProfileUtils');
 var cachemanager = require('../utils/cache/CacheManager');
 var cacheutils = require('../utils/cache/CacheUtils');
 var consts = require('../utils/Constants');
@@ -141,7 +141,7 @@ function loadFeed(connection, uuid, sql, sqlparams, sortby, lastindexkey, limit)
                                 requestmore: rows.length >= limit,
                                 candownvote: candownvote,
                                 lastindexkey: lastindexkey,
-                                items: (sortby === 'popular') ? utils.shuffle(rows) : rows
+                                items: rows // (sortby === 'popular') ? utils.shuffle(rows) : rows TODO: Find a general way to shuffle where needed
                             });
                         })
                         .catch(function (err) {
@@ -348,7 +348,21 @@ function getCollaborationCounts(connection, rows, feedEntities) {
                 if (items.length > 0) {
                     items.forEach(function (item) {
 
-                        var row_element = rows[rows.map(function (el) {
+                        utils.getAllIndexes(rows.map(function (el) {
+                            return el.entityid;
+                        }), item.entityid).forEach(function (i) {
+
+                            var row_element = rows[i];
+
+                            if (row_element.type === 'SHORT') {
+                                row_element.collabcount = item.shortcollabcount;
+                            }
+                            else if (row_element.type === 'CAPTURE') {
+                                row_element.collabcount = item.capturecollabcount;
+                            }
+                        });
+
+                        /*var row_element = rows[rows.map(function (el) {
                             return el.entityid;
                         }).indexOf(item.entityid)];
 
@@ -357,7 +371,7 @@ function getCollaborationCounts(connection, rows, feedEntities) {
                         }
                         else if (row_element.type === 'CAPTURE') {
                             row_element.collabcount = item.capturecollabcount;
-                        }
+                        }*/
 
                     });
 
@@ -592,7 +606,12 @@ function getCollaborationCountsFast(connection, master_rows, feedEntities) {
                 });
 
                 rows.forEach(function (r) {
-                    master_rows[master_entityids.indexOf(r.entityid)].collabcount = r.collabcount;
+
+                    utils.getAllIndexes(master_entityids, r.entityid).forEach(function (i) {
+                        master_rows[i].collabcount = r.collabcount;
+                    });
+
+                    //master_rows[master_entityids.indexOf(r.entityid)].collabcount = r.collabcount;
                 });
 
                 resolve(master_rows);

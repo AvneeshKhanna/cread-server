@@ -7,11 +7,7 @@ var moment = require('moment');
 var async = require('async');
 
 var utils = require('../utils/Utils');
-
-var feedutils = require('../feed/FeedUtils');
 var updatesutils = require('../updates/UpdatesUtils');
-var userprofileutils = require('../user-manager/UserProfileUtils');
-var consts = require('../utils/Constants');
 
 var NotFoundError = require('../utils/NotFoundError');
 
@@ -239,7 +235,7 @@ function loadCollabDetails(connection, entityid, entitytype, limit, lastindexkey
     });
 }
 
-function loadEntityData(connection, requesteruuid, entityid) {
+/*function loadEntityData(connection, requesteruuid, entityid) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, Short.shoid, Capture.capid AS captureid, ' +
             'Capture.shoid AS cpshortid, Short.capid AS shcaptureid, ' +
@@ -296,13 +292,13 @@ function loadEntityData(connection, requesteruuid, entityid) {
                     element.merchantable = (element.merchantable !== 0);
                     element.long_form = (element.long_form === 1);
 
-                    /*if(element.capid) {
+                    /!*if(element.capid) {
                         delete element.capid;
-                    }*/
+                    }*!/
 
-                    /*if(element.shoid) {
+                    /!*if(element.shoid) {
                         delete element.shoid;
-                    }*/
+                    }*!/
 
                     if (element.firstname) {
                         delete element.firstname;
@@ -330,18 +326,18 @@ function loadEntityData(connection, requesteruuid, entityid) {
                 var candownvote = false;    //TODO: Revert
 
                 //TODO: Solve a bug where 'TypeError: userprofileutils.getUserQualityPercentile' exception occurs possible due to circular dependency
-                /*userprofileutils.getUserQualityPercentile(connection, requesteruuid)
+                /!*userprofileutils.getUserQualityPercentile(connection, requesteruuid)
                     .then(function (result) {
                         candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user_downvote;
                         return feedutils.getCollaborationData(connection, row);
-                    })*/
+                    })*!/
                 feedutils.getCollaborationData(connection, row)
                     .then(function (row) {
 
-                        /*rows.map(function (e) {
+                        /!*rows.map(function (e) {
                             e.collabcount = 0;
                             return e;
-                        });*/
+                        });*!/
 
                         return feedutils.getCollaborationCounts(connection, row, [entityid]);
                     })
@@ -355,13 +351,13 @@ function loadEntityData(connection, requesteruuid, entityid) {
                         reject(err);
                     });
 
-                /*resolve({
+                /!*resolve({
                     entity: row[0]
-                });*/
+                });*!/
             }
         });
     });
-}
+}*/
 
 function loadEntityDatMultiple(connection, requesteruuid, entityids) {
     return new Promise(function (resolve, reject) {
@@ -763,7 +759,6 @@ function sendGapPostNotification(connection, firstname, lastname, uuid, entityid
 
 module.exports = {
     updateEntityCollabDataForUpdates: updateEntityCollabDataForUpdates,
-    loadEntityData: loadEntityData,
     loadEntityDatMultiple: loadEntityDatMultiple,
     loadEntityDataSeparate: loadEntityDataSeparate,
     retrieveShortDetails: retrieveShortDetails,

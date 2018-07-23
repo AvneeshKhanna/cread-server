@@ -13,7 +13,7 @@ var utils = require('../Utils');
 var BreakPromiseChainError = require('../BreakPromiseChainError');
 var userprofileutils = require('../../user-manager/UserProfileUtils');
 var entityintrstutils = require('../../interests/EntityInterestsUtils');
-var entityutils = require('../../entity/EntityUtils');
+var entityspecificutils = require('../../entity/EntitySpecificUtils');
 var entityimgutils = require('../../entity/EntityImageUtils');
 var _auth = require('../../../auth-token-management/AuthTokenManager');
 
@@ -382,7 +382,7 @@ function createEntityProductImage(connection, entityid) {
         var edata;
         var download_file_name;
 
-        entityutils.loadEntityData(connection, config.getCreadKalakaarUUID(), entityid)
+        entityspecificutils.loadEntityData(connection, config.getCreadKalakaarUUID(), entityid)
             .then(function (ed) {
                 edata = ed.entity;
                 download_file_name = entityid + '-product-process.jpg';

@@ -16,7 +16,7 @@ var config = require('../../Config');
 var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var utils = require('./Utils');
-var entityutils = require('../entity/EntityUtils');
+var entityspecificutils = require('../entity/EntitySpecificUtils');
 var entityimgutils = require('../entity/EntityImageUtils');
 var followutils = require('../follow/FollowUtils');
 var chatconvoutils = require('../chat/ChatConversationUtils');
@@ -439,7 +439,7 @@ function createEntityProductImage(connection, entityid) {
         var edata;
         var download_file_name;
 
-        entityutils.loadEntityData(connection, config.getCreadKalakaarUUID(), entityid)
+        entityspecificutils.loadEntityData(connection, config.getCreadKalakaarUUID(), entityid)
             .then(function (ed) {
                 edata = ed.entity;
                 download_file_name = entityid + '-product-process.jpg';

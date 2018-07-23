@@ -438,8 +438,8 @@ function loadRepostTimeline(connection, requesteruuid, requesteduuid, lastindexk
 
         lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
-        var sql = 'SELECT E.caption, E.entityid, E.regdate, E.merchantable, E.type, U.uuid, ' +
-            'U.firstname, U.lastname, ' +
+        var sql = 'SELECT R.repostid, R.regdate AS repostdate, RU.uuid AS reposteruuid, CONCAT_WS(" ", RU.firstname, RU.lastname) AS repostername, ' +
+            'E.caption, E.entityid, E.regdate, E.merchantable, E.type, U.uuid, U.firstname, U.lastname, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount ' +
@@ -448,6 +448,8 @@ function loadRepostTimeline(connection, requesteruuid, requesteduuid, lastindexk
             'ON(E.entityid = R.entityid) ' +
             'JOIN User U ' +
             'ON (E.uuid = U.uuid) ' +
+            'JOIN User RU ' +
+            'ON(RU.uuid = R.uuid) ' +
             'LEFT JOIN HatsOff ' +
             'ON HatsOff.entityid = E.entityid ' +
             'LEFT JOIN Downvote D ' +
@@ -457,8 +459,8 @@ function loadRepostTimeline(connection, requesteruuid, requesteduuid, lastindexk
             'WHERE R.uuid = ? ' +
             'AND E.status = "ACTIVE" ' +
             'AND E.regdate < ? ' +
-            'GROUP BY E.entityid ' +
-            'ORDER BY E.regdate DESC ' +
+            'GROUP BY R.repostid ' +
+            'ORDER BY R.regdate DESC ' +
             'LIMIT ?';
 
         var sqlparams = [

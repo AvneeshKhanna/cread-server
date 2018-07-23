@@ -277,39 +277,43 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
 
         console.log("TIME before start: " + moment().format('YYYY-MM-DD HH:mm:ss'));
 
-        connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, ' +
-            /*'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, Capture.capid AS captureid, ' +
-            'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
-            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
-            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +*/
-            /*'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +*/
-            /*'COUNT(DISTINCT Comment.commid) AS commentcount, ' +*/
+        connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, ER.posttype, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
-            'User.uuid, User.firstname, User.lastname ' +
-            'FROM Entity ' +
-            /*'LEFT JOIN Short ' +
-            'ON Short.entityid = Entity.entityid ' +
-            'LEFT JOIN Capture ' +
-            'ON Capture.entityid = Entity.entityid ' +*/
+            'User.uuid, User.firstname, User.lastname, ' +
+            'RU.uuid AS reposteruuid, CONCAT_WS(" ", RU.firstname, RU.lastname) AS repostername, ' +
+            'CASE WHEN(ER.posttype = "REPOST") THEN ER.regdate END AS repostdate ' +
+            'FROM ' +
+                '(' +
+                    'SELECT E.entityid, E.uuid, E.status, E.regdate, NULL AS repostid, "POST" AS posttype ' +
+                    'FROM Entity E ' +
+                    'WHERE E.status = "ACTIVE" ' +
+                    'AND E.regdate < ? ' +
+                    'UNION ALL ' +
+                    'SELECT R.entityid, R.uuid, "ACTIVE" AS status, R.regdate, R.repostid, "REPOST" AS posttype ' +
+                    'FROM Repost R ' +
+                    'JOIN Entity ER ' +
+                    'ON(R.entityid = ER.entityid) ' +
+                    'WHERE R.regdate < ? ' +
+                    'AND ER.status = "ACTIVE" ' +
+                    'ORDER BY regdate DESC ' +
+                    'LIMIT ?' +
+                ') ER ' +
+            'JOIN Entity ' +
+            'ON(ER.entityid = Entity.entityid) ' +
             'JOIN User ' +
-            // 'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
             'ON(User.uuid = Entity.uuid) ' +
-            /*'LEFT JOIN Comment ' +
-            'ON Comment.entityid = Entity.entityid ' +*/
+            'LEFT JOIN User RU ' +
+            'ON(ER.uuid = RU.uuid AND ER.posttype = "REPOST") ' +
             'LEFT JOIN HatsOff ' +
             'ON HatsOff.entityid = Entity.entityid ' +
             'LEFT JOIN Downvote D ' +
             'ON D.entityid = Entity.entityid ' +
             'LEFT JOIN Follow ' +
-            'ON Follow.followee = User.uuid ' +
+            'ON (Follow.followee = RU.uuid OR Follow.followee = User.uuid) ' +
             'WHERE Follow.follower = ? ' +
-            'AND Entity.status = "ACTIVE" ' +
-            'AND Entity.regdate < ? ' +
-            'GROUP BY Entity.entityid ' +
-            'ORDER BY Entity.regdate DESC ' +
-            'LIMIT ? '/* +
-            'OFFSET ?'*/, [uuid, uuid, uuid, lastindexkey, limit/*, offset*/], function (err, rows) {
+            'GROUP BY Entity.entityid, ER.repostid ' +
+            'ORDER BY ER.regdate DESC ', [uuid, uuid, lastindexkey, lastindexkey, limit, uuid/*, offset*/], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -414,7 +418,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                                 requestmore: rows.length >= limit,
                                 candownvote: candownvote,
                                 lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
-                                feed: utils.shuffle(rows)
+                                feed: rows/*utils.shuffle(rows)*/
                             });
                         })
                         .catch(function (err) {

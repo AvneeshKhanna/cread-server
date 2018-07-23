@@ -17,12 +17,12 @@ var notify = require('../../notification-system/notificationFramework');
 var consts = require('../utils/Constants');
 var cache_time = consts.cache_time;
 
-router.get('/add', function (request, response) {
+router.post('/add', function (request, response) {
 
-    var uuid = request.headers.uuid;
-    var authkey = request.headers.authkey;
+    var uuid = request.body.uuid;
+    var authkey = request.body.authkey;
 
-    var entityid = request.query.entityid;
+    var entityid = request.body.entityid;
 
     var connection;
     var notifuuids;
@@ -93,11 +93,6 @@ router.get('/add', function (request, response) {
                 return notify.notificationPromise(new Array(notifuuids.collabuuid), notifData);
             }
         })
-        .then(function () { //Updating cache for reposts count
-            return repostutils.updateRepostCountCacheFromDB(connection, [{
-                entityid: entityid
-            }]);
-        })
         .then(function () {
             throw new BreakPromiseChainError(); //To disconnect server connection
         })
@@ -122,7 +117,6 @@ router.post('/delete', function (request, response) {
     var repostid = request.body.repostid;
 
     var connection;
-    var entityid;
 
     _auth.authValid(uuid, authkey)
         .then(function () {
@@ -136,10 +130,6 @@ router.post('/delete', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return repostutils.getEntityFromRepost(connection, repostid);
-        })
-        .then(function (result) {
-            entityid = result.entityid;
             return repostutils.deleteRepost(connection, repostid, uuid);
         })
         .then(function () {
@@ -150,13 +140,6 @@ router.post('/delete', function (request, response) {
                 }
             });
             response.end();
-        })
-        .then(function () { //Updating cache for reposts count
-            return repostutils.updateRepostCountCacheFromDB(connection, [{
-                entityid: entityid
-            }]);
-        })
-        .then(function () {
             throw new BreakPromiseChainError();
         })
         .catch(function (err) {

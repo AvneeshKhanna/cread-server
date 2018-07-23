@@ -13,9 +13,10 @@ var _auth = require('../../auth-token-management/AuthTokenManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var consts = require('../utils/Constants');
 var utils = require('../utils/Utils');
-var entityutils = require('./EntityUtils');
 var entityintrstutils = require('../interests/EntityInterestsUtils');
 var feedutils = require('../feed/FeedUtils');
+var entityutils = require('./EntityUtils');
+var entityspecificutils = require('./EntitySpecificUtils');
 var captureutils = require('../capture/CaptureUtils');
 var hashtagutils = require('../hashtag/HashTagUtils');
 var profilementionutils = require('../profile-mention/ProfileMentionUtils');
@@ -119,7 +120,7 @@ router.get('/load-specific', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return entityutils.loadEntityData(connection, uuid, entityid);
+            return entityspecificutils.loadEntityData(connection, uuid, entityid);
         })
         .then(function (result) {
 
@@ -156,6 +157,9 @@ router.get('/load-specific', function (request, response) {
         });
 });
 
+/**
+ * Legacy route
+ * */
 router.post('/load-specific', function (request, response) {
     var uuid = request.body.uuid;
     var authkey = request.body.authkey;
@@ -176,7 +180,7 @@ router.post('/load-specific', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return entityutils.loadEntityData(connection, uuid, entityid);
+            return entityspecificutils.loadEntityData(connection, uuid, entityid);
         })
         .then(function (result) {
 

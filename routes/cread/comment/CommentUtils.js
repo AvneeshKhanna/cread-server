@@ -452,7 +452,12 @@ function loadCommentCountsFast(connection, master_rows) {
                 });
 
                 rows.forEach(function (r) {
-                    master_rows[master_entityids.indexOf(r.entityid)].commentcount = r.commentcount;
+
+                    utils.getAllIndexes(master_entityids, r.entityid).forEach(function (i) {
+                        master_rows[i].commentcount = r.commentcount;
+                    });
+
+                    // master_rows[master_entityids.indexOf(r.entityid)].commentcount = r.commentcount;
                 });
 
                 resolve(master_rows);
