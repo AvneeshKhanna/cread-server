@@ -56,6 +56,14 @@ function getEntityHtsoffCntCacheKey(entityid) {
     return "ent:htsoff-cnt:" + entityid;
 }
 
+function getUserBadgeCntCacheKey(uuid) {
+    if (!uuid) {
+        throw new Error("uuid cannot be undefined/null/empty-string");
+    }
+
+    return "usr:badge-cnt:" + uuid;
+}
+
 function getProfileLinkCacheKey(uuid) {
     if (!uuid) {
         throw new Error("UUID cannot be undefined/null/empty-string");
@@ -76,6 +84,7 @@ module.exports = {
     getEntityCollabCntCacheKey: getEntityCollabCntCacheKey,
     getEntityRepostCntCacheKey: getEntityRepostCntCacheKey,
     getEntityInfoCacheKey: getEntityInfoCacheKey,
+    getUserBadgeCntCacheKey: getUserBadgeCntCacheKey,
     getProfileLinkCacheKey: getProfileLinkCacheKey,
     REDIS_KEYS: REDIS_KEYS
 };

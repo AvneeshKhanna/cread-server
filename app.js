@@ -199,6 +199,7 @@ app.use('/support', require('./routes/cread/support/HelpQuesManager'));
 app.use('/mark-for-collab', require('./routes/cread/ops/mark-for-collab/MarkForCollabManager'));
 app.use('/mark-as-star', require('./routes/cread/ops/mark-as-star/MarkAsStarManager'));
 app.use('/repost', require('./routes/cread/repost/RepostManager'));
+app.use('/badges', require('./routes/cread/badges/BadgeManager'));
 
 //-dashboard-
 app.use('/campaign-details', require('./routes/cread/dsbrd/campaign-details/CampaignDetails'));

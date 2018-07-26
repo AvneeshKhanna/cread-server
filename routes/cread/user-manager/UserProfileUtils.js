@@ -369,6 +369,7 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
 
                 userdata.profilepicurl = utils.createProfilePicUrl(userdata.uuid);
                 userdata.featured = !!userdata.featured_id;
+                userdata.badgecount = 2; //Number(cache_manager.getCacheString(cache_utils.getUserBadgeCntCacheKey(requesteduuid))); //TODO: Handle case for null value
 
                 if (userdata.hasOwnProperty('featured_id')) {
                     delete userdata.featured_id;
