@@ -14,6 +14,7 @@ var updatesutils = require('../updates/UpdatesUtils');
 var cacheutils = require('../utils/cache/CacheUtils');
 var cachemanager = require('../utils/cache/CacheManager');
 var hatsoffutils = require('../hats-off/HatsOffUtils');
+let badgeutils = require('../badges/BadgeUtils');
 
 var jobqueuehandler = require('../utils/long-tasks/JobQueueHandler');
 var notify = require('../../notification-system/notificationFramework');
@@ -104,11 +105,18 @@ function loadComments(connection, entityid, limit, lastindexkey, loadAll) {
             }
             else {
 
-                rows.map(function (element) {
-                    element.profilepicurl = utils.createProfilePicUrl(element.uuid);
-                    element.edited = (element.edited === 1);
-                    return element;
-                });
+                try{
+                    rows.map(async function (element) {
+                        element.profilepicurl = utils.createProfilePicUrl(element.uuid);
+                        element.topartist = await badgeutils.isTopArtist(element.uuid);
+                        element.edited = (element.edited === 1);
+                        return element;
+                    });
+                }
+                catch (err){
+                    reject(err);
+                    return;
+                }
 
                 //Sort comments in chronological order
                 rows.sort(function (a, b) {
@@ -130,7 +138,7 @@ function loadComments(connection, entityid, limit, lastindexkey, loadAll) {
                     }
                     else {
                         result.requestmore = rows.length >= limit;
-                        result.lastindexkey = null
+                        result.lastindexkey = ""
                     }
                 }
 

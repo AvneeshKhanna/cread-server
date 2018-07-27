@@ -29,6 +29,7 @@ var cache_manager = require('../utils/cache/CacheManager');
 var cache_utils = require('../utils/cache/CacheUtils');
 var commentutils = require('../comment/CommentUtils');
 var hatsoffutils = require('../hats-off/HatsOffUtils');
+let badgeutils = require('../badges/BadgeUtils');
 var REDIS_KEYS = cache_utils.REDIS_KEYS;
 
 function loadTimelineLegacy(connection, requesteduuid, requesteruuid, limit, page) {
@@ -319,7 +320,7 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
             'ON(User.uuid = UI.uuid) ' +
             'LEFT JOIN Interests I ' +
             'ON(UI.intid = I.intid) ' +
-            'WHERE User.uuid = ?', [config.getCreadKalakaarUUID(), today, requesteduuid], function (err, rows) {
+            'WHERE User.uuid = ?', [config.getCreadKalakaarUUID(), today, requesteduuid], async function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -369,7 +370,16 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
 
                 userdata.profilepicurl = utils.createProfilePicUrl(userdata.uuid);
                 userdata.featured = !!userdata.featured_id;
-                userdata.badgecount = 2; //Number(cache_manager.getCacheString(cache_utils.getUserBadgeCntCacheKey(requesteduuid))); //TODO: Handle case for null value
+
+                try{
+                    userdata.badgecount = await badgeutils.getUserBadgeCount(requesteduuid);
+                }
+                catch (err){
+                    reject(err);
+                    return;
+                }
+
+                userdata.topartist = userdata.badgecount >= consts.total_badges;
 
                 if (userdata.hasOwnProperty('featured_id')) {
                     delete userdata.featured_id;

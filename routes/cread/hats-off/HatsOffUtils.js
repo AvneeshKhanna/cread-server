@@ -10,6 +10,7 @@
 var uuidGenerator = require('uuid');
 var utils = require('../utils/Utils');
 var updatesutils = require('../updates/UpdatesUtils');
+let badgeutils = require('../badges/BadgeUtils');
 var cacheutils = require('../utils/cache/CacheUtils');
 var cachemanager = require('../utils/cache/CacheManager');
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
@@ -125,10 +126,17 @@ function loadHatsOffs(connection, entityid, limit, lastindexkey) {
 
                 if(rows.length > 0){
 
-                    rows = rows.map(function (element) {
-                        element.profilepicurl = utils.createProfilePicUrl(element.uuid);
-                        return element;
-                    });
+                    try{
+                        rows = rows.map(async function (element) {
+                            element.profilepicurl = utils.createProfilePicUrl(element.uuid);
+                            element.topartist = await badgeutils.isTopArtist(element.uuid);
+                            return element;
+                        });
+                    }
+                    catch (err){
+                        reject(err);
+                        return;
+                    }
 
                     resolve({
                         hatsoffs: rows,

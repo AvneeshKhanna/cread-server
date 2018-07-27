@@ -13,6 +13,7 @@ var moment = require('moment');
 
 var config = require('../../Config');
 var utils = require('../utils/Utils');
+let badgeutils = require('../badges/BadgeUtils');
 var updatesutils = require('../updates/UpdatesUtils');
 
 function registerFollow(connection, register, follower, followees) {
@@ -118,10 +119,17 @@ function loadFollowers(connection, requesteduuid, limit, lastindexkey) {
                 reject(err);
             }
             else {
-                rows.map(function (elem) {
-                    elem.profilepicurl = utils.createProfilePicUrl(elem.uuid);
-                    return elem;
-                });
+                try{
+                    rows.map(async function (elem) {
+                        elem.profilepicurl = utils.createProfilePicUrl(elem.uuid);
+                        elem.topartist = await badgeutils.isTopArtist(elem.uuid);
+                        return elem;
+                    });
+                }
+                catch (err){
+                    reject(err);
+                    return;
+                }
 
                 if(rows.length > 0){
                     resolve({
@@ -201,10 +209,17 @@ function loadFollowing(connection, requesteduuid, limit, lastindexkey) {
                 reject(err);
             }
             else {
-                rows.map(function (elem) {
-                    elem.profilepicurl = utils.createProfilePicUrl(elem.uuid);
-                    return elem;
-                });
+                try{
+                    rows.map(async function (elem) {
+                        elem.profilepicurl = utils.createProfilePicUrl(elem.uuid);
+                        elem.topartist = await badgeutils.isTopArtist(elem.uuid);
+                        return elem;
+                    });
+                }
+                catch (err){
+                    reject(err);
+                    return;
+                }
 
                 if(rows.length > 0){
                     resolve({
