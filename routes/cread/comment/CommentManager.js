@@ -14,6 +14,7 @@ var commentutils = require('./CommentUtils');
 var utils = require('../utils/Utils');
 var entityutils = require('../entity/EntityUtils');
 var profilementionutils = require('../profile-mention/ProfileMentionUtils');
+let usranlytcsutils = require('../user-manager/analytics/UserAnalyticsUtils');
 var notify = require('../../notification-system/notificationFramework');
 
 var consts = require('../utils/Constants');
@@ -292,6 +293,16 @@ router.post('/add', function (request, response) {
             }]);
         })
         .then(function () {
+            if(notifuuids.creatoruuid !== uuid){
+                return usranlytcsutils.updateUserCommentsGiven(connection, uuid);
+            }
+        })
+        .then(function () {
+            if(notifuuids.creatoruuid !== uuid){
+                return usranlytcsutils.updateUserCommentsReceived(connection, notifuuids.creatoruuid);
+            }
+        })
+        .then(function () {
             throw new BreakPromiseChainError(); //To disconnect server connection
         })
         .catch(function (err) {
@@ -412,6 +423,7 @@ router.post('/delete', function (request, response) {
 
     var connection;
     var entityid;
+    var creatoruuid;
 
     _auth.authValid(uuid, authkey)
         .then(function () {
@@ -444,6 +456,20 @@ router.post('/delete', function (request, response) {
             return commentutils.updateCommentCountCacheFromDB(connection, [{
                 entityid: entityid
             }]);
+        })
+        .then(function () {
+            return entityutils.getEntityUsrDetailsForNotif(connection, entityid);
+        })
+        .then(function (result) {
+            creatoruuid = result.creatoruuid;
+            if(creatoruuid !== uuid){
+                return usranlytcsutils.updateUserCommentsGiven(connection, uuid);
+            }
+        })
+        .then(function () {
+            if(creatoruuid !== uuid){
+                return usranlytcsutils.updateUserCommentsReceived(connection, creatoruuid);
+            }
         })
         .then(function () {
             throw new BreakPromiseChainError();

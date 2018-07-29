@@ -103,6 +103,19 @@ function loadHatsOffsLegacy(connection, entityid, limit, page) {
     });
 }
 
+async function hey(connection) {
+    return new Promise(function (resolve, reject) {
+        connection.query('', [], function (err, rows) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
+
 function loadHatsOffs(connection, entityid, limit, lastindexkey) {
 
     lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
@@ -117,7 +130,7 @@ function loadHatsOffs(connection, entityid, limit, lastindexkey) {
             'GROUP BY HatsOff.entityid, HatsOff.uuid ' +
             'ORDER BY HatsOff.regdate DESC ' +
             'LIMIT ? '/* +
-             'OFFSET ?'*/, [entityid, lastindexkey, limit/*, offset*/], function (err, rows) {
+             'OFFSET ?'*/, [entityid, lastindexkey, limit/*, offset*/], async function (err, rows) {
 
             if(err){
                 reject(err);
@@ -127,11 +140,11 @@ function loadHatsOffs(connection, entityid, limit, lastindexkey) {
                 if(rows.length > 0){
 
                     try{
-                        rows = rows.map(async function (element) {
+                        rows = await Promise.all(rows.map(async function (element) {
                             element.profilepicurl = utils.createProfilePicUrl(element.uuid);
                             element.topartist = await badgeutils.isTopArtist(element.uuid);
                             return element;
-                        });
+                        }));
                     }
                     catch (err){
                         reject(err);

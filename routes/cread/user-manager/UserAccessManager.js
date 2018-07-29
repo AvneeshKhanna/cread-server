@@ -23,6 +23,7 @@ var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 var utils = require('../utils/Utils');
 var useraccessutils = require('./UserAccessUtils');
 var userprofileutils = require('./UserProfileUtils');
+let usranlytcsutils = require('./analytics/UserAnalyticsUtils');
 var notify = require('../../notification-system/notificationFramework');
 
 router.post('/sign-in', function (request, response) {
@@ -238,6 +239,9 @@ router.post('/sign-up', function (request, response) {
         })
         .then(function () {
             return useraccessutils.addDefaultCreadKalakaarActions(connection, new_user_uuid);
+        })
+        .then(function () {
+            return usranlytcsutils.createUserAnalyticsRecord(connection, new_user_uuid);
         })
         .then(function () {
             throw new BreakPromiseChainError(); //To disconnect server connection

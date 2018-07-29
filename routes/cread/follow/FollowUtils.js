@@ -114,17 +114,17 @@ function loadFollowers(connection, requesteduuid, limit, lastindexkey) {
             'WHERE Follow.followee = ? ' +
             'AND Follow.regdate < ? ' +
             'ORDER BY Follow.regdate DESC ' +
-            'LIMIT ? ', [requesteduuid, lastindexkey, limit], function (err, rows) {
+            'LIMIT ? ', [requesteduuid, lastindexkey, limit], async function (err, rows) {
             if (err) {
                 reject(err);
             }
             else {
                 try{
-                    rows.map(async function (elem) {
+                    rows = await Promise.all(rows.map(async function (elem) {
                         elem.profilepicurl = utils.createProfilePicUrl(elem.uuid);
                         elem.topartist = await badgeutils.isTopArtist(elem.uuid);
                         return elem;
-                    });
+                    }));
                 }
                 catch (err){
                     reject(err);
@@ -204,17 +204,17 @@ function loadFollowing(connection, requesteduuid, limit, lastindexkey) {
             'WHERE Follow.follower = ? ' +
             'AND Follow.regdate < ? ' +
             'ORDER BY Follow.regdate DESC ' +
-            'LIMIT ?', [requesteduuid, lastindexkey, limit], function (err, rows) {
+            'LIMIT ?', [requesteduuid, lastindexkey, limit], async function (err, rows) {
             if (err) {
                 reject(err);
             }
             else {
                 try{
-                    rows.map(async function (elem) {
+                    rows = await Promise.all(rows.map(async function (elem) {
                         elem.profilepicurl = utils.createProfilePicUrl(elem.uuid);
                         elem.topartist = await badgeutils.isTopArtist(elem.uuid);
                         return elem;
-                    });
+                    }));
                 }
                 catch (err){
                     reject(err);

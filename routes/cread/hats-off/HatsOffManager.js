@@ -19,6 +19,7 @@ var utils = require('../utils/Utils');
 var notify = require('../../notification-system/notificationFramework');
 var hatsoffutils = require('./HatsOffUtils');
 var entityutils = require('../entity/EntityUtils');
+let usranlytcsutils = require('../user-manager/analytics/UserAnalyticsUtils');
 
 var consts = require('../utils/Constants');
 var cache_time = consts.cache_time;
@@ -120,6 +121,16 @@ router.post('/on-click', function (request, response) {
                     };
                     return notify.notificationPromise(new Array(notifuuids.collabuuid), notifData);
                 }
+            }
+        })
+        .then(function () {
+            if(notifuuids.creatoruuid !== uuid){
+                return usranlytcsutils.updateUserHatsoffGiven(connection, uuid);
+            }
+        })
+        .then(function () {
+            if(notifuuids.creatoruuid !== uuid){
+                return usranlytcsutils.updateUserHatsoffsReceived(connection, notifuuids.creatoruuid);
             }
         })
         .then(function () {

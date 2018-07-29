@@ -27,6 +27,7 @@ var hashtagutils = require('../hashtag/HashTagUtils');
 var entityutils = require('../entity/EntityUtils');
 var entityimgutils = require('../entity/EntityImageUtils');
 var entityintrstutils = require('../interests/EntityInterestsUtils');
+let usranlytcsutils = require('../user-manager/analytics/UserAnalyticsUtils');
 var commentutils = require('../comment/CommentUtils');
 var feedutils = require('../feed/FeedUtils');
 
@@ -462,6 +463,19 @@ router.post('/collaborated', upload.fields([{name: 'capture-img-high', maxCount:
                 //Send a notification to followers
                 return entityutils.sendGapPostNotification(connection, requesterdetails.firstname, requesterdetails.lastname, uuid, entityid);
             }
+        })
+        .then(function () {
+            if(shortdetails.uuid !== uuid){
+                return usranlytcsutils.updateUserCaptureCollabDone(connection, uuid);
+            }
+        })
+        .then(function () {
+            if(shortdetails.uuid !== uuid){
+                return usranlytcsutils.updateUserShortWrittenOn(connection, shortdetails.uuid);
+            }
+        })
+        .then(function () {
+            return usranlytcsutils.updateUserTotalPosts(connection, uuid);
         })
         .then(function () {
             throw new BreakPromiseChainError(); //To disconnect server connection

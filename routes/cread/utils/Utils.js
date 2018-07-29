@@ -263,6 +263,10 @@ function getCaptureJournalOverlayUrl(uuid, capid) {
     return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Capture/' + capid + '-overlay-journal.png';
 }
 
+function getBadgeImgUrl(badgeimg) {
+    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Cread-Badges/' + badgeimg;
+}
+
 function commitTransaction(connection, resultfromprev) {
     return new Promise(function (resolve, reject) {
         connection.commit(function (err) {
@@ -508,6 +512,7 @@ module.exports = {
     getShortCoffeeMugOverlayUrl: getShortCoffeeMugOverlayUrl,
     getShortJournalOverlayUrl: getShortJournalOverlayUrl,
     getCaptureJournalOverlayUrl: getCaptureJournalOverlayUrl,
+    getBadgeImgUrl: getBadgeImgUrl,
     commitTransaction: commitTransaction,
     beginTransaction: beginTransaction,
     rollbackTransaction: rollbackTransaction,

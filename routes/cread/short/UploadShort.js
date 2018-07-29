@@ -23,6 +23,7 @@ var feedutils = require('../feed/FeedUtils');
 var entityutils = require('../entity/EntityUtils');
 var entityimgutils = require('../entity/EntityImageUtils');
 var entityintrstutils = require('../interests/EntityInterestsUtils');
+let usranlytcsutils = require('../user-manager/analytics/UserAnalyticsUtils');
 var commentutils = require('../comment/CommentUtils');
 var shortutils = require('./ShortUtils');
 var hashtagutils = require('../hashtag/HashTagUtils');
@@ -246,6 +247,29 @@ router.post('/', upload.single('short-image'), function (request, response) {
                 //Send a notification to followers
                 return entityutils.sendGapPostNotification(connection, requesterdetails.firstname, requesterdetails.lastname, uuid, entityid);
             }
+        })
+        .then(function () {
+            if(captureuseruuid && captureuseruuid !== uuid){
+                return usranlytcsutils.updateUserShortCollabDone(connection, uuid);
+            }
+        })
+        .then(function () {
+            if(captureuseruuid && captureuseruuid !== uuid){
+                return usranlytcsutils.updateUserCaptureAddedOn(connection, captureuseruuid);
+            }
+        })
+        .then(function () {
+            if(captureuseruuid && captureuseruuid !== uuid){
+                return usranlytcsutils.updateUserLongFormCollab(connection, uuid);
+            }
+        })
+        .then(function () {
+            if(!captureuseruuid){
+                return usranlytcsutils.updateUserLongFormSolo(connection, uuid);
+            }
+        })
+        .then(function () {
+            return usranlytcsutils.updateUserTotalPosts(connection, uuid);
         })
         .then(function () {
             throw new BreakPromiseChainError(); //To disconnect server connection
