@@ -20,6 +20,7 @@ var entityspecificutils = require('../entity/EntitySpecificUtils');
 var entityimgutils = require('../entity/EntityImageUtils');
 var followutils = require('../follow/FollowUtils');
 var chatconvoutils = require('../chat/ChatConversationUtils');
+let usranlytcsutils = require('../user-manager/analytics/UserAnalyticsUtils');
 
 var async = require('async');
 var uuidGen = require('uuid');
@@ -589,6 +590,122 @@ function addDataToHelpQues(connection, sqlparams) {
                 reject(err);
             }
             else {
+                resolve();
+            }
+        });
+    });
+}
+
+router.post('/update-users-analytics', (request, response) => {
+
+    let connection;
+
+    config.getNewConnection()
+        .then((conn) => {
+            connection = conn;
+            return getAllUsers(connection);
+        })
+        .then((users) => {
+            updateUserAnalytics(users);
+            response.send({
+                status: 'process initiated'
+            });
+            response.end();
+            throw new BreakPromiseChainError();
+        })
+        .catch((err) => {
+            config.disconnect(connection);
+            if(err instanceof BreakPromiseChainError){
+                //Do nothing
+            }
+            else{
+                console.error(err);
+                response.status(500).send({
+                    message: 'Some error occurred at the server'
+                }).end();
+            }
+        });
+});
+
+function getAllUsers(connection){
+    return new Promise((resolve, reject) => {
+        connection.query('SELECT uuid ' +
+            'FROM User ' +
+            'ORDER BY regdate DESC', [], (err, rows) => {
+
+            if(err){
+                reject(err);
+            }
+            else{
+                resolve(rows);
+            }
+        });
+    });
+}
+
+function updateUserAnalytics(users) {
+    return new Promise((resolve, reject) => {
+        async.each(users, function (user, callback) {
+
+            let uuid = user.uuid;
+            let connection;
+
+            config.getNewConnection()
+                .then(function (conn) {
+                    connection = conn;
+                    return usranlytcsutils.updateUserTotalPosts(connection, uuid);
+                })
+                .then(() => {
+                    return usranlytcsutils.updateUserFeaturedCount(connection, uuid);
+                })
+                .then(() => {
+                    return usranlytcsutils.updateUserFeaturedCountConsec(connection, uuid);
+                })
+                .then(() => {
+                    return usranlytcsutils.updateUserCommentsGiven(connection, uuid);
+                })
+                .then(() => {
+                    return usranlytcsutils.updateUserCommentsReceived(connection, uuid);
+                })
+                .then(() => {
+                    return usranlytcsutils.updateUserHatsoffGiven(connection, uuid);
+                })
+                .then(() => {
+                    return usranlytcsutils.updateUserHatsoffsReceived(connection, uuid);
+                })
+                .then(() => {
+                    return usranlytcsutils.updateUserShortCollabDone(connection, uuid);
+                })
+                .then(() => {
+                    return usranlytcsutils.updateUserShortWrittenOn(connection, uuid);
+                })
+                .then(() => {
+                    return usranlytcsutils.updateUserCaptureCollabDone(connection, uuid);
+                })
+                .then(() => {
+                    return usranlytcsutils.updateUserCaptureAddedOn(connection, uuid);
+                })
+                .then(() => {
+                    return usranlytcsutils.updateUserLongFormSolo(connection, uuid);
+                })
+                .then(() => {
+                    return usranlytcsutils.updateUserLongFormCollab(connection, uuid);
+                })
+                .then(() => {
+                    console.log(`updateUserAnalytics for ${user.uuid} is complete`);
+                    config.disconnect(connection);
+                    callback();
+                })
+                .catch((err) => {
+                    config.disconnect(connection);
+                    callback(err);
+                });
+
+        }, function (err) {
+            if(err){
+                reject(err);
+            }
+            else{
                 resolve();
             }
         });
