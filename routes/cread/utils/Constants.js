@@ -23,7 +23,7 @@ const max_intrst_selectn_div = config.isProduction() ? 4 : 4;   //Divisor to div
 const min_percentile_quality_user_downvote = 90;
 const min_qpercentile_user_recommendation = 70;
 
-const total_badges = 17;
+const total_badges = Object.keys(badgenames).length - 1;
 
 const mark_for_collab = {
     UNMARKED: 'UNMARKED',
@@ -50,6 +50,26 @@ const cache_time = {
     xxhigh: !(config.isProduction()) ? 20 : 3600,       //1 hour
     xxxhigh: !(config.isProduction()) ? 20 : 21600,     //6 hours
     ultrahigh: !(config.isProduction()) ? 20 : 86400    //24 hours
+};
+
+const badgenames = {
+    SIGN_UP: "Cread-ee",
+    BIO: "Persona Grata",
+    TOP_ARTIST: "Top Artist",
+    FEATURED_ONCE: "Featured",
+    FEATURED_3_CONSEC: "Star",
+    COMMENT_GIVEN: "Critic",
+    COMMENT_RECEIVED: "Alpha Artist",
+    HATSOFF_GIVEN: "Admirer",
+    HATSOFF_RECEIVED: "Praiseworthy",
+    SHORT_WRITTEN_ON: "Word Player",
+    CAPTURE_ADDED_ON: "Picasso",
+    FOLLOWING: "Companion",
+    FOLLOWERS: "Popular",
+    FIRST_POST: "Inception",
+    LONG_FORM: "Story Teller",
+    CAPTURE_COLLAB_DONE: "Aesthete",
+    SHORT_COLLAB_DONE: "Wordsworth"
 };
 
 function getMarkup(markup) {
@@ -82,5 +102,6 @@ module.exports = {
     min_qpercentile_user_recommendation: min_qpercentile_user_recommendation,
     max_intrst_selectn_div: max_intrst_selectn_div,
     mark_for_collab: mark_for_collab,
-    total_badges: total_badges
+    total_badges: total_badges,
+    badgenames: badgenames
 };

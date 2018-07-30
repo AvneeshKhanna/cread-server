@@ -3,7 +3,7 @@
  */
 'use-strict';
 
-var async = require('async');
+const async = require('async');
 
 const config = require('../../Config');
 const BreakPromiseChainError = require('../utils/BreakPromiseChainError');
@@ -11,6 +11,8 @@ const consts = require('../utils/Constants');
 const utils = require('../utils/Utils');
 var cacheutils = require('../utils/cache/CacheUtils');
 var cachemanager = require('../utils/cache/CacheManager');
+const notify = require('../../notification-system/notificationFramework');
+const badgenames = consts.badgenames;
 
 /**
  * Function to calculate which badges have been unlocked for a particular user
@@ -46,12 +48,18 @@ function getBadgesData(connection, requesteduuid, unlocked_only) {
 
 function getBadgesDataExceptTopArtist(connection, requesteduuid, unlocked_only) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT F.followee, F.follower, U.bio ' +
-            'FROM Follow F ' +
-            'JOIN User U ' +
-            'ON(U.uuid = ?) ' +
-            'WHERE followee = ? ' +
-            'OR follower = ?;' +
+        connection.query('SELECT F.follower, F.followee, U.bio ' +
+            'FROM (' +
+                'SELECT bio, uuid ' +
+                'FROM User ' +
+                'WHERE uuid = ?' +
+            ') AS U ' +
+            'CROSS JOIN (' +
+                'SELECT followee, follower  ' +
+                'FROM Follow ' +
+                'WHERE followee = ? ' +
+                'OR follower = ?' +
+            ') AS F;'+
             'SELECT * ' +
             'FROM UserAnalytics UA ' +
             'WHERE uuid = ?', [requesteduuid, requesteduuid, requesteduuid, requesteduuid], function (err, rows) {
@@ -59,118 +67,118 @@ function getBadgesDataExceptTopArtist(connection, requesteduuid, unlocked_only) 
                 reject(err);
             }
             else {
-                var follow_data = rows[0];
+                let follow_data = rows[0];
 
-                var followercount = follow_data.filter(function (f) {
-                    return f.followee === requesteduuid;
-                }).length;
-
-                var followingcount = follow_data.filter(function (f) {
+                let followingcount = follow_data.filter(function (f) {
                     return f.follower === requesteduuid;
                 }).length;
 
-                var analytics_data = rows[1][0];
+                let followercount = follow_data.filter(function (f) {
+                    return f.followee === requesteduuid;
+                }).length;
 
-                var badge_data = [
+                let analytics_data = rows[1][0];
+
+                let badge_data = [
                     {
                         unlocked: true,
-                        title: "Sign Up",
+                        title: badgenames.SIGN_UP,
                         description: "You unlock this badge by becoming a member of the Cread community",
                         imgurl: utils.getBadgeImgUrl("1.png")
                     },
                     {
-                        unlocked: !!follow_data.bio,
-                        title: "Bio",
+                        unlocked: !!follow_data[0].bio,
+                        title: badgenames.BIO,
                         description: "You unlock this badge by filling up your bio",
                         imgurl: utils.getBadgeImgUrl("2.png")
                     },
                     {
                         unlocked: analytics_data.featured > 0,
-                        title: "Featured",
+                        title: badgenames.FEATURED_ONCE,
                         description: "You unlock this badge by becoming a featured artist on Cread",
                         imgurl: utils.getBadgeImgUrl("3.png")
                     },
                     {
                         unlocked: !!analytics_data.featured_3_consctve,
-                        title: "Featured Consecutive",
+                        title: badgenames.FEATURED_3_CONSEC,
                         description: "You unlock this badge by becoming a featured artist on Cread 3 days in a row",
                         imgurl: utils.getBadgeImgUrl("4.png")
                     },
                     {
-                        unlocked: analytics_data.comment_given >= 10,
-                        title: "Comment Given",
+                        unlocked: analytics_data.comment_given >= 30,
+                        title: badgenames.COMMENT_GIVEN,
                         description: "You unlock this badge by commenting 10 or more times on others' posts",
                         imgurl: utils.getBadgeImgUrl("5.png")
                     },
                     {
-                        unlocked: analytics_data.comment_received >= 5,
-                        title: "Comment Received",
+                        unlocked: analytics_data.comment_received >= 15,
+                        title: badgenames.COMMENT_RECEIVED,
                         description: "You unlock this badge when you receive 5 or more comments from others on your posts",
                         imgurl: utils.getBadgeImgUrl("6.png")
                     },
                     {
-                        unlocked: analytics_data.hatsoff_given >= 20,
-                        title: "Hatsoff Given",
+                        unlocked: analytics_data.hatsoff_given >= 50,
+                        title: badgenames.HATSOFF_GIVEN,
                         description: "You unlock this badge by giving 20 or more hatsoffs on others' posts",
                         imgurl: utils.getBadgeImgUrl("7.png")
                     },
                     {
-                        unlocked: analytics_data.hatsoff_received >= 10,
-                        title: "Hatsoff Received",
+                        unlocked: analytics_data.hatsoff_received >= 25,
+                        title: badgenames.HATSOFF_RECEIVED,
                         description: "You unlock this badge when you receive 10 or more hatsoffs from others on your posts",
                         imgurl: utils.getBadgeImgUrl("8.png")
                     },
                     {
                         unlocked: analytics_data.short_written_on >= 3,
-                        title: "Collaboration Others Writing",
+                        title: badgenames.SHORT_WRITTEN_ON,
                         description: "You unlock this badge when others collaborate on your writing posts 3 or more times",
                         imgurl: utils.getBadgeImgUrl("9.png")
                     },
                     {
                         unlocked: analytics_data.capture_added_on >= 3,
-                        title: "Collaboration Others Photo",
+                        title: badgenames.CAPTURE_ADDED_ON,
                         description: "You unlock this badge when others collaborate on your artistic photo posts 3 or more times",
                         imgurl: utils.getBadgeImgUrl("10.png")
                     },
                     {
                         unlocked: followingcount >= 35,
-                        title: "Following",
+                        title: badgenames.FOLLOWING,
                         description: "You unlock this badge when you follow 35 or more people",
                         imgurl: utils.getBadgeImgUrl("11.png")
                     },
                     {
                         unlocked: followercount >= 25,
-                        title: "Follower",
+                        title: badgenames.FOLLOWERS,
                         description: "You unlock this badge when 25 or more people follow you",
                         imgurl: utils.getBadgeImgUrl("12.png")
                     },
                     {
                         unlocked: analytics_data.total_uploads >= 1,
-                        title: "First Post",
+                        title: badgenames.FIRST_POST,
                         description: "You unlock this badge when you upload your first post on Cread",
                         imgurl: utils.getBadgeImgUrl("13.png")
                     },
                     {
-                        unlocked: !!analytics_data.long_form_solo,
-                        title: "Long Form Solo",
+                        unlocked: !!analytics_data.long_form_solo || !!analytics_data.long_form_collab,
+                        title: badgenames.LONG_FORM,
                         description: "You unlock this badge when you upload your long form writing post on Cread",
                         imgurl: utils.getBadgeImgUrl("14.png")
                     },
-                    {
+                    /*{
                         unlocked: !!analytics_data.long_form_collab,
-                        title: "Long Form Collab",
+                        title: "Story Teller",
                         description: "You unlock this badge when you upload your long form writing post in collaboration on Cread",
                         imgurl: utils.getBadgeImgUrl("15.png")
-                    },
+                    },*/
                     {
                         unlocked: analytics_data.capture_collab_done > 0,
-                        title: "Photo Collabs Done",
+                        title: badgenames.CAPTURE_COLLAB_DONE,
                         description: "You unlock this badge when you upload your first artistic photo in collaboration on Cread",
                         imgurl: utils.getBadgeImgUrl("16.png")
                     },
                     {
                         unlocked: analytics_data.short_collab_done > 0,
-                        title: "Writing Collab Done",
+                        title: badgenames.SHORT_COLLAB_DONE,
                         description: "You unlock this badge when you upload your first writing in collaboration on Cread",
                         imgurl: utils.getBadgeImgUrl("17.png")
                     }
@@ -222,15 +230,25 @@ function updateBadgeCountCache(users) {
  * Function to update badge count after fetching data from UserAnalytics table
  * */
 function updateBadgeCountCacheFromDB(connection, uuid) {
+
+    let badgecount = 0;
+
     return new Promise(function (resolve, reject) {
         getBadgesDataExceptTopArtist(connection, uuid, true)
             .then(function (result) {
+                badgecount = result.items.length;
                 return updateBadgeCountCache([{
                     uuid: uuid,
-                    badgecount: result.items.length
+                    badgecount: badgecount
                 }]);
             })
-            .then(resolve, reject);
+            .then(() => {
+                if(badgecount >= consts.total_badges){
+                    sendBadgeNotification(uuid, badgenames.TOP_ARTIST);
+                }
+                resolve();
+            })
+            .catch(reject);
     });
 }
 
@@ -288,9 +306,24 @@ async function isTopArtist(uuid) {
     });
 }
 
+function sendBadgeNotification(uuid, badgename) {
+    return new Promise((resolve, reject) => {
+
+        let notifData = {
+            message: "Congratulations! You have unlocked the '" + badgename + "' badge",
+            category: "badge",
+            persistable: "No"
+        };
+
+        notify.notificationPromise([uuid], notifData)
+            .then(resolve, reject);
+    });
+}
+
 module.exports = {
     getBadgesData: getBadgesData,
     updateBadgeCountCacheFromDB: updateBadgeCountCacheFromDB,
     getUserBadgeCount: getUserBadgeCount,
-    isTopArtist: isTopArtist
+    isTopArtist: isTopArtist,
+    sendBadgeNotification: sendBadgeNotification
 };

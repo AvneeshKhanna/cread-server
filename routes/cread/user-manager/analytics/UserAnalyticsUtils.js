@@ -4,6 +4,7 @@
 'use-strict';
 
 let badgeutils = require('../../badges/BadgeUtils');
+const badgenames = require('../../utils/Constants').badgenames;
 
 /**
  * Creates a new entry into UserAnalytics table
@@ -43,7 +44,18 @@ function updateUserTotalPosts(connection, uuid) {
             }
             else {
                 badgeutils.updateBadgeCountCacheFromDB(connection, uuid)
-                    .then(resolve, reject);
+                    .then(() => {
+                        return getParameterFromUserAnalytics(connection, "total_uploads", uuid);
+                    })
+                    .then((value) => {
+                        if(value === 1){
+                            badgeutils.sendBadgeNotification(uuid, badgenames.FIRST_POST)
+                        }
+                        resolve();
+                    }, reject)
+                    .catch(err => {
+                        console.error(err);
+                    });
             }
         });
     });
@@ -69,7 +81,18 @@ function updateUserFeaturedCount(connection, uuid) {
             }
             else{
                 badgeutils.updateBadgeCountCacheFromDB(connection, uuid)
-                    .then(resolve, reject);
+                    .then(() => {
+                        return getParameterFromUserAnalytics(connection, "featured", uuid);
+                    })
+                    .then((value) => {
+                        if(value === 1){
+                            badgeutils.sendBadgeNotification(uuid, badgenames.FEATURED_ONCE)
+                        }
+                        resolve();
+                    }, reject)
+                    .catch(err => {
+                        console.error(err);
+                    });
             }
 
         });
@@ -82,9 +105,9 @@ function updateUserFeaturedCount(connection, uuid) {
 function updateUserFeaturedCountConsec(connection, uuid) {
     return new Promise((resolve, reject) => {
         connection.query("INSERT INTO UserAnalytics (uuid, featured_3_consctve) " +
-            "SELECT FC.uuid, CASE WHEN FC.consec_count IS NULL THEN false ELSE true END AS f_consec_status" +
+            "SELECT FC.uuid, FC.f_consec_status " +
             "FROM (" +
-                "SELECT U.uuid, COUNT(FA.featured_id) AS consec_count " +
+                "SELECT U.uuid, CASE WHEN FSQ.consec_count IS NULL THEN false ELSE true END AS f_consec_status " +
                 "FROM User U " +
                 "LEFT JOIN (" +
                     "SELECT FA.uuid, COUNT(FA.featured_id) AS consec_count " +
@@ -102,6 +125,7 @@ function updateUserFeaturedCountConsec(connection, uuid) {
                 reject(err);
             }
             else{
+                //TODO: Notification system
                 badgeutils.updateBadgeCountCacheFromDB(connection, uuid)
                     .then(resolve, reject);
             }
@@ -130,7 +154,18 @@ function updateUserCommentsGiven(connection, uuid) {
             }
             else{
                 badgeutils.updateBadgeCountCacheFromDB(connection, uuid)
-                    .then(resolve, reject);
+                    .then(() => {
+                        return getParameterFromUserAnalytics(connection, "comment_given", uuid);
+                    })
+                    .then((value) => {
+                        if(value === 30){
+                            badgeutils.sendBadgeNotification(uuid, badgenames.COMMENT_GIVEN)
+                        }
+                        resolve();
+                    }, reject)
+                    .catch(err => {
+                        console.error(err);
+                    });
             }
         });
     });
@@ -155,7 +190,18 @@ function updateUserCommentsReceived(connection, uuid) {
             }
             else{
                 badgeutils.updateBadgeCountCacheFromDB(connection, uuid)
-                    .then(resolve, reject);
+                    .then(() => {
+                        return getParameterFromUserAnalytics(connection, "comment_received", uuid);
+                    })
+                    .then((value) => {
+                        if(value === 15){
+                            badgeutils.sendBadgeNotification(uuid, badgenames.COMMENT_RECEIVED)
+                        }
+                        resolve();
+                    }, reject)
+                    .catch(err => {
+                        console.error(err);
+                    });
             }
         });
     });
@@ -181,7 +227,18 @@ function updateUserHatsoffGiven(connection, uuid) {
             }
             else{
                 badgeutils.updateBadgeCountCacheFromDB(connection, uuid)
-                    .then(resolve, reject);
+                    .then(() => {
+                        return getParameterFromUserAnalytics(connection, "hatsoff_given", uuid);
+                    })
+                    .then((value) => {
+                        if(value === 50){
+                            badgeutils.sendBadgeNotification(uuid, badgenames.HATSOFF_GIVEN)
+                        }
+                        resolve();
+                    }, reject)
+                    .catch(err => {
+                        console.error(err);
+                    });
             }
         });
     });
@@ -208,7 +265,18 @@ function updateUserHatsoffsReceived(connection, uuid) {
             }
             else{
                 badgeutils.updateBadgeCountCacheFromDB(connection, uuid)
-                    .then(resolve, reject);
+                    .then(() => {
+                        return getParameterFromUserAnalytics(connection, "hatsoff_received", uuid);
+                    })
+                    .then((value) => {
+                        if(value === 25){
+                            badgeutils.sendBadgeNotification(uuid, badgenames.HATSOFF_RECEIVED)
+                        }
+                        resolve();
+                    }, reject)
+                    .catch(err => {
+                        console.error(err);
+                    });
             }
         });
     });
@@ -244,7 +312,18 @@ function updateUserShortCollabDone(connection, uuid) {
             }
             else{
                 badgeutils.updateBadgeCountCacheFromDB(connection, uuid)
-                    .then(resolve, reject);
+                    .then(() => {
+                        return getParameterFromUserAnalytics(connection, "short_collab_done", uuid);
+                    })
+                    .then((value) => {
+                        if(value === 1){
+                            badgeutils.sendBadgeNotification(uuid, badgenames.SHORT_COLLAB_DONE)
+                        }
+                        resolve();
+                    }, reject)
+                    .catch(err => {
+                        console.error(err);
+                    });
             }
 
         });
@@ -281,7 +360,18 @@ function updateUserShortWrittenOn(connection, uuid) {
             }
             else{
                 badgeutils.updateBadgeCountCacheFromDB(connection, uuid)
-                    .then(resolve, reject);
+                    .then(() => {
+                        return getParameterFromUserAnalytics(connection, "short_written_on", uuid);
+                    })
+                    .then((value) => {
+                        if(value === 3){
+                            badgeutils.sendBadgeNotification(uuid, badgenames.SHORT_WRITTEN_ON)
+                        }
+                        resolve();
+                    }, reject)
+                    .catch(err => {
+                        console.error(err);
+                    });
             }
 
         });
@@ -318,7 +408,18 @@ function updateUserCaptureCollabDone(connection, uuid) {
             }
             else{
                 badgeutils.updateBadgeCountCacheFromDB(connection, uuid)
-                    .then(resolve, reject);
+                    .then(() => {
+                        return getParameterFromUserAnalytics(connection, "capture_collab_done", uuid);
+                    })
+                    .then((value) => {
+                        if(value === 1){
+                            badgeutils.sendBadgeNotification(uuid, badgenames.CAPTURE_COLLAB_DONE)
+                        }
+                        resolve();
+                    }, reject)
+                    .catch(err => {
+                        console.error(err);
+                    });
             }
 
         });
@@ -355,7 +456,18 @@ function updateUserCaptureAddedOn(connection, uuid) {
             }
             else{
                 badgeutils.updateBadgeCountCacheFromDB(connection, uuid)
-                    .then(resolve, reject);
+                    .then(() => {
+                        return getParameterFromUserAnalytics(connection, "capture_added_on", uuid);
+                    })
+                    .then((value) => {
+                        if(value === 3){
+                            badgeutils.sendBadgeNotification(uuid, badgenames.CAPTURE_ADDED_ON)
+                        }
+                        resolve();
+                    }, reject)
+                    .catch(err => {
+                        console.error(err);
+                    });
             }
 
         });
@@ -432,6 +544,24 @@ function updateUserLongFormSolo(connection, uuid) {
                     .then(resolve, reject);
             }
 
+        });
+    });
+}
+
+/**
+ * Function to fetch a particular param/column from UserAnalytics table for a particular user
+ * */
+function getParameterFromUserAnalytics(connection, param, uuid) {
+    return new Promise((resolve, reject) => {
+        connection.query(`SELECT ${param} 
+        FROM UserAnalytics 
+        WHERE uuid = ?`, [uuid], (err, rows) => {
+            if(err){
+                reject(err);
+            }
+            else {
+                resolve(rows[0][param]);
+            }
         });
     });
 }

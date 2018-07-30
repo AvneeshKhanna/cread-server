@@ -14,6 +14,7 @@ var BreakPromiseChainError = require('../cread/utils/BreakPromiseChainError');
 var userprofileutils = require('../cread/user-manager/UserProfileUtils');
 var featuredartistutils = require('../cread/featured-artists/FeaturedArtistsUtils');
 var usereventsutils = require('../cread/user-manager/events/UserEventsUtils');
+let usranlytcsutils = require('../cread/user-manager/analytics/UserAnalyticsUtils');
 
 var top_givers_notification = new CronJob({
     cronTime: '00 30 20 * * 5', //second | minute | hour | day-of-month | month | day-of-week
@@ -145,6 +146,7 @@ var featured_artist_notification = new CronJob({
             })
             .then(function () {
                 if (featuredartists.length > 0) {
+                    updateFeaturedArtistsAnalyticsAll(connection, featuredartists);
                     return featuredartistutils.sendFeaturedArtistNotifToFollowers(connection, featuredartists);
                 }
                 else {
@@ -177,6 +179,29 @@ var featured_artist_notification = new CronJob({
     start: false,   //Whether to start just now
     timeZone: 'Asia/Kolkata'
 });
+
+function updateFeaturedArtistsAnalyticsAll(connection, users) {
+    return new Promise((resolve, reject) => {
+        async.each(users, (user, callback) => {
+            usranlytcsutils.updateUserFeaturedCount(connection, user.uuid)
+                .then(() => {
+                    return usranlytcsutils.updateUserFeaturedCountConsec(connection, user.uuid);
+                })
+                .then(()=> {
+                    callback();
+                })
+                .catch(err => {
+                    callback(err);
+                });
+
+        }, err => {
+            if(err){
+                console.error(err);
+            }
+            resolve();
+        })
+    })
+}
 
 /**
  * Returns the entityid, type and the hatsoffcount of the Entity that has more than 3 hats-offs within the last scan date
@@ -249,7 +274,7 @@ function categoriseUsers(connection, entity) {
 var engagement_notification_job = new CronJob({
     //Runs every 2nd day, 8:30 pm
     cronTime: '00 30 20 */2 * *', //second | minute | hour | day-of-month | month | day-of-week
-    onTick: function() {
+    onTick: function () {
 
         usereventsutils.sendEngagementNotificationsForUsers()
             .then(function () {
@@ -342,7 +367,7 @@ function sendNotificationInactiveUsersAll(users) {
                     callback(err);
                 });
         }, function (err) {
-            if(err){
+            if (err) {
                 console.error("sendNotificationInactiveUsersAll errored");
                 reject(err);
             }
@@ -405,10 +430,10 @@ function getRecentPosters(connection) {
 
                 var message;
 
-                if(rows.length > 0){
+                if (rows.length > 0) {
                     message = rows[0].firstname + (rows[1] ? ", " + rows[1].firstname : "") + " and " + rows.length + " others posted recently since you joined. We thought you might want to post something of your own"
                 }
-                else{
+                else {
                     message = "Some nice artwork has been shared on Cread since you joined. We thought you might want to post something of your own";
                 }
 
@@ -433,12 +458,12 @@ var first_posts_notification_job = new CronJob({
             })
             .then(function (users) {
                 first_post_users = users;
-                if(first_post_users.length > 0){
+                if (first_post_users.length > 0) {
                     return userprofileutils.getAllUsersExcept(connection, first_post_users.map(function (user) {
                         return user.uuid;
                     }));
                 }
-                else{
+                else {
                     throw new BreakPromiseChainError();
                 }
             })
@@ -480,11 +505,11 @@ function getFirstPosts(connection) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT U.uuid, U.firstname, U.lastname, E.entityid ' +
             'FROM (' +
-                'SELECT entityid, MIN(regdate) AS first_post_time ' +
-                'FROM Entity ' +
-                'WHERE status = "ACTIVE" ' +
-                'GROUP BY uuid ' +
-                'HAVING first_post_time > DATE_SUB(NOW(), INTERVAL 3 DAY)' +
+            'SELECT entityid, MIN(regdate) AS first_post_time ' +
+            'FROM Entity ' +
+            'WHERE status = "ACTIVE" ' +
+            'GROUP BY uuid ' +
+            'HAVING first_post_time > DATE_SUB(NOW(), INTERVAL 3 DAY)' +
             ') AS FirstPosts ' +
             'JOIN Entity E ' +
             'ON(E.regdate = FirstPosts.first_post_time) ' +
