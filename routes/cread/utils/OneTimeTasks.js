@@ -606,7 +606,13 @@ router.post('/update-users-analytics', (request, response) => {
             return getAllUsers(connection);
         })
         .then((users) => {
-            updateUserAnalytics(users);
+            updateUserAnalytics(users)
+                .then(() => {
+                    console.log(`${updateUserAnalytics} completed executing`);
+                })
+                .catch(err => {
+                    console.error(err);
+                });
             response.send({
                 status: 'process initiated'
             });
@@ -645,7 +651,7 @@ function getAllUsers(connection){
 
 function updateUserAnalytics(users) {
     return new Promise((resolve, reject) => {
-        async.each(users, function (user, callback) {
+        async.eachLimit(users, 25, function (user, callback) {
 
             let uuid = user.uuid;
             let connection;
