@@ -23,8 +23,6 @@ const max_intrst_selectn_div = config.isProduction() ? 4 : 4;   //Divisor to div
 const min_percentile_quality_user_downvote = 90;
 const min_qpercentile_user_recommendation = 70;
 
-const total_badges = Object.keys(badgenames).length - 1;
-
 const mark_for_collab = {
     UNMARKED: 'UNMARKED',
     ACCEPTED: 'ACCEPTED',
@@ -71,6 +69,8 @@ const badgenames = {
     CAPTURE_COLLAB_DONE: "Aesthete",
     SHORT_COLLAB_DONE: "Wordsworth"
 };
+
+const total_badges = Object.keys(badgenames).length - 1;
 
 function getMarkup(markup) {
     if (markup > 100) {

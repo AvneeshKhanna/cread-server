@@ -31,6 +31,15 @@ function loadFeed(connection, uuid, sql, sqlparams, sortby, lastindexkey, limit)
             else {
                 console.log("TIME after SQL: " + moment().format('YYYY-MM-DD HH:mm:ss'));
 
+                rows.map(function (r) {
+                    if(r.repostid){
+                        console.log(moment(r.repostdate).format('YYYY-MM-DD HH:mm:ss'));
+                    }
+                    else{
+                        console.log(moment(r.redate).format('YYYY-MM-DD HH:mm:ss'));
+                    }
+                });
+
                 if (rows.length > 0) {
 
                     var feedEntities = rows.map(function (elem) {
@@ -750,7 +759,7 @@ function getEntitiesInfoFast(connection, master_rows) {
                 }
                 else {
                     console.log("fetched from cache");
-                    resolve(addDefaultKV(sortByDateDesc(mergeAndFlattenRows(master_rows, 'info')), 'livefilter', 'none'));
+                    resolve(addDefaultKV(sortByDate(mergeAndFlattenRows(master_rows, 'info'), 'regdate', 'DESC'), 'livefilter', 'none'));
                     throw new BreakPromiseChainError();
                 }
             })
@@ -763,7 +772,7 @@ function getEntitiesInfoFast(connection, master_rows) {
                     master_rows[master_entityids.indexOf(r.info.entityid)].info = r.info;
                 });
 
-                resolve(addDefaultKV(sortByDateDesc(mergeAndFlattenRows(master_rows, 'info')), 'livefilter', 'none'));
+                resolve(addDefaultKV(sortByDate(mergeAndFlattenRows(master_rows, 'info'), 'regdate', 'DESC'), 'livefilter', 'none'));
                 //TODO: Uncomment
                 updateEntitiesInfoCache(rows.map(function (r) {
                     return r.info;
@@ -798,13 +807,13 @@ function mergeAndFlattenRows(rows, key) {
 /**
  * Sort the elements of the array by descending order of date
  * */
-function sortByDateDesc(rows) {
+function sortByDate(rows, keyname, orderby) {
     rows.sort(function (a, b) {
-        if (a.regdate < b.regdate) {
-            return 1;
+        if (a[keyname] < b[keyname] ) {
+            return orderby === 'DESC' ? 1 : -1;
         }
         else {
-            return -1;
+            return orderby === 'DESC' ? -1 : 1;
         }
     });
     return rows;
@@ -847,5 +856,6 @@ module.exports = {
     structureDataCrossPatternTopNew: structureDataCrossPatternTopNew,
     getCollaborationCountsFast: getCollaborationCountsFast,
     getEntitiesInfoFast: getEntitiesInfoFast,
-    updateEntitiesInfoCacheViaDB: updateEntitiesInfoCacheViaDB
+    updateEntitiesInfoCacheViaDB: updateEntitiesInfoCacheViaDB,
+    sortByDate: sortByDate
 };

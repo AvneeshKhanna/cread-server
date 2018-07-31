@@ -49,20 +49,13 @@ function getBadgesData(connection, requesteduuid, unlocked_only) {
 function getBadgesDataExceptTopArtist(connection, requesteduuid, unlocked_only) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT F.follower, F.followee, U.bio ' +
-            'FROM (' +
-                'SELECT bio, uuid ' +
-                'FROM User ' +
-                'WHERE uuid = ?' +
-            ') AS U ' +
-            'CROSS JOIN (' +
-                'SELECT followee, follower  ' +
-                'FROM Follow ' +
-                'WHERE followee = ? ' +
-                'OR follower = ?' +
-            ') AS F;'+
+            'FROM User U ' +
+            'LEFT JOIN Follow F ' +
+            'ON (F.followee = U.uuid OR F.follower = U.uuid) ' +
+            'WHERE U.uuid = ?;'+
             'SELECT * ' +
             'FROM UserAnalytics UA ' +
-            'WHERE uuid = ?', [requesteduuid, requesteduuid, requesteduuid, requesteduuid], function (err, rows) {
+            'WHERE uuid = ?', [requesteduuid, requesteduuid], function (err, rows) {
             if (err) {
                 reject(err);
             }

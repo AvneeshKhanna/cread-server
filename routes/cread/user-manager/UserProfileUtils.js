@@ -417,8 +417,8 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
                     'ON E.entityid = H.entityid  ' +
                     'LEFT JOIN Comment AS Cmt ' +
                     'ON E.entityid = Cmt.entityid ' +
-                    'WHERE (S.uuid = ? OR C.uuid = ?) ' +
-                    'AND E.status = "ACTIVE"', [requesteduuid, requesteduuid], function (err, data) {
+                    'WHERE E.uuid = ? ' +
+                    'AND E.status = "ACTIVE"', [requesteduuid], function (err, data) {
                     if (err) {
                         reject(err);
                     }
@@ -449,8 +449,8 @@ function loadRepostTimeline(connection, requesteruuid, requesteduuid, lastindexk
 
         lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
-        var sql = 'SELECT R.repostid, R.regdate AS repostdate, RU.uuid AS reposteruuid, CONCAT_WS(" ", RU.firstname, RU.lastname) AS repostername, ' +
-            'E.caption, E.entityid, E.regdate, E.merchantable, E.type, U.uuid, U.firstname, U.lastname, ' +
+        var sql = 'SELECT R.repostid, R.regdate, RU.uuid AS reposteruuid, RU.firstname AS repostername, ' +
+            'E.caption, E.entityid, E.regdate AS postdate, E.merchantable, E.type, U.uuid, U.firstname, U.lastname, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount ' +
@@ -469,7 +469,7 @@ function loadRepostTimeline(connection, requesteruuid, requesteduuid, lastindexk
             'ON U.uuid = Follow.followee ' +
             'WHERE R.uuid = ? ' +
             'AND E.status = "ACTIVE" ' +
-            'AND E.regdate < ? ' +
+            'AND R.regdate < ? ' +
             'GROUP BY R.repostid ' +
             'ORDER BY R.regdate DESC ' +
             'LIMIT ?';
@@ -484,7 +484,10 @@ function loadRepostTimeline(connection, requesteruuid, requesteduuid, lastindexk
         ];
 
         feedutils.loadFeed(connection, requesteruuid, sql, sqlparams, undefined, lastindexkey, limit)
-            .then(resolve, reject);
+            .then(result => {
+                result.items = feedutils.sortByDate(result.items, 'regdate', 'DESC');
+                resolve(result);
+            }, reject);
     });
 }
 

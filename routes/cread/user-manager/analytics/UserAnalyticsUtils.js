@@ -32,11 +32,12 @@ function updateUserTotalPosts(connection, uuid) {
         connection.query('INSERT INTO UserAnalytics (uuid, total_uploads) ' +
             'SELECT uuid, user_posts ' +
             'FROM ' +
-                '(SELECT uuid, COUNT(*) AS user_posts ' +
-                'FROM Entity ' +
-                'WHERE uuid = ? ' +
-                'AND status = "ACTIVE" ' +
-                'GROUP BY uuid) AS UP ' +
+                '(SELECT U.uuid, COUNT(E.entityid) AS user_posts ' +
+                'FROM User U ' +
+                'LEFT JOIN Entity E ' +
+                'ON(U.uuid = E.uuid AND E.status = "ACTIVE") ' +
+                'WHERE U.uuid = ? ' +
+                'GROUP BY U.uuid) AS UP ' +
             'ON DUPLICATE KEY ' +
             'UPDATE total_uploads = UP.user_posts', [uuid], function (err, rows) {
             if (err) {
@@ -67,12 +68,14 @@ function updateUserTotalPosts(connection, uuid) {
 function updateUserFeaturedCount(connection, uuid) {
     return new Promise((resolve, reject) => {
         connection.query("INSERT INTO UserAnalytics (uuid, featured) " +
-            "SELECT ?, fcount " +
+            "SELECT uuid, fcount " +
             "FROM (" +
-                "SELECT uuid, COUNT(uuid) AS fcount " +
-                "FROM FeaturedArtists " +
-                "WHERE uuid = ?" +
-                "GROUP BY uuid) FA " +
+                "SELECT U.uuid, COUNT(F.uuid) AS fcount " +
+                "FROM User U " +
+                "LEFT JOIN FeaturedArtists F " +
+                "USING(uuid) " +
+                "WHERE U.uuid = ?" +
+                "GROUP BY U.uuid) FA " +
             "ON DUPLICATE KEY " +
             "UPDATE featured = FA.fcount", [uuid, uuid], (err, rows) => {
 
@@ -139,13 +142,14 @@ function updateUserCommentsGiven(connection, uuid) {
         connection.query('INSERT INTO UserAnalytics (uuid, comment_given) ' +
             'SELECT uuid, comment_count ' +
             'FROM (' +
-                'SELECT C.uuid, COUNT(C.commid) AS comment_count ' +
-                'FROM Comment C ' +
-                'JOIN Entity E ' +
-                'USING(entityid) ' +
-                'WHERE C.uuid = ? ' +
-                'AND E.uuid <> ? ' +
-                'GROUP BY C.uuid) AS CG ' +
+                'SELECT U.uuid, COUNT(C.commid) AS comment_count ' +
+                'FROM User U ' +
+                'LEFT JOIN Comment C ' +
+                'ON (C.uuid = U.uuid) ' +
+                'LEFT JOIN Entity E ' +
+                'ON(E.entityid = C.entityid AND E.uuid <> ?) ' +
+                'WHERE U.uuid = ? ' +
+                'GROUP BY U.uuid) AS CG ' +
             'ON DUPLICATE KEY ' +
             'UPDATE comment_given = CG.comment_count', [uuid, uuid], (err, rows) => {
 
@@ -176,13 +180,14 @@ function updateUserCommentsReceived(connection, uuid) {
         connection.query('INSERT INTO UserAnalytics (uuid, comment_received) ' +
             'SELECT uuid, comment_count ' +
             'FROM (' +
-                'SELECT E.uuid, COUNT(C.commid) AS comment_count ' +
-                'FROM Comment C ' +
-                'JOIN Entity E ' +
-                'USING(entityid) ' +
-                'WHERE C.uuid <> ? ' +
-                'AND E.uuid = ?' +
-                'GROUP BY E.uuid) AS CR ' +
+                'SELECT U.uuid, COUNT(C.commid) AS comment_count ' +
+                'FROM User U ' +
+                'LEFT JOIN Entity E ' +
+                'ON(U.uuid = E.uuid AND E.status = "ACTIVE") ' +
+                'LEFT JOIN Comment C ' +
+                'ON(C.entityid = E.entityid AND C.uuid <> ?) ' +
+                'WHERE U.uuid = ? ' +
+                'GROUP BY U.uuid) AS CR ' +
             'ON DUPLICATE KEY ' +
             'UPDATE comment_received = CR.comment_count', [uuid, uuid], (err, rows) => {
             if(err){
@@ -212,13 +217,14 @@ function updateUserHatsoffGiven(connection, uuid) {
         connection.query('INSERT INTO UserAnalytics (uuid, hatsoff_given) ' +
             'SELECT uuid, hatsoff_count ' +
             'FROM (' +
-                'SELECT H.uuid, COUNT(H.hoid) AS hatsoff_count ' +
-                'FROM HatsOff H ' +
-                'JOIN Entity E ' +
-                'USING(entityid) ' +
-                'WHERE H.uuid = ? ' +
-                'AND E.uuid <> ?' +
-                'GROUP BY H.uuid) AS HG ' +
+                'SELECT U.uuid, COUNT(H.hoid) AS hatsoff_count ' +
+                'FROM User U ' +
+                'LEFT JOIN HatsOff H ' +
+                'ON(U.uuid = H.uuid) ' +
+                'LEFT JOIN Entity E ' +
+                'ON(E.entityid = H.entityid AND E.uuid <> ?) ' +
+                'WHERE U.uuid = ? ' +
+                'GROUP BY U.uuid) AS HG ' +
             'ON DUPLICATE KEY ' +
             'UPDATE hatsoff_given = HG.hatsoff_count', [uuid, uuid], (err, rows) => {
 
@@ -249,14 +255,14 @@ function updateUserHatsoffsReceived(connection, uuid) {
         connection.query('INSERT INTO UserAnalytics (uuid, hatsoff_received) ' +
             'SELECT uuid, hatsoff_count ' +
             'FROM (' +
-                'SELECT E.uuid, COUNT(H.hoid) AS hatsoff_count ' +
-                'FROM HatsOff H ' +
-                'JOIN Entity E ' +
-                'USING(entityid) ' +
-                'WHERE H.uuid <> ? ' +
-                'AND E.uuid = ? ' +
-                'AND E.status = "ACTIVE" ' +
-                'GROUP BY E.uuid) AS HR ' +
+                'SELECT U.uuid, COUNT(H.hoid) AS hatsoff_count ' +
+                'FROM User U ' +
+                'LEFT JOIN Entity E ' +
+                'ON(U.uuid = E.uuid AND E.status = "ACTIVE") ' +
+                'LEFT JOIN HatsOff H ' +
+                'ON(E.entityid = H.entityid AND H.uuid <> ?) ' +
+                'WHERE U.uuid = ? ' +
+                'GROUP BY U.uuid) AS HR ' +
             'ON DUPLICATE KEY ' +
             'UPDATE hatsoff_received = HR.hatsoff_count', [uuid, uuid], (err, rows) => {
 
@@ -288,10 +294,11 @@ function updateUserHatsoffsReceived(connection, uuid) {
 function updateUserShortCollabDone(connection, uuid) {
     return new Promise((resolve, reject) => {
         connection.query('INSERT INTO UserAnalytics (uuid, short_collab_done) ' +
-            'SELECT ?, short_collab_count ' +
+            'SELECT uuid, short_collab_count ' +
             'FROM (' +
-                'SELECT COUNT(subQ.shoid) AS short_collab_count ' +
-                'FROM (' +
+                'SELECT U.uuid, COUNT(subQ.shoid) AS short_collab_count ' +
+                'FROM User U ' +
+                'LEFT JOIN (' +
                     'SELECT S.uuid, S.shoid ' +
                     'FROM Short S ' +
                     'JOIN Capture CC ' +
@@ -303,6 +310,8 @@ function updateUserShortCollabDone(connection, uuid) {
                     'AND CC.uuid <> ? ' +
                     'GROUP BY S.shoid ' +
                     ') AS subQ ' +
+                'ON(U.uuid = subQ.uuid) ' +
+                'WHERE U.uuid = ? ' +
                 ') AS SCC ' +
             'ON DUPLICATE KEY ' +
             'UPDATE short_collab_done = SCC.short_collab_count', [uuid, uuid, uuid], (err, rows) => {
@@ -336,10 +345,11 @@ function updateUserShortCollabDone(connection, uuid) {
 function updateUserShortWrittenOn(connection, uuid) {
     return new Promise((resolve, reject) => {
         connection.query('INSERT INTO UserAnalytics (uuid, short_written_on) ' +
-            'SELECT ?, short_written_count ' +
+            'SELECT uuid, short_written_count ' +
             'FROM (' +
-                'SELECT COUNT(subQ.shoid) AS short_written_count ' +
-                'FROM (' +
+                'SELECT U.uuid, COUNT(subQ.shoid) AS short_written_count ' +
+                'FROM User U ' +
+                'LEFT JOIN (' +
                     'SELECT CC.uuid, S.shoid ' +
                     'FROM Short S ' +
                     'JOIN Capture CC ' +
@@ -350,7 +360,9 @@ function updateUserShortWrittenOn(connection, uuid) {
                     'AND CC.uuid = ? ' +
                     'AND S.uuid <> ? ' +
                     'GROUP BY S.shoid' +
-                    ') AS subQ' +
+                    ') AS subQ ' +
+                'ON(U.uuid = subQ.uuid) ' +
+                'WHERE U.uuid = ? ' +
                 ') AS SWC ' +
             'ON DUPLICATE KEY ' +
             'UPDATE short_written_on = SWC.short_written_count', [uuid, uuid, uuid], (err, rows) => {
@@ -384,10 +396,11 @@ function updateUserShortWrittenOn(connection, uuid) {
 function updateUserCaptureCollabDone(connection, uuid) {
     return new Promise((resolve, reject) => {
         connection.query('INSERT INTO UserAnalytics (uuid, capture_collab_done) ' +
-            'SELECT ?, capture_collab_count ' +
+            'SELECT uuid, capture_collab_count ' +
             'FROM (' +
-                'SELECT COUNT(capid) AS capture_collab_count ' +
-                'FROM (' +
+                'SELECT U.uuid, COUNT(capid) AS capture_collab_count ' +
+                'FROM User U ' +
+                'LEFT JOIN (' +
                     'SELECT C.uuid, C.capid ' +
                     'FROM Capture C ' +
                     'JOIN Short CS ' +
@@ -399,6 +412,8 @@ function updateUserCaptureCollabDone(connection, uuid) {
                     'AND CS.uuid <> ? ' +
                     'GROUP BY C.capid ' +
                 ') AS subQ ' +
+                'ON(U.uuid = subQ.uuid) ' +
+                'WHERE U.uuid = ? ' +
             ') AS CCC ' +
             'ON DUPLICATE KEY ' +
             'UPDATE capture_collab_done = CCC.capture_collab_count', [uuid, uuid, uuid], (err, rows) => {
@@ -432,10 +447,11 @@ function updateUserCaptureCollabDone(connection, uuid) {
 function updateUserCaptureAddedOn(connection, uuid) {
     return new Promise((resolve, reject) => {
         connection.query('INSERT INTO UserAnalytics (uuid, capture_added_on) ' +
-            'SELECT ?, capture_added_count ' +
+            'SELECT uuid, capture_added_count ' +
             'FROM (' +
-                'SELECT COUNT(capid) AS capture_added_count ' +
-                'FROM (' +
+                'SELECT U.uuid, COUNT(capid) AS capture_added_count ' +
+                'FROM User U ' +
+                'LEFT JOIN (' +
                     'SELECT CS.uuid, C.capid ' +
                     'FROM Capture C ' +
                     'JOIN Short CS ' +
@@ -447,6 +463,8 @@ function updateUserCaptureAddedOn(connection, uuid) {
                     'AND C.uuid <> ? ' +
                     'GROUP BY C.capid) ' +
                     'AS subQ ' +
+                'ON(U.uuid = subQ.uuid) ' +
+                'WHERE U.uuid = ? ' +
                 ') AS CAC ' +
             'ON DUPLICATE KEY ' +
             'UPDATE capture_added_on = CAC.capture_added_count', [uuid, uuid, uuid], (err, rows) => {
@@ -480,10 +498,11 @@ function updateUserCaptureAddedOn(connection, uuid) {
 function updateUserLongFormCollab(connection, uuid) {
     return new Promise((resolve, reject) => {
         connection.query('INSERT INTO UserAnalytics (uuid, long_form_collab) ' +
-            'SELECT ?, long_form_collab_count ' +
+            'SELECT uuid, long_form_collab_count ' +
             'FROM (' +
-                'SELECT COUNT(shoid) AS long_form_collab_count ' +
-                'FROM (' +
+                'SELECT U.uuid, COUNT(shoid) AS long_form_collab_count ' +
+                'FROM User U ' +
+                'LEFT JOIN (' +
                     'SELECT S.uuid, S.shoid ' +
                     'FROM Short S ' +
                     'JOIN Capture CC ' +
@@ -495,7 +514,9 @@ function updateUserLongFormCollab(connection, uuid) {
                     'AND S.uuid = ? ' +
                     'AND CC.uuid <> ? ' +
                     'GROUP BY S.shoid' +
-                    ') AS subQ' +
+                    ') AS subQ ' +
+                'ON(U.uuid = subQ.uuid) ' +
+                'WHERE U.uuid = ? ' +
                 ') AS LFCC ' +
             'ON DUPLICATE KEY ' +
             'UPDATE long_form_collab = LFCC.long_form_collab_count', [uuid, uuid, uuid], (err, rows) => {
@@ -518,10 +539,11 @@ function updateUserLongFormCollab(connection, uuid) {
 function updateUserLongFormSolo(connection, uuid) {
     return new Promise((resolve, reject) => {
         connection.query('INSERT INTO UserAnalytics (uuid, long_form_solo) ' +
-            'SELECT ?, long_form_solo_count ' +
+            'SELECT uuid, long_form_solo_count ' +
             'FROM (' +
-                'SELECT COUNT(subQ.shoid) AS long_form_solo_count ' +
-                'FROM (' +
+                'SELECT U.uuid, COUNT(subQ.shoid) AS long_form_solo_count ' +
+                'FROM User U ' +
+                'LEFT JOIN (' +
                     'SELECT S.uuid, S.shoid ' +
                     'FROM Short S ' +
                     'JOIN Entity E ' +
@@ -531,7 +553,9 @@ function updateUserLongFormSolo(connection, uuid) {
                     'AND S.uuid = ? ' +
                     'AND S.capid IS NULL ' +
                     'GROUP BY S.shoid' +
-                ') AS subQ' +
+                ') AS subQ ' +
+            'ON(U.uuid = subQ.uuid) ' +
+            'WHERE U.uuid = ? ' +
             ') AS LFSC ' +
             'ON DUPLICATE KEY ' +
             'UPDATE long_form_solo = long_form_solo_count', [uuid, uuid], (err, rows) => {
