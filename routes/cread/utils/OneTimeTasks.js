@@ -9,23 +9,23 @@
 
 'use-strict';
 
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
 
-var config = require('../../Config');
-var _auth = require('../../auth-token-management/AuthTokenManager');
-var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
-var utils = require('./Utils');
-var entityspecificutils = require('../entity/EntitySpecificUtils');
-var entityimgutils = require('../entity/EntityImageUtils');
-var followutils = require('../follow/FollowUtils');
-var chatconvoutils = require('../chat/ChatConversationUtils');
+const config = require('../../Config');
+const _auth = require('../../auth-token-management/AuthTokenManager');
+const BreakPromiseChainError = require('../utils/BreakPromiseChainError');
+const utils = require('./Utils');
+const entityspecificutils = require('../entity/EntitySpecificUtils');
+const entityimgutils = require('../entity/EntityImageUtils');
+const followutils = require('../follow/FollowUtils');
+const chatconvoutils = require('../chat/ChatConversationUtils');
 let usranlytcsutils = require('../user-manager/analytics/UserAnalyticsUtils');
 
-var async = require('async');
-var uuidGen = require('uuid');
+const async = require('async');
+const uuidGen = require('uuid');
 
-var download_base_path = './images/downloads';
+let download_base_path = './images/downloads';
 
 router.post('/add-entity-data', function (request, response) {
 
