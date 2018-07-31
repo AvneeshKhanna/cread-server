@@ -30,7 +30,7 @@ const mark_for_collab = {
 };
 
 const share_time_interval = {
-    same_share : {
+    same_share: {
         time_diff: config.isProduction() ? 24 : 2,
         time_diff_unit: config.isProduction() ? "hours" : "minutes"
     },
