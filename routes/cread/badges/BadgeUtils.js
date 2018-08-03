@@ -100,25 +100,25 @@ function getBadgesDataExceptTopArtist(connection, requesteduuid, unlocked_only) 
                     {
                         unlocked: analytics_data.comment_given >= 30,
                         title: badgenames.COMMENT_GIVEN,
-                        description: "You unlock this badge by commenting 10 or more times on others' posts",
+                        description: "You unlock this badge by commenting 30 or more times on others' posts",
                         imgurl: utils.getBadgeImgUrl("5.png")
                     },
                     {
                         unlocked: analytics_data.comment_received >= 15,
                         title: badgenames.COMMENT_RECEIVED,
-                        description: "You unlock this badge when you receive 5 or more comments from others on your posts",
+                        description: "You unlock this badge when you receive 15 or more comments from others on your posts",
                         imgurl: utils.getBadgeImgUrl("6.png")
                     },
                     {
                         unlocked: analytics_data.hatsoff_given >= 50,
                         title: badgenames.HATSOFF_GIVEN,
-                        description: "You unlock this badge by giving 20 or more hatsoffs on others' posts",
+                        description: "You unlock this badge by giving 50 or more hatsoffs on others' posts",
                         imgurl: utils.getBadgeImgUrl("7.png")
                     },
                     {
                         unlocked: analytics_data.hatsoff_received >= 25,
                         title: badgenames.HATSOFF_RECEIVED,
-                        description: "You unlock this badge when you receive 10 or more hatsoffs from others on your posts",
+                        description: "You unlock this badge when you receive 25 or more hatsoffs from others on your posts",
                         imgurl: utils.getBadgeImgUrl("8.png")
                     },
                     {
