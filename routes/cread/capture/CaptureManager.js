@@ -3,35 +3,35 @@
  */
 'use-strict';
 
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
 
-var config = require('../../Config');
+const config = require('../../Config');
 
-var _auth = require('../../auth-token-management/AuthTokenManager');
-var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
-var userprofileutils = require('../user-manager/UserProfileUtils');
-var hashtagutils = require('../hashtag/HashTagUtils');
-var utils = require('../utils/Utils');
-var entityintrstutils = require('../interests/EntityInterestsUtils');
-var entityutils = require('../entity/EntityUtils');
-var profilementionutils = require('../profile-mention/ProfileMentionUtils');
-var notify = require('../../notification-system/notificationFramework');
-var feedutils = require('../feed/FeedUtils');
-var captureutils = require('./CaptureUtils');
+const _auth = require('../../auth-token-management/AuthTokenManager');
+const BreakPromiseChainError = require('../utils/BreakPromiseChainError');
+const userprofileutils = require('../user-manager/UserProfileUtils');
+const hashtagutils = require('../hashtag/HashTagUtils');
+const utils = require('../utils/Utils');
+const entityintrstutils = require('../interests/EntityInterestsUtils');
+const entityutils = require('../entity/EntityUtils');
+const profilementionutils = require('../profile-mention/ProfileMentionUtils');
+const notify = require('../../notification-system/notificationFramework');
+const feedutils = require('../feed/FeedUtils');
+const captureutils = require('./CaptureUtils');
 
 router.post('/delete', function (request, response) {
-    var uuid = request.body.uuid;
-    var authkey = request.body.authkey;
-    var entityid = request.body.entityid;
+    let uuid = request.body.uuid;
+    let authkey = request.body.authkey;
+    let entityid = request.body.entityid;
 
-    var connection;
+    let connection;
 
     _auth.authValid(uuid, authkey)
         .then(function () {
             return config.getNewConnection();
         }, function () {
-            reponse.send({
+            response.send({
                 tokenstatus: 'invalid'
             });
             response.end();
@@ -64,28 +64,28 @@ router.post('/delete', function (request, response) {
 
 router.post('/edit-caption', function (request, response) {
 
-    var uuid = request.body.uuid;
-    var authkey = request.body.authkey;
-    var entityid = request.body.entityid;
-    var caption = request.body.caption ? request.body.caption.trim() : null;
-    var livefilter = request.body.livefilter ? request.body.livefilter : 'none';
+    let uuid = request.body.uuid;
+    let authkey = request.body.authkey;
+    let entityid = request.body.entityid;
+    let caption = request.body.caption ? request.body.caption.trim() : null;
+    let livefilter = request.body.livefilter ? request.body.livefilter : 'none';
 
-    var uniquehashtags;
-    var mentioneduuids = [];
+    let uniquehashtags;
+    let mentioneduuids = [];
 
     if(caption){
         uniquehashtags = hashtagutils.extractUniqueHashtags(caption);
         mentioneduuids = utils.extractProfileMentionUUIDs(caption);
     }
 
-    var interests = request.body.interests ? JSON.parse(request.body.interests) : null;
+    let interests = request.body.interests ? JSON.parse(request.body.interests) : null;
 
-    var captureparams = {
+    let captureparams = {
         livefilter: livefilter
     };
 
-    var connection;
-    var requesterdetails;
+    let connection;
+    let requesterdetails;
 
     _auth.authValid(uuid, authkey)
         .then(function (details) {
@@ -150,7 +150,7 @@ router.post('/edit-caption', function (request, response) {
         })
         .then(function () {
             if(mentioneduuids.length > 0  ){
-                var notifData = {
+                let notifData = {
                     message: requesterdetails.firstname + " " + requesterdetails.lastname + " mentioned you in a post",
                     category: "profile-mention-post",
                     entityid: entityid,

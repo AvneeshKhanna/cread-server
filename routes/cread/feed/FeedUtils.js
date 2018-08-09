@@ -834,6 +834,7 @@ function addDefaultKV(arr, key, value) {
 /**
  * Function to updata entities via DB into cache
  *
+ * @param connection SQL connection object
  * @param entities Should be of the form [{uuid: *string*, entityid: *string*, type: "SHORT" | "CAPTURE"}, ..]
  * */
 function updateEntitiesInfoCacheViaDB(connection, entities) {

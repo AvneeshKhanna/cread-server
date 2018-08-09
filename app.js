@@ -201,6 +201,7 @@ app.use('/mark-as-star', require('./routes/cread/ops/mark-as-star/MarkAsStarMana
 app.use('/repost', require('./routes/cread/repost/RepostManager'));
 app.use('/badges', require('./routes/cread/badges/BadgeManager'));
 app.use('/upload-meme', require('./routes/cread/meme/UploadMemeManager'));
+app.use('/meme-manager', require('./routes/cread/meme/MemeManager'));
 
 //-dashboard-
 app.use('/campaign-details', require('./routes/cread/dsbrd/campaign-details/CampaignDetails'));

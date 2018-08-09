@@ -37,14 +37,13 @@ router.post('/add', upload.single('meme-photo'), (request, response) => {
         entityid: uuidgen.v4(),
         caption: caption,
         uuid: uuid,
-        type: "MEME"
+        type: 'MEME'
     };
 
     let memeparams = {
         memeid: uuidgen.v4(),
         entityid: entityparams.entityid,
         uuid: uuid,
-        meme_layout: request.body.meme_layout,
         img_height: request.body.img_height,
         img_width: request.body.img_width
     };
@@ -59,6 +58,8 @@ router.post('/add', upload.single('meme-photo'), (request, response) => {
 
     let requesterdetails;
     let is_first_post;
+
+    console.log("Request is " + JSON.stringify(request.body, null, 3));
 
     _auth.authValid(uuid, authkey)
         .then(details => {
@@ -76,7 +77,7 @@ router.post('/add', upload.single('meme-photo'), (request, response) => {
             return utils.beginTransaction(connection)
         })
         .then(() => {
-            return uploadmemeutils.addMemeToDb(connection, memeparams);
+            return uploadmemeutils.addMemeToDb(connection, entityparams, memeparams);
         })
         .then(() => {
             if (uniquehashtags && uniquehashtags.length > 0) {
@@ -128,7 +129,7 @@ router.post('/add', upload.single('meme-photo'), (request, response) => {
         })
         .then(function () {
             if (!is_first_post) {
-                return userprofileutils.checkIfPostedAfterGap(connection, uuid, entityid);
+                return userprofileutils.checkIfPostedAfterGap(connection, uuid, entityparams.entityid);
             }
         })
         .then(function (hasPostedAfterGap) {
@@ -156,7 +157,6 @@ router.post('/add', upload.single('meme-photo'), (request, response) => {
 
 });
 
-//FixMe
 router.post('/edit', upload.single('meme-photo'), (request, response) => {
 
     let uuid = request.body.uuid;
