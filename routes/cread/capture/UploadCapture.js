@@ -3,35 +3,35 @@
  */
 'use-strict';
 
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
 
-var config = require('../../Config');
+const config = require('../../Config');
 
-var _auth = require('../../auth-token-management/AuthTokenManager');
-var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
-var userprofileutils = require('../user-manager/UserProfileUtils');
-var profilementionutils = require('../profile-mention/ProfileMentionUtils');
+const _auth = require('../../auth-token-management/AuthTokenManager');
+const BreakPromiseChainError = require('../utils/BreakPromiseChainError');
+const userprofileutils = require('../user-manager/UserProfileUtils');
+const profilementionutils = require('../profile-mention/ProfileMentionUtils');
 
-var uuidgen = require('uuid');
-var multer = require('multer');
-var upload = multer({dest: './images/uploads/capture/', limits: {fileSize: 20 * 1024 * 1024}});
-var fs = require('fs');
+const uuidgen = require('uuid');
+const multer = require('multer');
+const upload = multer({dest: './images/uploads/capture/', limits: {fileSize: 20 * 1024 * 1024}});
+const fs = require('fs');
 
-var utils = require('../utils/Utils');
-var profilepicutils = require('../user-manager/UserProfileUtils');
-var captureutils = require('./CaptureUtils');
-var notify = require('../../notification-system/notificationFramework');
-var shortutils = require('../short/ShortUtils');
-var hashtagutils = require('../hashtag/HashTagUtils');
-var entityutils = require('../entity/EntityUtils');
-var entityimgutils = require('../entity/EntityImageUtils');
-var entityintrstutils = require('../interests/EntityInterestsUtils');
-let usranlytcsutils = require('../user-manager/analytics/UserAnalyticsUtils');
-var commentutils = require('../comment/CommentUtils');
-var feedutils = require('../feed/FeedUtils');
+const utils = require('../utils/Utils');
+const profilepicutils = require('../user-manager/UserProfileUtils');
+const captureutils = require('./CaptureUtils');
+const notify = require('../../notification-system/notificationFramework');
+const shortutils = require('../short/ShortUtils');
+const hashtagutils = require('../hashtag/HashTagUtils');
+const entityutils = require('../entity/EntityUtils');
+const entityimgutils = require('../entity/EntityImageUtils');
+const entityintrstutils = require('../interests/EntityInterestsUtils');
+const usranlytcsutils = require('../user-manager/analytics/UserAnalyticsUtils');
+const commentutils = require('../comment/CommentUtils');
+const feedutils = require('../feed/FeedUtils');
 
-var filebasepath = './images/uploads/capture/';
+let filebasepath = './images/uploads/capture/';
 
 router.post('/', upload.single('captured-image'), function (request, response) {
 

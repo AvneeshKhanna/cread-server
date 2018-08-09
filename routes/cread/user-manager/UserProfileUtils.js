@@ -3,38 +3,38 @@
  */
 'use-strict';
 
-var utils = require('../utils/Utils');
-var requestclient = require('request');
+const utils = require('../utils/Utils');
+const requestclient = require('request');
 
-var envconfig = require('config');
+const envconfig = require('config');
 
-var fs = require('fs');
-var jimp = require('jimp');
-var uuidgen = require('uuid');
-var moment = require('moment');
+const fs = require('fs');
+const jimp = require('jimp');
+const uuidgen = require('uuid');
+const moment = require('moment');
 
-var config = require('../../Config');
-var AWS = config.AWS;
-var s3bucket = envconfig.get('s3.bucket');
+const config = require('../../Config');
+const AWS = config.AWS;
+const s3bucket = envconfig.get('s3.bucket');
 
-var imagesize = require('image-size');
+const imagesize = require('image-size');
 
-var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
-var NotFoundError = require('../utils/NotFoundError');
+const BreakPromiseChainError = require('../utils/BreakPromiseChainError');
+const NotFoundError = require('../utils/NotFoundError');
 
-var feedutils = require('../feed/FeedUtils');
-var consts = require('../utils/Constants');
+const feedutils = require('../feed/FeedUtils');
+const consts = require('../utils/Constants');
 
-var cache_manager = require('../utils/cache/CacheManager');
-var cache_utils = require('../utils/cache/CacheUtils');
-var commentutils = require('../comment/CommentUtils');
-var hatsoffutils = require('../hats-off/HatsOffUtils');
-let badgeutils = require('../badges/BadgeUtils');
-var REDIS_KEYS = cache_utils.REDIS_KEYS;
+const cache_manager = require('../utils/cache/CacheManager');
+const cache_utils = require('../utils/cache/CacheUtils');
+const commentutils = require('../comment/CommentUtils');
+const hatsoffutils = require('../hats-off/HatsOffUtils');
+const badgeutils = require('../badges/BadgeUtils');
+const REDIS_KEYS = cache_utils.REDIS_KEYS;
 
 function loadTimelineLegacy(connection, requesteduuid, requesteruuid, limit, page) {
 
-    var offset = limit * page;
+    let offset = limit * page;
 
     return new Promise(function (resolve, reject) {
         connection.query('SELECT COUNT(*) AS totalcount ' +
@@ -51,7 +51,7 @@ function loadTimelineLegacy(connection, requesteduuid, requesteruuid, limit, pag
                 reject(err);
             }
             else {
-                var totalcount = (data[0]) ? data[0].totalcount : 0;
+                let totalcount = (data[0]) ? data[0].totalcount : 0;
 
                 if (totalcount > 0) {
                     connection.query('SELECT Entity.entityid, Entity.merchantable, Entity.type, User.uuid, User.firstname, User.lastname, Short.shoid, Capture.capid AS captureid, ' +
@@ -152,29 +152,16 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
     return new Promise(function (resolve, reject) {
         connection.query('SELECT Entity.caption, Entity.entityid, Entity.regdate, Entity.merchantable, Entity.type, User.uuid, ' +
             'User.firstname, User.lastname, ' +
-            // 'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, Capture.capid AS captureid, ' +
-            // 'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
-            // 'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
-            // 'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount ' +
-            // 'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount ' +
-            /*'COUNT(DISTINCT Comment.commid) AS commentcount ' +*/
             'FROM Entity ' +
-            // 'LEFT JOIN Capture ' +
-            // 'USING(entityid) ' +
-            // 'LEFT JOIN Short ' +
-            // 'USING(entityid) ' +
             'JOIN User ' +
-            // 'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
             'ON (Entity.uuid = User.uuid) ' +
             'LEFT JOIN HatsOff ' +
             'ON HatsOff.entityid = Entity.entityid ' +
             'LEFT JOIN Downvote D ' +
             'ON D.entityid = Entity.entityid ' +
-            /*'LEFT JOIN Comment ' +
-            'ON Comment.entityid = Entity.entityid ' +*/
             'LEFT JOIN Follow ' +
             'ON User.uuid = Follow.followee ' +
             'WHERE User.uuid = ? ' +
@@ -182,8 +169,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
             'AND Entity.regdate < ? ' +
             'GROUP BY Entity.entityid ' +
             'ORDER BY Entity.regdate DESC ' +
-            'LIMIT ? '/* +
-            'OFFSET ?'*/, [requesteruuid, requesteruuid, requesteruuid, requesteduuid, lastindexkey, limit/*, offset*/], function (err, rows) {
+            'LIMIT ?', [requesteruuid, requesteruuid, requesteruuid, requesteduuid, lastindexkey, limit], function (err, rows) {
             if (err) {
                 reject(err);
             }
