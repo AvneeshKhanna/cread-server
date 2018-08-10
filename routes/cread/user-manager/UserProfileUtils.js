@@ -3,6 +3,8 @@
  */
 'use-strict';
 
+//region Global Variables
+
 const utils = require('../utils/Utils');
 const requestclient = require('request');
 
@@ -31,6 +33,8 @@ const commentutils = require('../comment/CommentUtils');
 const hatsoffutils = require('../hats-off/HatsOffUtils');
 const badgeutils = require('../badges/BadgeUtils');
 const REDIS_KEYS = cache_utils.REDIS_KEYS;
+
+//endregion
 
 function loadTimelineLegacy(connection, requesteduuid, requesteruuid, limit, page) {
 
