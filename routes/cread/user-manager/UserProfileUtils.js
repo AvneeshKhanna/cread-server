@@ -177,7 +177,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
 
                 console.log("TIME after SQL: " + moment().format('YYYY-MM-DD HH:mm:ss'));
 
-                var feedEntities = rows.map(function (elem) {
+                let feedEntities = rows.map(function (elem) {
                     return elem.entityid;
                 });
 
@@ -203,6 +203,10 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
                             element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
                         }*/
 
+                        if(element.type === 'MEME'){
+                            element.collabcount = 0; //FixMe
+                        }
+
                         if (element.hasOwnProperty('firstname')) {
                             delete element.firstname;
                         }
@@ -226,7 +230,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
                         return element;
                     });
 
-                    var candownvote;
+                    let candownvote;
 
                     feedutils.getEntitiesInfoFast(connection, rows)
                         .then(function (updated_rows) {
@@ -261,7 +265,12 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
                                 requestmore: rows.length >= limit,//totalcount > (offset + limit),
                                 candownvote: candownvote,
                                 lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
-                                items: rows
+                                items: rows.map(function (r) {
+                                    if(r.type === 'MEME'){
+                                        r.entityurl = utils.createSmallMemeUrl(r.uuid, 'b3cd5073-03f9-4292-816e-22504d47057a'); //FixMe
+                                    }
+                                    return r;
+                                })
                             });
                         })
                         .catch(function (err) {
@@ -435,7 +444,7 @@ function loadRepostTimeline(connection, requesteruuid, requesteduuid, lastindexk
 
         lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
-        var sql = 'SELECT R.repostid, R.regdate, RU.uuid AS reposteruuid, RU.firstname AS repostername, ' +
+        let sql = 'SELECT R.repostid, R.regdate, RU.uuid AS reposteruuid, RU.firstname AS repostername, ' +
             'E.caption, E.entityid, E.regdate AS postdate, E.merchantable, E.type, U.uuid, U.firstname, U.lastname, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
@@ -460,7 +469,7 @@ function loadRepostTimeline(connection, requesteruuid, requesteduuid, lastindexk
             'ORDER BY R.regdate DESC ' +
             'LIMIT ?';
 
-        var sqlparams = [
+        let sqlparams = [
             requesteruuid,
             requesteruuid,
             requesteruuid,
@@ -493,31 +502,27 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
             }
             else {
                 connection.query('SELECT Entity.caption, Entity.entityid, Entity.regdate, Entity.merchantable, Entity.type, User.uuid, ' +
-                    'User.firstname, User.lastname, ' +
-                    'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
+                    'CONCAT_WS(" ", User.firstname, User.lastname) AS creatorname, ' +
+                    /*'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
                     'Capture.capid AS captureid, CShort.entityid AS csentityid, SCapture.entityid AS scentityid, ' +
                     'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
                     'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
                     'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +
-                    'CASE WHEN(Entity.type = "SHORT") THEN Short.livefilter ELSE Capture.livefilter END AS livefilter, ' +
+                    'CASE WHEN(Entity.type = "SHORT") THEN Short.livefilter ELSE Capture.livefilter END AS livefilter, ' +*/
                     'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
                     'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
                     'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount ' +
-                    // 'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount ' +
-                    /*'COUNT(DISTINCT Comment.commid) AS commentcount ' +*/
                     'FROM Entity ' +
                     'LEFT JOIN Capture ' +
                     'USING(entityid) ' +
                     'LEFT JOIN Short ' +
                     'USING(entityid) ' +
                     'JOIN User ' +
-                    'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
+                    'ON (Entity.uuid = User.uuid) ' +
                     'LEFT JOIN HatsOff ' +
                     'ON HatsOff.entityid = Entity.entityid ' +
                     'LEFT JOIN Downvote D ' +
                     'ON D.entityid = Entity.entityid ' +
-                    /*'LEFT JOIN Comment ' +
-                    'ON Comment.entityid = Entity.entityid ' +*/
                     'LEFT JOIN Short CShort ' +
                     'ON Capture.shoid = CShort.shoid ' +
                     'LEFT JOIN Capture SCapture ' +
@@ -536,7 +541,7 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                     }
                     else {
 
-                        var feedEntities = rows.map(function (elem) {
+                        let feedEntities = rows.map(function (elem) {
                             return elem.entityid;
                         });
 
@@ -544,14 +549,13 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                             rows.map(function (element) {
 
                                 element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
-                                element.creatorname = element.firstname + ' ' + element.lastname;
                                 element.followstatus = element.fbinarycount > 0;
                                 element.hatsoffstatus = element.hbinarycount > 0;
                                 element.downvotestatus = element.dbinarycount > 0;
                                 element.merchantable = (element.merchantable !== 0);
                                 element.long_form = (element.long_form === 1);
 
-                                if (element.type === 'CAPTURE') {
+                                /*if (element.type === 'CAPTURE') {
                                     element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
                                     element.cpshort = {
                                         name: requesteduuiddetails[0].firstname + ' ' + requesteduuiddetails[0].lastname,
@@ -566,15 +570,7 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                                         entityid: element.scentityid,
                                         uuid: requesteduuid
                                     }
-                                }
-
-                                if (element.hasOwnProperty('firstname')) {
-                                    delete element.firstname;
-                                }
-
-                                if (element.hasOwnProperty('lastname')) {
-                                    delete element.lastname;
-                                }
+                                }*/
 
                                 if (element.hasOwnProperty('hbinarycount')) {
                                     delete element.hbinarycount;
@@ -591,9 +587,13 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                                 return element;
                             });
 
-                            var candownvote;
+                            let candownvote;
 
-                            hatsoffutils.loadHatsoffCountsFast(connection, rows)
+                            feedutils.getEntitiesInfoFast(connection, rows)
+                                .then(function (updated_rows) {
+                                    rows = updated_rows;
+                                    return hatsoffutils.loadHatsoffCountsFast(connection, rows);
+                                })
                                 .then(function (updated_rows) {
                                     rows = updated_rows;
                                     return commentutils.loadCommentCountsFast(connection, rows);
@@ -604,6 +604,10 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                                 })
                                 .then(function (result) {
                                     candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user_downvote;
+                                    return feedutils.getCollaborationData(connection, rows);
+                                })
+                                .then(function (rows) {
+                                    console.log("TIME after getCollaborationData: " + moment().format('YYYY-MM-DD HH:mm:ss'));
                                     return feedutils.getCollaborationCounts(connection, rows, feedEntities);
                                 })
                                 .then(function (rows) {

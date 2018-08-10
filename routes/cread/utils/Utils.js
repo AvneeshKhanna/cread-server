@@ -247,6 +247,10 @@ function createShortUrl(uuid, shoid) {
     return urlprotocol + /*'d2vvojd6jjmi1r.cloudfront.net'*/ s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Short/' + shoid + '.jpg';
 }
 
+function createSmallMemeUrl(uuid, memeid) {
+    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Meme/' + memeid + '-small.jpg';
+}
+
 function getShortCoffeeMugOverlayUrl(uuid, shoid) {
     return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Short/' + shoid + '-overlay-coffee-mug.png';
 }
@@ -508,6 +512,7 @@ module.exports = {
     createCaptureUrl: createCaptureUrl,
     createSmallShortUrl: createSmallShortUrl,
     createShortUrl: createShortUrl,
+    createSmallMemeUrl: createSmallMemeUrl,
     getCaptureCoffeeMugOverlayUrl: getCaptureCoffeeMugOverlayUrl,
     getShortCoffeeMugOverlayUrl: getShortCoffeeMugOverlayUrl,
     getShortJournalOverlayUrl: getShortJournalOverlayUrl,

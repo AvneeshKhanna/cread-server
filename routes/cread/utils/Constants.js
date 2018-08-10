@@ -23,6 +23,12 @@ const max_intrst_selectn_div = config.isProduction() ? 4 : 4;   //Divisor to div
 const min_percentile_quality_user_downvote = 90;
 const min_qpercentile_user_recommendation = 70;
 
+const post_type = {
+    SHORT: 'SHORT',
+    CAPTURE: 'CAPTURE',
+    MEME: 'MEME'
+};
+
 const mark_for_collab = {
     UNMARKED: 'UNMARKED',
     ACCEPTED: 'ACCEPTED',
@@ -96,6 +102,7 @@ module.exports = {
     required_unverified_checks: required_unverified_checks,
     required_verified_checks: required_verified_checks,
     royalty_percentage: royalty_percentage,
+    post_type: post_type,
     cache_time: cache_time,
     explore_algo_base_score: explore_algo_base_score,
     min_percentile_quality_user_downvote: min_percentile_quality_user_downvote,

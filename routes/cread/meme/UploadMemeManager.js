@@ -20,6 +20,9 @@ const entityutils = require('../entity/EntityUtils');
 const profilementionutils = require('../profile-mention/ProfileMentionUtils');
 const notify = require('../../notification-system/notificationFramework');
 const commentutils = require('../comment/CommentUtils');
+const feedutils = require('../feed/FeedUtils');
+const consts = require('../utils/Constants');
+const post_type = consts.post_type;
 
 const upload = multer({dest: uploadfilebasepath, limits: {fileSize: 20 * 1024 * 1024}});
 
@@ -37,7 +40,7 @@ router.post('/add', upload.single('meme-photo'), (request, response) => {
         entityid: uuidgen.v4(),
         caption: caption,
         uuid: uuid,
-        type: 'MEME'
+        type: post_type.MEME
     };
 
     let memeparams = {
@@ -138,7 +141,14 @@ router.post('/add', upload.single('meme-photo'), (request, response) => {
                 return entityutils.sendGapPostNotification(connection, requesterdetails.firstname, requesterdetails.lastname, uuid, entityparams.entityid);
             }
         })
-        //TODO: Caching mechanism
+        .then(() => {
+            return feedutils.updateEntitiesInfoCacheViaDB(connection, [
+                {
+                    entityid: entityparams.entityid,
+                    uuid: uuid
+                }
+            ]);
+        })
         .then(() => {
             throw new BreakPromiseChainError();
         })
@@ -207,6 +217,7 @@ router.post('/edit', upload.single('meme-photo'), (request, response) => {
             response.end();
             throw new BreakPromiseChainError();
         })
+        //TODO: Caching mechanism
         .catch(err => {
             config.disconnect(connection);
             if(err instanceof BreakPromiseChainError){

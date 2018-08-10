@@ -14,6 +14,7 @@ var commentutils = require('../comment/CommentUtils');
 var cachemanager = require('../utils/cache/CacheManager');
 var cacheutils = require('../utils/cache/CacheUtils');
 var consts = require('../utils/Constants');
+const post_type = consts.post_type;
 var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
 /**
@@ -361,13 +362,16 @@ function getCollaborationCounts(connection, rows, feedEntities) {
                             return el.entityid;
                         }), item.entityid).forEach(function (i) {
 
-                            var row_element = rows[i];
+                            let row_element = rows[i];
 
-                            if (row_element.type === 'SHORT') {
+                            if (row_element.type === post_type.SHORT) {
                                 row_element.collabcount = item.shortcollabcount;
                             }
-                            else if (row_element.type === 'CAPTURE') {
+                            else if (row_element.type === post_type.CAPTURE) {
                                 row_element.collabcount = item.capturecollabcount;
+                            }
+                            else if (row_element.type === post_type.MEME){
+                                row_element.collabcount = 0;
                             }
                         });
 
@@ -529,7 +533,7 @@ function updateCollabCountsCache(entities) {
     return new Promise(function (resolve, reject) {
         async.each(entities, function (entity, callback) {
 
-            var ent_collabcnt_cache_key = cacheutils.getEntityCollabCntCacheKey(entity.entityid);
+            let ent_collabcnt_cache_key = cacheutils.getEntityCollabCntCacheKey(entity.entityid);
 
             if (typeof entity.collabcount !== "number") {
                 callback(new Error("Value to store for collab count in cache should be a number"));
@@ -595,7 +599,7 @@ function getCollaborationCountsFast(connection, master_rows, feedEntities) {
             .then(function (rows) {
                 master_rows = rows;
 
-                var rows_no_collabcnt = master_rows.filter(function (mrow) {
+                let rows_no_collabcnt = master_rows.filter(function (mrow) {
                     return mrow.collabcount === null;
                 });
 
@@ -610,7 +614,7 @@ function getCollaborationCountsFast(connection, master_rows, feedEntities) {
                 }
             })
             .then(function (rows) {
-                var master_entityids = master_rows.map(function (mr) {
+                let master_entityids = master_rows.map(function (mr) {
                     return mr.entityid;
                 });
 
@@ -675,21 +679,23 @@ function updateEntitiesInfoCache(entities) {
 function getEntitiesInfoDB(connection, entities) {
     return new Promise(function (resolve, reject) {
 
-        var entityids = entities.map(function (e) {
+        let entityids = entities.map(function (e) {
             return e.entityid;
         });
 
         connection.query('SELECT Entity.entityid, Entity.type, Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
-            'Capture.capid AS captureid, ' +
+            'Capture.capid AS captureid, M.memeid, ' +
             'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
-            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
-            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +
-            'CASE WHEN(Entity.type = "SHORT") THEN Short.livefilter ELSE Capture.livefilter END AS livefilter ' +
+            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width WHEN(Entity.type = "CAPTURE") THEN Capture.img_width ELSE M.img_width END AS img_width, ' +
+            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height WHEN(Entity.type = "CAPTURE") THEN Capture.img_height ELSE M.img_height END AS img_height, ' +
+            'CASE WHEN(Entity.type = "SHORT") THEN Short.livefilter WHEN(Entity.type = "CAPTURE") THEN Capture.livefilter ELSE "none" END AS livefilter ' +
             'FROM Entity ' +
             'LEFT JOIN Short ' +
             'ON Short.entityid = Entity.entityid ' +
             'LEFT JOIN Capture ' +
             'ON Capture.entityid = Entity.entityid ' +
+            'LEFT JOIN Meme M ' +
+            'ON (Entity.entityid = M.entityid) ' +
             'WHERE Entity.entityid IN (?) ' +
             'GROUP BY Entity.entityid', [entityids], function (err, rows) {
             if (err) {
@@ -698,11 +704,14 @@ function getEntitiesInfoDB(connection, entities) {
             else {
 
                 rows = rows.map(function (element) {
-                    if (element.type === 'CAPTURE') {
+                    if (element.type === post_type.CAPTURE) {
                         element.entityurl = utils.createSmallCaptureUrl(entities[entityids.indexOf(element.entityid)].uuid, element.captureid);
                     }
-                    else {
+                    else if(element.type === post_type.SHORT) {
                         element.entityurl = utils.createSmallShortUrl(entities[entityids.indexOf(element.entityid)].uuid, element.shoid);
+                    }
+                    else if(element.type === post_type.MEME){
+                        element.entityurl = utils.createSmallMemeUrl(entities[entityids.indexOf(element.entityid)].uuid, element.memeid);
                     }
 
                     element.long_form = (element.long_form === 1);
@@ -750,7 +759,7 @@ function getEntitiesInfoFast(connection, master_rows) {
 
                 master_rows = rows;
 
-                var rows_no_info = master_rows.filter(function (mrow) {
+                let rows_no_info = master_rows.filter(function (mrow) {
                     return mrow.info === null;
                 });
 
@@ -764,7 +773,7 @@ function getEntitiesInfoFast(connection, master_rows) {
                 }
             })
             .then(function (rows) {
-                var master_entityids = master_rows.map(function (mr) {
+                let master_entityids = master_rows.map(function (mr) {
                     return mr.entityid;
                 });
 
@@ -773,7 +782,6 @@ function getEntitiesInfoFast(connection, master_rows) {
                 });
 
                 resolve(addDefaultKV(sortByDate(mergeAndFlattenRows(master_rows, 'info'), 'regdate', 'DESC'), 'livefilter', 'none'));
-                //TODO: Uncomment
                 updateEntitiesInfoCache(rows.map(function (r) {
                     return r.info;
                 }));

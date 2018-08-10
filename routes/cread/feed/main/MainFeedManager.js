@@ -384,7 +384,7 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                         return element;
                     });
 
-                    var candownvote;
+                    let candownvote;
                     let lastindexkey;
 
                     feedutils.getEntitiesInfoFast(connection, rows)
@@ -405,11 +405,6 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                             return feedutils.getCollaborationData(connection, rows);
                         })
                         .then(function (rows) {
-
-                            /*rows.map(function (e) {
-                                e.collabcount = 0;
-                                return e;
-                            });*/
 
                             console.log("TIME after getCollaborationData: " + moment().format('YYYY-MM-DD HH:mm:ss'));
 
