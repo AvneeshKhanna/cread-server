@@ -27,30 +27,17 @@ function getRecommendedPosts(connection, requesteruuid, creatoruuid, collaborato
 
     return new Promise(function (resolve, reject) {
         connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, ' +
-            /*'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, Capture.capid AS captureid, ' +
-            'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
-            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
-            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +*/
-            /*'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +*/
-            /*'COUNT(DISTINCT Comment.commid) AS commentcount, ' +*/
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount, ' +
             'User.uuid, CONCAT_WS(" ", User.firstname, User.lastname) AS creatorname ' +
             'FROM Entity ' +
-            /*'LEFT JOIN Capture ' +
-            'USING(entityid) ' +
-            'LEFT JOIN Short ' +
-            'USING(entityid) ' +*/
             'JOIN User ' +
-            // 'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
             'ON (User.uuid = Entity.uuid) ' +
             'LEFT JOIN HatsOff ' +
             'ON HatsOff.entityid = Entity.entityid ' +
             'LEFT JOIN Downvote D ' +
             'ON D.entityid = Entity.entityid ' +
-            /*'LEFT JOIN Comment ' +
-            'ON Comment.entityid = Entity.entityid ' +*/
             'LEFT JOIN Follow ' +
             'ON User.uuid = Follow.followee ' +
             'WHERE User.uuid IN (?) ' +

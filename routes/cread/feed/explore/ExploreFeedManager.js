@@ -337,6 +337,7 @@ function loadFeed(connection, uuid, mintid, sortby, limit, lastindexkey) {
                     'LEFT JOIN Interests I ' +
                     'ON(EI.intid = I.intid) ' +
                     'WHERE E.status = "ACTIVE" ' +
+                    'AND E.type <> "MEME" ' +
                     'AND E.for_explore = 1 ' +
                     sql_mintid_where +
                     'GROUP BY E.entityid ' +
@@ -369,6 +370,7 @@ function loadFeed(connection, uuid, mintid, sortby, limit, lastindexkey) {
                     'LEFT JOIN Interests I ' +
                     'ON(EI.intid = I.intid) ' +
                     'WHERE E.status = "ACTIVE" ' +
+                    'AND E.type <> "MEME" ' +
                     'AND E.for_explore = 1 ' +
                     sql_mintid_where +
                     'GROUP BY E.entityid ' +
@@ -401,6 +403,7 @@ function loadFeed(connection, uuid, mintid, sortby, limit, lastindexkey) {
                     'LEFT JOIN Interests I ' +
                     'ON(EI.intid = I.intid) ' +
                     'WHERE E.status = "ACTIVE" ' +
+                    'AND E.type <> "MEME" ' +
                     'AND E.starred = true ' +
                     'AND E.for_explore = 1 ' +
                     sql_mintid_where +
@@ -615,139 +618,145 @@ router.get('/load-memes', (request, response) => {
 });
 
 async function loadMemeFeed(connection, uuid, limit, lastindexkey) {
-    connection.query('SELECT EA.caption, EA.entityid, EA.merchantable, EA.type, EA.regdate, EA.memeid ' +
-        'User.uuid, CONCAT_WS(" ", User.firstname, User.lastname) AS creatorname, ' +
-        'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
-        'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
-        'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
-        'FROM ' +
-            '(SELECT E.caption, E.entityid, E.uuid, E.merchantable, E.type, E.regdate, M.memeid ' +
-            'FROM Entity E ' +
-            'JOIN Meme M ' +
-            'USING(entityid) ' +
-            'WHERE E.status = "ACTIVE" ' +
-            'AND E.for_explore = 1 ' +
-            'AND E.type = "MEME" ' +
-            'AND E.regdate < ? ' +
-            'GROUP BY E.entityid ' +
-            'ORDER BY E.regdate DESC ' +
-            'LIMIT ?) EA ' +
-        'JOIN User ' +
-        'ON (EA.uuid = User.uuid) ' +
-        'LEFT JOIN HatsOff ' +
-        'ON HatsOff.entityid = EA.entityid ' +
-        'LEFT JOIN Downvote D ' +
-        'ON D.entityid = EA.entityid ' +
-        'LEFT JOIN Follow ' +
-        'ON User.uuid = Follow.followee ' +
-        'GROUP BY EA.entityid ' +
-        'ORDER BY EA.regdate DESC', [uuid, uuid, uuid, lastindexkey, limit], (err, rows) => {
 
-        if(err){
-            throw err;
-        }
+    lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
-        if(rows.length > 0){
+    console.log("TIME before start: " + moment().format('YYYY-MM-DD HH:mm:ss'));
 
-            let feedEntities = rows.map(function (elem) {
-                return elem.entityid;
-            });
+    return new Promise((resolve, reject) => {
+        connection.query('SELECT EA.caption, EA.entityid, EA.merchantable, EA.type, EA.regdate, EA.memeid, ' +
+            'User.uuid, CONCAT_WS(" ", User.firstname, User.lastname) AS creatorname, ' +
+            'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
+            'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
+            'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount ' +
+            'FROM ' +
+                '(SELECT E.caption, E.entityid, E.uuid, E.merchantable, E.type, E.regdate, M.memeid ' +
+                'FROM Entity E ' +
+                'JOIN Meme M ' +
+                'USING(entityid) ' +
+                'WHERE E.status = "ACTIVE" ' +
+                'AND E.for_explore = 1 ' +
+                'AND E.regdate < ? ' +
+                'GROUP BY E.entityid ' +
+                'ORDER BY E.regdate DESC ' +
+                'LIMIT ?) EA ' +
+            'JOIN User ' +
+            'ON (EA.uuid = User.uuid) ' +
+            'LEFT JOIN HatsOff ' +
+            'ON HatsOff.entityid = EA.entityid ' +
+            'LEFT JOIN Downvote D ' +
+            'ON D.entityid = EA.entityid ' +
+            'LEFT JOIN Follow ' +
+            'ON User.uuid = Follow.followee ' +
+            'GROUP BY EA.entityid ' +
+            'ORDER BY EA.regdate DESC', [uuid, uuid, uuid, lastindexkey, limit], (err, rows) => {
 
-            rows.map(function (element) {
-
-                element.entityurl = utils.createSmallMemeUrl(element.uuid, element.memeid);
-                element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
-                element.hatsoffstatus = element.hbinarycount > 0;
-                element.downvotestatus = element.dbinarycount > 0;
-                element.followstatus = element.binarycount > 0;
-                element.merchantable = (element.merchantable !== 0);
-                //element.long_form = (element.long_form === 1);
-
-                if (element.hasOwnProperty('binarycount')) {
-                    delete element.binarycount;
-                }
-
-                if (element.hasOwnProperty('hbinarycount')) {
-                    delete element.hbinarycount;
-                }
-
-                if (element.hasOwnProperty('dbinarycount')) {
-                    delete element.dbinarycount;
-                }
-
-                if (element.hasOwnProperty('firstname')) {
-                    delete element.firstname;
-                }
-
-                if (element.hasOwnProperty('lastname')) {
-                    delete element.lastname;
-                }
-
-                return element;
-            });
-
-            // lastindexkey = lastindexkey + rows.length;
-            /*rows[rows.length - 1]._id*/ //moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss');
-
-            let candownvote;
-
-            //--Retrieve Collaboration Data--
-
-            feedutils.getEntitiesInfoFast(connection, rows)
-                .then(function (updated_rows){
-                    console.log("TIME after getEntitiesInfoFast: " + moment().format('YYYY-MM-DD HH:mm:ss'));
-                    rows = updated_rows;
-                    return hatsoffutils.loadHatsoffCountsFast(connection, rows);
-                })
-                .then(function (updated_rows) {
-                    rows = updated_rows;
-                    console.log("TIME after loadHatsoffCountsFast: " + moment().format('YYYY-MM-DD HH:mm:ss'));
-                    return commentutils.loadCommentCountsFast(connection, rows);
-                })
-                .then(function (updated_rows) {
-                    rows = updated_rows;
-                    console.log("TIME after loadCommentCountsFast: " + moment().format('YYYY-MM-DD HH:mm:ss'));
-                    return userprofileutils.getUserQualityPercentile(connection, uuid);
-                })
-                .then(function (result) {
-                    candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user_downvote;
-                    return feedutils.getCollaborationData(connection, rows);
-                })
-                .then(function (rows) {
-
-                    console.log("TIME after getCollaborationData: " + moment().format('YYYY-MM-DD HH:mm:ss'));
-
-                    return feedutils.getCollaborationCounts(connection, rows, feedEntities);
-                    /*return feedutils.getCollaborationCountsFast(connection, rows);*/
-                })
-                /*.then(function (rows) {
-                    return feedutils.structureDataCrossPattern(rows);
-                })*/
-                .then(function (rows) {
-
-                    console.log("TIME after getCollaborationCounts: " + moment().format('YYYY-MM-DD HH:mm:ss'));
-
-                    return {
-                        requestmore: rows.length >= limit,
-                        candownvote: candownvote,
-                        lastindexkey: lastindexkey,
-                        feed: rows
-                    };
-                })
-                .catch(function (err) {
-                    throw err;
-                });
-
-        }
-        else{
-            return {
-                requestmore: rows.length >= limit,
-                lastindexkey: "",
-                items: rows
+            if(err){
+                reject(err);
             }
-        }
+            else{
+                if(rows.length > 0){
 
-    });
+                    let feedEntities = rows.map(function (elem) {
+                        return elem.entityid;
+                    });
+
+                    rows.map(function (element) {
+
+                        element.entityurl = utils.createSmallMemeUrl(element.uuid, element.memeid);
+                        element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
+                        element.hatsoffstatus = element.hbinarycount > 0;
+                        element.downvotestatus = element.dbinarycount > 0;
+                        element.followstatus = element.binarycount > 0;
+                        element.merchantable = (element.merchantable !== 0);
+                        //element.long_form = (element.long_form === 1);
+
+                        if (element.hasOwnProperty('binarycount')) {
+                            delete element.binarycount;
+                        }
+
+                        if (element.hasOwnProperty('hbinarycount')) {
+                            delete element.hbinarycount;
+                        }
+
+                        if (element.hasOwnProperty('dbinarycount')) {
+                            delete element.dbinarycount;
+                        }
+
+                        if (element.hasOwnProperty('firstname')) {
+                            delete element.firstname;
+                        }
+
+                        if (element.hasOwnProperty('lastname')) {
+                            delete element.lastname;
+                        }
+
+                        return element;
+                    });
+
+                    lastindexkey = moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss');
+
+                    let candownvote;
+
+                    //--Retrieve Collaboration Data--
+
+                    feedutils.getEntitiesInfoFast(connection, rows)
+                        .then(function (updated_rows){
+                            console.log("TIME after getEntitiesInfoFast: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+                            rows = updated_rows;
+                            return hatsoffutils.loadHatsoffCountsFast(connection, rows);
+                        })
+                        .then(function (updated_rows) {
+                            rows = updated_rows;
+                            console.log("TIME after loadHatsoffCountsFast: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+                            return commentutils.loadCommentCountsFast(connection, rows);
+                        })
+                        .then(function (updated_rows) {
+                            rows = updated_rows;
+                            console.log("TIME after loadCommentCountsFast: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+                            return userprofileutils.getUserQualityPercentile(connection, uuid);
+                        })
+                        .then(function (result) {
+                            candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user_downvote;
+                            return feedutils.getCollaborationData(connection, rows);
+                        })
+                        .then(function (rows) {
+
+                            console.log("TIME after getCollaborationData: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+
+                            return feedutils.getCollaborationCounts(connection, rows, feedEntities);
+                            /*return feedutils.getCollaborationCountsFast(connection, rows);*/
+                        })
+                        /*.then(function (rows) {
+                            return feedutils.structureDataCrossPattern(rows);
+                        })*/
+                        .then(function (rows) {
+
+                            console.log("TIME after getCollaborationCounts: " + moment().format('YYYY-MM-DD HH:mm:ss'));
+
+                            resolve({
+                                requestmore: rows.length >= limit,
+                                candownvote: candownvote,
+                                lastindexkey: lastindexkey,
+                                feed: rows
+                            });
+                        })
+                        .catch(function (err) {
+                            reject(err);
+                        });
+
+                }
+                else{
+                    resolve({
+                        requestmore: rows.length >= limit,
+                        lastindexkey: "",
+                        items: rows
+                    });
+                }
+            }
+
+        });
+    })
 }
 
 router.post('/campaign-shares', function (request, response) {

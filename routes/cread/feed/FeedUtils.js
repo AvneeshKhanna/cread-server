@@ -52,12 +52,12 @@ function loadFeed(connection, uuid, sql, sqlparams, sortby, lastindexkey, limit)
                             return el.entityid;
                         }).indexOf(element.entityid);*/
 
-                        if (element.type === 'CAPTURE') {
+                        /*if (element.type === post_type.CAPTURE) {
                             element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
                         }
-                        else {
+                        else if(element.type === post_type.SHORT){
                             element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
-                        }
+                        }*/
 
                         element.creatorname = element.firstname + ' ' + element.lastname;
 
@@ -104,7 +104,7 @@ function loadFeed(connection, uuid, sql, sqlparams, sortby, lastindexkey, limit)
 
                     /*rows[rows.length - 1]._id*/ //moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss');
 
-                    var candownvote = false;    //FixMe
+                    let candownvote = false;    //FixMe
 
                     //--Retrieve Collaboration Data--
 
@@ -175,6 +175,7 @@ function loadFeed(connection, uuid, sql, sqlparams, sortby, lastindexkey, limit)
 /**
  * Function to retrieve the users' details whose content has been collaborated on
  * */
+//TODO: Meme entity type incorporation
 function getCollaborationData(connection, rows) {
     return new Promise(function (resolve, reject) {
 
@@ -258,7 +259,7 @@ function getCollaborationData(connection, rows) {
                         // var row_element;
                         var indexes;
 
-                        if (collab.type === 'SHORT') {   //Case where rows[i] is of type CAPTURE & collab_rows[i] is of type SHORT
+                        if (collab.type === post_type.SHORT) {   //Case where rows[i] is of type CAPTURE & collab_rows[i] is of type SHORT
 
                             indexes = utils.getAllIndexes(rows.map(function (e) {
                                 if (!e.cpshortid) {

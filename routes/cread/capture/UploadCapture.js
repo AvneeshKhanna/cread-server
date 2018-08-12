@@ -30,6 +30,8 @@ const entityintrstutils = require('../interests/EntityInterestsUtils');
 const usranlytcsutils = require('../user-manager/analytics/UserAnalyticsUtils');
 const commentutils = require('../comment/CommentUtils');
 const feedutils = require('../feed/FeedUtils');
+const consts = require('../utils/Constants');
+const post_type = consts.post_type;
 
 let filebasepath = './images/uploads/capture/';
 
@@ -500,7 +502,7 @@ function updateCaptureDB(connection, captureid, uuid, watermark, merchantable, c
         var entityparams = {
             entityid: entityid,
             uuid: uuid,
-            type: 'CAPTURE',
+            type: post_type.CAPTURE,
             merchantable: (merchantable === 1),
             product_overlay: (merchantable === 1),
             caption: caption

@@ -22,8 +22,8 @@ async function addMemeToDb(connection, entityparams, memeparams) {
     });
 }
 
-async function updateMemeToDb(connection, params) {
-    connection.query('UPDATE Meme SET ?', [params], function(err, rows){
+async function updateMemeToDb(connection, params, memeid) {
+    connection.query('UPDATE Meme SET ? WHERE memeid = ?', [params, memeid], function(err, rows){
         if(err){
             throw err;
         }

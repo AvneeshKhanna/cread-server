@@ -103,19 +103,6 @@ function loadHatsOffsLegacy(connection, entityid, limit, page) {
     });
 }
 
-async function hey(connection) {
-    return new Promise(function (resolve, reject) {
-        connection.query('', [], function (err, rows) {
-            if (err) {
-                reject(err);
-            }
-            else {
-                resolve();
-            }
-        });
-    });
-}
-
 function loadHatsOffs(connection, entityid, limit, lastindexkey) {
 
     lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp

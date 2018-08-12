@@ -27,6 +27,7 @@ function loadMarkStarFeed(connection, limit, lastindexkey, starred)  {
             'LEFT JOIN Short S ' +
             'ON(S.entityid = E.entityid) ' +
             'WHERE E.status = "ACTIVE" ' +
+            'AND E.type <> "MEME" ' +
             'AND E.for_explore = 1 ' +
             'AND E.starred = ? ' +
             'AND E.regdate < ? ' +

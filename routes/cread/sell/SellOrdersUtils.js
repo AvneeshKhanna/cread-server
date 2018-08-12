@@ -6,7 +6,8 @@
 var moment = require('moment');
 var utils = require('../utils/Utils');
 
-var consts = require('../utils/Constants');
+const consts = require('../utils/Constants');
+const post_type = consts.post_type;
 
 function loadTotalRoyalty(connection, uuid) {
     return new Promise(function (resolve, reject) {
@@ -62,7 +63,7 @@ function loadSellOrders(connection, uuid, limit, toloadtotal, lastindexkey) {
                 if(rows.length > 0){
 
                     rows.map(function (element) {
-                        if(element.etype === 'SHORT'){
+                        if(element.etype === post_type.SHORT){
                             element.entityurl = utils.createSmallShortUrl(element.suuid, element.shoid);
                             //element.redeemstatus = !!element.sroyaltytransacid;
                         }

@@ -38,12 +38,8 @@ function getTopUsersData(connection, requesteruuid, limit, lastindexkey) {
             'FROM User U ' +
             'JOIN UserAnalytics UA ' +
             'USING(uuid) ' +
-            'LEFT JOIN Short S ' +
-            'ON(S.uuid = U.uuid) ' +
-            'LEFT JOIN Capture C ' +
-            'ON(C.uuid = U.uuid) ' +
             'LEFT JOIN Entity E ' +
-            'ON(S.entityid = E.entityid OR C.entityid = E.entityid) ' +
+            'ON(E.uuid = U.uuid) ' +
             'LEFT JOIN Follow F ' +
             'ON (F.followee = U.uuid AND F.follower = ?) ' +   //To get only those users who the requester is not following
             'WHERE U.uuid <> ? ' +

@@ -99,7 +99,9 @@ router.post('/add', upload.single('meme-photo'), (request, response) => {
             response.send({
                 tokenstatus: 'valid',
                 data: {
-                    status: 'done'
+                    status: 'done',
+                    entityid: entityparams.entityid,
+                    entityurl: utils.createSmallMemeUrl(uuid, memeparams.memeid)
                 }
             });
             response.end();
@@ -167,26 +169,29 @@ router.post('/add', upload.single('meme-photo'), (request, response) => {
 
 });
 
-router.post('/edit', upload.single('meme-photo'), (request, response) => {
+router.post('/edit', (request, response) => {
 
     let uuid = request.body.uuid;
     let authkey = request.body.authkey;
 
-    let meme = request.file;
-
     let connection;
+    let entityid = request.body.entityid;
 
-    let memeparams = {
-        memeid: request.body.memeid,
-        entityid: request.body.entityid,
-        uuid: uuid,
-        meme_layout: request.body.meme_layout,
-        img_height: request.body.img_height,
-        img_width: request.body.img_width
-    };
+    let uniquehashtags;
+    let mentioneduuids = [];
+
+    let caption = request.body.caption.trim() ? request.body.caption.trim() : null;
+
+    if (caption) {
+        uniquehashtags = hashtagutils.extractUniqueHashtags(caption);
+        mentioneduuids = utils.extractProfileMentionUUIDs(caption);
+    }
+
+    let requesterdetails;
 
     _auth.authValid(uuid, authkey)
-        .then(requesterdetails => {
+        .then(details => {
+            requesterdetails = details;
             return config.getNewConnection();
         }, () => {
             response.send({
@@ -200,7 +205,17 @@ router.post('/edit', upload.single('meme-photo'), (request, response) => {
             return utils.beginTransaction(connection)
         })
         .then(() => {
-            return uploadmemeutils.addMemeToDb(connection, memeparams);
+            return entityutils.updateEntityCaption(connection, entityid, caption);
+        })
+        .then(function () {
+            //Deleting existing hashtags for entity
+            return hashtagutils.deleteHashtagsForEntity(connection, entityid);
+        })
+        .then(function () {
+            //Adding new hashtags for entity
+            if(uniquehashtags && uniquehashtags.length > 0){
+                return hashtagutils.addHashtagsForEntity(connection, uniquehashtags, entityid);
+            }
         })
         .then(() => {
             return utils.commitTransaction(connection, undefined);
@@ -215,9 +230,35 @@ router.post('/edit', upload.single('meme-photo'), (request, response) => {
                 }
             });
             response.end();
+        })
+        .then(() => {
+            if (mentioneduuids.length > 0) {
+                return profilementionutils.addProfileMentionToUpdates(connection, entityid, "profile-mention-post", uuid, mentioneduuids);
+            }
+        })
+        .then(() => {
+            if (mentioneduuids.length > 0) {
+                let notifData = {
+                    message: requesterdetails.firstname + " " + requesterdetails.lastname + " mentioned you in a post",
+                    category: "profile-mention-post",
+                    entityid: entityid,
+                    persistable: "Yes",
+                    actorimage: utils.createSmallProfilePicUrl(uuid)
+                };
+                return notify.notificationPromise(mentioneduuids, notifData);
+            }
+        })
+        .then(() => {
+            return feedutils.updateEntitiesInfoCacheViaDB(connection, [
+                {
+                    entityid: entityid,
+                    uuid: uuid
+                }
+            ]);
+        })
+        .then(() => {
             throw new BreakPromiseChainError();
         })
-        //TODO: Caching mechanism
         .catch(err => {
             config.disconnect(connection);
             if(err instanceof BreakPromiseChainError){

@@ -40,4 +40,4 @@ function registerDownvote(connection, register, uuid, entityid) {
 
 module.exports = {
     registerDownvote: registerDownvote
-}
+};

@@ -638,12 +638,8 @@ function checkForFirstPost(connection, uuid) {
     return new Promise(function (resolve, reject) {
         connection.query('SELECT COUNT(DISTINCT E.entityid) AS postcount, U.firstname AS name ' +
             'FROM Entity E ' +
-            'LEFT JOIN Short S ' +
-            'USING(entityid) ' +
-            'LEFT JOIN Capture C ' +
-            'USING(entityid) ' +
             'JOIN User U ' +
-            'ON(U.uuid = S.uuid OR U.uuid = C.uuid) ' +
+            'ON(U.uuid = E.uuid) ' +
             'WHERE U.uuid = ? ' +
             'AND E.status = "ACTIVE"', [uuid], function (err, rows) {
             if (err) {

@@ -31,6 +31,7 @@ function loadFeed(connection, limit, lastindexkey) {
                 'JOIN Entity E ' +
                 'USING(entityid) ' +
                 'WHERE E.status = "ACTIVE" ' +
+                'AND E.type <> "MEME" ' +
                 'AND E.for_explore = 1 ' +
                 'AND E.merchantable = 1 ' +
                 'ORDER BY impact_score DESC ' +

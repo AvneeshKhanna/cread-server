@@ -3,7 +3,7 @@
  */
 
 /**
- * Used to handle the server endpoints for follow system
+ * Is used to handle the server endpoints for follow system
  * */
 
 'use-strict';
