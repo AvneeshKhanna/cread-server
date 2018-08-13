@@ -155,8 +155,8 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
     console.log("TIME before SQL: " + moment().format('YYYY-MM-DD HH:mm:ss'));
 
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT Entity.caption, Entity.entityid, Entity.regdate, Entity.merchantable, Entity.type, User.uuid, ' +
-            'User.firstname, User.lastname, ' +
+        connection.query('SELECT Entity.caption, Entity.entityid, Entity.regdate, Entity.merchantable, Entity.type, ' +
+            'User.uuid, User.firstname, User.lastname, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount ' +
@@ -188,11 +188,6 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
 
                 if (rows.length > 0) {
                     rows.map(function (element) {
-
-                        /*var thisEntityIndex = hdata.map(function (el) {
-                            return el.entityid;
-                        }).indexOf(element.entityid);*/
-
                         element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
                         element.creatorname = element.firstname + ' ' + element.lastname;
                         element.hatsoffstatus = element.hbinarycount > 0;
@@ -200,13 +195,6 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
                         element.downvotestatus = element.dbinarycount > 0;
                         element.merchantable = (element.merchantable !== 0);
                         // element.long_form = (element.long_form === 1);
-
-                        /*if (element.type === 'CAPTURE') {
-                            element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
-                        }
-                        else {
-                            element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
-                        }*/
 
                         if(element.type === 'MEME'){
                             element.collabcount = 0; //FixMe
@@ -270,12 +258,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
                                 requestmore: rows.length >= limit,//totalcount > (offset + limit),
                                 candownvote: candownvote,
                                 lastindexkey: moment.utc(rows[rows.length - 1].regdate).format('YYYY-MM-DD HH:mm:ss'),
-                                items: rows.map(function (r) {
-                                    if(r.type === 'MEME'){
-                                        r.entityurl = utils.createSmallMemeUrl(r.uuid, 'b3cd5073-03f9-4292-816e-22504d47057a'); //FixMe
-                                    }
-                                    return r;
-                                })
+                                items: rows
                             });
                         })
                         .catch(function (err) {

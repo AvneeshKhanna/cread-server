@@ -21,6 +21,8 @@ const entityimgutils = require('../entity/EntityImageUtils');
 const followutils = require('../follow/FollowUtils');
 const chatconvoutils = require('../chat/ChatConversationUtils');
 let usranlytcsutils = require('../user-manager/analytics/UserAnalyticsUtils');
+const consts = require('./Constants');
+const post_type = consts.post_type;
 
 const async = require('async');
 const uuidGen = require('uuid');
@@ -29,7 +31,7 @@ let download_base_path = './images/downloads';
 
 router.post('/add-entity-data', function (request, response) {
 
-    var connection;
+    let connection;
 
     config.getNewConnection()
         .then(function (conn) {
@@ -66,7 +68,7 @@ function addEntityData(connection) {
 
                 async.eachSeries(data, function (cmid, callback) {
 
-                    var entityid = uuidGen.v4();
+                    let entityid = uuidGen.v4();
 
                     config.connectionPool.getConnection(function (error, conn) {
 
@@ -437,8 +439,8 @@ function createMultipleEntityProductImages(entities) {
 function createEntityProductImage(connection, entityid) {
     return new Promise(function (resolve, reject) {
 
-        var edata;
-        var download_file_name;
+        let edata;
+        let download_file_name;
 
         entityspecificutils.loadEntityData(connection, config.getCreadKalakaarUUID(), entityid)
             .then(function (ed) {
@@ -447,10 +449,10 @@ function createEntityProductImage(connection, entityid) {
                 return utils.downloadFile(download_base_path, download_file_name, edata.entityurl);
             })
             .then(function (downloadpath) {
-                return entityimgutils.createOverlayedImageJournal(edata.type === 'SHORT' ? edata.shoid : edata.captureid, edata.type, edata.uuid, download_base_path + '/' + download_file_name);
+                return entityimgutils.createOverlayedImageJournal(edata.type === post_type.SHORT ? edata.shoid : edata.captureid, edata.type, edata.uuid, download_base_path + '/' + download_file_name);
             })
             .then(function () {
-                return entityimgutils.createOverlayedImageCoffeeMug(edata.type === 'SHORT' ? edata.shoid : edata.captureid, edata.uuid, edata.type, download_base_path + '/' + download_file_name)
+                return entityimgutils.createOverlayedImageCoffeeMug(edata.type === post_type.SHORT ? edata.shoid : edata.captureid, edata.uuid, edata.type, download_base_path + '/' + download_file_name);
             })
             .then(function () {
                 return new Promise(function (resolve, reject) {

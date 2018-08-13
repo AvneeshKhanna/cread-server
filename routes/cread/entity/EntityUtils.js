@@ -3,15 +3,17 @@
  */
 'use-strict';
 
-var moment = require('moment');
-var async = require('async');
+const moment = require('moment');
+const async = require('async');
 
-var utils = require('../utils/Utils');
-var updatesutils = require('../updates/UpdatesUtils');
+const utils = require('../utils/Utils');
+const updatesutils = require('../updates/UpdatesUtils');
 
-var NotFoundError = require('../utils/NotFoundError');
+const NotFoundError = require('../utils/NotFoundError');
 
-var notify = require('../../notification-system/notificationFramework');
+const notify = require('../../notification-system/notificationFramework');
+const consts = require('../utils/Constants');
+const post_type = consts.post_type;
 
 function retrieveShortDetails(connection, entityid) {
     return new Promise(function (resolve, reject) {
@@ -74,7 +76,7 @@ function getEntityDetailsForPrint(connection, entityids) {
                     var C = element.C;
                     var CS = element.CS;
 
-                    if (E.type === 'SHORT') {
+                    if (E.type === post_type.SHORT) {
 
                         if (S.hasOwnProperty('regdate')) {
                             delete S.regdate;
@@ -94,7 +96,7 @@ function getEntityDetailsForPrint(connection, entityids) {
                         }
 
                     }
-                    else if (E.type === 'CAPTURE') {
+                    else if (E.type === post_type.CAPTURE) {
 
                         if (C.hasOwnProperty('regdate')) {
                             delete C.regdate;
@@ -191,7 +193,7 @@ function loadCollabDetails(connection, entityid, entitytype, limit, lastindexkey
                     element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
                     element.name = element.firstname + ' ' + element.lastname;
 
-                    if (entitytype === 'SHORT') {
+                    if (entitytype === post_type.SHORT) {
                         element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.capid);
                     }
                     else {
@@ -362,7 +364,7 @@ function loadCollabDetails(connection, entityid, entitytype, limit, lastindexkey
 function loadEntityDatMultiple(connection, requesteruuid, entityids) {
     return new Promise(function (resolve, reject) {
 
-        var items = [];
+        let items = [];
 
         async.each(entityids, function (entityid, callback) {
             loadEntityData(connection, requesteruuid, entityid)
@@ -408,7 +410,7 @@ function loadEntityDataSeparate(connection, entityid) {
 
                 var row;
 
-                if (rows[0][0].type === 'CAPTURE') {
+                if (rows[0][0].type === post_type.CAPTURE) {
                     row = rows[0];
                 }
                 else {
@@ -468,12 +470,12 @@ function getEntityUsrDetailsForNotif(connection, entityid) {
             else {
 
                 rows.map(function (el) {
-                    if (el.type === 'SHORT') {
+                    if (el.type === post_type.SHORT) {
                         if (el.collabcuuid) {
                             el.collabuuid = el.collabcuuid;
                         }
                     }
-                    else if (el.type === 'CAPTURE') {
+                    else if (el.type === post_type.CAPTURE) {
                         if (el.collabsuuid) {
                             el.collabuuid = el.collabsuuid;
                         }
@@ -507,7 +509,7 @@ function getEntityUrl(connection, entityid) {
                     return;
                 }
 
-                var entityurl;
+                let entityurl;
 
                 if(rows[0].type === 'SHORT'){
                     entityurl = utils.createSmallShortUrl(rows[0].uuid, rows[0].shoid);
@@ -538,11 +540,11 @@ function getEntityCoffeeMugNJournalUrls(connection, entityid) {
             }
             else {
                 rows.map(function (element) {
-                    if(element.type === 'SHORT'){
+                    if(element.type === post_type.SHORT){
                         element.coffeemugurl = utils.getShortCoffeeMugOverlayUrl(element.uuid, element.shoid);
                         element.journalurl = utils.getShortJournalOverlayUrl(element.uuid, element.shoid);
                     }
-                    else if(element.type === 'CAPTURE'){
+                    else if(element.type === post_type.CAPTURE){
                         element.coffeemugurl = utils.getCaptureCoffeeMugOverlayUrl(element.uuid, element.capid);
                         element.journalurl = utils.getCaptureJournalOverlayUrl(element.uuid, element.capid);
                     }
