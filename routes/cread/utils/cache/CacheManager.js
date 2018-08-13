@@ -3,8 +3,8 @@
  */
 'use-strict';
 
-var config = require('../../../Config');
-var cache_utils = require('./CacheUtils');
+const config = require('../../../Config');
+const cache_utils = require('./CacheUtils');
 
 function setCacheString(key, value){
     return new Promise(function (resolve, reject) {
@@ -37,7 +37,7 @@ function getCacheString(key){
 function setCacheHMap(key, value){
     return new Promise(function (resolve, reject) {
 
-        for (var prop in value) {
+        for (let prop in value) {
             value[prop] = JSON.stringify(value[prop]);
         }
 
@@ -61,7 +61,7 @@ function getCacheHMap(key){
                     else {
 
                         try{
-                            for(var prop in value){
+                            for(let prop in value){
                                 value[prop] = JSON.parse(value[prop]);
                             }
                         }

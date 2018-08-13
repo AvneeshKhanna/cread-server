@@ -3,32 +3,28 @@
  */
 'use-strict';
 
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
 
-var config = require('../../Config');
+const config = require('../../Config');
 
-var envconfig = require('config');
-var uuidGen = require('uuid');
+const _auth = require('../../auth-token-management/AuthTokenManager');
+const BreakPromiseChainError = require('../utils/BreakPromiseChainError');
+const updatesutils = require('./UpdatesUtils');
+const consts = require('../utils/Constants');
 
-var _auth = require('../../auth-token-management/AuthTokenManager');
-var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
-var utils = require('../utils/Utils');
-var updatesutils = require('./UpdatesUtils');
-var consts = require('../utils/Constants');
-
-var cache_time = consts.cache_time;
+const cache_time = consts.cache_time;
 
 router.get('/load', function (request, response) {
 
     console.log("request.headers are " + JSON.stringify(request.headers, null, 3));
 
-    var uuid = request.headers.uuid;
-    var authkey = request.headers.authkey;
-    var lastindexkey = decodeURIComponent(request.query.lastindexkey);
+    let uuid = request.headers.uuid;
+    let authkey = request.headers.authkey;
+    let lastindexkey = decodeURIComponent(request.query.lastindexkey);
 
-    var limit = (config.envtype === 'PRODUCTION') ? 30 : 15;
-    var connection;
+    let limit = config.isProduction() ? 30 : 15;
+    let connection;
 
     _auth.authValid(uuid, authkey)
         .then(function (details) {
@@ -80,11 +76,11 @@ router.get('/load', function (request, response) {
  * */
 router.post('/update-unread', function (request, response) {
 
-    var uuid = request.body.uuid;
-    var authkey = request.body.authkey;
-    var updateid = request.body.updateid;
+    let uuid = request.body.uuid;
+    let authkey = request.body.authkey;
+    let updateid = request.body.updateid;
 
-    var connection;
+    let connection;
 
     _auth.authValid(uuid, authkey)
         .then(function (details) {
@@ -129,10 +125,10 @@ router.post('/update-unread', function (request, response) {
  * Function to get the seen statuses for Chat and Updates screen on the app
  * */
 router.get('/load-seen-status', function (request, response) {
-    var uuid = request.headers.uuid;
-    var authkey = request.headers.authkey;
+    let uuid = request.headers.uuid;
+    let authkey = request.headers.authkey;
 
-    var connection;
+    let connection;
 
     _auth.authValid(uuid, authkey)
         .then(function (details) {
@@ -180,10 +176,10 @@ router.get('/load-seen-status', function (request, response) {
  * */
 router.post('/update-unseen', function (request, response) {
 
-    var uuid = request.body.uuid;
-    var authkey = request.body.authkey;
+    let uuid = request.body.uuid;
+    let authkey = request.body.authkey;
 
-    var connection;
+    let connection;
 
     _auth.authValid(uuid, authkey)
         .then(function (details) {

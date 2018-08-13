@@ -3,15 +3,15 @@
  */
 'use-strict';
 
-var config = require('../../../Config');
+const config = require('../../../Config');
 
-var jobqueue = config.getKueJobQueue();
-var kue = config.getKueClient();
+const jobqueue = config.getKueJobQueue();
+const kue = config.getKueClient();
 
 function scheduleJob(jobKey, jobData, options) {
     return new Promise(function (resolve, reject) {
 
-        var job = jobqueue.create(jobKey, jobData);
+        let job = jobqueue.create(jobKey, jobData);
 
         if (options.hasOwnProperty('delay')) {
             job.delay(options.delay);

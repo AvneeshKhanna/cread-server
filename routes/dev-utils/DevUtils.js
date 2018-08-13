@@ -444,7 +444,7 @@ router.post('/send-inactive-notif', function (request, response) {
 
 function getInactiveUsersSinceLong(connection) {
 
-    var last_post_limit = {
+    let last_post_limit = {
         upper: 9,
         lower: 3
     };
@@ -515,7 +515,7 @@ function getAllUsers(connection) {
                 });
 
                 const json2csv = new json2csvparser(fields);
-                var csv_data = json2csv.parse(rows);
+                let csv_data = json2csv.parse(rows);
 
                 fs.writeFile(users_csv_path, csv_data, function (err) {
                     if(err){

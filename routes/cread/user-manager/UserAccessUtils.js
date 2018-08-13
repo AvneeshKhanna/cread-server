@@ -3,27 +3,27 @@
  */
 'use-strict';
 
-var config = require('../../Config');
+const config = require('../../Config');
 
-var envconfig = require('config');
+const envconfig = require('config');
 
-var AWS = config.AWS;
-var ddbClient = new AWS.DynamoDB.DocumentClient();
-var uuidGen = require('uuid');
+const AWS = config.AWS;
+const ddbClient = new AWS.DynamoDB.DocumentClient();
+const uuidGen = require('uuid');
 
-var _auth = require('../../auth-token-management/AuthTokenManager');
+const _auth = require('../../auth-token-management/AuthTokenManager');
 
-var userstbl_ddb = envconfig.get('dynamoDB.users_table');
-var updatesutils = require('../updates/UpdatesUtils');
-var utils = require('../utils/Utils');
-var followutils = require('../follow/FollowUtils');
-var chatconvoutils = require('../chat/ChatConversationUtils');
-var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
+const userstbl_ddb = envconfig.get('dynamoDB.users_table');
+const updatesutils = require('../updates/UpdatesUtils');
+const utils = require('../utils/Utils');
+const followutils = require('../follow/FollowUtils');
+const chatconvoutils = require('../chat/ChatConversationUtils');
+const BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
-var cache_utils = require('../utils/cache/CacheUtils');
-var REDIS_KEYS = cache_utils.REDIS_KEYS;
-var CREAD_GOOGLE = config.CREAD_GOOGLE;
-var jobqueuehandler = require('../utils/long-tasks/JobQueueHandler');
+const cache_utils = require('../utils/cache/CacheUtils');
+const REDIS_KEYS = cache_utils.REDIS_KEYS;
+const CREAD_GOOGLE = config.CREAD_GOOGLE;
+const jobqueuehandler = require('../utils/long-tasks/JobQueueHandler');
 
 const googleOAuthClient = config.getGoogleOAuthClient();
 
@@ -63,8 +63,8 @@ function checkIfUserExists(connection, fbid, ggl_userid) {
 
 function registerUserData(connection, userdetails, fcmtoken) {
 
-    var uuid = uuidGen.v4();
-    var authkey = _auth.generateToken({
+    const uuid = uuidGen.v4();
+    const authkey = _auth.generateToken({
         id: userdetails.fbid ? userdetails.fbid : userdetails.ggl_userid
     });
 
@@ -119,7 +119,7 @@ function registerUserData(connection, userdetails, fcmtoken) {
 }
 
 function addUserToDynamoDB(item, callback) {
-    var params = {
+    let params = {
         TableName: userstbl_ddb,
         Item: /*{
                 'UUID': uuid,
@@ -143,8 +143,8 @@ function addUserToDynamoDB(item, callback) {
 
 function addUserFcmToken(uuid, fcmtoken, resultfromprev) {
     return new Promise(function (resolve, reject) {
-        var table = userstbl_ddb;
-        var addParams = {
+        let table = userstbl_ddb;
+        let addParams = {
             TableName: table,
             Key: {
                 UUID: uuid
@@ -157,7 +157,7 @@ function addUserFcmToken(uuid, fcmtoken, resultfromprev) {
             }
         };
 
-        var getParams = {
+        let getParams = {
             TableName: table,
             Key: {
                 UUID: uuid
@@ -189,8 +189,8 @@ function addUserFcmToken(uuid, fcmtoken, resultfromprev) {
 function removeUserFcmToken(uuid, fcmtoken) {
     return new Promise(function (resolve, reject) {
 
-        var table = userstbl_ddb;
-        var getParams = {
+        let table = userstbl_ddb;
+        let getParams = {
             TableName: table,
             Key: {
                 UUID: uuid
@@ -203,12 +203,12 @@ function removeUserFcmToken(uuid, fcmtoken) {
                 reject(error);
             }
             else {
-                var fcmtokens = data.Item.Fcm_token;
+                let fcmtokens = data.Item.Fcm_token;
 
                 if (fcmtokens.indexOf(fcmtoken) !== -1) {    //Fcm Token exists, remove it
                     fcmtokens.splice(fcmtokens.indexOf(fcmtoken), 1);
 
-                    var updateParams = {
+                    let updateParams = {
                         TableName: table,
                         Key: {
                             UUID: uuid
@@ -273,7 +273,7 @@ function getUserDetailsFromGoogle(access_token) {
 
 function updateNewFacebookUserDataForUpdates(connection, uuid, actor_uuid, category) {
     return new Promise(function (resolve, reject) {
-        var updateparams = {
+        let updateparams = {
             uuid: uuid,
             actor_uuid: actor_uuid,
             category: category
@@ -291,7 +291,7 @@ function addDefaultCreadKalakaarActions(connection, user_uuid) {
     return new Promise(function (resolve, reject) {
         utils.beginTransaction(connection)
             .then(function () {
-                var default_ck_chat_job_data = {
+                let default_ck_chat_job_data = {
                     for_uuid: user_uuid
                 };
 
@@ -316,7 +316,7 @@ function addDefaultCreadKalakaarActions(connection, user_uuid) {
 
 (function processDefaultCKChatJob() {
 
-    var connection;
+    let connection;
 
     jobqueuehandler.processJob(REDIS_KEYS.KUE_DEFAULT_CK_CHAT_MSG, function (jobData) {
         config.getNewConnection()

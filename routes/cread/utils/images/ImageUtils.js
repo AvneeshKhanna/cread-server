@@ -3,20 +3,20 @@
  */
 'use-strict';
 
-var moment = require('moment');
+const moment = require('moment');
 
-var config = require('../../../Config');
+const config = require('../../../Config');
 
-var CLOUDFRONT = config.CLOUDFRONT;
-var AWS = config.AWS;
-var cloudfrontClient = new AWS.CloudFront();
+const CLOUDFRONT = config.CLOUDFRONT;
+const AWS = config.AWS;
+const cloudfrontClient = new AWS.CloudFront();
 
 /**
  * A function to invalidate an object from AWS Cloudfront distribution
  * */
 function invalidateCloudfrontObject(object_paths, options) {
     return new Promise(function (resolve, reject) {
-        var params = {
+        let params = {
             DistributionId: CLOUDFRONT.distributionid,
             InvalidationBatch: {
                 CallerReference: moment().format('x'), /* Unique string value to identify the request */
@@ -40,4 +40,4 @@ function invalidateCloudfrontObject(object_paths, options) {
 
 module.exports = {
     invalidateCloudfrontObject: invalidateCloudfrontObject
-}
+};

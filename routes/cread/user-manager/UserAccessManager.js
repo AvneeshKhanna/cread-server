@@ -7,24 +7,24 @@
  * */
 'use-strict';
 
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
 
-var config = require('../../Config');
+const config = require('../../Config');
 
 /*var envconfig = require('config');
 var uuidGen = require('uuid');
 var request_client = require('request');*/
 
-var CryptoJS = require('crypto-js');
+const CryptoJS = require('crypto-js');
 
-var _auth = require('../../auth-token-management/AuthTokenManager');
-var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
-var utils = require('../utils/Utils');
-var useraccessutils = require('./UserAccessUtils');
-var userprofileutils = require('./UserProfileUtils');
-let usranlytcsutils = require('./analytics/UserAnalyticsUtils');
-var notify = require('../../notification-system/notificationFramework');
+const _auth = require('../../auth-token-management/AuthTokenManager');
+const BreakPromiseChainError = require('../utils/BreakPromiseChainError');
+const utils = require('../utils/Utils');
+const useraccessutils = require('./UserAccessUtils');
+const userprofileutils = require('./UserProfileUtils');
+const usranlytcsutils = require('./analytics/UserAnalyticsUtils');
+const notify = require('../../notification-system/notificationFramework');
 
 router.post('/sign-in', function (request, response) {
 

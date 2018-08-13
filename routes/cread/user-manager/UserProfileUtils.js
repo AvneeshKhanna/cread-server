@@ -26,6 +26,7 @@ const NotFoundError = require('../utils/NotFoundError');
 
 const feedutils = require('../feed/FeedUtils');
 const consts = require('../utils/Constants');
+const post_type = consts.post_type;
 
 const cache_manager = require('../utils/cache/CacheManager');
 const cache_utils = require('../utils/cache/CacheUtils');
@@ -297,7 +298,7 @@ function loadTimeline(connection, requesteduuid, requesteruuid, limit, lastindex
 
 function loadProfileInformation(connection, requesteduuid, requesteruuid) {
 
-    var today = moment().format('YYYY-MM-DD 00:00:00');
+    let today = moment().format('YYYY-MM-DD 00:00:00');
 
     return new Promise(function (resolve, reject) {
         connection.query('SELECT User.uuid, User.firstname, User.lastname, User.bio, User.watermarkstatus, ' +
@@ -330,10 +331,10 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
                     return;
                 }
 
-                var topinterests = [];
+                let topinterests = [];
 
                 //Interests selected by the user
-                var interests_arr = utils.getUniqueValues(rows.map(function (r) {
+                let interests_arr = utils.getUniqueValues(rows.map(function (r) {
                     return r.intname
                 })).filter(function (r) {
                     return !!r;
@@ -348,24 +349,24 @@ function loadProfileInformation(connection, requesteduuid, requesteruuid) {
                 }
 
                 //People who follow the requesteduuid
-                var followers = rows.filter(function (elem) {
+                let followers = rows.filter(function (elem) {
                     return (elem.followee === requesteduuid);
                 });
 
                 //People who the requesteduuid follows
-                var following = rows.filter(function (elem) {
+                let following = rows.filter(function (elem) {
                     return (elem.follower === requesteduuid);
                 });
 
-                var followercount = utils.getUniqueValues(followers.map(function (f) {
+                let followercount = utils.getUniqueValues(followers.map(function (f) {
                     return f.followid;
                 })).length;
 
-                var followingcount = utils.getUniqueValues(following.map(function (f) {
+                let followingcount = utils.getUniqueValues(following.map(function (f) {
                     return f.followid;
                 })).length;
 
-                var userdata = rows[0];
+                let userdata = rows[0];
 
                 userdata.profilepicurl = utils.createProfilePicUrl(userdata.uuid);
                 userdata.featured = !!userdata.featured_id;
@@ -507,12 +508,6 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
             else {
                 connection.query('SELECT Entity.caption, Entity.entityid, Entity.regdate, Entity.merchantable, Entity.type, User.uuid, ' +
                     'CONCAT_WS(" ", User.firstname, User.lastname) AS creatorname, ' +
-                    /*'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
-                    'Capture.capid AS captureid, CShort.entityid AS csentityid, SCapture.entityid AS scentityid, ' +
-                    'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
-                    'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
-                    'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +
-                    'CASE WHEN(Entity.type = "SHORT") THEN Short.livefilter ELSE Capture.livefilter END AS livefilter, ' +*/
                     'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
                     'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
                     'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount ' +
@@ -558,23 +553,6 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                                 element.downvotestatus = element.dbinarycount > 0;
                                 element.merchantable = (element.merchantable !== 0);
                                 element.long_form = (element.long_form === 1);
-
-                                /*if (element.type === 'CAPTURE') {
-                                    element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
-                                    element.cpshort = {
-                                        name: requesteduuiddetails[0].firstname + ' ' + requesteduuiddetails[0].lastname,
-                                        entityid: element.csentityid,
-                                        uuid: requesteduuid
-                                    }
-                                }
-                                else if (element.type === 'SHORT') {
-                                    element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
-                                    element.shcapture = {
-                                        name: requesteduuiddetails[0].firstname + ' ' + requesteduuiddetails[0].lastname,
-                                        entityid: element.scentityid,
-                                        uuid: requesteduuid
-                                    }
-                                }*/
 
                                 if (element.hasOwnProperty('hbinarycount')) {
                                     delete element.hbinarycount;
@@ -631,7 +609,7 @@ function loadCollaborationTimeline(connection, requesteduuid, requesteruuid, lim
                             resolve({
                                 requestmore: rows.length >= limit,
                                 candownvote: false, //Since no posts exist, user would have a percentile 0. Hence, not a quality user
-                                lastindexkey: null,
+                                lastindexkey: "",
                                 items: []
                             });
                         }
@@ -658,7 +636,7 @@ function updateProfile(connection, uuid, details) {
 function loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl) {
     return new Promise(function (resolve, reject) {
 
-        var graphurl = (nexturl) ? nexturl : 'https://graph.facebook.com/v2.10/'
+        let graphurl = (nexturl) ? nexturl : 'https://graph.facebook.com/v2.10/'
             + fbid
             + '/'
             + 'friends'
@@ -676,13 +654,13 @@ function loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl) {
             }
             else {
                 console.log("body-response " + JSON.stringify(JSON.parse(body), null, 3));
-                var response = JSON.parse(body);
+                let response = JSON.parse(body);
 
-                var friendsids = response.data.map(function (element) {
+                let friendsids = response.data.map(function (element) {
                     return element.id;
                 });
 
-                var result = {};
+                let result = {};
 
                 if (friendsids.length === 0) {    //Case of no data
                     result.nexturl = null;
@@ -735,7 +713,7 @@ function loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl) {
 function loadAllFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl) {
     return new Promise(function (resolve, reject) {
 
-        var friends = [];
+        let friends = [];
 
         function recursive(nexturl) {
             loadFacebookFriends(connection, uuid, fbid, fbaccesstoken, nexturl)
@@ -797,7 +775,7 @@ function saveFbIdUser(connection, fbid, uuid) {
 function getFbAppAccessToken() {
     return new Promise(function (resolve, reject) {
 
-        var graphurl = 'https://graph.facebook.com/v2.10/'
+        let graphurl = 'https://graph.facebook.com/v2.10/'
             + 'oauth/access_token?client_id='
             + config['cread-fb-app-id']
             + '&client_secret='
@@ -814,7 +792,7 @@ function getFbAppAccessToken() {
             }
             else {
                 console.log("body-response " + JSON.stringify(JSON.parse(body), null, 3));
-                var response = JSON.parse(body);
+                let response = JSON.parse(body);
 
                 resolve(response.access_token);
             }
@@ -851,16 +829,6 @@ function renameFile(filebasepath, file, guid) {
                 reject(err);
             }
             else {
-                /*fs.open('./images/uploads/profile_picture/' + guid + '.jpg', 'r+', function (err, renamed) {
-                    if(err){
-                        console.log("fs.readFile: onReject()");
-                        reject(err);
-                    }
-                    else{
-                        console.log('renamed file path ' + renamed.path);
-                        resolve('./images/uploads/profile_picture/' + guid + '.jpg');
-                    }
-                });*/
                 resolve(filebasepath + guid + '.jpg');
             }
         });
@@ -893,14 +861,14 @@ function createSmallImage(readingpath, writingbasepath, guid, height, width) {
 function uploadImageToS3(sourcefilepath, uuid, type, destfilename /* ,filekey*/) {
     console.log("uploadImageToS3() called file.path " + sourcefilepath);
     return new Promise(function (resolve, reject) {
-        var params = {
+        let params = {
             Body: fs.createReadStream(sourcefilepath),
             Bucket: s3bucket,
             Key: "Users/" + uuid + "/" + type + "/" + destfilename,
             ACL: "public-read"
         };
 
-        var s3 = new AWS.S3();
+        let s3 = new AWS.S3();
         s3.putObject(params, function (err, data) {
             if (err) {
                 reject(err);
@@ -916,7 +884,7 @@ function uploadImageToS3(sourcefilepath, uuid, type, destfilename /* ,filekey*/)
  * Method to copy Facebook or Google's profile picture to S3
  * */
 function copySocialMediaProfilePic(picurl, uuid) {
-    var downloadpath;
+    let downloadpath;
     return new Promise(function (resolve, reject) {
         utils.downloadFile('./images/downloads/profilepic', uuid + '.jpg', picurl)
             .then(function (downldpath) {
@@ -924,7 +892,7 @@ function copySocialMediaProfilePic(picurl, uuid) {
 
                 console.log("downldpath is " + JSON.stringify(downldpath, null, 3));
 
-                var imagedimensions = imagesize(downloadpath);
+                let imagedimensions = imagesize(downloadpath);
 
                 if (imagedimensions.width > 500) {    //To resize
                     return createSmallProfilePic(downloadpath, uuid, 128, 128);
@@ -953,7 +921,7 @@ function copySocialMediaProfilePic(picurl, uuid) {
 function createSmallProfilePic(renamedpath, uuid, height, width) {
 
     console.log("createSmallProfilePic() called renamedpath " + renamedpath);
-    var writepath = "./images/uploads/profile_picture/" + uuid + "-small.jpg";
+    let writepath = "./images/uploads/profile_picture/" + uuid + "-small.jpg";
 
     return new Promise(function (resolve, reject) {
         jimp.read(renamedpath, function (err, resized) {
@@ -1020,42 +988,7 @@ function parseLatestPostsCacheValue(posts) {
 
 function addToLatestPostsCache(connection, uuid, entityurl) {
     return new Promise(function (resolve, reject) {
-        /*connection.query('SELECT E.type, S.shoid, C.capid, U.uuid ' +
-            'FROM Entity E ' +
-            'LEFT JOIN Short S ' +
-            'USING(entityid) ' +
-            'LEFT JOIN Capture C ' +
-            'USING(entityid) ' +
-            'JOIN User U ' +
-            'ON(U.uuid = S.uuid OR U.uuid = C.uuid) ' +
-            'WHERE U.uuid = ? ' +
-            'AND E.status = "ACTIVE" ' +
-            'GROUP BY E.entityid ' +
-            'ORDER BY E.regdate DESC ' +
-            'LIMIT 4', [uuid], function (err, rows) {
-            if (err) {
-                reject(err);
-            }
-            else {
-
-                var posts = [
-                    entityurl
-                ];
-
-                rows.map(function (element) {
-                    if(element.type === 'SHORT'){
-                        posts.push(utils.createSmallShortUrl(uuid, element.shoid));
-                    }
-                    else{
-                        posts.push(utils.createSmallCaptureUrl(uuid, element.capid));
-                    }
-                });
-
-
-            }
-        });*/
-
-        var posts;
+        let posts;
         getUserQualityPercentile(connection, uuid)
             .then(function (result) {
                 if (result.quality_percentile_score >= consts.min_qpercentile_user_recommendation) {
@@ -1087,7 +1020,7 @@ function addToLatestPostsCache(connection, uuid, entityurl) {
             })
             .then(function (result) {
 
-                var lp_hmap = {};
+                let lp_hmap = {};
                 lp_hmap[uuid] = result;
 
                 return cache_manager.setCacheHMap(REDIS_KEYS.USER_LATEST_POSTS, lp_hmap);
@@ -1109,6 +1042,7 @@ function getLatestPostsOfUser(connection, uuid) {
             'ON(U.uuid = S.uuid OR U.uuid = C.uuid) ' +
             'WHERE U.uuid = ? ' +
             'AND E.status = "ACTIVE" ' +
+            'AND E.type <> "MEME" ' +
             'GROUP BY E.entityid ' +
             'ORDER BY E.regdate DESC ' +
             'LIMIT 7', [uuid], function (err, rows) {
@@ -1117,13 +1051,13 @@ function getLatestPostsOfUser(connection, uuid) {
             }
             else {
 
-                var posts = [];
+                let posts = [];
 
                 rows.map(function (element) {
-                    if (element.type === 'SHORT') {
+                    if (element.type === post_type.SHORT) {
                         posts.push(utils.createSmallShortUrl(uuid, element.shoid));
                     }
-                    else {
+                    else if(element.type === post_type.CAPTURE){
                         posts.push(utils.createSmallCaptureUrl(uuid, element.capid));
                     }
                 });
@@ -1142,7 +1076,7 @@ function updateLatestPostsCache(connection, uuid) {
                     resolve([]);
                 }
                 else {
-                    var posts;
+                    let posts;
                     getLatestPostsOfUser(connection, uuid)
                         .then(function (psts) {
                             posts = psts;
@@ -1171,9 +1105,9 @@ function getLatestPostsCache(uuids) {
         cache_manager.getCacheHMapMultiple(cache_utils.REDIS_KEYS.USER_LATEST_POSTS, uuids)
             .then(function (stringified_posts) {
                 if (stringified_posts) {
-                    var res = {};
-                    for (var i = 0; i < stringified_posts.length; i++) {
-                        var stringified_post = stringified_posts[i];
+                    let res = {};
+                    for (let i = 0; i < stringified_posts.length; i++) {
+                        let stringified_post = stringified_posts[i];
                         if (stringified_post) {
                             res[uuids[i]] = parseLatestPostsCacheValue(stringified_post);
                         }

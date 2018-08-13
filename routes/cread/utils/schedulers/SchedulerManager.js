@@ -3,27 +3,28 @@
  */
 'use-strict';
 
-var CronJob = require('cron').CronJob;
-var moment = require('moment');
-var async = require('async');
+const CronJob = require('cron').CronJob;
+const moment = require('moment');
+const async = require('async');
 
-var config = require('../../../Config');
-var consts = require('../Constants');
-var utils = require('../Utils');
-var BreakPromiseChainError = require('../BreakPromiseChainError');
-var userprofileutils = require('../../user-manager/UserProfileUtils');
-var entityintrstutils = require('../../interests/EntityInterestsUtils');
-var entityspecificutils = require('../../entity/EntitySpecificUtils');
-var entityimgutils = require('../../entity/EntityImageUtils');
-var _auth = require('../../../auth-token-management/AuthTokenManager');
+const config = require('../../../Config');
+const consts = require('../Constants');
+const post_type = consts.post_type;
+const utils = require('../Utils');
+const BreakPromiseChainError = require('../BreakPromiseChainError');
+const userprofileutils = require('../../user-manager/UserProfileUtils');
+const entityintrstutils = require('../../interests/EntityInterestsUtils');
+const entityspecificutils = require('../../entity/EntitySpecificUtils');
+const entityimgutils = require('../../entity/EntityImageUtils');
+const _auth = require('../../../auth-token-management/AuthTokenManager');
 
-var download_base_path = './images/downloads';
+const download_base_path = './images/downloads';
 
-var update_latestposts_cache_job = new CronJob({
+let update_latestposts_cache_job = new CronJob({
     cronTime: '00 00 01 * * *', //second | minute | hour | day-of-month | month | day-of-week
     onTick: function () {
 
-        var connection;
+        let connection;
 
         config.getNewConnection()
             .then(function (conn) {
@@ -92,12 +93,12 @@ function updateLatestPostsAllCache(connection, users) {
     });
 }
 
-var delete_stale_hotds_job = new CronJob({
+const delete_stale_hotds_job = new CronJob({
     //Runs at 12:05 am
     cronTime: '00 05 00 * * *', //second | minute | hour | day-of-month | month | day-of-week
     onTick: function () {
 
-        var connection;
+        let connection;
 
         config.getNewConnection()
             .then(function (conn) {
@@ -140,12 +141,12 @@ function removeStaleHOTDs(connection) {
     });
 }
 
-var reminder_hotd_job = new CronJob({
+const reminder_hotd_job = new CronJob({
     //Runs at 12:05 am
     cronTime: '00 00 20 * * *', //second | minute | hour | day-of-month | month | day-of-week
     onTick: function () {
 
-        var connection;
+        let connection;
 
         if (config.isProduction()) {
             config.getNewConnection()
@@ -159,7 +160,7 @@ var reminder_hotd_job = new CronJob({
                         console.log("HOTD scheduled for tomorrow");
                     }
                     else {
-                        var toAddresses = [
+                        let toAddresses = [
                             "admin@thetestament.com",
                             "nishantmittal2410@gmail.com",
                             "avneesh.khanna92@gmail.com"
@@ -206,12 +207,12 @@ function checkForScheduledHOTD(connection) {
     });
 }
 
-var generate_new_web_token_job = new CronJob({
+const generate_new_web_token_job = new CronJob({
     //Runs at 12:05 am
     cronTime: '00 05 00 * * *', //second | minute | hour | day-of-month | month | day-of-week
     onTick: function () {
 
-        var connection;
+        let connection;
 
         config.getNewConnection()
             .then(function (conn) {
@@ -245,12 +246,12 @@ var generate_new_web_token_job = new CronJob({
 /**
  * Cron job to unlock entities that may have locked due to manual post categorising process using Cread Ops
  * */
-var unlock_entities_job = new CronJob({
+const unlock_entities_job = new CronJob({
     //Runs every 1 hour
     cronTime: '00 00 * * * *', //second | minute | hour | day-of-month | month | day-of-week
     onTick: function () {
 
-        var connection;
+        let connection;
 
         config.getNewConnection()
             .then(function (conn) {
@@ -279,12 +280,12 @@ var unlock_entities_job = new CronJob({
 /**
  * Cron job to add product overlay images
  * */
-var add_product_images_job = new CronJob({
+const add_product_images_job = new CronJob({
     //Runs at 06:00 am
     cronTime: '00 00 06 * * *', //second | minute | hour | day-of-month | month | day-of-week
     onTick: function () {
 
-        var connection;
+        let connection;
 
         if (config.isProduction()) {
             config.getNewConnection()
@@ -296,6 +297,7 @@ var add_product_images_job = new CronJob({
                             'WHERE product_overlay = 0 ' +
                             'AND merchantable = 1 ' +
                             'AND status = "ACTIVE" ' +
+                            'AND type <> "MEME" ' +
                             'ORDER BY regdate DESC ' +
                             'LIMIT 300', [false], function (err, rows) {
                             if (err) {
@@ -337,7 +339,7 @@ function createMultipleEntityProductImages(entities) {
         //Limit async operations to 20 at a time as multiple SQL connections would be opened parallely
         async.eachOfLimit(entities, 20, function (entity, index, callback) {
 
-            var connection;
+            let connection;
 
             config.getNewConnection()
                 .then(function (conn) {
@@ -379,8 +381,8 @@ function createMultipleEntityProductImages(entities) {
 function createEntityProductImage(connection, entityid) {
     return new Promise(function (resolve, reject) {
 
-        var edata;
-        var download_file_name;
+        let edata;
+        let download_file_name;
 
         entityspecificutils.loadEntityData(connection, config.getCreadKalakaarUUID(), entityid)
             .then(function (ed) {
@@ -389,10 +391,10 @@ function createEntityProductImage(connection, entityid) {
                 return utils.downloadFile(download_base_path, download_file_name, edata.entityurl);
             })
             .then(function (downloadpath) {
-                return entityimgutils.createOverlayedImageJournal(edata.type === 'SHORT' ? edata.shoid : edata.captureid, edata.type, edata.uuid, download_base_path + '/' + download_file_name);
+                return entityimgutils.createOverlayedImageJournal(edata.type === post_type.SHORT ? edata.shoid : edata.captureid, edata.type, edata.uuid, download_base_path + '/' + download_file_name);
             })
             .then(function () {
-                return entityimgutils.createOverlayedImageCoffeeMug(edata.type === 'SHORT' ? edata.shoid : edata.captureid, edata.uuid, edata.type, download_base_path + '/' + download_file_name)
+                return entityimgutils.createOverlayedImageCoffeeMug(edata.type === post_type.SHORT ? edata.shoid : edata.captureid, edata.uuid, edata.type, download_base_path + '/' + download_file_name)
             })
             .then(function () {
                 return new Promise(function (resolve, reject) {
@@ -415,12 +417,12 @@ function createEntityProductImage(connection, entityid) {
 /**
  * Cron job to shoot mail to team for help queries present in the last 3 hours
  * */
-var help_queries_status_job = new CronJob({
+const help_queries_status_job = new CronJob({
     //Runs every 3 hours
     cronTime: '00 00 */3 * * *', //second | minute | hour | day-of-month | month | day-of-week
     onTick: function () {
 
-        var connection;
+        let connection;
 
         if (config.isProduction()) {
             config.getNewConnection()
@@ -431,7 +433,7 @@ var help_queries_status_job = new CronJob({
                 .then(function (items) {
 
                     if (items.length > 0) {
-                        var toAddresses = [
+                        let toAddresses = [
                             "admin@thetestament.com",
                             "nishantmittal2410@gmail.com"/*,
                             "avneesh.khanna92@gmail.com"*/

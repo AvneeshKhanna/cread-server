@@ -3,7 +3,7 @@
  */
 'use-strict';
 
-var config = require('../../../Config');
+const config = require('../../../Config');
 
 const REDIS_KEYS = {
 

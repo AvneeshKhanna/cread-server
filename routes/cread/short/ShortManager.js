@@ -3,16 +3,16 @@
  */
 'use-strict';
 
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
 
-var config = require('../../Config');
+const config = require('../../Config');
 
-var _auth = require('../../auth-token-management/AuthTokenManager');
-var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
+const _auth = require('../../auth-token-management/AuthTokenManager');
+const BreakPromiseChainError = require('../utils/BreakPromiseChainError');
 
-var utils = require('../utils/Utils');
-var shortutils = require('./ShortUtils');
+const utils = require('../utils/Utils');
+const shortutils = require('./ShortUtils');
 
 router.get('/load-specific', function (request, response) {
 

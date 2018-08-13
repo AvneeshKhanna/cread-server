@@ -3,7 +3,9 @@
  */
 'use-strict';
 
-var utils = require('../utils/Utils');
+const utils = require('../utils/Utils');
+const consts = require('../utils/Constants');
+const post_type = consts.post_type;
 
 function retrieveShortDetails(connection, shoid, select) {
     return new Promise(function (resolve, reject) {
@@ -29,9 +31,9 @@ function retrieveShortDetails(connection, shoid, select) {
 
 function getShortDetailsFromCollab(connection, entityid, type, select) {
 
-    var sqlquery;
+    let sqlquery;
 
-    if(type === 'SHORT'){
+    if(type === post_type.SHORT){
 
         select = select.map(function (el) {
             el = 'S.' + el;
@@ -47,7 +49,7 @@ function getShortDetailsFromCollab(connection, entityid, type, select) {
             'WHERE E.entityid = ?';
 
     }
-    else if(type === 'CAPTURE') {
+    else if(type === post_type.CAPTURE) {
 
         select = select.map(function (el) {
             el = 'C.' + el;
@@ -103,7 +105,7 @@ function addShortToDb(connection, shortsqlparams, entityparams) {
             }
         });*/
 
-        entityparams.type = 'SHORT';
+        entityparams.type = post_type.SHORT;
 
         connection.query('INSERT INTO Entity SET ?', [entityparams], function (err, edata) {
             if (err) {

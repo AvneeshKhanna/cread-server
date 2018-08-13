@@ -683,14 +683,6 @@ async function loadMemeFeed(connection, uuid, limit, lastindexkey) {
                             delete element.dbinarycount;
                         }
 
-                        if (element.hasOwnProperty('firstname')) {
-                            delete element.firstname;
-                        }
-
-                        if (element.hasOwnProperty('lastname')) {
-                            delete element.lastname;
-                        }
-
                         return element;
                     });
 

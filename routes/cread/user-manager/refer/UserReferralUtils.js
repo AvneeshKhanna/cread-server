@@ -3,13 +3,13 @@
  */
 'use-strict';
 
-var CryptoJS = require('crypto-js');
+const CryptoJS = require('crypto-js');
 
-var config = require('../../../Config');
-var serverbaseurl = config.server_url;
+const config = require('../../../Config');
+const serverbaseurl = config.server_url;
 
 function getEncryptedReferralPayload(referrer_uuid){
-    var payload = {
+    let payload = {
         referrer_uuid: referrer_uuid
     };
 
@@ -18,7 +18,7 @@ function getEncryptedReferralPayload(referrer_uuid){
 
 function generateShareAppDeepLink(referrer_uuid){
 
-    var cipher_text = getEncryptedReferralPayload(referrer_uuid);
+    let cipher_text = getEncryptedReferralPayload(referrer_uuid);
 
     return serverbaseurl
         + '?referral_code='

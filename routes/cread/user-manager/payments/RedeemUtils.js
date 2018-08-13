@@ -3,27 +3,27 @@
  */
 'use-strict';
 
-var envconfig = require('config');
-var userstbl_ddb = envconfig.get('dynamoDB.users_table');
-var paytmCreds = envconfig.get('paytm-creds');
+const envconfig = require('config');
+const userstbl_ddb = envconfig.get('dynamoDB.users_table');
+const paytmCreds = envconfig.get('paytm-creds');
 
-var paytm_server_url = paytmCreds.get('server-url');
-var saleswalletguid = paytmCreds.get('sales-wallet-guid');
-var merchantGuid = paytmCreds.get("merchant-guid");
-var paytmMerchantKey = paytmCreds.get('merchant-key');
+const paytm_server_url = paytmCreds.get('server-url');
+const saleswalletguid = paytmCreds.get('sales-wallet-guid');
+const merchantGuid = paytmCreds.get("merchant-guid");
+const paytmMerchantKey = paytmCreds.get('merchant-key');
 
-var uuidGen = require('uuid');
-var httprequest = require('request');
+const uuidGen = require('uuid');
+const httprequest = require('request');
 
-var paytmchecksum = require('../../paytmutils/checksum');
-var utils = require('../../utils/Utils');
+const paytmchecksum = require('../../paytmutils/checksum');
+const utils = require('../../utils/Utils');
 
 /**
  * Sends a confirmation SMS to the user that the amount has been successfully transacted to Paytm
  * */
 function informUserViaRegisteredContact(name, phone, amount, userpaytmcontact){
     return new Promise(function (resolve, reject) {
-        var msg = 'Hi ' +
+        let msg = 'Hi ' +
             name +
             ',\nYour Cread earnings amounting to Rs. ' +
             amount +
@@ -130,7 +130,7 @@ function generatePaytmChecksumHash(aesKey, userpaytmcontact, amount, orderId, re
 function updateRDS(connection, uuid, orderId, amount, entityids) {
     return new Promise(function (resolve, reject) {
 
-        var usrtransparams = {
+        let usrtransparams = {
             transacid: uuidGen.v4(),
             uuid: uuid,
             paytmOrderId: orderId,
@@ -165,90 +165,15 @@ function updateRDS(connection, uuid, orderId, amount, entityids) {
 function transactToPaytm(/*uuid, */amount, userpaytmcontact, orderId, checksumhash) {
     console.log("transactToPaytm called");
     return new Promise(function (resolve, reject) {
-        /*connection.beginTransaction(function (err) {
-            if (err) {
-                connection.rollback(function () {
-                    console.log('Transaction rollbacked');
-                    reject(err);
-                });
-            }
-            else {
-
-                var usrtransparams = {
-                    transid: uuidGen.v4(),
-                    uuid: uuid,
-                    paytmOrderId: orderId,
-                    amount: amount
-                };
-
-                //Adding transaction to UserWalletTransaction table
-                connection.query('INSERT INTO UsersWalletTransaction SET ?', [usrtransparams], function (err, row) {
-
-                    if (err) {
-                        connection.rollback(function () {
-                            console.log('Transaction rollbacked');
-                            reject(err);
-                        });
-                    }
-                    else {
-
-                        //Updating Share table
-                        connection.query('UPDATE Share ' +
-                            'JOIN Campaign ' +
-                            'ON Share.cmid = Campaign.cmid ' +
-                            'SET Share.cashed_in = ?, Share.transid = ? ' +
-                            'WHERE Share.checkstatus = ? ' +
-                            'AND Share.UUID = ? ' +
-                            'AND Campaign.main_feed = ?', [true, usrtransparams.transid, 'COMPLETE', uuid, true], function (err, row) {
-
-                            if (err) {
-                                connection.rollback(function () {
-                                    console.log('Transaction rollbacked');
-                                    reject(err);
-                                });
-                            }
-                            else {
-
-                                //Updating Checks table
-                                connection.query('UPDATE Checks ' +
-                                    'SET cashed_in = 1, transid = ? ' +
-                                    'WHERE UUID = ? ' +
-                                    'AND cashed_in = 0', [usrtransparams.transid, uuid], function (err, data) {
-
-                                    if (err) {
-                                        connection.rollback(function () {
-                                            console.log('Transaction rollbacked');
-                                            reject(err);
-                                        });
-                                    }
-                                    else {
-
-
-
-                                    }
-
-                                });
-
-                            }
-
-                        });
-
-                    }
-
-                });
-
-            }
-        });*/
-
         // Set the headers
-        var headers = {
+        let headers = {
             'checksumhash': checksumhash,
             'Content-Type': 'application/json',
             'mid': merchantGuid   //Provided by Paytm
         };
 
         // Configure the request
-        var options = {
+        let options = {
             url: paytm_server_url + "/wallet-web/salesToUserCredit",
             method: 'POST',
             headers: headers,
@@ -260,46 +185,17 @@ function transactToPaytm(/*uuid, */amount, userpaytmcontact, orderId, checksumha
         httprequest(options, function (err, res, body) {
 
             if (err) {
-                /*connection.rollback(function () {
-                    console.log('Transaction rollbacked');
-                    reject(err);
-                });*/
                 reject(err);
             }
             else {
 
-                var resbody = JSON.parse(body);
+                let resbody = JSON.parse(body);
                 console.log("paytm response resbody is " + JSON.stringify(resbody, null, 3));
 
                 if (resbody.status === "SUCCESS") {
-                    /*connection.commit(function (err) {
-                        if (err) {  //Could be a caveat, if this happens, paytm transactions would go through but our records won't be updated
-                            connection.rollback(function () {
-                                console.log('Transaction rollbacked');
-                                reject(err);
-                            });
-                        }
-                        else {
-                            console.log('Transaction committed');
-                            resolve("success");
-                        }
-                    });*/
                     resolve("success");
                 }
                 else if (resbody.status === "FAILURE") {
-                    /*connection.rollback(function () {
-                        console.log('Transaction rollbacked');
-
-                        if (resbody.statusCode === 'GE_1032') {    //Case of invalid mobile number
-                            resolve('invalid-contact');
-                        }
-                        else if(resbody.statusCode === 'STUC_1002'){ //Payee record not found, please verify emailId/ssoId.
-                            resolve("invalid-user");
-                        }
-                        else {
-                            reject(new Error(resbody.statusMessage));
-                        }
-                    });*/
                     if (resbody.statusCode === 'GE_1032') {    //Case of invalid mobile number
                         resolve('invalid-contact');
                     }
@@ -311,10 +207,6 @@ function transactToPaytm(/*uuid, */amount, userpaytmcontact, orderId, checksumha
                     }
                 }
                 else {   //resbody.status == "PENDING"
-                    /*connection.rollback(function () {
-                        console.log('Transaction rollbacked');
-                        resolve("invalid-user");
-                    });*/
                     resolve("invalid-user");
                 }
 

@@ -3,15 +3,15 @@
  */
 'use-strict';
 
-var async = require('async');
+const async = require('async');
 
-var config = require('../../../Config');
-var notify = require('../../../notification-system/notificationFramework');
+const config = require('../../../Config');
+const notify = require('../../../notification-system/notificationFramework');
 
-var time_range = {};
-var time_unit;
+let time_range = {};
+let time_unit;
 
-if (config.envtype === 'PRODUCTION') {
+if (config.isProduction()) {
 
     time_range = {
         min: 48,
@@ -51,11 +51,11 @@ function saveUserEvents(connection, user_events) {
 
 function restructureForBulkInsert(user_events) {
 
-    var masterArr = [];
+    let masterArr = [];
 
     user_events.forEach(function (event) {
 
-        var subArr = [
+        let subArr = [
             event['actor_uuid'],
             event['entityid'],
             event['event_type'],
@@ -73,8 +73,8 @@ function restructureForBulkInsert(user_events) {
  * */
 function sendEngagementNotificationsForUsers() {
 
-    var connection;
-    var allUsers = [];
+    let connection;
+    let allUsers = [];
 
     return new Promise(function (resolve, reject) {
         config.getNewConnection()
@@ -174,7 +174,7 @@ function sendEngagementNotificationsForUsers() {
  * */
 function getRecentPosters(connection, recentCollaborators) {
 
-    var sql = 'SELECT DISTINCT U.uuid ' +
+    let sql = 'SELECT DISTINCT U.uuid ' +
         'FROM Entity E ' +
         'LEFT JOIN Short S ' +
         'ON (E.entityid = S.entityid) ' +
@@ -185,7 +185,7 @@ function getRecentPosters(connection, recentCollaborators) {
         'WHERE E.regdate BETWEEN DATE_SUB(NOW(), INTERVAL ? ' + time_unit + ') AND DATE_SUB(NOW(), INTERVAL ? ' + time_unit + ') ' +
         'AND E.regdate NOT BETWEEN NOW() AND DATE_SUB(NOW(), INTERVAL ? ' + time_unit + ')';
 
-    var sqlparams = [
+    let sqlparams = [
         time_range.max,
         time_range.min,
         time_range.min

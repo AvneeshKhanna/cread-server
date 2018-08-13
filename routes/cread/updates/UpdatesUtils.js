@@ -3,14 +3,16 @@
  */
 'use-strict';
 
-var utils = require('../utils/Utils');
-var moment = require('moment');
+const utils = require('../utils/Utils');
+const moment = require('moment');
+const consts = require('../utils/Constants');
+const post_type = consts.post_type;
 
 function deleteFromUpdatesTable(connection, where_col_names, where_col_values){
     return new Promise(function (resolve, reject) {
 
-        var where_array = [];
-        var sql_params = [];
+        let where_array = [];
+        let sql_params = [];
 
         if(!(where_col_names instanceof Array) || !(where_col_values instanceof Array)){
             reject(new Error("where_col_names and where_col_values should be of type array"));
@@ -25,9 +27,9 @@ function deleteFromUpdatesTable(connection, where_col_names, where_col_values){
             return;
         }
 
-        for (var i = 0; i < where_col_names.length; i++) {
-            var col_name = where_col_names[i];
-            var col_value = where_col_values[i];
+        for (let i = 0; i < where_col_names.length; i++) {
+            let col_name = where_col_names[i];
+            let col_value = where_col_values[i];
             where_array.push(col_name + " = ?");
             sql_params.push(col_value);
         }
@@ -78,7 +80,7 @@ function restructureParamsForAddUpdates(params){
         params.uuid = new Array(params.uuid);
     }
 
-    var masterArr = [];
+    let masterArr = [];
 
     params.uuid.forEach(function (uuid) {
         masterArr.push([
@@ -157,11 +159,14 @@ function loadUpdates(connection, uuid, lastindexkey, limit){
 
                     rows.map(function (element) {
                         if(element.entityid) {
-                            if (element.type === 'SHORT') {
+                            if (element.type === post_type.SHORT) {
                                 element.entityurl = utils.createSmallShortUrl(element.actor_uuid, element.shoid);
                             }
-                            else if (element.type === 'CAPTURE') {
+                            else if (element.type === post_type.CAPTURE) {
                                 element.entityurl = utils.createSmallCaptureUrl(element.actor_uuid, element.capid);
+                            }
+                            else if(element.type === post_type.MEME){
+                                element.entityurl = utils.createSmallMemeUrl(element.actor_uuid, element.memeid);
                             }
                         }
                         else{
@@ -203,7 +208,7 @@ function loadUpdates(connection, uuid, lastindexkey, limit){
                 else {
                     resolve({
                         requestmore: false,
-                        lastindexkey: null,
+                        lastindexkey: "",
                         items: rows
                     });
                 }
