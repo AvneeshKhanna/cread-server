@@ -122,48 +122,64 @@ function getHashtagCounts(connection, uniquetags) {
     });
 }
 
-function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey) {
+function loadHashtagFeed(connection, uuid, limit, hashtag, lastindexkey, options) {
     return new Promise(function (resolve, reject) {
 
         lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
-        connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, User.uuid, ' +
-            'User.firstname, User.lastname, ' +
-            /*'Short.txt AS short, Capture.capid AS captureid, ' +
-            'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, ' +
-            'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
-            'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
-            'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
-            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
-            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +*/
-            'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
-            'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount, ' +
-            'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount ' +
-            'FROM Entity ' +
-            // 'JOIN HashTagDistribution AS HTD ' +
-            // 'ON HTD.entityid = Entity.entityid ' +
-            /*'LEFT JOIN Short ' +
-            'ON Short.entityid = Entity.entityid ' +
-            'LEFT JOIN Capture ' +
-            'ON Capture.entityid = Entity.entityid ' +*/
-            'JOIN User ' +
-            'ON(Entity.uuid = User.uuid) ' +
-            'LEFT JOIN HatsOff ' +
-            'ON HatsOff.entityid = Entity.entityid ' +
-            'LEFT JOIN Downvote D ' +
-            'ON D.entityid = Entity.entityid ' +
-            /*'LEFT JOIN Comment ' +
-            'ON Comment.entityid = Entity.entityid ' +*/
-            'LEFT JOIN Follow ' +
-            'ON User.uuid = Follow.followee ' +
-            'WHERE Entity.for_explore = "1" ' +
-            'AND Entity.status = "ACTIVE" ' +
-            'AND Entity.regdate < ? ' +
-            'AND MATCH(Entity.caption) ' +
-            'AGAINST (? IN BOOLEAN MODE) ' +
-            'GROUP BY Entity.entityid ' +
-            'ORDER BY Entity.regdate DESC ' +
-            'LIMIT ?', [uuid, uuid, uuid, lastindexkey, hashtag, limit], function (err, rows) {
+        let sql;
+
+        if(options.memesupport === 'yes'){
+            sql = 'SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, User.uuid, ' +
+                'User.firstname, User.lastname, ' +
+                'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
+                'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount, ' +
+                'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount ' +
+                'FROM Entity ' +
+                'JOIN User ' +
+                'ON(Entity.uuid = User.uuid) ' +
+                'LEFT JOIN HatsOff ' +
+                'ON HatsOff.entityid = Entity.entityid ' +
+                'LEFT JOIN Downvote D ' +
+                'ON D.entityid = Entity.entityid ' +
+                'LEFT JOIN Follow ' +
+                'ON User.uuid = Follow.followee ' +
+                'WHERE Entity.for_explore = "1" ' +
+                'AND Entity.status = "ACTIVE" ' +
+                'AND Entity.regdate < ? ' +
+                'AND MATCH(Entity.caption) ' +
+                'AGAINST (? IN BOOLEAN MODE) ' +
+                'GROUP BY Entity.entityid ' +
+                'ORDER BY Entity.regdate DESC ' +
+                'LIMIT ?';
+        }
+        else{
+            sql = 'SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, User.uuid, ' +
+                'User.firstname, User.lastname, ' +
+                'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
+                'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS binarycount, ' +
+                'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount ' +
+                'FROM Entity ' +
+                'JOIN User ' +
+                'ON(Entity.uuid = User.uuid) ' +
+                'LEFT JOIN HatsOff ' +
+                'ON HatsOff.entityid = Entity.entityid ' +
+                'LEFT JOIN Downvote D ' +
+                'ON D.entityid = Entity.entityid ' +
+                'LEFT JOIN Follow ' +
+                'ON User.uuid = Follow.followee ' +
+                'WHERE Entity.for_explore = "1" ' +
+                'AND Entity.status = "ACTIVE" ' +
+                'AND Entity.type <> "MEME" ' +
+                'AND Entity.regdate < ? ' +
+                'AND MATCH(Entity.caption) ' +
+                'AGAINST (? IN BOOLEAN MODE) ' +
+                'GROUP BY Entity.entityid ' +
+                'ORDER BY Entity.regdate DESC ' +
+                'LIMIT ?';
+        }
+
+        connection.query(sql, [uuid, uuid, uuid, lastindexkey, hashtag, limit], function (err, rows) {
             if (err) {
                 reject(err);
             }

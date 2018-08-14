@@ -3,6 +3,8 @@
  */
 'use-strict';
 
+const utils = require('../utils/Utils');
+
 /**
  * Function to load URLs for meme photos
  * */
@@ -10,14 +12,11 @@ async function loadPresetMemePhotos(limit, lastindexkey) {
 
     lastindexkey = lastindexkey ? Number(lastindexkey) : 0;
 
-    let data = [
-        'https://www.rd.com/wp-content/uploads/2018/05/shutterstock_725437768-760x506.jpg',
-        'http://i.imgur.com/UzhNiIx.jpg',
-        'https://i.kym-cdn.com/entries/icons/mobile/000/005/180/YaoMingMeme.jpg',
-        'https://i.kym-cdn.com/entries/icons/original/000/016/546/hidethepainharold.jpg',
-        'https://cdn.vox-cdn.com/thumbor/7wdvVMnJZvGfh4osoxfJ85awtCs=/0x0:500x375/1200x0/filters:focal(0x0:500x375)/cdn.vox-cdn.com/uploads/chorus_asset/file/10835833/n4scgse21iuz.jpg',
-        'https://s1.r29static.com//bin/entry/7b0/100,0,1800,2400/x,80/1621852/image.jpg'
-    ];
+    let data = [];
+
+    for (let i = 1; i < 27; i++) {
+        data.push(utils.getMemePresetPhoto(i));
+    }
 
     //Pagination logic
     let startpgntnindex = lastindexkey;

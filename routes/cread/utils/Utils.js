@@ -251,6 +251,10 @@ function createSmallMemeUrl(uuid, memeid) {
     return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Meme/' + memeid + '-small.jpg';
 }
 
+function getMemePresetPhoto(filename) {
+    return urlprotocol + s3bucketheader + '/' + s3bucket + '/Cread-Meme-Photos/' + filename + '.jpg';
+}
+
 function getShortCoffeeMugOverlayUrl(uuid, shoid) {
     return urlprotocol + s3bucketheader + '/' + s3bucket + '/Users/' + uuid + '/Short/' + shoid + '-overlay-coffee-mug.png';
 }
@@ -513,6 +517,7 @@ module.exports = {
     createSmallShortUrl: createSmallShortUrl,
     createShortUrl: createShortUrl,
     createSmallMemeUrl: createSmallMemeUrl,
+    getMemePresetPhoto: getMemePresetPhoto,
     getCaptureCoffeeMugOverlayUrl: getCaptureCoffeeMugOverlayUrl,
     getShortCoffeeMugOverlayUrl: getShortCoffeeMugOverlayUrl,
     getShortJournalOverlayUrl: getShortJournalOverlayUrl,

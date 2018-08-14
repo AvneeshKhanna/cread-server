@@ -26,6 +26,7 @@ router.get('/details', function (request, response) {
     var creatoruuid = request.query.creatoruuid;
     var collaboratoruuid = request.query.collaboratoruuid;
     var platform = request.query.platform;
+    let memesupport = request.query.memesupport ? request.query.memesupport : 'no';
 
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
 
@@ -51,16 +52,19 @@ router.get('/details', function (request, response) {
                 collaboratoruuid,
                 entityid,
                 limit,
-                lastindexkey);
+                lastindexkey,
+                {
+                    memesupport: memesupport
+                });
         })
         .then(function (result) {
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 
-            if(platform !== "android"){
+            if (platform !== "android") {
                 result.items = utils.filterProfileMentions(result.items, "caption")
             }
 
-            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+            if (request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')) {
                 response.status(304).send().end();
             }
             else {
@@ -75,10 +79,10 @@ router.get('/details', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     message: 'Some error occurred at the server'
@@ -90,17 +94,18 @@ router.get('/details', function (request, response) {
 
 router.get('/load-firsts', function (request, response) {
 
-    var uuid = request.headers.uuid;
-    var authkey = request.headers.authkey;
-    var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : "";
-    var platform = request.query.platform;
+    let uuid = request.headers.uuid;
+    let authkey = request.headers.authkey;
+    let lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : "";
+    let platform = request.query.platform;
+    let memesupport = request.query.memesupport ? request.query.memesupport : 'no';
 
-    var entityids;
+    let entityids;
 
-    try{
+    try {
         entityids = _authutils.decryptPayloadAuthSync(decodeURIComponent(request.headers.entityids));
     }
-    catch (err){
+    catch (err) {
         console.error(err);
         response.status(500).send({
             message: 'Some error occurred at the server'
@@ -108,9 +113,9 @@ router.get('/load-firsts', function (request, response) {
         return;
     }
 
-    var limit = (config.isProduction()) ? 8 : 4;
+    let limit = (config.isProduction()) ? 8 : 4;
 
-    var connection;
+    let connection;
 
     _auth.authValid(uuid, authkey)
         .then(function (details) {
@@ -124,17 +129,17 @@ router.get('/load-firsts', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return postrecommendutils.getFirstPosts(connection, uuid, entityids, limit, lastindexkey);
+            return postrecommendutils.getFirstPosts(connection, uuid, entityids, limit, lastindexkey, {memesupport: memesupport});
         })
         .then(function (result) {
-            if(platform !== "android"){
+            if (platform !== "android") {
                 result.items = utils.filterProfileMentions(result.items, "caption")
             }
 
             console.log("result is " + JSON.stringify(result, null, 3));
             response.set('Cache-Control', 'public, max-age=' + cache_time.medium);
 
-            if(request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')){
+            if (request.header['if-none-match'] && request.header['if-none-match'] === response.get('ETag')) {
                 response.status(304).send().end();
             }
             else {
@@ -149,10 +154,10 @@ router.get('/load-firsts', function (request, response) {
         })
         .catch(function (err) {
             config.disconnect(connection);
-            if(err instanceof BreakPromiseChainError){
+            if (err instanceof BreakPromiseChainError) {
                 //Do nothing
             }
-            else{
+            else {
                 console.error(err);
                 response.status(500).send({
                     message: 'Some error occurred at the server'

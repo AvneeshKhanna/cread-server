@@ -485,16 +485,17 @@ function updateClientBio(connection, clientid, bio) {
 }
 
 router.get('/load-timeline', function (request, response) {
-    var uuid = request.headers.uuid;
-    var authkey = request.headers.authkey;
-    var lastindexkey = decodeURIComponent(request.query.lastindexkey);
-    var requesteduuid = decodeURIComponent(request.query.requesteduuid);
-    var platform = request.query.platform;
-    var web_access_token = request.headers.wat;
+    let uuid = request.headers.uuid;
+    let authkey = request.headers.authkey;
+    let lastindexkey = decodeURIComponent(request.query.lastindexkey);
+    let requesteduuid = decodeURIComponent(request.query.requesteduuid);
+    let platform = request.query.platform;
+    let memesupport = request.query.memesupport ? request.query.memesupport : 'no';
+    let web_access_token = request.headers.wat;
 
-    var limit = config.isProduction() ? 10 : 8;  //TODO: Change to 10
+    let limit = config.isProduction() ? 10 : 8;  //TODO: Change to 10
 
-    var connection;
+    let connection;
 
     _auth.authValidWeb(web_access_token)
         .then(function (payload) {
@@ -518,7 +519,7 @@ router.get('/load-timeline', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return userprofileutils.loadTimeline(connection, requesteduuid, uuid, limit, lastindexkey);
+            return userprofileutils.loadTimeline(connection, requesteduuid, uuid, limit, lastindexkey, {memesupport: memesupport});
         })
         .then(function (result) {
 
@@ -742,16 +743,17 @@ router.post('/load-profile', function (request, response) {
 
 router.get('/load-repost-timeline', function (request, response) {
 
-    var uuid = request.headers.uuid;
-    var authkey = request.headers.authkey;
+    let uuid = request.headers.uuid;
+    let authkey = request.headers.authkey;
 
-    var requesteduuid = request.query.requesteduuid;
-    var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : "";
-    var platform = request.query.platform;
+    let requesteduuid = request.query.requesteduuid;
+    let lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : "";
+    let platform = request.query.platform;
+    let memesupport = request.query.memesupport ? request.query.memesupport : 'no';
 
-    var limit = config.isProduction() ? 15 : 8;
+    let limit = config.isProduction() ? 15 : 8;
 
-    var connection;
+    let connection;
 
     _auth.authValid(uuid, authkey)
         .then(function (details) {
@@ -765,7 +767,7 @@ router.get('/load-repost-timeline', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return userprofileutils.loadRepostTimeline(connection, uuid, requesteduuid, lastindexkey, limit);
+            return userprofileutils.loadRepostTimeline(connection, uuid, requesteduuid, lastindexkey, limit, {memesupport: memesupport});
         })
         .then(function (result) {
             if (platform !== "android" && platform !== "web") {
@@ -804,15 +806,16 @@ router.get('/load-repost-timeline', function (request, response) {
 
 router.get('/load-collab-timeline', function (request, response) {
 
-    var uuid = request.headers.uuid;
-    var authkey = request.headers.authkey;
-    var lastindexkey = decodeURIComponent(request.query.lastindexkey);
-    var requesteduuid = decodeURIComponent(request.query.requesteduuid);
-    var platform = request.query.platform;
-    var web_access_token = request.headers.wat;
+    let uuid = request.headers.uuid;
+    let authkey = request.headers.authkey;
+    let lastindexkey = decodeURIComponent(request.query.lastindexkey);
+    let requesteduuid = decodeURIComponent(request.query.requesteduuid);
+    let platform = request.query.platform;
+    let web_access_token = request.headers.wat;
+    let memesupport = request.query.memesupport ? request.query.memesupport : 'no';
 
-    var limit = (config.envtype === 'PRODUCTION') ? 10 : 5;
-    var connection;
+    let limit = config.isProduction() ? 10 : 5;
+    let connection;
 
     _auth.authValidWeb(web_access_token)
         .then(function (payload) {
@@ -836,7 +839,7 @@ router.get('/load-collab-timeline', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return userprofileutils.loadCollaborationTimeline(connection, requesteduuid, uuid, limit, lastindexkey);
+            return userprofileutils.loadCollaborationTimeline(connection, requesteduuid, uuid, limit, lastindexkey, {memesupport: memesupport});
         })
         .then(function (result) {
 

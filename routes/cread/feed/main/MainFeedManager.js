@@ -152,14 +152,15 @@ router.get('/load', function (request, response) {
 
     console.log("request headers are " + JSON.stringify(request.headers, null, 3));
 
-    var uuid = request.headers.uuid;
-    var authkey = request.headers.authkey;
-    var lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : null;
-    var platform = request.query.platform;
+    let uuid = request.headers.uuid;
+    let authkey = request.headers.authkey;
+    let lastindexkey = request.query.lastindexkey ? decodeURIComponent(request.query.lastindexkey) : null;
+    let platform = request.query.platform;
     let repostsupport = request.query.repostsupport;
+    let memesupport = request.query.memesupport ? request.query.memesupport : 'no';
 
-    var limit = config.isProduction() ? 10 : 10;
-    var connection;
+    let limit = config.isProduction() ? 10 : 10;
+    let connection;
 
     _auth.authValid(uuid, authkey)
         .then(function () {
@@ -175,10 +176,10 @@ router.get('/load', function (request, response) {
             connection = conn;
 
             if(repostsupport === 'yes'){
-                return loadFeed(connection, uuid, limit, lastindexkey);
+                return loadFeed(connection, uuid, limit, lastindexkey, {memesupport: memesupport});
             }
             else{
-                return loadFeedLegacy(connection, uuid, limit, lastindexkey);
+                return loadFeedLegacy(connection, uuid, limit, lastindexkey, {memesupport: memesupport});
             }
         })
         .then(function (result) {
@@ -277,21 +278,24 @@ router.post('/load', function (request, response) {
         })
 });
 
-function loadFeed(connection, uuid, limit, lastindexkey) {
+function loadFeed(connection, uuid, limit, lastindexkey, options) {
     return new Promise(function (resolve, reject) {
 
         lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
         console.log("TIME before start: " + moment().format('YYYY-MM-DD HH:mm:ss'));
 
-        connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, ' +
-            'Entity.regdate, RE.regdate AS sortdate, RE.posttype, ' +
-            'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
-            'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
-            'User.uuid, User.firstname, User.lastname, ' +
-            'RU.uuid AS reposteruuid, RU.firstname AS repostername, ' +
-            'CASE WHEN(RE.posttype = "REPOST") THEN RE.regdate END AS repostdate ' +
-            'FROM (' +
+        let sql;
+
+        if(options.memesupport === 'yes'){
+            sql = 'SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, ' +
+                'Entity.regdate, RE.regdate AS sortdate, RE.posttype, ' +
+                'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
+                'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
+                'User.uuid, User.firstname, User.lastname, ' +
+                'RU.uuid AS reposteruuid, RU.firstname AS repostername, ' +
+                'CASE WHEN(RE.posttype = "REPOST") THEN RE.regdate END AS repostdate ' +
+                'FROM (' +
                     'SELECT E.entityid, E.uuid, E.status, E.regdate, NULL AS repostid, "POST" AS posttype ' +
                     'FROM Entity E ' +
                     'WHERE E.status = "ACTIVE" ' +
@@ -302,23 +306,65 @@ function loadFeed(connection, uuid, limit, lastindexkey) {
                     'ON(R.entityid = ER.entityid) ' +
                     'WHERE ER.status = "ACTIVE" ' +
                     //'ORDER BY regdate DESC ' +
-                ') RE ' +
-            'JOIN Entity ' +
-            'ON(RE.entityid = Entity.entityid) ' +
-            'JOIN User ' +
-            'ON(User.uuid = Entity.uuid) ' +
-            'LEFT JOIN User RU ' +
-            'ON(RE.uuid = RU.uuid AND RE.posttype = "REPOST") ' +
-            'LEFT JOIN HatsOff ' +
-            'ON HatsOff.entityid = Entity.entityid ' +
-            'LEFT JOIN Downvote D ' +
-            'ON D.entityid = Entity.entityid ' +
-            'JOIN Follow ' +
-            'ON (Follow.followee = RE.uuid AND Follow.follower = ?) ' +
-            'WHERE RE.regdate < ? ' +
-            'GROUP BY Entity.entityid, RE.repostid ' +
-            'ORDER BY RE.regdate DESC ' +
-            'LIMIT ?', [uuid, uuid, uuid, lastindexkey, limit], function (err, rows) {
+                    ') RE ' +
+                'JOIN Entity ' +
+                'ON(RE.entityid = Entity.entityid) ' +
+                'JOIN User ' +
+                'ON(User.uuid = Entity.uuid) ' +
+                'LEFT JOIN User RU ' +
+                'ON(RE.uuid = RU.uuid AND RE.posttype = "REPOST") ' +
+                'LEFT JOIN HatsOff ' +
+                'ON HatsOff.entityid = Entity.entityid ' +
+                'LEFT JOIN Downvote D ' +
+                'ON D.entityid = Entity.entityid ' +
+                'JOIN Follow ' +
+                'ON (Follow.followee = RE.uuid AND Follow.follower = ?) ' +
+                'WHERE RE.regdate < ? ' +
+                'GROUP BY Entity.entityid, RE.repostid ' +
+                'ORDER BY RE.regdate DESC ' +
+                'LIMIT ?';
+        }
+        else{   //Backward compatability
+            sql = 'SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, ' +
+                'Entity.regdate, RE.regdate AS sortdate, RE.posttype, ' +
+                'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
+                'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
+                'User.uuid, User.firstname, User.lastname, ' +
+                'RU.uuid AS reposteruuid, RU.firstname AS repostername, ' +
+                'CASE WHEN(RE.posttype = "REPOST") THEN RE.regdate END AS repostdate ' +
+                'FROM (' +
+                    'SELECT E.entityid, E.uuid, E.status, E.regdate, NULL AS repostid, "POST" AS posttype ' +
+                    'FROM Entity E ' +
+                    'WHERE E.status = "ACTIVE" ' +
+                    'AND E.type <> "MEME" ' +
+                    'UNION ALL ' +
+                    'SELECT R.entityid, R.uuid, "ACTIVE" AS status, R.regdate, R.repostid, "REPOST" AS posttype ' +
+                    'FROM Repost R ' +
+                    'JOIN Entity ER ' +
+                    'ON(R.entityid = ER.entityid) ' +
+                    'WHERE ER.status = "ACTIVE" ' +
+                    'AND ER.type <> "MEME" ' +
+                    //'ORDER BY regdate DESC ' +
+                    ') RE ' +
+                'JOIN Entity ' +
+                'ON(RE.entityid = Entity.entityid) ' +
+                'JOIN User ' +
+                'ON(User.uuid = Entity.uuid) ' +
+                'LEFT JOIN User RU ' +
+                'ON(RE.uuid = RU.uuid AND RE.posttype = "REPOST") ' +
+                'LEFT JOIN HatsOff ' +
+                'ON HatsOff.entityid = Entity.entityid ' +
+                'LEFT JOIN Downvote D ' +
+                'ON D.entityid = Entity.entityid ' +
+                'JOIN Follow ' +
+                'ON (Follow.followee = RE.uuid AND Follow.follower = ?) ' +
+                'WHERE RE.regdate < ? ' +
+                'GROUP BY Entity.entityid, RE.repostid ' +
+                'ORDER BY RE.regdate DESC ' +
+                'LIMIT ?';
+        }
+
+        connection.query(sql, [uuid, uuid, uuid, lastindexkey, limit], function (err, rows) {
             if (err) {
                 reject(err);
             }
@@ -448,46 +494,60 @@ function getLastIndexKeyByPostType(rows) {
     }
 }
 
-function loadFeedLegacy(connection, uuid, limit, lastindexkey) {
+function loadFeedLegacy(connection, uuid, limit, lastindexkey, options) {
     return new Promise(function (resolve, reject) {
 
         lastindexkey = (lastindexkey) ? lastindexkey : moment().format('YYYY-MM-DD HH:mm:ss');  //true ? value : current_timestamp
 
         console.log("TIME before start: " + moment().format('YYYY-MM-DD HH:mm:ss'));
 
-        connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, ' +
-            /*'Short.shoid, Short.capid AS shcaptureid, Capture.shoid AS cpshortid, Capture.capid AS captureid, ' +
-            'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
-            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
-            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +*/
-            /*'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +*/
-            /*'COUNT(DISTINCT Comment.commid) AS commentcount, ' +*/
-            'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
-            'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
-            'User.uuid, User.firstname, User.lastname ' +
-            'FROM Entity ' +
-            /*'LEFT JOIN Short ' +
-            'ON Short.entityid = Entity.entityid ' +
-            'LEFT JOIN Capture ' +
-            'ON Capture.entityid = Entity.entityid ' +*/
-            'JOIN User ' +
-            // 'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
-            'ON(User.uuid = Entity.uuid) ' +
-            /*'LEFT JOIN Comment ' +
-            'ON Comment.entityid = Entity.entityid ' +*/
-            'LEFT JOIN HatsOff ' +
-            'ON HatsOff.entityid = Entity.entityid ' +
-            'LEFT JOIN Downvote D ' +
-            'ON D.entityid = Entity.entityid ' +
-            'LEFT JOIN Follow ' +
-            'ON Follow.followee = User.uuid ' +
-            'WHERE Follow.follower = ? ' +
-            'AND Entity.status = "ACTIVE" ' +
-            'AND Entity.regdate < ? ' +
-            'GROUP BY Entity.entityid ' +
-            'ORDER BY Entity.regdate DESC ' +
-            'LIMIT ? '/* +
-            'OFFSET ?'*/, [uuid, uuid, uuid, lastindexkey, limit/*, offset*/], function (err, rows) {
+        let sql;
+
+        if(options.memesupport === 'yes'){
+            sql = 'SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, ' +
+                'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
+                'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
+                'User.uuid, User.firstname, User.lastname ' +
+                'FROM Entity ' +
+                'JOIN User ' +
+                'ON(User.uuid = Entity.uuid) ' +
+                'LEFT JOIN HatsOff ' +
+                'ON HatsOff.entityid = Entity.entityid ' +
+                'LEFT JOIN Downvote D ' +
+                'ON D.entityid = Entity.entityid ' +
+                'LEFT JOIN Follow ' +
+                'ON Follow.followee = User.uuid ' +
+                'WHERE Follow.follower = ? ' +
+                'AND Entity.status = "ACTIVE" ' +
+                'AND Entity.regdate < ? ' +
+                'GROUP BY Entity.entityid ' +
+                'ORDER BY Entity.regdate DESC ' +
+                'LIMIT ? ';
+        }
+        else{
+            sql = 'SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, ' +
+                'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
+                'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
+                'User.uuid, User.firstname, User.lastname ' +
+                'FROM Entity ' +
+                'JOIN User ' +
+                'ON(User.uuid = Entity.uuid) ' +
+                'LEFT JOIN HatsOff ' +
+                'ON HatsOff.entityid = Entity.entityid ' +
+                'LEFT JOIN Downvote D ' +
+                'ON D.entityid = Entity.entityid ' +
+                'LEFT JOIN Follow ' +
+                'ON Follow.followee = User.uuid ' +
+                'WHERE Follow.follower = ? ' +
+                'AND Entity.status = "ACTIVE" ' +
+                'AND Entity.type <> "MEME" ' +
+                'AND Entity.regdate < ? ' +
+                'GROUP BY Entity.entityid ' +
+                'ORDER BY Entity.regdate DESC ' +
+                'LIMIT ? ';
+        }
+
+        connection.query(sql, [uuid, uuid, uuid, lastindexkey, limit], function (err, rows) {
             if (err) {
                 reject(err);
             }

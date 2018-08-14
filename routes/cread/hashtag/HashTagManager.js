@@ -25,6 +25,7 @@ router.get('/feed', function (request, response) {
     var htag = decodeURIComponent(request.query.htag).toLowerCase();
     var lastindexkey = decodeURIComponent(request.query.lastindexkey);
     var platform = request.query.platform;
+    let memesupport = request.query.memesupport ? request.query.memesupport : 'no';
 
     var limit = config.isProduction() ? 15 : 4;
     var connection;
@@ -41,7 +42,7 @@ router.get('/feed', function (request, response) {
         })
         .then(function (conn) {
             connection = conn;
-            return hashtagutils.loadHashtagFeed(connection, uuid, limit, htag, lastindexkey);
+            return hashtagutils.loadHashtagFeed(connection, uuid, limit, htag, lastindexkey, {memesupport: memesupport});
         })
         .then(function (result) {
 
