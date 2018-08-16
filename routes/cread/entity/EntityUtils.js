@@ -457,8 +457,10 @@ function getEntityUsrDetailsForNotif(connection, entityid) {
             'ON Capture.entityid = Entity.entityid ' +
             'LEFT JOIN Short ' +
             'ON Short.entityid = Entity.entityid ' +
+            'LEFT JOIN Meme ' +
+            'ON Meme.entityid = Entity.entityid ' +
             'JOIN User AS Creator ' +
-            'ON (Creator.uuid = Short.uuid OR Creator.uuid = Capture.uuid)  ' +
+            'ON (Creator.uuid = Entity.uuid)  ' +
             'LEFT JOIN Capture AS CollabC ' +
             'ON Short.capid = CollabC.capid ' +
             'LEFT JOIN Short AS CollabS ' +

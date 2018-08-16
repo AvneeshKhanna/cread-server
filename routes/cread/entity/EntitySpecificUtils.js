@@ -8,36 +8,27 @@
  * */
 'use-strict';
 
-var feedutils = require('../feed/FeedUtils');
-var utils = require('../utils/Utils');
-var userprofileutils = require('../user-manager/UserProfileUtils');
-var consts = require('../utils/Constants');
+const feedutils = require('../feed/FeedUtils');
+const utils = require('../utils/Utils');
+const userprofileutils = require('../user-manager/UserProfileUtils');
+const hatsoffutils = require('../hats-off/HatsOffUtils');
+const commentutils = require('../comment/CommentUtils');
+const consts = require('../utils/Constants');
+const post_type = consts.post_type;
 
-var NotFoundError = require('../utils/NotFoundError');
+const NotFoundError = require('../utils/NotFoundError');
 
 function loadEntityData(connection, requesteruuid, entityid) {
     return new Promise(function (resolve, reject) {
-        connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, Short.shoid, Capture.capid AS captureid, ' +
-            'Capture.shoid AS cpshortid, Short.capid AS shcaptureid, ' +
-            'CASE WHEN(Entity.type = "SHORT") THEN Short.livefilter ELSE Capture.livefilter END AS livefilter, ' +
-            'CASE WHEN(Entity.type = "SHORT") THEN Short.text_long IS NOT NULL ELSE Capture.text_long IS NOT NULL END AS long_form, ' +
-            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_width ELSE Capture.img_width END AS img_width, ' +
-            'CASE WHEN(Entity.type = "SHORT") THEN Short.img_height ELSE Capture.img_height END AS img_height, ' +
+        connection.query('SELECT Entity.caption, Entity.entityid, Entity.merchantable, Entity.type, Entity.regdate, ' +
             'COUNT(CASE WHEN(Follow.follower = ?) THEN 1 END) AS fbinarycount, ' +
             'COUNT(CASE WHEN(HatsOff.uuid = ?) THEN 1 END) AS hbinarycount, ' +
             'COUNT(DISTINCT HatsOff.uuid, HatsOff.entityid) AS hatsoffcount, ' +
             'COUNT(CASE WHEN(D.uuid = ?) THEN 1 END) AS dbinarycount, ' +
-            'COUNT(DISTINCT Comment.commid) AS commentcount, ' +
-            'User.uuid, User.firstname, User.lastname ' +
+            'User.uuid, CONCAT_WS(" ", User.firstname, User.lastname) AS creatorname ' +
             'FROM Entity ' +
-            'LEFT JOIN Short ' +
-            'ON Short.entityid = Entity.entityid ' +
-            'LEFT JOIN Capture ' +
-            'ON Capture.entityid = Entity.entityid ' +
             'JOIN User ' +
-            'ON (Short.uuid = User.uuid OR Capture.uuid = User.uuid) ' +
-            'LEFT JOIN Comment ' +
-            'ON Comment.entityid = Entity.entityid ' +
+            'ON (User.uuid = Entity.uuid) ' +
             'LEFT JOIN HatsOff ' +
             'ON HatsOff.entityid = Entity.entityid ' +
             'LEFT JOIN Downvote D ' +
@@ -58,14 +49,17 @@ function loadEntityData(connection, requesteruuid, entityid) {
                 row.map(function (element) {
                     element.profilepicurl = utils.createSmallProfilePicUrl(element.uuid);
 
-                    if (element.type === 'CAPTURE') {
+                    /*if (element.type === post_type.CAPTURE) {
                         element.entityurl = utils.createSmallCaptureUrl(element.uuid, element.captureid);
                     }
-                    else {
+                    else if(element.type === post_type.SHORT){
                         element.entityurl = utils.createSmallShortUrl(element.uuid, element.shoid);
                     }
+                    else{
+                        element.entityurl = utils.createSmallMemeUrl(element.uuid, element.memeid);
+                    }*/
 
-                    element.creatorname = element.firstname + ' ' + element.lastname;
+                    /*element.creatorname = element.firstname + ' ' + element.lastname;*/
                     element.hatsoffstatus = element.hbinarycount > 0;
                     element.followstatus = element.fbinarycount > 0;
                     element.downvotestatus = element.dbinarycount > 0;
@@ -103,10 +97,21 @@ function loadEntityData(connection, requesteruuid, entityid) {
                     return element;
                 });
 
-                var candownvote = false;    //TODO: Revert
+                let candownvote = false;    //TODO: Revert
 
-                //TODO: Solve a bug where 'TypeError: userprofileutils.getUserQualityPercentile' exception occurs possible due to circular dependency
-                userprofileutils.getUserQualityPercentile(connection, requesteruuid)
+                feedutils.getEntitiesInfoFast(connection, row)
+                    .then(updated_row => {
+                        row = updated_row;
+                        return hatsoffutils.loadHatsoffCountsFast(connection, row);
+                    })
+                    .then(function (updated_row) {
+                        rows = updated_row;
+                        return commentutils.loadCommentCountsFast(connection, row);
+                    })
+                    .then(updated_row => {
+                        row = updated_row;
+                        return userprofileutils.getUserQualityPercentile(connection, requesteruuid);
+                    })
                     .then(function (result) {
                         candownvote = result.quality_percentile_score >= consts.min_percentile_quality_user_downvote;
                         return feedutils.getCollaborationData(connection, row);

@@ -3,32 +3,32 @@
  */
 'use-strict';
 
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
 
-var config = require('../../Config');
+const config = require('../../Config');
 
-var _auth = require('../../auth-token-management/AuthTokenManager');
-var BreakPromiseChainError = require('../utils/BreakPromiseChainError');
-var hashtagutils = require('./HashTagUtils');
-var utils = require('../utils/Utils');
+const _auth = require('../../auth-token-management/AuthTokenManager');
+const BreakPromiseChainError = require('../utils/BreakPromiseChainError');
+const hashtagutils = require('./HashTagUtils');
+const utils = require('../utils/Utils');
 
-var consts = require('../utils/Constants');
-var cache_time = consts.cache_time;
+const consts = require('../utils/Constants');
+const cache_time = consts.cache_time;
 
 router.get('/feed', function (request, response) {
 
     console.log("request headers " + JSON.stringify(request.headers, null, 3));
 
-    var uuid = request.headers.uuid;
-    var authkey = request.headers.authkey;
-    var htag = decodeURIComponent(request.query.htag).toLowerCase();
-    var lastindexkey = decodeURIComponent(request.query.lastindexkey);
-    var platform = request.query.platform;
+    let uuid = request.headers.uuid;
+    let authkey = request.headers.authkey;
+    let htag = decodeURIComponent(request.query.htag).toLowerCase();
+    let lastindexkey = decodeURIComponent(request.query.lastindexkey);
+    let platform = request.query.platform;
     let memesupport = request.query.memesupport ? request.query.memesupport : 'no';
 
-    var limit = config.isProduction() ? 15 : 4;
-    var connection;
+    let limit = config.isProduction() ? 15 : 4;
+    let connection;
 
     _auth.authValid(uuid, authkey)
         .then(function (details) {
@@ -82,10 +82,10 @@ router.get('/feed', function (request, response) {
 });
 
 router.get('/day/load', function (request, response) {
-    var uuid = request.headers.uuid;
-    var authkey = request.headers.authkey;
+    let uuid = request.headers.uuid;
+    let authkey = request.headers.authkey;
 
-    var connection;
+    let connection;
 
     _auth.authValid(uuid, authkey)
         .then(function (details) {
